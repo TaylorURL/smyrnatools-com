@@ -85,10 +85,11 @@ const AirContentCalculator = () => {
                                     key={a.id}
                                     type="button"
                                     onClick={() => setField('aggSize')(a.id)}
-                                    className={`rounded-md px-2 py-1.5 text-[12px] font-semibold tabular-nums transition-colors ${
+                                    aria-pressed={active}
+                                    className={`rounded-md px-2 py-1.5 text-[12px] font-semibold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
                                         active
                                             ? 'bg-accent text-white border border-accent'
-                                            : 'bg-[var(--bg-secondary)] border border-[var(--border-light)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
+                                            : 'bg-[var(--bg-secondary)] border border-[var(--border-light)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] hover:border-[var(--border-medium)]'
                                     }`}
                                 >
                                     {a.label}
@@ -106,11 +107,12 @@ const AirContentCalculator = () => {
                                     key={opt.code}
                                     type="button"
                                     onClick={() => setField('exposureClass')(opt.code)}
-                                    title={opt.description}
-                                    className={`flex flex-col items-start rounded-md px-2.5 py-2 text-left transition-colors ${
+                                    aria-pressed={active}
+                                    aria-label={`${opt.code}: ${opt.description}`}
+                                    className={`flex flex-col items-start rounded-md px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
                                         active
                                             ? 'bg-accent text-white border border-accent'
-                                            : 'bg-[var(--bg-secondary)] border border-[var(--border-light)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
+                                            : 'bg-[var(--bg-secondary)] border border-[var(--border-light)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] hover:border-[var(--border-medium)]'
                                     }`}
                                 >
                                     <span className="text-[12.5px] font-bold">{opt.code}</span>

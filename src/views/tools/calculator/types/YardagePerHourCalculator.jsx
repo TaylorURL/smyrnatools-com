@@ -100,18 +100,20 @@ const YardagePerHourCalculator = () => {
     const yardsField = isOngoing ? 'yardsPoured' : 'totalYards'
 
     const modeToggle = (
-        <div className="inline-flex items-center rounded-lg p-0.5 gap-0.5 bg-[var(--bg-tertiary)] border border-[var(--border-light)]">
+        <div role="group" aria-label="Pour mode" className="inline-flex items-center rounded-lg p-0.5 gap-0.5 bg-[var(--bg-tertiary)] border border-[var(--border-light)]">
             <button
                 type="button"
                 onClick={() => setIsOngoing(false)}
-                className={`flex items-center gap-1.5 font-semibold rounded text-xs py-1 px-2.5 transition-colors ${!isOngoing ? 'bg-accent text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
+                aria-pressed={!isOngoing}
+                className={`flex items-center gap-1.5 font-semibold rounded text-xs py-1 px-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${!isOngoing ? 'bg-accent text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
             >
                 Completed
             </button>
             <button
                 type="button"
                 onClick={() => setIsOngoing(true)}
-                className={`flex items-center gap-1.5 font-semibold rounded text-xs py-1 px-2.5 transition-colors ${isOngoing ? 'bg-accent text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
+                aria-pressed={isOngoing}
+                className={`flex items-center gap-1.5 font-semibold rounded text-xs py-1 px-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${isOngoing ? 'bg-accent text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
             >
                 <i className="fas fa-circle text-[6px]" />
                 Live
@@ -148,16 +150,17 @@ const YardagePerHourCalculator = () => {
                         />
                         <CalcField label={isOngoing ? 'Now' : 'Last Poured'}>
                             {isOngoing ? (
-                                <div className="flex items-center gap-2 w-full rounded-lg bg-green-50 border border-green-200 text-text-primary font-bold text-sm py-2.5 px-3">
-                                    <i className="fas fa-circle text-[6px] animate-pulse" />
+                                <div role="status" aria-live="polite" className="flex items-center gap-2 w-full rounded-lg bg-[color:var(--success)]/10 border border-[color:var(--success)]/40 text-text-primary font-bold text-sm py-2.5 px-3">
+                                    <i className="fas fa-circle text-[6px] animate-pulse text-[color:var(--success)]" />
                                     <span className="tabular-nums">{values.completionTime}</span>
                                 </div>
                             ) : (
                                 <input
                                     type="time"
+                                    aria-label="Last load completion time"
                                     value={values.completionTime}
                                     onChange={(e) => handleChange('completionTime')(e.target.value)}
-                                    className="w-full bg-[var(--card-background)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-sm font-semibold outline-none transition-all duration-150 px-3 py-2.5 focus:border-accent focus:shadow-[0_0_0_3px_rgba(30,58,95,0.10)]"
+                                    className="w-full bg-[var(--card-background)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-sm font-semibold outline-none transition-colors duration-150 px-3 py-2.5 [color-scheme:light] dark:[color-scheme:dark] hover:border-[var(--border-dark)] focus:border-accent focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                                 />
                             )}
                         </CalcField>

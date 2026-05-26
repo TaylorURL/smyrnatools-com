@@ -109,8 +109,8 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     <i className={`fas ${icon} text-sm`} style={{ color: 'var(--text-primary)' }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-slate-800 truncate">{doc.name}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">
+                    <div className="text-sm font-medium text-text-primary truncate">{doc.name}</div>
+                    <div className="text-xs text-text-tertiary mt-0.5">
                         {formatFileSize(doc.file_size)} &middot; {DateUtility.formatDate(doc.created_at)}
                         {uploaderName ? ` \u00b7 ${uploaderName}` : ''}
                     </div>
@@ -118,7 +118,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                         {previewable && (
                             <button
                                 onClick={() => onPreview(doc)}
-                                className="text-xs font-medium px-2.5 py-1 rounded-md border border-border-light bg-white text-slate-600 cursor-pointer hover:bg-slate-50 transition-colors"
+                                className="text-xs font-medium px-2.5 py-1 rounded-md border border-border-light bg-bg-primary text-text-secondary cursor-pointer hover:bg-bg-tertiary hover:border-border-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                             >
                                 <i className="fas fa-eye mr-1" />
                                 Preview
@@ -129,7 +129,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                             target="_blank"
                             rel="noopener noreferrer"
                             download
-                            className="text-xs font-medium px-2.5 py-1 rounded-md border border-border-light bg-white text-slate-600 no-underline hover:bg-slate-50 transition-colors"
+                            className="text-xs font-medium px-2.5 py-1 rounded-md border border-border-light bg-bg-primary text-text-secondary no-underline hover:bg-bg-tertiary hover:border-border-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                         >
                             <i className="fas fa-download mr-1" />
                             Download
@@ -137,7 +137,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                         {canDelete && (
                             <button
                                 onClick={() => onDelete(doc)}
-                                className="text-xs font-medium px-2.5 py-1 rounded-md border border-red-200 bg-white text-text-primary cursor-pointer hover:bg-red-50 transition-colors"
+                                className="text-xs font-medium px-2.5 py-1 rounded-md border border-[color:var(--danger)]/40 bg-bg-primary text-[color:var(--danger)] cursor-pointer hover:bg-[color:var(--danger)]/10 hover:border-[color:var(--danger)]/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--danger)]/40"
                             >
                                 <i className="fas fa-trash mr-1" />
                                 Delete
@@ -176,8 +176,9 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     <button
                         type="button"
                         onClick={() => onPreview(doc)}
-                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent hover:brightness-90 transition-colors text-text-tertiary"
+                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                         title="Preview"
+                        aria-label={`Preview ${doc.name}`}
                     >
                         <i className="fas fa-eye" />
                     </button>
@@ -187,8 +188,9 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     target="_blank"
                     rel="noopener noreferrer"
                     download
-                    className="flex items-center justify-center w-5 h-5 rounded text-[11px] no-underline hover:brightness-90 transition-colors text-text-tertiary"
+                    className="flex items-center justify-center w-5 h-5 rounded text-[11px] no-underline text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                     title="Download"
+                    aria-label={`Download ${doc.name}`}
                 >
                     <i className="fas fa-download" />
                 </a>
@@ -196,8 +198,9 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     <button
                         type="button"
                         onClick={() => onDelete(doc)}
-                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent transition-colors hover:brightness-90 text-text-primary"
+                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent text-text-tertiary transition-colors hover:bg-[color:var(--danger)]/10 hover:text-[color:var(--danger)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--danger)]/40"
                         title="Delete"
+                        aria-label={`Delete ${doc.name}`}
                     >
                         <i className="fas fa-trash" />
                     </button>
@@ -211,10 +214,10 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
 function DocumentsSkeleton() {
     return Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="flex items-center gap-3 px-4 lg:px-7 py-4 border-b border-border-light animate-pulse">
-            <div className="w-9 h-9 rounded-lg bg-slate-200" />
+            <div className="w-9 h-9 rounded-lg bg-bg-tertiary" />
             <div className="flex-1">
-                <div className="h-3.5 rounded w-2/5 bg-slate-200 mb-1.5" />
-                <div className="h-3 rounded w-1/4 bg-slate-100" />
+                <div className="h-3.5 rounded w-2/5 bg-bg-tertiary mb-1.5" />
+                <div className="h-3 rounded w-1/4 bg-bg-secondary" />
             </div>
         </div>
     ))
@@ -230,14 +233,14 @@ function EmptyState({ canUpload, onUpload, accentColor }) {
             >
                 <i className="fas fa-folder-open text-2xl" style={{ color: accentColor }} />
             </div>
-            <h3 className="text-lg font-semibold text-slate-800 mb-1">No documents yet</h3>
-            <p className="text-sm text-slate-400 mb-5 max-w-xs">
+            <h3 className="text-lg font-semibold text-text-primary mb-1">No documents yet</h3>
+            <p className="text-sm text-text-tertiary mb-5 max-w-xs">
                 {canUpload ? 'Upload your first document to get started.' : 'Documents will appear here once uploaded.'}
             </p>
             {canUpload && (
                 <button
                     onClick={onUpload}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-none text-white text-sm font-semibold cursor-pointer transition-opacity hover:opacity-90"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-none text-white text-sm font-semibold cursor-pointer transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                     style={{ backgroundColor: accentColor }}
                 >
                     <i className="fas fa-cloud-upload-alt" />
@@ -251,11 +254,18 @@ function EmptyState({ canUpload, onUpload, accentColor }) {
 /** Page-size selector and prev/next navigation for paginated document lists. */
 function Pagination({ currentPage, totalPages, pageSize, onPageSizeChange, onPageChange }) {
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border-light bg-slate-50">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border-light bg-bg-secondary">
             <select
-                className="appearance-none bg-white border border-border-light rounded-md text-sm text-slate-600 py-1.5 pl-3 pr-8 cursor-pointer"
+                className="appearance-none bg-bg-primary border border-border-light rounded-md text-sm text-text-primary py-1.5 pl-3 pr-8 cursor-pointer hover:border-border-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus:border-accent bg-no-repeat [color-scheme:light] dark:[color-scheme:dark]"
+                style={{
+                    backgroundImage:
+                        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
+                    backgroundPosition: 'right 8px center',
+                    backgroundSize: '14px'
+                }}
                 value={pageSize}
                 onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                aria-label="Documents per page"
             >
                 {[25, 50, 100].map((n) => (
                     <option key={n} value={n}>
@@ -265,28 +275,30 @@ function Pagination({ currentPage, totalPages, pageSize, onPageSizeChange, onPag
             </select>
             <div className="flex items-center gap-2">
                 <button
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-all ${
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
                         currentPage === 1
-                            ? 'bg-slate-100 text-slate-400 border-border-light cursor-not-allowed'
-                            : 'bg-white text-slate-700 border-border-light hover:bg-slate-50 cursor-pointer'
+                            ? 'bg-bg-tertiary text-text-tertiary border-border-light cursor-not-allowed opacity-60'
+                            : 'bg-bg-primary text-text-primary border-border-light hover:bg-bg-tertiary hover:border-border-medium cursor-pointer'
                     }`}
                     onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
+                    aria-label="Previous page"
                 >
                     <i className="fas fa-chevron-left text-[10px] mr-1" />
                     <span className="hidden xs:inline">Prev</span>
                 </button>
-                <span className="text-sm text-slate-500">
+                <span className="text-sm text-text-secondary tabular-nums">
                     {currentPage} / {totalPages}
                 </span>
                 <button
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-all ${
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
                         currentPage === totalPages
-                            ? 'bg-slate-100 text-slate-400 border-border-light cursor-not-allowed'
-                            : 'bg-white text-slate-700 border-border-light hover:bg-slate-50 cursor-pointer'
+                            ? 'bg-bg-tertiary text-text-tertiary border-border-light cursor-not-allowed opacity-60'
+                            : 'bg-bg-primary text-text-primary border-border-light hover:bg-bg-tertiary hover:border-border-medium cursor-pointer'
                     }`}
                     onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
+                    aria-label="Next page"
                 >
                     <span className="hidden xs:inline">Next</span>
                     <i className="fas fa-chevron-right text-[10px] ml-1" />
@@ -350,15 +362,16 @@ export default function DocumentsView() {
     /** File-type dropdown rendered inside TopSection's custom filter slot. */
     const typeFilterSelect = (
         <select
-            className="appearance-none bg-slate-50 border border-border-light rounded-xl text-slate-900 text-sm cursor-pointer min-w-[140px] py-3 pl-4 pr-10 bg-no-repeat"
+            className="appearance-none bg-bg-secondary border border-border-light rounded-xl text-text-primary text-sm cursor-pointer min-w-[140px] py-3 pl-4 pr-10 bg-no-repeat transition-colors hover:bg-bg-tertiary hover:border-border-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus:border-accent [color-scheme:light] dark:[color-scheme:dark]"
             style={{
                 backgroundImage:
-                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
+                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
                 backgroundPosition: 'right 12px center',
                 backgroundSize: '18px'
             }}
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
+            aria-label="Filter documents by file type"
         >
             {TYPE_FILTER_OPTIONS.map((opt) => (
                 <option key={opt} value={opt === 'All Types' ? '' : opt}>
@@ -369,7 +382,7 @@ export default function DocumentsView() {
     )
 
     return (
-        <div className="bg-slate-50 min-h-screen w-full pb-16">
+        <div className="bg-bg-secondary min-h-screen w-full pb-16">
             <TopSection
                 title="Documents"
                 isLoading={loading}
@@ -393,7 +406,7 @@ export default function DocumentsView() {
             />
             {uploading && (
                 <div className="mx-3 sm:mx-4 md:mx-6 lg:mx-8 mt-4">
-                    <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3.5">
+                    <div className="flex items-center gap-3 bg-[color:var(--accent)]/10 border border-[color:var(--accent)]/30 rounded-xl px-5 py-3.5">
                         <i className="fas fa-circle-notch fa-spin" style={{ color: accentColor }} />
                         <span className="text-sm text-text-primary font-medium">Uploading document...</span>
                     </div>
@@ -401,13 +414,13 @@ export default function DocumentsView() {
             )}
             {error && (
                 <div className="mx-3 sm:mx-4 md:mx-6 lg:mx-8 mt-4">
-                    <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl text-text-primary px-5 py-3.5">
+                    <div className="flex items-center justify-between bg-[color:var(--danger)]/10 border border-[color:var(--danger)]/30 rounded-xl text-text-primary px-5 py-3.5">
                         <span className="text-sm">{error}</span>
                     </div>
                 </div>
             )}
             <div className="px-3 py-4 sm:px-4 md:px-6 lg:px-8">
-                <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
+                <div className="bg-bg-primary rounded-xl border border-border-light shadow-sm overflow-hidden">
                     {loading ? (
                         <DocumentsSkeleton />
                     ) : filtered.length === 0 ? (
@@ -415,7 +428,7 @@ export default function DocumentsView() {
                     ) : (
                         <>
                             {!isMobile && (
-                                <div className="grid grid-cols-[1fr_100px_120px_160px_140px] px-4 lg:px-7 py-2.5 bg-slate-50 border-b border-border-light text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                                <div className="grid grid-cols-[1fr_100px_120px_160px_140px] px-4 lg:px-7 py-2.5 bg-bg-secondary border-b border-border-light text-[11px] font-bold uppercase tracking-wide text-text-tertiary">
                                     <div>Name</div>
                                     <div>Size</div>
                                     <div>Date</div>
@@ -447,7 +460,7 @@ export default function DocumentsView() {
                     )}
                 </div>
                 {!loading && filtered.length > 0 && (
-                    <div className="text-xs text-slate-400 text-center mt-3">
+                    <div className="text-xs text-text-tertiary text-center mt-3">
                         {filtered.length} document{filtered.length !== 1 ? 's' : ''}
                         {typeFilter ? ` (${typeFilter})` : ''}
                     </div>
