@@ -50,7 +50,7 @@ export const CalcField = ({
             <div className="relative flex items-center">
                 {children || (
                     <input
-                        className={`w-full bg-bg-primary border border-border-medium rounded-md text-text-primary text-[13px] font-semibold outline-none transition-colors duration-150 px-2.5 py-2 focus:border-accent ${suffix ? 'pr-9' : ''}`}
+                        className={`w-full bg-bg-primary border border-border-medium rounded-md text-text-primary text-[13px] font-semibold outline-none transition-colors duration-150 px-2.5 py-2 placeholder:text-text-tertiary [color-scheme:light] dark:[color-scheme:dark] hover:border-border-dark focus:border-accent focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-60 disabled:cursor-not-allowed ${suffix ? 'pr-9' : ''}`}
                         max={max}
                         min={min}
                         onChange={handleChange}
@@ -166,9 +166,10 @@ const CalculatorShell = ({
                 right={
                     onReset ? (
                         <button
-                            className="inline-flex items-center gap-1.5 bg-bg-secondary border border-border-light text-text-secondary rounded text-[11px] font-semibold px-2 py-1 hover:bg-bg-tertiary transition-colors"
+                            className="inline-flex items-center gap-1.5 bg-bg-secondary border border-border-light text-text-secondary rounded text-[11px] font-semibold px-2 py-1 hover:bg-bg-tertiary hover:border-border-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                             onClick={onReset}
                             type="button"
+                            aria-label="Reset calculator inputs"
                         >
                             <i className="fas fa-rotate-left text-[10px]" />
                             <span>Reset</span>

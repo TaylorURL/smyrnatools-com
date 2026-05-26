@@ -298,7 +298,8 @@ const SetTimeCalculator = () => {
                         <button
                             type="button"
                             onClick={() => setUseManual(!useManual)}
-                            className={`font-semibold rounded text-xs px-2.5 py-1 cursor-pointer transition-colors ${useManual ? 'bg-blue-50 border border-accent text-accent' : 'bg-[var(--bg-secondary)] border border-[var(--border-light)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]'}`}
+                            aria-pressed={useManual}
+                            className={`font-semibold rounded text-xs px-2.5 py-1 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${useManual ? 'bg-[color:var(--accent)]/10 border border-accent text-accent' : 'bg-[var(--bg-secondary)] border border-[var(--border-light)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:border-[var(--border-medium)]'}`}
                         >
                             {useManual ? 'Use Location' : 'Manual Entry'}
                         </button>
@@ -327,7 +328,7 @@ const SetTimeCalculator = () => {
                                     unit: '%'
                                 }
                             ].map(renderManualField)}
-                            <div className="md:col-span-3 flex items-center justify-center gap-2 rounded-lg bg-blue-50 text-accent font-semibold text-xs py-2 px-3">
+                            <div className="md:col-span-3 flex items-center justify-center gap-2 rounded-lg bg-[color:var(--accent)]/10 text-accent font-semibold text-xs py-2 px-3">
                                 <i className={`fas ${tod.icon}`} />
                                 <span>{tod.short}</span>
                             </div>
@@ -346,7 +347,8 @@ const SetTimeCalculator = () => {
                                     <span>{locationError}</span>
                                     <button
                                         onClick={getLocation}
-                                        className="bg-[var(--card-background)] border border-red-500 rounded text-text-primary cursor-pointer text-xs font-semibold py-1 px-2 hover:bg-red-50"
+                                        aria-label="Retry getting location"
+                                        className="bg-[var(--card-background)] border border-[color:var(--danger)] rounded text-text-primary cursor-pointer text-xs font-semibold py-1 px-2 hover:bg-[color:var(--danger)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--danger)]/40"
                                     >
                                         <i className="fas fa-redo" /> Retry
                                     </button>
@@ -400,12 +402,13 @@ const SetTimeCalculator = () => {
 
                 {result?.riskMessage && (
                     <div
+                        role="status"
                         className={`flex items-start gap-3 rounded-lg border text-sm font-medium p-3 text-text-primary ${
                             result.riskLevel === 'hot'
-                                ? 'bg-red-50 border-red-300'
+                                ? 'bg-[color:var(--danger)]/10 border-[color:var(--danger)]/40'
                                 : result.riskLevel === 'cold' || result.riskLevel === 'cool'
-                                  ? 'bg-blue-50 border-blue-300'
-                                  : 'bg-amber-50 border-amber-300'
+                                  ? 'bg-[color:var(--accent)]/10 border-[color:var(--accent)]/40'
+                                  : 'bg-[color:var(--warning)]/10 border-[color:var(--warning)]/40'
                         }`}
                     >
                         <i className="fas fa-exclamation-triangle mt-0.5" />
