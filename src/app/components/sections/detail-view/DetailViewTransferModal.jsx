@@ -34,7 +34,8 @@ export default function DetailViewTransferModal({
                     </span>
                     <button
                         onClick={closeTransfer}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-white/15 text-sm text-white cursor-pointer"
+                        aria-label="Close"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-white/15 text-sm text-white cursor-pointer hover:bg-white/25 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                     >
                         <i className="fas fa-times"></i>
                     </button>

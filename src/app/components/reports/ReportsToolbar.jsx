@@ -51,11 +51,15 @@ const RefreshButton = ({ isRefreshing, onClick }) => (
 // same chip is used wherever a plant picker is exposed.
 
 /** Compact pill toggle — sliding-segment look matching Plan tab's view-mode toggle. */
-const PillToggle = ({ options, value, onChange }) => {
+const PillToggle = ({ options, value, onChange, ariaLabel }) => {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
     return (
-        <div className="inline-flex items-center rounded p-0.5 gap-0.5 bg-bg-tertiary border border-border-light">
+        <div
+            role="group"
+            aria-label={ariaLabel}
+            className="inline-flex items-center rounded p-0.5 gap-0.5 bg-bg-tertiary border border-border-light"
+        >
             {options.map((opt) => {
                 const active = value === opt.value
                 return (
@@ -63,7 +67,8 @@ const PillToggle = ({ options, value, onChange }) => {
                         key={opt.value}
                         type="button"
                         onClick={() => onChange(opt.value)}
-                        className="rounded text-[11.5px] font-semibold cursor-pointer border-none px-2 py-1 transition-colors"
+                        aria-pressed={active}
+                        className="rounded text-[11.5px] font-semibold cursor-pointer border-none px-2 py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         style={{
                             background: active ? accentColor : 'transparent',
                             color: active ? '#fff' : 'var(--text-secondary)'
@@ -88,7 +93,7 @@ const DateRange = ({ from, to, onFromChange, onToChange }) => (
             aria-label="From date"
             value={from}
             onChange={(e) => onFromChange(e.target.value)}
-            className="text-[12px] bg-transparent focus:outline-none rounded-sm flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary"
+            className="text-[12px] bg-transparent focus:outline-none rounded-sm flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary [color-scheme:light] dark:[color-scheme:dark]"
         />
         <span className="text-[10px] select-none mx-0.5 text-text-tertiary">–</span>
         <input
@@ -96,7 +101,7 @@ const DateRange = ({ from, to, onFromChange, onToChange }) => (
             aria-label="To date"
             value={to}
             onChange={(e) => onToChange(e.target.value)}
-            className="text-[12px] bg-transparent focus:outline-none rounded-sm flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary"
+            className="text-[12px] bg-transparent focus:outline-none rounded-sm flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary [color-scheme:light] dark:[color-scheme:dark]"
         />
     </div>
 )
@@ -214,15 +219,21 @@ export function ReportsActionBar({
                 )}
                 {rightChildren}
                 {safeTabs.length > 1 && (
-                    <div className="flex items-center rounded p-0.5 overflow-x-auto bg-bg-tertiary border border-border-light">
+                    <div
+                        role="tablist"
+                        aria-label="Report tabs"
+                        className="flex items-center rounded p-0.5 overflow-x-auto bg-bg-tertiary border border-border-light"
+                    >
                         {safeTabs.map(({ key, label, icon, badge }) => {
                             const isActive = activeTab === key
                             return (
                                 <button
                                     key={key}
                                     type="button"
+                                    role="tab"
+                                    aria-selected={isActive}
                                     onClick={() => onTabChange?.(key)}
-                                    className="flex items-center gap-1.5 rounded text-[12px] font-semibold border-none cursor-pointer px-2.5 py-1.5 whitespace-nowrap"
+                                    className="flex items-center gap-1.5 rounded text-[12px] font-semibold border-none cursor-pointer px-2.5 py-1.5 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                                     style={{
                                         backgroundColor: isActive ? accentColor : 'transparent',
                                         color: isActive ? '#fff' : 'var(--text-secondary)'

@@ -52,7 +52,8 @@ export default function EmbeddedViewModal({
                     </div>
                     <button
                         onClick={onClose}
-                        className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                        aria-label="Close"
+                        className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                     >
                         <i className="fas fa-times text-lg" />
                     </button>

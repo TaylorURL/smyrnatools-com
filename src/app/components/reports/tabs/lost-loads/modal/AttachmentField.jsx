@@ -25,7 +25,8 @@ function AttachmentField({ attachment, fileInputRef, onFileSelect, onClear }) {
                     <button
                         type="button"
                         onClick={onClear}
-                        className="w-6 h-6 flex items-center justify-center rounded text-text-secondary hover:text-text-primary transition-colors shrink-0"
+                        aria-label="Remove attachment"
+                        className="w-6 h-6 flex items-center justify-center rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors duration-150 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                     >
                         <i className="fas fa-times text-xs" />
                     </button>

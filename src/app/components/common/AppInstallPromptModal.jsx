@@ -278,8 +278,9 @@ function AppInstallPromptModal() {
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
-                    className="absolute right-4 top-4 z-[1] flex h-9 w-9 items-center justify-center rounded-full border-none bg-slate-100 text-base text-slate-500 hover:bg-slate-200"
+                    className="absolute right-4 top-4 z-[1] flex h-9 w-9 items-center justify-center rounded-full border-none bg-slate-100 text-base text-slate-500 hover:bg-slate-200 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                     onClick={handleRemindLater}
+                    aria-label="Close"
                 >
                     <i className="fas fa-times" />
                 </button>

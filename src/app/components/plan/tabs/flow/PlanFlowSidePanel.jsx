@@ -444,15 +444,17 @@ function RouteRow({ accentColor, assignment, canEdit, clockIn, onDelete, onEdit,
                 <div className="flex items-center gap-0.5 shrink-0">
                     <button
                         onClick={onEdit}
-                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         title="Edit"
+                        aria-label="Edit"
                     >
                         <i className="fas fa-pen text-[10px]" />
                     </button>
                     <button
                         onClick={onDelete}
-                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-text-primary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-text-primary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         title="Delete"
+                        aria-label="Delete"
                     >
                         <i className="fas fa-trash text-[10px]" />
                     </button>

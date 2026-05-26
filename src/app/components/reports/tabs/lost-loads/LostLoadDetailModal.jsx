@@ -62,7 +62,8 @@ function LostLoadDetailModal({ report, getUserName, onClose }) {
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors text-text-secondary"
+                        aria-label="Close"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors duration-150 text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                         type="button"
                     >
                         <i className="fas fa-times text-sm" />

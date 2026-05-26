@@ -97,7 +97,8 @@ function ChangelogView({ onBack }) {
                 <div className="flex items-center justify-between mb-5">
                     <button
                         onClick={onBack}
-                        className="flex items-center justify-center w-9 h-9 bg-slate-100 rounded-xl text-slate-600 border-none cursor-pointer hover:bg-slate-200 transition-colors"
+                        aria-label="Back"
+                        className="flex items-center justify-center w-9 h-9 bg-slate-100 rounded-xl text-slate-600 border-none cursor-pointer hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                     >
                         <i className="fas fa-arrow-left text-sm" />
                     </button>
@@ -105,7 +106,8 @@ function ChangelogView({ onBack }) {
                         href={GITHUB_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center w-9 h-9 bg-slate-100 rounded-xl text-slate-600 no-underline hover:bg-slate-200 transition-colors"
+                        aria-label="Open GitHub repository"
+                        className="flex items-center justify-center w-9 h-9 bg-slate-100 rounded-xl text-slate-600 no-underline hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                     >
                         <i className="fab fa-github" />
                     </a>

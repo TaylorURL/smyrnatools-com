@@ -36,7 +36,7 @@ function RoleModal({ children, isOpen, maxWidth = 'max-w-md', onClose, subtitle,
                             {subtitle && <span className="text-xs text-white/70">{subtitle}</span>}
                         </div>
                     </div>
-                    <button className={CLOSE_BUTTON_CLASSES} onClick={onClose} type="button">
+                    <button className={CLOSE_BUTTON_CLASSES} onClick={onClose} type="button" aria-label="Close">
                         <i className="fas fa-times" />
                     </button>
                 </div>
