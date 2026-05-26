@@ -66,13 +66,13 @@ const BulkAddModal = ({ isOpen, onClose, roles, onBulkAdd, accentColor: _accentC
                     <div className="flex items-center gap-2 mb-2">
                         <button
                             onClick={selectAll}
-                            className="text-[11px] font-semibold px-2 py-1 rounded bg-slate-100 text-slate-600 border-none cursor-pointer hover:bg-slate-200"
+                            className="text-[11px] font-semibold px-2 py-1 rounded bg-bg-tertiary text-text-secondary border-none cursor-pointer outline-none transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent/30"
                         >
                             Select All
                         </button>
                         <button
                             onClick={selectNone}
-                            className="text-[11px] font-semibold px-2 py-1 rounded bg-slate-100 text-slate-600 border-none cursor-pointer hover:bg-slate-200"
+                            className="text-[11px] font-semibold px-2 py-1 rounded bg-bg-tertiary text-text-secondary border-none cursor-pointer outline-none transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent/30"
                         >
                             Select None
                         </button>

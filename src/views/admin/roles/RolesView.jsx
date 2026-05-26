@@ -128,7 +128,7 @@ function RolesView() {
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setShowBulkAddModal(true)}
-                                className="flex items-center gap-2 border-none rounded-xl text-sm font-semibold px-5 py-3 cursor-pointer transition-all bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                className="flex items-center gap-2 border-none rounded-xl text-sm font-semibold px-5 py-3 cursor-pointer outline-none transition-colors duration-150 bg-bg-tertiary text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent/30"
                             >
                                 <i className="fas fa-layer-group" />
                                 Bulk Add

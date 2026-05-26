@@ -179,7 +179,7 @@ const RoleCard = ({
                                         e.stopPropagation()
                                         handlePastePermissions()
                                     }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-600 border-none cursor-pointer hover:bg-slate-300 transition-colors"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-bg-tertiary text-text-secondary border-none cursor-pointer outline-none hover:bg-bg-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent/30 transition-colors duration-150"
                                     title="Paste permissions from clipboard — merges with existing"
                                 >
                                     <i className="fas fa-paste text-[9px]" />
@@ -199,7 +199,7 @@ const RoleCard = ({
                                 onKeyDown={(e) => e.key === 'Enter' && handleAddPerm()}
                                 placeholder="e.g. reports.qc_strength"
                                 autoFocus
-                                className="flex-1 bg-white border border-border-light rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                                className="flex-1 bg-bg-primary border border-border-light rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                             />
                             <button
                                 onClick={handleAddPerm}
@@ -214,7 +214,7 @@ const RoleCard = ({
                                     setAddingPerm(false)
                                     setNewPerm('')
                                 }}
-                                className="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-200 text-slate-600 border-none cursor-pointer"
+                                className="px-3 py-2 rounded-lg text-xs font-semibold bg-bg-tertiary text-text-secondary border-none cursor-pointer outline-none hover:bg-bg-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent/30 transition-colors duration-150"
                             >
                                 Cancel
                             </button>
