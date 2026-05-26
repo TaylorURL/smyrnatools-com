@@ -2,7 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import Skeleton, { SkeletonStack } from '../../../app/components/common/Skeleton'
 import PlantManagersQuickEditModal from '../../../app/components/plants/PlantManagersQuickEditModal'
+import PlantSaturdayForecastBadge from '../../../app/components/plants/PlantSaturdayForecastBadge'
 import TopSection from '../../../app/components/sections/TopSection'
+import { getUpcomingSaturdayIso } from '../../../app/constants/saturdayForecastConstants'
+import { useSaturdayForecasts } from '../../../app/hooks/useSaturdayForecasts'
 import { PlantService } from '../../../services/PlantService'
 import PlantsAddView from './PlantsAddView'
 import PlantsDetailView from './PlantsDetailView'
@@ -46,7 +49,7 @@ const FILTER_SELECT_STYLE = {
 }
 
 /** Grid card — matches AssetGridCard visual rhythm (header / body grid / footer). */
-function PlantGridCard({ plant, region, plantType, managerCount, onSelect, onManageManagers }) {
+function PlantGridCard({ plant, region, plantType, managerCount, saturdayForecast, onSelect, onManageManagers }) {
     const meta = PLANT_TYPE_META[plantType] || DEFAULT_TYPE_META
     const code = getPlantCode(plant)
     const name = getPlantName(plant)
@@ -83,6 +86,13 @@ function PlantGridCard({ plant, region, plantType, managerCount, onSelect, onMan
                         {region?.regionCode || '—'}
                     </span>
                 </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 px-5 py-2 border-t border-border-light bg-bg-secondary">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
+                    Sat forecast
+                </span>
+                <PlantSaturdayForecastBadge plantCode={code} forecast={saturdayForecast} />
             </div>
 
             <div className="flex border-t border-border-light">
@@ -176,6 +186,10 @@ function PlantsView({ title = 'Plants' }) {
             })
         )
     }
+    const saturdayDate = useMemo(() => getUpcomingSaturdayIso(), [])
+    const plantCodes = useMemo(() => plants.map(getPlantCode).filter(Boolean), [plants])
+    const { forecastsByPlant } = useSaturdayForecasts({ saturdayDate, plantCodes })
+
     const filteredPlants = useMemo(
         () =>
             plants.filter((plant) => {
@@ -298,6 +312,7 @@ function PlantsView({ title = 'Plants' }) {
                                     region={region}
                                     plantType={getPlantType(region)}
                                     managerCount={getPlantManagerIds(plant).length}
+                                    saturdayForecast={forecastsByPlant?.[code] || null}
                                     onSelect={handleSelectPlant}
                                     onManageManagers={setManagersEditPlant}
                                 />
@@ -336,23 +351,30 @@ function PlantsView({ title = 'Plants' }) {
                                                 </span>
                                             </td>
                                             <td className="px-5 py-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={(event) => {
-                                                        event.stopPropagation()
-                                                        setManagersEditPlant(plant)
-                                                    }}
-                                                    className="inline-flex items-center gap-2 rounded-full border border-border-light bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-colors hover:bg-blue-50 hover:border-accent"
-                                                    title="Attach or remove managers for this plant"
-                                                >
-                                                    <i className="fas fa-user-tie text-[10px] text-accent" />
-                                                    <span>
-                                                        {managerCount === 0
-                                                            ? 'No managers'
-                                                            : `${managerCount} manager${managerCount === 1 ? '' : 's'}`}
-                                                    </span>
-                                                    <i className="fas fa-pen text-[9px] text-slate-400" />
-                                                </button>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(event) => {
+                                                            event.stopPropagation()
+                                                            setManagersEditPlant(plant)
+                                                        }}
+                                                        className="inline-flex items-center gap-2 rounded-full border border-border-light bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-colors hover:bg-blue-50 hover:border-accent"
+                                                        title="Attach or remove managers for this plant"
+                                                    >
+                                                        <i className="fas fa-user-tie text-[10px] text-accent" />
+                                                        <span>
+                                                            {managerCount === 0
+                                                                ? 'No managers'
+                                                                : `${managerCount} manager${managerCount === 1 ? '' : 's'}`}
+                                                        </span>
+                                                        <i className="fas fa-pen text-[9px] text-slate-400" />
+                                                    </button>
+                                                    <PlantSaturdayForecastBadge
+                                                        plantCode={code}
+                                                        forecast={forecastsByPlant?.[code] || null}
+                                                        compact
+                                                    />
+                                                </div>
                                             </td>
                                         </tr>
                                     )
