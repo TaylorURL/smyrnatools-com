@@ -84,105 +84,127 @@ const RoleCard = ({
     }
 
     return (
-        <div className="overflow-hidden rounded border border-border-light bg-bg-primary shadow-sm transition-all duration-200 hover:shadow-lg">
+        <div className="overflow-hidden rounded-card border border-border-light bg-bg-primary shadow-sm transition-shadow duration-200 hover:shadow-card">
             {/* Header — asset-card visual rhythm: 40x40 accent icon + bold name + stat pills + chevron. */}
-            <div
-                className="flex items-center gap-3 px-5 py-4 cursor-pointer transition-colors hover:bg-slate-50"
+            <button
+                type="button"
+                aria-expanded={isExpanded}
                 onClick={onToggle}
+                className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
             >
                 <div
-                    className="w-10 h-10 rounded flex items-center justify-center text-white text-lg flex-shrink-0"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-base text-white shadow-sm"
                     style={{ background: accentColor }}
                 >
-                    <i className="fas fa-shield-alt" />
+                    <i className="fas fa-shield-alt" aria-hidden="true" />
                 </div>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-lg font-extrabold tracking-tight truncate text-text-primary">
+                <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="truncate font-heading text-lg font-bold tracking-tight text-text-primary">
                             {role.name}
                         </span>
                         {isElevated && (
-                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-text-primary">
+                            <span
+                                className="inline-flex items-center gap-1 rounded-full bg-status-warning/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-status-warning"
+                                title="Weight exceeds elevated threshold"
+                            >
+                                <i className="fas fa-bolt text-[8px]" aria-hidden="true" />
                                 Elevated
                             </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600">
-                            <i className="fas fa-balance-scale text-[9px]" />
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-bg-tertiary px-1.5 py-0.5 text-[10px] font-semibold text-text-secondary">
+                            <i className="fas fa-balance-scale text-[9px]" aria-hidden="true" />
                             <span className="font-mono tabular-nums">{role.weight || 0}</span>
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-teal-50 text-text-primary">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
                             <span className="font-mono tabular-nums">{permissions.length}</span>
                             <span>perms</span>
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-cyan-50 text-text-primary">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-status-active/15 px-1.5 py-0.5 text-[10px] font-semibold text-status-active">
                             <span className="font-mono tabular-nums">{namespaces.length}</span>
                             <span>namespaces</span>
                         </span>
                     </div>
                 </div>
                 <i
-                    className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} text-slate-300 text-xs transition-transform`}
+                    className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} text-xs text-text-tertiary transition-transform duration-200`}
+                    aria-hidden="true"
                 />
-            </div>
+            </button>
 
             {/* Expanded content */}
             {isExpanded && (
-                <div className="border-t border-border-light">
+                <div className="border-t border-border-light animate-fade-in motion-reduce:animate-none">
                     {/* Actions bar */}
-                    <div className="flex items-center gap-2 px-5 py-3 bg-slate-50 border-b border-border-light">
+                    <div className="flex items-center gap-2 border-b border-border-light bg-bg-secondary px-5 py-3">
                         {hasITAccess && (
                             <>
                                 <button
+                                    type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         setAddingPerm(true)
                                     }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border-none cursor-pointer transition-colors"
-                                    style={{ background: `${accentColor}15`, color: accentColor }}
+                                    className="inline-flex items-center gap-1.5 rounded-md bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition-all duration-150 hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97]"
                                 >
-                                    <i className="fas fa-plus text-[9px]" />
+                                    <i className="fas fa-plus text-[9px]" aria-hidden="true" />
                                     Add Permission
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         onEditWeight(role)
                                     }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-600 border-none cursor-pointer hover:bg-slate-300 transition-colors"
+                                    className="inline-flex items-center gap-1.5 rounded-md bg-bg-tertiary px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97]"
                                 >
-                                    <i className="fas fa-balance-scale text-[9px]" />
+                                    <i className="fas fa-balance-scale text-[9px]" aria-hidden="true" />
                                     Edit Weight
                                 </button>
                             </>
                         )}
-                        <div className="flex items-center gap-2 ml-auto">
+                        <div className="ml-auto flex items-center gap-2">
                             {pasteStatus && (
-                                <span className="text-[11px] font-semibold text-text-primary">{pasteStatus.text}</span>
+                                <span
+                                    className={`text-[11px] font-semibold animate-fade-in-fast motion-reduce:animate-none ${
+                                        pasteStatus.type === 'error'
+                                            ? 'text-status-danger'
+                                            : pasteStatus.type === 'success'
+                                              ? 'text-status-active'
+                                              : 'text-text-secondary'
+                                    }`}
+                                    role="status"
+                                    aria-live="polite"
+                                >
+                                    {pasteStatus.text}
+                                </span>
                             )}
                             <button
+                                type="button"
                                 onClick={(e) => {
                                     e.stopPropagation()
                                     handleCopyPermissions()
                                 }}
                                 disabled={permissions.length === 0}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-600 border-none cursor-pointer hover:bg-slate-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="inline-flex items-center gap-1.5 rounded-md bg-bg-tertiary px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
                                 title="Copy all permission nodes — one per line"
                             >
-                                <i className={`fas ${copied ? 'fa-check' : 'fa-copy'} text-[9px]`} />
+                                <i className={`fas ${copied ? 'fa-check' : 'fa-copy'} text-[9px]`} aria-hidden="true" />
                                 {copied ? 'Copied' : 'Copy'}
                             </button>
                             {hasITAccess && (
                                 <button
+                                    type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         handlePastePermissions()
                                     }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-bg-tertiary text-text-secondary border-none cursor-pointer outline-none hover:bg-bg-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent/30 transition-colors duration-150"
+                                    className="inline-flex items-center gap-1.5 rounded-md bg-bg-tertiary px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97]"
                                     title="Paste permissions from clipboard — merges with existing"
                                 >
-                                    <i className="fas fa-paste text-[9px]" />
+                                    <i className="fas fa-paste text-[9px]" aria-hidden="true" />
                                     Paste
                                 </button>
                             )}
@@ -191,7 +213,7 @@ const RoleCard = ({
 
                     {/* Add permission inline */}
                     {addingPerm && (
-                        <div className="flex items-center gap-2 px-5 py-3 bg-blue-50 border-b border-blue-100">
+                        <div className="flex items-center gap-2 border-b border-border-light bg-accent/5 px-5 py-3 animate-fade-slide-in motion-reduce:animate-none">
                             <input
                                 type="text"
                                 value={newPerm}
@@ -199,22 +221,25 @@ const RoleCard = ({
                                 onKeyDown={(e) => e.key === 'Enter' && handleAddPerm()}
                                 placeholder="e.g. reports.qc_strength"
                                 autoFocus
-                                className="flex-1 bg-bg-primary border border-border-light rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+                                className="flex-1 rounded-md border border-border-light bg-bg-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
+                                aria-label="New permission node"
                             />
                             <button
+                                type="button"
                                 onClick={handleAddPerm}
                                 disabled={!newPerm.trim()}
-                                className="px-3 py-2 rounded-lg text-xs font-semibold text-white border-none cursor-pointer disabled:opacity-40"
+                                className="rounded-md px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100"
                                 style={{ background: accentColor }}
                             >
                                 Add
                             </button>
                             <button
+                                type="button"
                                 onClick={() => {
                                     setAddingPerm(false)
                                     setNewPerm('')
                                 }}
-                                className="px-3 py-2 rounded-lg text-xs font-semibold bg-bg-tertiary text-text-secondary border-none cursor-pointer outline-none hover:bg-bg-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent/30 transition-colors duration-150"
+                                className="rounded-md bg-bg-tertiary px-3 py-2 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97]"
                             >
                                 Cancel
                             </button>
@@ -224,8 +249,8 @@ const RoleCard = ({
                     {/* Permissions grouped by namespace */}
                     <div className="px-4 py-3">
                         {permissions.length === 0 ? (
-                            <div className="text-center py-6 text-slate-400 text-sm">
-                                <i className="fas fa-lock text-2xl mb-2 block" />
+                            <div className="py-6 text-center text-sm text-text-tertiary">
+                                <i className="fas fa-lock mb-2 block text-2xl" aria-hidden="true" />
                                 No permissions assigned
                             </div>
                         ) : (
@@ -234,12 +259,17 @@ const RoleCard = ({
                                 const icon = NAMESPACE_ICONS[ns] || 'fa-key'
                                 return (
                                     <div key={ns} className="mb-3 last:mb-0">
-                                        <div className="flex items-center gap-2 px-1 mb-1">
-                                            <i className={`fas ${icon} text-[10px] text-slate-400`} />
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        <div className="mb-1 flex items-center gap-2 px-1">
+                                            <i
+                                                className={`fas ${icon} text-[10px] text-text-tertiary`}
+                                                aria-hidden="true"
+                                            />
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
                                                 {ns}
                                             </span>
-                                            <span className="text-[10px] text-slate-300">{nsPerms.length}</span>
+                                            <span className="text-[10px] text-text-tertiary opacity-70">
+                                                {nsPerms.length}
+                                            </span>
                                         </div>
                                         {nsPerms.map((perm) => (
                                             <PermissionRow

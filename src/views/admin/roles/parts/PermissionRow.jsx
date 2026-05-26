@@ -6,21 +6,23 @@ import { getNamespace, NAMESPACE_COLORS, NAMESPACE_ICONS } from './permissionMet
 const PermissionRow = ({ permission, onRemove, hasITAccess, isSaving }) => {
     const ns = getNamespace(permission)
     const icon = NAMESPACE_ICONS[ns] || 'fa-key'
-    const bgColor = NAMESPACE_COLORS[ns] || 'bg-slate-500'
+    const bgColor = NAMESPACE_COLORS[ns] || 'bg-bg-tertiary'
     return (
-        <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-50 group transition-colors">
-            <div className={`w-5 h-5 rounded ${bgColor} flex items-center justify-center shrink-0`}>
-                <i className={`fas ${icon} text-white text-[8px]`} />
+        <div className="group flex items-center gap-2.5 rounded-md px-3 py-2 transition-colors duration-150 hover:bg-bg-hover">
+            <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded ${bgColor}`}>
+                <i className={`fas ${icon} text-[8px] text-white`} aria-hidden="true" />
             </div>
-            <span className="text-sm text-slate-700 flex-1 font-mono text-[13px]">{permission}</span>
+            <span className="flex-1 font-mono text-[13px] text-text-primary">{permission}</span>
             {hasITAccess && (
                 <button
+                    type="button"
                     onClick={() => onRemove(permission)}
                     disabled={isSaving}
-                    className="w-6 h-6 flex items-center justify-center rounded text-slate-300 hover:text-text-primary hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer border-none bg-transparent shrink-0 disabled:opacity-30"
+                    className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded text-text-tertiary opacity-0 transition-all duration-150 hover:bg-status-danger/15 hover:text-status-danger group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger active:scale-[0.92] disabled:opacity-30 disabled:active:scale-100"
                     title="Remove permission"
+                    aria-label={`Remove permission ${permission}`}
                 >
-                    <i className="fas fa-times text-[10px]" />
+                    <i className="fas fa-times text-[10px]" aria-hidden="true" />
                 </button>
             )}
         </div>

@@ -110,7 +110,7 @@ function RolesView() {
     if (isLoading && roles.length === 0) return <RolesLoadingSkeleton />
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-16">
+        <div className="min-h-screen bg-bg-secondary pb-16">
             <TopSection
                 title="Roles & Permissions"
                 badge={badge}
@@ -127,14 +127,18 @@ function RolesView() {
                     hasITAccess ? (
                         <div className="flex items-center gap-2">
                             <button
+                                type="button"
                                 onClick={() => setShowBulkAddModal(true)}
-                                className="flex items-center gap-2 border-none rounded-xl text-sm font-semibold px-5 py-3 cursor-pointer outline-none transition-colors duration-150 bg-bg-tertiary text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent/30"
+                                className="inline-flex items-center gap-2 rounded-md bg-bg-tertiary px-4 py-2 text-sm font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.98]"
                             >
-                                <i className="fas fa-layer-group" />
+                                <i className="fas fa-layer-group text-[12px]" aria-hidden="true" />
                                 Bulk Add
                             </button>
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 text-text-primary rounded-lg text-xs font-semibold">
-                                <i className="fas fa-shield-alt text-[10px]" />
+                            <div
+                                className="inline-flex items-center gap-1.5 rounded-full bg-status-active/15 px-2.5 py-1 text-xs font-semibold text-status-active"
+                                title="You have IT administrator access"
+                            >
+                                <i className="fas fa-shield-alt text-[10px]" aria-hidden="true" />
                                 IT Access
                             </div>
                         </div>
@@ -145,14 +149,22 @@ function RolesView() {
             <div className="px-3 py-4 sm:px-4 md:px-6 lg:px-8">
                 {/* Alerts */}
                 {message && (
-                    <div className="flex items-center gap-2 mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-text-primary text-sm">
-                        <i className="fas fa-check-circle shrink-0" />
+                    <div
+                        role="status"
+                        aria-live="polite"
+                        className="mb-4 flex items-center gap-2 rounded-card border border-status-active/30 bg-status-active/10 p-3 text-sm text-text-primary animate-fade-slide-in motion-reduce:animate-none"
+                    >
+                        <i className="fas fa-check-circle shrink-0 text-status-active" aria-hidden="true" />
                         {message}
                     </div>
                 )}
                 {error && (
-                    <div className="flex items-center gap-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-text-primary text-sm">
-                        <i className="fas fa-exclamation-circle shrink-0" />
+                    <div
+                        role="alert"
+                        aria-live="assertive"
+                        className="mb-4 flex items-center gap-2 rounded-card border border-status-danger/30 bg-status-danger/10 p-3 text-sm text-text-primary animate-fade-slide-in motion-reduce:animate-none"
+                    >
+                        <i className="fas fa-exclamation-circle shrink-0 text-status-danger" aria-hidden="true" />
                         {error}
                     </div>
                 )}
@@ -175,12 +187,14 @@ function RolesView() {
                         />
                     ))}
                     {sortedRoles.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-16 px-6 text-center bg-white border border-border-light rounded">
-                            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6">
-                                <i className="fas fa-shield-alt text-3xl text-slate-400" />
+                        <div className="flex flex-col items-center justify-center rounded-card border border-border-light bg-bg-primary px-6 py-16 text-center animate-fade-in motion-reduce:animate-none">
+                            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-accent/10 text-accent">
+                                <i className="fas fa-shield-alt text-3xl" aria-hidden="true" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-800 mb-2">No Roles Found</h3>
-                            <p className="text-slate-500 max-w-md">
+                            <h3 className="mb-2 font-heading text-xl font-semibold text-text-primary">
+                                No Roles Found
+                            </h3>
+                            <p className="max-w-md text-sm text-text-secondary">
                                 {searchQuery ? 'No roles match your search.' : 'There are no roles in the system yet.'}
                             </p>
                         </div>
