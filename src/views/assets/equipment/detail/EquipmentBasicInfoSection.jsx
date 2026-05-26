@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
@@ -8,9 +7,9 @@ import { EQUIPMENT_TYPE_OPTIONS, STATUS_OPTIONS } from './equipmentTypeOptions'
  * Renders the Identifying Number / Status / Plant / Type card plus the
  * Make / Model / Year specifications card on the equipment detail view.
  *
- * The plant-selector relies on the parent to open the plant modal; an inline
- * style is still needed for the disabled-state visuals because the design
- * system's `form-control` colors get overridden by the button base class.
+ * The plant-selector button mirrors `form-control` chrome — surface-aware
+ * Tailwind tokens handle the disabled visuals so the look stays consistent
+ * across dark/light/gray themes.
  */
 export default function EquipmentBasicInfoSection({
     canEditEquipment,
@@ -61,23 +60,12 @@ export default function EquipmentBasicInfoSection({
                 <div className="form-group">
                     <label>Assigned Plant</label>
                     <button
-                        className="operator-select-button form-control"
+                        className={`operator-select-button form-control text-left ${!canEditEquipment ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                         onClick={() => canEditEquipment && setShowPlantModal(true)}
                         type="button"
                         disabled={!canEditEquipment}
-                        style={
-                            !canEditEquipment
-                                ? {
-                                      backgroundColor: 'var(--card-bg)',
-                                      cursor: 'not-allowed',
-                                      opacity: 0.8
-                                  }
-                                : {}
-                        }
                     >
-                        <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
-                            {plantDisplayText}
-                        </span>
+                        <span className="block truncate">{plantDisplayText}</span>
                     </button>
                 </div>
                 <div className="form-group">

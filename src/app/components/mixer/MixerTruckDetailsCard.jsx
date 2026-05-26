@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import {
@@ -7,12 +6,6 @@ import {
     MIXER_STATUS_OPTIONS
 } from '../../constants/mixerDetailConstants'
 import DetailViewSection from '../sections/DetailViewSection'
-
-const readOnlySelectStyle = {
-    backgroundColor: 'var(--card-bg)',
-    cursor: 'not-allowed',
-    opacity: 0.8
-}
 
 /**
  * Truck Number, Status, and (when In Shop) Shop Status sub-selector. Status
@@ -30,6 +23,7 @@ export default function MixerTruckDetailsCard({
     truckNumber
 }) {
     const shopStatusNote = MIXER_SHOP_STATUS_NOTES[shopStatus] || MIXER_SHOP_STATUS_NOTES.in_shop
+    const readOnlySelectClasses = !canEditMixer ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''
 
     return (
         <DetailViewSection.Card title="Truck Details" icon="fas fa-info-circle">
@@ -68,10 +62,7 @@ export default function MixerTruckDetailsCard({
                     ))}
                 </select>
                 {isCleanlinessBlocking && (
-                    <div
-                        className="items-center bg-bg-hover rounded-md text-text-secondary flex text-[0.8125rem]"
-                        style={{ gap: '0.5rem', marginTop: '0.5rem', padding: '0.5rem 0.75rem' }}
-                    >
+                    <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-bg-hover rounded-md text-text-secondary text-[0.8125rem]">
                         <i className="fas fa-exclamation-triangle"></i>
                         <span>Cleanliness must be 3+ stars to set Active status</span>
                     </div>
@@ -85,14 +76,13 @@ export default function MixerTruckDetailsCard({
             )}
             {status === 'In Shop' && (
                 <div className="down-in-yard-container">
-                    <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                    <div className="form-group mb-2">
                         <label>Shop Status</label>
                         <select
-                            className="form-control"
+                            className={`form-control ${readOnlySelectClasses}`}
                             value={shopStatus || 'in_shop'}
                             onChange={(e) => canEditMixer && setShopStatus(e.target.value)}
                             disabled={!canEditMixer}
-                            style={!canEditMixer ? readOnlySelectStyle : {}}
                         >
                             {MIXER_SHOP_STATUS_OPTIONS.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -101,9 +91,7 @@ export default function MixerTruckDetailsCard({
                             ))}
                         </select>
                     </div>
-                    <div className="down-in-yard-note text-text-secondary text-xs" style={{ marginTop: '4px' }}>
-                        {shopStatusNote}
-                    </div>
+                    <div className="down-in-yard-note text-text-secondary text-xs mt-1">{shopStatusNote}</div>
                 </div>
             )}
         </DetailViewSection.Card>

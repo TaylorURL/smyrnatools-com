@@ -16,23 +16,28 @@ export default function TrailerCleanlinessCard({ cleanlinessRating, onCleanlines
                 <label>Cleanliness Rating</label>
                 <div className="cleanliness-rating-editor">
                     <div className="star-input">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                                key={star}
-                                type="button"
-                                className={`star-button ${star <= cleanlinessRating ? 'active' : ''} ${!canEditTrailer ? 'disabled' : ''}`}
-                                onClick={() =>
-                                    canEditTrailer && onCleanlinessRatingChange(star === cleanlinessRating ? 0 : star)
-                                }
-                                aria-label={`Rate ${star} of 5 stars`}
-                                disabled={!canEditTrailer}
-                            >
-                                <i
-                                    className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`}
-                                    style={star <= cleanlinessRating ? { color: 'var(--text-primary)' } : {}}
-                                ></i>
-                            </button>
-                        ))}
+                        {[1, 2, 3, 4, 5].map((star) => {
+                            const isLit = star <= cleanlinessRating
+                            return (
+                                <button
+                                    key={star}
+                                    type="button"
+                                    className={`star-button ${isLit ? 'active' : ''} ${!canEditTrailer ? 'disabled' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded`}
+                                    onClick={() =>
+                                        canEditTrailer &&
+                                        onCleanlinessRatingChange(star === cleanlinessRating ? 0 : star)
+                                    }
+                                    aria-label={`Rate ${star} of 5 stars`}
+                                    aria-pressed={isLit}
+                                    disabled={!canEditTrailer}
+                                >
+                                    <i
+                                        className={`fas fa-star ${isLit ? 'filled' : ''}`}
+                                        style={isLit ? { color: 'var(--text-primary)' } : {}}
+                                    ></i>
+                                </button>
+                            )
+                        })}
                     </div>
                     {cleanlinessRating > 0 && (
                         <div className="rating-value-display">

@@ -100,7 +100,7 @@ function PickupTrucksAddView({ onClose, onAdded }) {
                                 onChange={(e) => setVin(e.target.value.toUpperCase().replace(/[IOQ]/g, ''))}
                                 placeholder="Enter VIN (no I, O, Q)"
                             />
-                            <span className="text-xs text-gray-500">Letters I, O, and Q are not used.</span>
+                            <span className="text-xs text-text-secondary">Letters I, O, and Q are not used.</span>
                         </div>
                         <div className="flex flex-col gap-1">
                             <label>Year</label>

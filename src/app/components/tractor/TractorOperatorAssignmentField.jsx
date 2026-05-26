@@ -1,12 +1,11 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { TractorService } from '../../../services/TractorService'
-import {
-    READ_ONLY_BUTTON_STYLE,
-    READ_ONLY_OPERATOR_BUTTON_STYLE,
-    UNDO_BUTTON_STYLE
-} from '../../constants/tractorDetailConstants'
+
+const DISABLED_FIELD_CLASSES = 'bg-bg-secondary opacity-80 cursor-not-allowed'
+
+const UNDO_BUTTON_CLASSES =
+    'undo-operator-button unassign-operator-button bg-[var(--success)] rounded text-[var(--text-light)] cursor-pointer text-[1rem] h-[38px] min-w-[140px] border-0 box-border ml-2 px-4 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40'
 
 /**
  * Plant + operator assignment block from the tractor detail. Owns the
@@ -83,29 +82,27 @@ function TractorOperatorAssignmentField({
         }
     }
 
-    const readOnlyPlantStyle = !canEditTractor ? READ_ONLY_BUTTON_STYLE : {}
+    const plantDisabled = !canEditTractor
+    const operatorDisabled = !canEditTractor
 
     return (
         <>
             <div className="form-group">
                 <label>Assigned Plant</label>
                 <button
-                    className="operator-select-button form-control active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
+                    className={`operator-select-button form-control text-left active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none ${plantDisabled ? DISABLED_FIELD_CLASSES : ''}`}
                     onClick={() => canEditTractor && setShowPlantModal(true)}
                     type="button"
-                    disabled={!canEditTractor}
-                    style={readOnlyPlantStyle}
+                    disabled={plantDisabled}
                 >
-                    <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
-                        {plantDisplayText}
-                    </span>
+                    <span className="block truncate">{plantDisplayText}</span>
                 </button>
             </div>
             <div className="form-group">
                 <label>Assigned Operator</label>
                 <div className="operator-select-container">
                     <button
-                        className="operator-select-button form-control active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        className={`operator-select-button form-control text-left active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none ${operatorDisabled ? DISABLED_FIELD_CLASSES : ''}`}
                         onClick={async () => {
                             if (canEditTractor) {
                                 await fetchOperatorsForModal()
@@ -113,18 +110,17 @@ function TractorOperatorAssignmentField({
                             }
                         }}
                         type="button"
-                        disabled={!canEditTractor}
-                        style={!canEditTractor ? READ_ONLY_OPERATOR_BUTTON_STYLE : {}}
+                        disabled={operatorDisabled}
                     >
-                        <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
+                        <span className="block truncate">
                             {assignedOperator ? getOperatorName(assignedOperator, operators) : 'None (Click to select)'}
                         </span>
                     </button>
                     {canEditTractor &&
                         (assignedOperator ? (
                             <button
-                                className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                                title="Unassign Operator"
+                                className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                                aria-label="Unassign Operator"
                                 onClick={handleUnassign}
                                 type="button"
                             >
@@ -133,11 +129,10 @@ function TractorOperatorAssignmentField({
                         ) : (
                             lastUnassignedOperatorId && (
                                 <button
-                                    className="undo-operator-button unassign-operator-button bg-[var(--success)] rounded text-[var(--text-light)] cursor-pointer text-[1rem] h-[38px] active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                                    title="Undo Unassign"
+                                    className={UNDO_BUTTON_CLASSES}
+                                    aria-label="Undo Unassign"
                                     onClick={handleUndoUnassign}
                                     type="button"
-                                    style={UNDO_BUTTON_STYLE}
                                 >
                                     Undo
                                 </button>

@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
@@ -47,23 +46,12 @@ export default function TrailerBasicInfoCard({
             <div className="form-group">
                 <label>Assigned Plant</label>
                 <button
-                    className="operator-select-button form-control"
+                    className={`operator-select-button form-control text-left ${!canEditTrailer ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                     onClick={() => canEditTrailer && onOpenPlantModal()}
                     type="button"
                     disabled={!canEditTrailer}
-                    style={
-                        !canEditTrailer
-                            ? {
-                                  backgroundColor: 'var(--card-bg)',
-                                  cursor: 'not-allowed',
-                                  opacity: 0.8
-                              }
-                            : {}
-                    }
                 >
-                    <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
-                        {plantDisplayText}
-                    </span>
+                    <span className="block truncate">{plantDisplayText}</span>
                 </button>
             </div>
             <div className="form-group">
