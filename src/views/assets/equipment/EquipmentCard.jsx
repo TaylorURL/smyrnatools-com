@@ -49,38 +49,38 @@ function EquipmentCard({ equipment, plantName, onSelect, onShowCommentModal, onS
             verificationTooltip={verificationTooltip}
         >
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Plant</div>
+                <div className="text-sm text-text-secondary">Plant</div>
                 <div className="text-sm font-medium">{plantName}</div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Status</div>
+                <div className="text-sm text-text-secondary">Status</div>
                 <div className="text-sm font-medium">{equipment.status || 'Unknown'}</div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Type</div>
+                <div className="text-sm text-text-secondary">Type</div>
                 <div className="text-sm font-medium">{equipment.equipmentType || 'Not Assigned'}</div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Last Service</div>
+                <div className="text-sm text-text-secondary">Last Service</div>
                 <div className="text-sm font-medium">
                     {equipment.lastServiceDate ? new Date(equipment.lastServiceDate).toLocaleDateString() : 'Unknown'}
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Hours/Mileage</div>
+                <div className="text-sm text-text-secondary">Hours/Mileage</div>
                 <div className="text-sm font-medium">
                     {equipment.hoursMileage ? equipment.hoursMileage : 'Not Recorded'}
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Cleanliness</div>
+                <div className="text-sm text-text-secondary">Cleanliness</div>
                 <div className="text-sm font-medium">
                     {equipment.cleanlinessRating ? (
                         <div className="flex gap-0.5">
                             {[...Array(5)].map((_, i) => (
                                 <i
                                     key={i}
-                                    className={`fas fa-star ${i < equipment.cleanlinessRating ? 'text-text-primary' : 'text-gray-300'}`}
+                                    className={`fas fa-star ${i < equipment.cleanlinessRating ? 'text-text-primary' : 'text-border-light'}`}
                                     aria-hidden="true"
                                 ></i>
                             ))}
@@ -91,14 +91,14 @@ function EquipmentCard({ equipment, plantName, onSelect, onShowCommentModal, onS
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Condition</div>
+                <div className="text-sm text-text-secondary">Condition</div>
                 <div className="text-sm font-medium">
                     {equipment.conditionRating ? (
                         <div className="flex gap-0.5">
                             {[...Array(5)].map((_, i) => (
                                 <i
                                     key={i}
-                                    className={`fas fa-star ${i < equipment.conditionRating ? 'text-text-primary' : 'text-gray-300'}`}
+                                    className={`fas fa-star ${i < equipment.conditionRating ? 'text-text-primary' : 'text-border-light'}`}
                                     aria-hidden="true"
                                 ></i>
                             ))}

@@ -7,18 +7,21 @@ import VerifiedUtility from '../../../utils/VerifiedUtility'
 /** Maps mixer status to card accent color. Shop sub-statuses handled separately. */
 const STATUS_COLORS = {
     Active: 'var(--status-active)',
-    'In Shop': 'var(--status-inshop)',
-    Retired: 'var(--status-retired)',
+    'In Shop': 'var(--status-shop)',
+    Retired: 'var(--text-tertiary)',
     Spare: 'var(--status-spare)'
 }
 
-/** Shop sub-status overrides for In Shop mixers. */
+/** Shop sub-status overrides for In Shop mixers (drawn from semantic tokens). */
 const SHOP_SUB_STATUS_COLORS = {
-    down_in_yard: 'var(--error)',
-    ready_for_pickup: 'var(--success)',
-    third_party: '#7c3aed',
-    waiting_for_shop: 'var(--warning)'
+    down_in_yard: 'var(--status-danger)',
+    ready_for_pickup: 'var(--status-active)',
+    third_party: 'var(--status-spare)',
+    waiting_for_shop: 'var(--status-warning)'
 }
+
+const DEFAULT_STATUS_COLOR = 'var(--accent)'
+const OVERDUE_STATUS_COLOR = 'var(--status-danger)'
 
 /**
  * Grid-mode card for a single mixer. Displays plant, operator, status
@@ -34,21 +37,19 @@ function MixerCard({
     onShowCommentModal,
     onShowIssueModal
 }) {
-    const isServiceOverdue = AssetStatsUtility.isServiceOverdue(mixer.lastServiceDate)
-    const isChipOverdue = AssetStatsUtility.isServiceOverdue(mixer.lastChipDate, 90)
     const isVerified =
         typeof mixer.isVerified === 'function'
             ? mixer.isVerified(mixer.latestHistoryDate)
             : VerifiedUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy)
 
-    // Resolve status color: shop sub-statuses override the base In Shop color
+    /** Shop sub-status overrides the base In Shop color when one is set. */
     const resolveStatusColor = () => {
         if (mixer.status === 'In Shop' && SHOP_SUB_STATUS_COLORS[mixer.shopStatus]) {
             return SHOP_SUB_STATUS_COLORS[mixer.shopStatus]
         }
         return (
             STATUS_COLORS[mixer.status] ??
-            (AssetStatsUtility.isServiceOverdue(mixer.lastServiceDate) ? 'var(--error)' : 'var(--accent)')
+            (AssetStatsUtility.isServiceOverdue(mixer.lastServiceDate) ? OVERDUE_STATUS_COLOR : DEFAULT_STATUS_COLOR)
         )
     }
     const statusColor = resolveStatusColor()
@@ -69,12 +70,14 @@ function MixerCard({
                 return 'In Shop'
         }
     }
+
     const verificationTooltip =
         !mixer.updatedLast || !mixer.updatedBy
             ? 'Mixer never verified'
             : mixer.latestHistoryDate && new Date(mixer.latestHistoryDate) > new Date(mixer.updatedLast)
               ? 'Changes recorded in history since last verification'
               : 'Mixer not verified since last Sunday'
+
     return (
         <CardSection
             item={mixer}
@@ -90,58 +93,59 @@ function MixerCard({
             verificationTooltip={verificationTooltip}
         >
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Plant</div>
-                <div className="text-sm font-medium">{plantName}</div>
+                <div className="text-sm text-text-secondary">Plant</div>
+                <div className="text-sm font-medium text-text-primary">{plantName}</div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Status</div>
-                <div className="text-sm font-medium flex items-center gap-2">
+                <div className="text-sm text-text-secondary">Status</div>
+                <div className="text-sm font-medium flex items-center gap-2 text-text-primary">
                     <span>{getDisplayStatus()}</span>
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Last Service</div>
-                <div className="text-sm font-medium">
+                <div className="text-sm text-text-secondary">Last Service</div>
+                <div className="text-sm font-medium text-text-primary">
                     {mixer.lastServiceDate ? new Date(mixer.lastServiceDate).toLocaleDateString() : 'Unknown'}
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Last Chip</div>
-                <div className="text-sm font-medium">
+                <div className="text-sm text-text-secondary">Last Chip</div>
+                <div className="text-sm font-medium text-text-primary">
                     {mixer.lastChipDate ? new Date(mixer.lastChipDate).toLocaleDateString() : 'Unknown'}
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Cleanliness</div>
+                <div className="text-sm text-text-secondary">Cleanliness</div>
                 <div className="text-sm font-medium">
                     {mixer.status === 'Retired' ? (
-                        <span className="text-[color:var(--text-secondary)]">N/A</span>
+                        <span className="text-text-secondary">N/A</span>
                     ) : mixer.cleanlinessRating ? (
                         <div className="flex items-center gap-2">
                             <div className="flex gap-0.5">
                                 {[...Array(5)].map((_, i) => (
                                     <i
                                         key={i}
-                                        className={`fas fa-star ${i < mixer.cleanlinessRating ? 'text-text-primary' : 'text-gray-300'}`}
+                                        className={`fas fa-star ${i < mixer.cleanlinessRating ? 'text-status-warning' : 'text-border-light'}`}
                                         aria-hidden="true"
-                                    ></i>
+                                    />
                                 ))}
                             </div>
                             {mixer.cleanlinessRating < 3 && (
                                 <span
                                     title="This truck cannot run loads until the cleanliness is 3 stars or better. Do not ignore this warning."
-                                    className="bg-[#fee2e2] text-text-primary rounded text-[11px] font-bold px-1.5 py-0.5 cursor-help"
+                                    className="inline-flex items-center rounded-md bg-status-danger/10 text-status-danger text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 cursor-help"
                                 >
-                                    DIRTY
+                                    Dirty
                                 </span>
                             )}
                         </div>
                     ) : (
-                        'Not Rated'
+                        <span className="text-text-secondary">Not Rated</span>
                     )}
                 </div>
             </div>
         </CardSection>
     )
 }
+
 export default MixerCard

@@ -347,15 +347,15 @@ const mixerConfig = {
         'Waiting For Shop': (item) => item.status === 'In Shop' && item.shopStatus === 'waiting_for_shop'
     },
 
-    // Status badge color classes
+    // Status badge color classes — semantic tokens, theme-aware.
     statusBadgeClasses: {
-        Active: 'bg-[#dcfce7] text-[#166534]',
-        'Down In Yard': 'bg-[#fee2e2] text-[#dc2626]',
-        'In Shop': 'bg-[#dbeafe] text-[#1e40af]',
-        'Ready For Pickup': 'bg-[#dcfce7] text-[#166534]',
-        Spare: 'bg-[#f3e8ff] text-[#7c3aed]',
-        'Third Party Work': 'bg-[#fef9c3] text-[#a16207]',
-        'Waiting For Shop': 'bg-[#ffedd5] text-[#c2410c]'
+        Active: 'bg-status-active/15 text-status-active',
+        'Down In Yard': 'bg-status-danger/15 text-status-danger',
+        'In Shop': 'bg-status-shop/15 text-status-shop',
+        'Ready For Pickup': 'bg-status-active/15 text-status-active',
+        Spare: 'bg-status-spare/15 text-status-spare',
+        'Third Party Work': 'bg-status-warning/15 text-status-warning',
+        'Waiting For Shop': 'bg-status-warning/15 text-status-warning'
     },
 
     // Map status → CSS variable for the card accent bar

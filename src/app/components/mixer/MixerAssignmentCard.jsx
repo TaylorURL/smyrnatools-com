@@ -1,10 +1,14 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import DetailViewSection from '../sections/DetailViewSection'
 
+const FIELD_BUTTON_BASE =
+    'operator-select-button form-control text-left active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'
+
+const DISABLED_FIELD_CLASSES = 'bg-bg-secondary opacity-80 cursor-not-allowed'
+
 const UNDO_BUTTON_CLASSES =
-    'undo-operator-button unassign-operator-button bg-[var(--success)] rounded text-[var(--text-light)] cursor-pointer text-[1rem] h-[38px] min-w-[140px] border-0 box-border ml-2 px-4 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40'
+    'undo-operator-button unassign-operator-button bg-status-active text-white cursor-pointer text-[1rem] h-[38px] min-w-[140px] border-0 box-border ml-2 px-4 rounded-md active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent hover:brightness-105'
 
 /**
  * Renders the Assigned Plant and Assigned Operator selectors with their
@@ -25,14 +29,13 @@ export default function MixerAssignmentCard({
 }) {
     const plantDisabled = !canEditMixer
     const operatorDisabled = !canEditMixer || isCleanlinessBlocking
-    const disabledFieldClasses = 'bg-bg-secondary opacity-80 cursor-not-allowed'
 
     return (
         <DetailViewSection.Card title="Assignment" icon="fas fa-user-tag">
             <div className="form-group">
                 <label>Assigned Plant</label>
                 <button
-                    className={`operator-select-button form-control text-left active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none ${plantDisabled ? disabledFieldClasses : ''}`}
+                    className={`${FIELD_BUTTON_BASE} ${plantDisabled ? DISABLED_FIELD_CLASSES : ''}`}
                     onClick={() => canEditMixer && onOpenPlantModal()}
                     type="button"
                     disabled={plantDisabled}
@@ -44,7 +47,7 @@ export default function MixerAssignmentCard({
                 <label>Assigned Operator</label>
                 <div className="operator-select-container">
                     <button
-                        className={`operator-select-button form-control text-left active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none ${operatorDisabled ? disabledFieldClasses : ''}`}
+                        className={`${FIELD_BUTTON_BASE} ${operatorDisabled ? DISABLED_FIELD_CLASSES : ''}`}
                         onClick={onOpenOperatorModal}
                         type="button"
                         disabled={operatorDisabled}
@@ -56,7 +59,7 @@ export default function MixerAssignmentCard({
                     {canEditMixer &&
                         (assignedOperator ? (
                             <button
-                                className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                                className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                 aria-label="Unassign Operator"
                                 onClick={onUnassignOperator}
                                 type="button"
@@ -77,8 +80,8 @@ export default function MixerAssignmentCard({
                         ))}
                 </div>
                 {isCleanlinessBlocking && (
-                    <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-bg-hover rounded-md text-text-secondary text-[0.8125rem]">
-                        <i className="fas fa-exclamation-triangle"></i>
+                    <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-status-warning/10 rounded-md text-status-warning text-[0.8125rem]">
+                        <i className="fas fa-exclamation-triangle" />
                         <span>Cleanliness must be 3+ stars to assign an operator</span>
                     </div>
                 )}

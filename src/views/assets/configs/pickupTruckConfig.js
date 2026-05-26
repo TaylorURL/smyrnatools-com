@@ -260,12 +260,12 @@ const pickupTruckConfig = {
         'Over 300k Miles': (item) => typeof item.mileage === 'number' && item.mileage > 300000
     },
 
-    // Status badge color classes (Tailwind)
+    // Status badge color classes — semantic tokens, theme-aware.
     statusBadgeClasses: {
-        Active: 'bg-[#dcfce7] text-[#166534]',
-        'In Shop': 'bg-[#dbeafe] text-[#1e40af]',
-        Spare: 'bg-[#f3e8ff] text-[#7c3aed]',
-        Stationary: 'bg-[#e0e7ff] text-[#3730a3]'
+        Active: 'bg-status-active/15 text-status-active',
+        'In Shop': 'bg-status-shop/15 text-status-shop',
+        Spare: 'bg-status-spare/15 text-status-spare',
+        Stationary: 'bg-status-shop/15 text-status-shop'
     },
 
     // Map status → CSS variable for the card accent bar

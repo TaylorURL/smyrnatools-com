@@ -1,10 +1,101 @@
 import React from 'react'
 
+const VERIFIED_PILL_CLASS = 'bg-status-active/10 text-status-active'
+const UNVERIFIED_PILL_CLASS = 'bg-status-warning/10 text-status-warning'
+
+/** 9+ clamp for badge counts (avoids "10" pushing pill out of round). */
+const formatBadgeCount = (count) => (count > 9 ? '9+' : count)
+
+const getInitials = (name) => {
+    if (!name) return '—'
+    const parts = String(name).split(' ').filter(Boolean)
+    return parts.length >= 2
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : (name[0] || '?').toUpperCase()
+}
+
+/**
+ * Compact circular count badge anchored to action icons (top-right corner).
+ * Used for unread comments and open-issues counts.
+ */
+function CountBadge({ count, tone = 'accent' }) {
+    if (!count) return null
+    const palette =
+        tone === 'danger' ? 'bg-status-danger text-white' : 'bg-accent text-white'
+    return (
+        <span
+            className={`absolute -top-1 -right-1 inline-flex min-w-[14px] h-3.5 items-center justify-center rounded-full px-0.5 text-[9px] font-bold leading-none ${palette}`}
+        >
+            {formatBadgeCount(count)}
+        </span>
+    )
+}
+
+/**
+ * Footer-row action button (Comments / Issues / History).
+ * Borderless tap target with focus-visible ring and active scale press.
+ */
+function CardFooterAction({ count, countTone, icon, label, onActivate, divider }) {
+    return (
+        <button
+            type="button"
+            onClick={(event) => {
+                event.stopPropagation()
+                onActivate?.()
+            }}
+            aria-label={label}
+            className={`relative flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-semibold cursor-pointer text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset ${
+                divider ? 'border-r border-border-light' : ''
+            }`}
+        >
+            <i className={`fas ${icon}`} />
+            <span>{label}</span>
+            {count > 0 && (
+                <span
+                    className={`inline-flex min-w-[16px] h-4 items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+                        countTone === 'danger' ? 'bg-status-danger text-white' : 'bg-accent text-white'
+                    }`}
+                >
+                    {formatBadgeCount(count)}
+                </span>
+            )}
+        </button>
+    )
+}
+
+/**
+ * Operator/tractor assignment row icon button (comment, history).
+ * 24x24 borderless icon, accent on hover, keyboard accessible.
+ */
+function AssignmentIconButton({ ariaLabel, count, icon, onActivate }) {
+    return (
+        <button
+            type="button"
+            onClick={(event) => {
+                event.stopPropagation()
+                onActivate?.()
+            }}
+            title={ariaLabel}
+            aria-label={ariaLabel}
+            className="relative inline-flex h-6 w-6 items-center justify-center rounded-md border-none bg-transparent text-[10px] text-text-secondary transition-colors duration-150 hover:bg-accent hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+            <i className={`fas ${icon}`} />
+            {count > 0 && <CountBadge count={count} tone="accent" />}
+        </button>
+    )
+}
+
 /**
  * Config-driven grid card for all asset types.
- * Renders a dashboard-panel layout with icon header, operator/tractor bar,
- * 2-column detail grid from gridCardFields, and action footer with
- * comment/issue/history buttons including count badges.
+ * Renders a polished card with icon header, status pill, optional
+ * operator/tractor assignment bar, 2-column detail grid, and footer
+ * action row with comment/issue/history affordances.
+ *
+ * Visual contract:
+ * - Card surface: `bg-bg-secondary border border-border-light rounded-card`.
+ * - Hover lift: `-translate-y-0.5` + `shadow-card` via `transition` from the design system.
+ * - Status pills use `bg-status-*` tokens — never raw hex.
+ * - Wrapper is `role="button"` for keyboard activation (Enter/Space).
  */
 function AssetGridCard({
     item,
@@ -23,15 +114,7 @@ function AssetGridCard({
     onShowOperatorHistoryModal
 }) {
     const number = item[config.primaryField] || '---'
-    const statusBadgeClass = config.statusBadgeClasses?.[displayStatus] || 'bg-slate-100 text-slate-600'
-
-    const getInitials = (name) => {
-        if (!name) return '\u2014'
-        const parts = name.split(' ').filter(Boolean)
-        return parts.length >= 2
-            ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-            : (name[0] || '?').toUpperCase()
-    }
+    const statusBadgeClass = config.statusBadgeClasses?.[displayStatus] || 'bg-bg-tertiary text-text-secondary'
 
     const subtitleName = config.hasOperatorAssignment
         ? operator?.name
@@ -43,28 +126,40 @@ function AssetGridCard({
 
     const fields = config.gridCardFields || []
 
+    const handleSelect = () => onSelect?.(item.id)
+
+    const handleKeyDown = (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            handleSelect()
+        }
+    }
+
     return (
         <div
-            className="flex flex-col overflow-hidden rounded border border-[color:var(--border-light)] bg-[color:var(--bg-primary)] shadow-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-            onClick={() => onSelect?.(item.id)}
+            role="button"
+            tabIndex={0}
+            onClick={handleSelect}
+            onKeyDown={handleKeyDown}
+            aria-label={`${config.singularLabel} ${number}`}
+            className="group flex flex-col overflow-hidden rounded-card border border-border-light bg-bg-secondary shadow-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card hover:border-border-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
         >
-            {/* Header: icon + number + verification + status */}
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-[color:var(--border-light)]">
-                <div className="w-10 h-10 rounded flex items-center justify-center text-white text-lg flex-shrink-0 bg-[color:var(--accent)]">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent text-white text-lg">
                     <i className={`fas ${config.icon}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="text-lg font-extrabold tracking-tight truncate text-[color:var(--text-primary)]">
+                    <div className="truncate font-heading text-lg font-semibold tracking-tight text-text-primary tabular-nums">
                         #{number}
                     </div>
-                    <div className="text-[11px] font-medium text-[color:var(--text-secondary)]">
+                    <div className="text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
                         {config.singularLabel}
                     </div>
                 </div>
                 {config.hasVerification && isVerified !== undefined && (
                     <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold flex-shrink-0 ${
-                            isVerified ? 'bg-[#dcfce7] text-text-primary' : 'bg-[#fef3c7] text-text-primary'
+                        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                            isVerified ? VERIFIED_PILL_CLASS : UNVERIFIED_PILL_CLASS
                         }`}
                     >
                         <i className={`fas ${isVerified ? 'fa-check-circle' : 'fa-exclamation-circle'}`} />
@@ -72,69 +167,51 @@ function AssetGridCard({
                     </span>
                 )}
                 <span
-                    className={`inline-block rounded text-[11px] font-bold px-3 py-1.5 flex-shrink-0 ${statusBadgeClass}`}
+                    className={`inline-flex shrink-0 items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${statusBadgeClass}`}
                 >
                     {displayStatus || '---'}
                     {statusDays ? ` (${statusDays}d)` : ''}
                 </span>
             </div>
 
-            {/* Operator / tractor bar */}
             {(config.hasOperatorAssignment || config.hasTractorAssignment) && (
                 <div
-                    className={`flex items-center gap-2.5 px-5 py-2.5 bg-[color-mix(in_srgb,var(--accent)_5%,transparent)] ${!subtitleName ? 'opacity-50' : ''}`}
+                    className={`flex items-center gap-2.5 px-5 py-2.5 bg-bg-hover/60 ${!subtitleName ? 'opacity-60' : ''}`}
                 >
                     <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${
                             subtitleName
-                                ? 'bg-gradient-to-br from-[color:var(--accent)] to-blue-400'
-                                : 'bg-gradient-to-br from-slate-400 to-slate-300'
+                                ? 'bg-gradient-to-br from-accent to-accent-hover'
+                                : 'bg-bg-tertiary text-text-tertiary'
                         }`}
                     >
                         {getInitials(config.hasOperatorAssignment ? operator?.name : tractor?.truckNumber)}
                     </div>
                     <span
-                        className={`text-xs font-semibold flex-1 truncate ${!subtitleName ? 'italic' : ''} ${
-                            subtitleName ? 'text-[color:var(--text-primary)]' : 'text-[color:var(--text-secondary)]'
+                        className={`flex-1 truncate text-xs font-semibold ${
+                            subtitleName ? 'text-text-primary' : 'italic text-text-tertiary'
                         }`}
                     >
                         {subtitleName || 'Not Assigned'}
                     </span>
                     {config.hasOperatorAssignment && operator?.name && (
                         <div className="flex gap-1">
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    onShowOperatorCommentModal?.(operator)
-                                }}
-                                title="Operator comments"
-                                className="relative border-none bg-transparent rounded-md w-6 h-6 flex items-center justify-center cursor-pointer text-[10px] text-[color:var(--text-secondary)] transition-all hover:bg-[color:var(--accent)] hover:text-white"
-                            >
-                                <i className="fas fa-comment" />
-                                {operator.commentsCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 min-w-[13px] h-[13px] rounded-full bg-blue-500 text-white text-[7px] font-bold flex items-center justify-center px-0.5">
-                                        {operator.commentsCount > 9 ? '9+' : operator.commentsCount}
-                                    </span>
-                                )}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    onShowOperatorHistoryModal?.(operator)
-                                }}
-                                title="Operator history"
-                                className="border-none bg-transparent rounded-md w-6 h-6 flex items-center justify-center cursor-pointer text-[10px] text-[color:var(--text-secondary)] transition-all hover:bg-[color:var(--accent)] hover:text-white"
-                            >
-                                <i className="fas fa-history" />
-                            </button>
+                            <AssignmentIconButton
+                                ariaLabel="Operator comments"
+                                count={operator.commentsCount}
+                                icon="fa-comment"
+                                onActivate={() => onShowOperatorCommentModal?.(operator)}
+                            />
+                            <AssignmentIconButton
+                                ariaLabel="Operator history"
+                                icon="fa-history"
+                                onActivate={() => onShowOperatorHistoryModal?.(operator)}
+                            />
                         </div>
                     )}
                 </div>
             )}
 
-            {/* 2-column detail grid */}
             <div className="grid grid-cols-2">
                 {fields.map((field, idx) => {
                     const value = field.getValue
@@ -148,38 +225,38 @@ function AssetGridCard({
                     return (
                         <div
                             key={field.label}
-                            className={`flex flex-col gap-0.5 px-5 py-3 ${!isLastRow ? 'border-b border-[color:var(--border-light)]' : ''} ${isOdd ? 'border-r border-[color:var(--border-light)]' : ''}`}
+                            className={`flex flex-col gap-0.5 px-5 py-3 ${!isLastRow ? 'border-b border-border-light' : ''} ${isOdd ? 'border-r border-border-light' : ''}`}
                         >
-                            <span className="text-[10px] font-medium uppercase tracking-wide text-[color:var(--text-secondary)]">
+                            <span className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                                 {field.label}
                             </span>
-                            <span className="text-[13px] font-semibold text-[color:var(--text-primary)]">
+                            <span className="text-[13px] font-semibold text-text-primary">
                                 {field.type === 'stars' ? (
                                     <span className="inline-flex items-center gap-1">
                                         <span className="inline-flex gap-px text-[11px]">
                                             {Array.from({ length: 5 }).map((_, i) => (
                                                 <i
                                                     key={i}
-                                                    className={`fas fa-star ${i < (value || 0) ? 'text-text-primary' : 'text-[color:var(--border-light)]'}`}
+                                                    className={`fas fa-star ${i < (value || 0) ? 'text-status-warning' : 'text-border-light'}`}
                                                 />
                                             ))}
                                         </span>
                                         {warning && (
-                                            <span className="bg-red-100 text-text-primary text-[9px] font-bold px-1.5 py-0.5 rounded ml-1">
+                                            <span className="ml-1 inline-flex items-center rounded-md bg-status-danger/10 text-status-danger px-1.5 py-0.5 text-[9px] font-bold">
                                                 {warning}
                                             </span>
                                         )}
                                     </span>
                                 ) : field.type === 'monospace' ? (
-                                    <span className="font-mono text-[11px] text-[color:var(--text-secondary)]">
+                                    <span className="font-mono text-[11px] tabular-nums text-text-secondary">
                                         {value}
                                     </span>
                                 ) : (
                                     <span className="inline-flex items-center gap-1.5">
                                         {value}
                                         {isOverdue && (
-                                            <span className="bg-red-100 text-text-primary text-[8px] font-bold px-1.5 py-0.5 rounded">
-                                                OVERDUE
+                                            <span className="inline-flex items-center rounded-md bg-status-danger/10 text-status-danger px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider">
+                                                Overdue
                                             </span>
                                         )}
                                     </span>
@@ -190,51 +267,24 @@ function AssetGridCard({
                 })}
             </div>
 
-            {/* Footer: Comments / Issues / History */}
-            <div className="flex border-t border-[color:var(--border-light)]">
-                <button
-                    type="button"
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        onShowCommentModal?.()
-                    }}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border-none bg-transparent text-[11px] font-semibold cursor-pointer transition-all text-[color:var(--text-secondary)] border-r border-r-[color:var(--border-light)] hover:bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]"
-                >
-                    <i className="fas fa-comments" />
-                    Comments
-                    {item.commentsCount > 0 && (
-                        <span className="min-w-[16px] h-4 rounded-full bg-blue-500 text-white text-[9px] font-bold inline-flex items-center justify-center px-1">
-                            {item.commentsCount > 9 ? '9+' : item.commentsCount}
-                        </span>
-                    )}
-                </button>
-                <button
-                    type="button"
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        onShowIssueModal?.()
-                    }}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border-none bg-transparent text-[11px] font-semibold cursor-pointer transition-all text-[color:var(--text-secondary)] border-r border-r-[color:var(--border-light)] hover:bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]"
-                >
-                    <i className="fas fa-tools" />
-                    Issues
-                    {item.openIssuesCount > 0 && (
-                        <span className="min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[9px] font-bold inline-flex items-center justify-center px-1">
-                            {item.openIssuesCount > 9 ? '9+' : item.openIssuesCount}
-                        </span>
-                    )}
-                </button>
-                <button
-                    type="button"
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        onShowHistoryModal?.()
-                    }}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border-none bg-transparent text-[11px] font-semibold cursor-pointer transition-all text-[color:var(--text-secondary)] hover:bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]"
-                >
-                    <i className="fas fa-history" />
-                    History
-                </button>
+            <div className="flex border-t border-border-light">
+                <CardFooterAction
+                    count={item.commentsCount}
+                    countTone="accent"
+                    divider
+                    icon="fa-comments"
+                    label="Comments"
+                    onActivate={onShowCommentModal}
+                />
+                <CardFooterAction
+                    count={item.openIssuesCount}
+                    countTone="danger"
+                    divider
+                    icon="fa-tools"
+                    label="Issues"
+                    onActivate={onShowIssueModal}
+                />
+                <CardFooterAction icon="fa-history" label="History" onActivate={onShowHistoryModal} />
             </div>
         </div>
     )

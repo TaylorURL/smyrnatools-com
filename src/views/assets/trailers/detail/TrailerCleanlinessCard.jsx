@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
@@ -22,7 +21,7 @@ export default function TrailerCleanlinessCard({ cleanlinessRating, onCleanlines
                                 <button
                                     key={star}
                                     type="button"
-                                    className={`star-button ${isLit ? 'active' : ''} ${!canEditTrailer ? 'disabled' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded`}
+                                    className={`star-button ${isLit ? 'active' : ''} ${!canEditTrailer ? 'disabled' : ''} rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-transform duration-150 ease-out active:scale-[0.97] disabled:active:scale-100 motion-reduce:transition-none`}
                                     onClick={() =>
                                         canEditTrailer &&
                                         onCleanlinessRatingChange(star === cleanlinessRating ? 0 : star)
@@ -31,10 +30,7 @@ export default function TrailerCleanlinessCard({ cleanlinessRating, onCleanlines
                                     aria-pressed={isLit}
                                     disabled={!canEditTrailer}
                                 >
-                                    <i
-                                        className={`fas fa-star ${isLit ? 'filled' : ''}`}
-                                        style={isLit ? { color: 'var(--text-primary)' } : {}}
-                                    ></i>
+                                    <i className={`fas fa-star ${isLit ? 'filled !text-text-primary' : ''}`} />
                                 </button>
                             )
                         })}
