@@ -21,9 +21,8 @@ export default function AssetExtraTypeFilter({ config, filters, updateFilterRef 
     return (
         <select
             aria-label={extraTypeFilter.label}
-            className="text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 bg-bg-secondary border border-border-light text-text-primary"
+            className="min-w-[130px] cursor-pointer rounded text-[12px] font-medium py-1.5 pl-2 pr-7 bg-bg-secondary border border-border-light text-text-primary hover:border-border-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 transition-colors duration-150"
             onChange={handleChange}
-            style={{ minWidth: 130 }}
             value={filters.extraTypeFilter}
         >
             <option value="">{extraTypeFilter.allLabel}</option>

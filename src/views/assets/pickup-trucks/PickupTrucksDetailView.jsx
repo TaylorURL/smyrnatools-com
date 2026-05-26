@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
@@ -409,14 +408,12 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                         <div className="form-group">
                             <label>Assigned Plant</label>
                             <button
-                                className="operator-select-button form-control"
+                                className={`operator-select-button form-control text-left ${!canEditPickup ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                                 onClick={() => setShowPlantModal(true)}
                                 type="button"
                                 disabled={!canEditPickup}
                             >
-                                <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
-                                    {plantDisplayText}
-                                </span>
+                                <span className="block truncate">{plantDisplayText}</span>
                             </button>
                         </div>
                         <div className="form-group">

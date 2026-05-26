@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
@@ -28,13 +27,13 @@ export default function MixerServiceInfoCard({
                     onChange={(e) =>
                         setLastServiceDate(e.target.value ? DateUtility.parseLocalDate(e.target.value) : null)
                     }
-                    className="form-control"
+                    className="form-control [color-scheme:light] dark:[color-scheme:dark]"
                     readOnly={!canEditMixer}
                 />
                 {lastServiceDate && AssetStatsUtility.isServiceOverdue(lastServiceDate) && (
                     <div className="warning-text">Service overdue</div>
                 )}
-                <div className="text-text-secondary text-[11px]" style={{ lineHeight: '1.4', marginTop: '4px' }}>
+                <div className="text-text-secondary text-[11px] leading-snug mt-1">
                     Service will show as overdue if it has been more than 6 months since last serviced. Service is
                     determined by hours on the asset - check hours of service.
                 </div>
@@ -60,7 +59,7 @@ export default function MixerServiceInfoCard({
                     onChange={(e) =>
                         setLastChipDate(e.target.value ? DateUtility.parseLocalDate(e.target.value) : null)
                     }
-                    className="form-control"
+                    className="form-control [color-scheme:light] dark:[color-scheme:dark]"
                     readOnly={!canEditMixer}
                 />
                 {lastChipDate && AssetStatsUtility.isServiceOverdue(lastChipDate, MIXER_CHIP_OVERDUE_DAYS) && (
