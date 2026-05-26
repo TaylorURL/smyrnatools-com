@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
-import { INPUT_CLS, INPUT_STYLE, SELECT_CLS } from '../../../../app/constants/nrmcaConstants'
+import { INPUT_CLS, INPUT_STYLE, SELECT_CLS, SELECT_STYLE } from '../../../../app/constants/nrmcaConstants'
 import { NRMCAService } from '../../../../services/NRMCAService'
 import { Field, Modal } from './NRMCASharedUI'
 
@@ -44,7 +44,7 @@ export function PlantFormModal({ plant, regionPlants, onClose, onSaved }) {
                     type="button"
                     onClick={() => setShowPlantPicker(true)}
                     className={`${SELECT_CLS} text-left`}
-                    style={INPUT_STYLE}
+                    style={SELECT_STYLE}
                 >
                     {plantCode ? (
                         `(${plantCode}) ${selectedPlantName ?? ''}`

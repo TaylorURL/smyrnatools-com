@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
-import { INPUT_CLS, INPUT_STYLE, SCALE_TYPES, SELECT_CLS } from '../../../../app/constants/nrmcaConstants'
+import { INPUT_CLS, INPUT_STYLE, SCALE_TYPES, SELECT_CLS, SELECT_STYLE } from '../../../../app/constants/nrmcaConstants'
 import { NRMCAService } from '../../../../services/NRMCAService'
 import { Field, Modal } from './NRMCASharedUI'
 
@@ -41,7 +41,7 @@ export function ScaleFormModal({ scale, nrmcaPlants, defaultPlantId, onClose, on
             <Field label="Plant">
                 <select
                     className={SELECT_CLS}
-                    style={INPUT_STYLE}
+                    style={SELECT_STYLE}
                     value={nrmcaPlantId}
                     onChange={(e) => setNrmcaPlantId(e.target.value)}
                     required
@@ -68,7 +68,7 @@ export function ScaleFormModal({ scale, nrmcaPlants, defaultPlantId, onClose, on
             <Field label="Scale Type">
                 <select
                     className={SELECT_CLS}
-                    style={INPUT_STYLE}
+                    style={SELECT_STYLE}
                     value={scaleType}
                     onChange={(e) => setScaleType(e.target.value)}
                 >

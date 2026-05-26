@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react'
 
 import { ReportUtility } from '../../../../utils/ReportUtility'
-import { FORM_FIELD_BASE_CLASS, FORM_FIELD_STYLE, FORM_SECTION_LABEL_CLASS } from './formStyles'
+import { FORM_FIELD_BASE_CLASS, FORM_FIELD_STYLE, FORM_SECTION_LABEL_CLASS, FORM_SELECT_CLASS } from './formStyles'
 import PlantProductionOperatorCard, { computeRowStatus } from './PlantProductionOperatorCard'
 
 const SummaryChip = ({ accent, count, icon, label, onClick, selected }) => (
@@ -129,7 +129,7 @@ const PlantProductionForm = ({
                         onChange={(e) => setForm((f) => ({ ...f, plant: e.target.value, rows: [] }))}
                         required
                         disabled={readOnly}
-                        className={`${FORM_FIELD_BASE_CLASS} appearance-none cursor-pointer pr-8`}
+                        className={FORM_SELECT_CLASS}
                         style={FORM_FIELD_STYLE}
                     >
                         <option value="">Select Plant…</option>
