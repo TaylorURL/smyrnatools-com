@@ -69,10 +69,10 @@ const constantTimeEqual = (a, b) => {
 }
 /** Returns Tailwind classes for floating-label inputs. */
 const getInputClasses = (isFocused) =>
-    `w-full bg-white border-0 rounded-none text-slate-800 text-base outline-none pt-4 pb-3 border-b-2 transition-colors placeholder-transparent autofill:shadow-[inset_0_0_0px_1000px_white] autofill:[-webkit-text-fill-color:theme(colors.slate.800)] ${isFocused ? 'border-[#1e3a5f]' : 'border-slate-200'}`
+    `w-full bg-white border-0 rounded-none text-slate-800 text-base outline-none pt-4 pb-3 border-b-2 transition-colors duration-150 ease-out motion-reduce:transition-none placeholder-transparent autofill:shadow-[inset_0_0_0px_1000px_white] autofill:[-webkit-text-fill-color:theme(colors.slate.800)] ${isFocused ? 'border-[#1e3a5f]' : 'border-slate-200 hover:border-slate-300'}`
 /** Returns Tailwind classes for floating labels above inputs. */
 const getLabelClasses = (isFocused, hasValue) =>
-    `absolute left-0 pointer-events-none font-medium transition-all ${isFocused || hasValue ? 'top-0 text-[0.7rem]' : 'top-4 text-[0.9rem]'} ${isFocused ? 'text-text-primary' : 'text-slate-400'}`
+    `absolute left-0 pointer-events-none font-medium transition-[top,font-size,color] duration-150 ease-out motion-reduce:transition-none ${isFocused || hasValue ? 'top-0 text-[0.7rem]' : 'top-4 text-[0.9rem]'} ${isFocused ? 'text-[#1e3a5f]' : 'text-slate-400'}`
 /**
  * Full-screen login/signup view with a lazy-loaded video background,
  * animated fleet stats, password strength indicator, and links to
@@ -283,12 +283,12 @@ function LoginView() {
             <div className="flex items-stretch h-screen relative w-full z-10">
                 {/* Hero panel — hidden on mobile, shown on lg+ */}
                 <div className="hidden lg:flex flex-1 items-center justify-center relative p-12">
-                    <div className="relative z-[2] flex flex-col items-center text-center max-w-lg">
+                    <div className="relative z-[2] flex flex-col items-center text-center max-w-lg animate-fade-slide-in motion-reduce:animate-none">
                         <img src={SrmLogo} alt="SRM" className="h-32 w-32 mb-8 drop-shadow-2xl" loading="eager" />
-                        <h1 className="text-white text-5xl font-extrabold tracking-tight leading-tight mb-3">
+                        <h1 className="text-white font-heading text-5xl font-extrabold tracking-tight leading-tight mb-3">
                             Smyrna <span className="text-white/70">Tools</span>
                         </h1>
-                        <p className="text-white/50 text-lg leading-relaxed mb-10 max-w-sm">
+                        <p className="text-white/60 text-lg leading-relaxed mb-10 max-w-sm">
                             Fleet management and operations platform.
                         </p>
                         <StatsDisplay stats={animatedStats} />
@@ -304,7 +304,7 @@ function LoginView() {
                             </div>
                         )}
                         <div className="mb-10">
-                            <h2 className="text-slate-800 text-2xl font-bold mb-2">
+                            <h2 className="text-slate-800 font-heading text-2xl font-bold tracking-tight mb-2">
                                 {isSignUp ? 'Create account' : 'Welcome back'}
                             </h2>
                             <p className="text-slate-500 text-[0.9rem] m-0">
@@ -377,9 +377,14 @@ function LoginView() {
                                     <button
                                         type="button"
                                         onClick={togglePassword}
-                                        className="absolute right-0 bottom-3 bg-transparent border-none text-slate-400 cursor-pointer text-sm p-0"
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                        aria-pressed={showPassword}
+                                        className="absolute right-0 bottom-3 bg-transparent border-none text-slate-400 cursor-pointer text-sm p-1 transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-slate-700 focus-visible:outline-none focus-visible:text-[#1e3a5f] focus-visible:ring-2 focus-visible:ring-[#1e3a5f]/40 rounded"
                                     >
-                                        <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} />
+                                        <i
+                                            className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}
+                                            aria-hidden="true"
+                                        />
                                     </button>
                                 </div>
                             </div>
@@ -416,32 +421,45 @@ function LoginView() {
                                     <button
                                         type="button"
                                         onClick={openRecovery}
-                                        className="bg-transparent border-none text-text-primary cursor-pointer text-[0.8rem] font-medium p-0"
+                                        className="bg-transparent border-none text-[#1e3a5f] cursor-pointer text-[0.8rem] font-medium p-0 transition-colors duration-150 ease-out motion-reduce:transition-none hover:underline focus-visible:outline-none focus-visible:underline focus-visible:ring-2 focus-visible:ring-[#1e3a5f]/40 rounded"
                                     >
                                         Forgot password?
                                     </button>
                                 </div>
                             )}
                             {errorMessage && (
-                                <div className="flex items-center gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in bg-red-50 border border-red-200 text-text-primary">
-                                    <i className="fas fa-exclamation-circle shrink-0 text-[0.9rem]" />
+                                <div
+                                    role="alert"
+                                    className="flex items-start gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in motion-reduce:animate-none bg-red-50 border border-red-200 text-red-800"
+                                >
+                                    <i
+                                        className="fas fa-exclamation-circle shrink-0 mt-0.5 text-[0.9rem]"
+                                        aria-hidden="true"
+                                    />
                                     <span>{errorMessage}</span>
                                 </div>
                             )}
                             {successMessage && (
-                                <div className="flex items-center gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in bg-green-50 border border-green-200 text-text-primary">
-                                    <i className="fas fa-check-circle shrink-0 text-[0.9rem]" />
+                                <div
+                                    role="status"
+                                    aria-live="polite"
+                                    className="flex items-start gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in motion-reduce:animate-none bg-green-50 border border-green-200 text-green-800"
+                                >
+                                    <i
+                                        className="fas fa-check-circle shrink-0 mt-0.5 text-[0.9rem]"
+                                        aria-hidden="true"
+                                    />
                                     <span>{successMessage}</span>
                                 </div>
                             )}
                             <button
                                 type="submit"
                                 disabled={isSubmitting || loading}
-                                className={`w-full bg-[#1e3a5f] text-white rounded-md text-[0.9rem] font-semibold py-3.5 px-6 border-none transition-all ${isSubmitting || loading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+                                className={`w-full bg-[#1e3a5f] text-white rounded-md text-[0.9rem] font-semibold py-3.5 px-6 border-none transition-[filter,transform,opacity] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e3a5f]/50 focus-visible:ring-offset-2 ${isSubmitting || loading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:brightness-110 active:scale-[0.98]'}`}
                             >
                                 {isSubmitting || loading ? (
                                     <span className="inline-flex items-center gap-2">
-                                        <i className="fas fa-circle-notch fa-spin" />
+                                        <i className="fas fa-circle-notch fa-spin" aria-hidden="true" />
                                         Processing...
                                     </span>
                                 ) : isSignUp ? (
@@ -458,7 +476,7 @@ function LoginView() {
                             <button
                                 type="button"
                                 onClick={toggleSignUp}
-                                className="bg-transparent border-none text-text-primary cursor-pointer text-[0.85rem] font-semibold p-0"
+                                className="bg-transparent border-none text-[#1e3a5f] cursor-pointer text-[0.85rem] font-semibold p-0 transition-colors duration-150 ease-out motion-reduce:transition-none hover:underline focus-visible:outline-none focus-visible:underline focus-visible:ring-2 focus-visible:ring-[#1e3a5f]/40 rounded"
                             >
                                 {isSignUp ? 'Sign in' : 'Sign up'}
                             </button>
