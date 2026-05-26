@@ -38,43 +38,37 @@ export default function NavigationMobile({
     const headerStyle = buildHeaderStyle(accentColor)
     const dashboardItem = standaloneItems.find((i) => i.id === 'Dashboard')
     return (
-        <div className="flex flex-col h-screen w-full">
+        <div className="flex h-screen w-full flex-col">
             <div
-                style={{
-                    ...headerStyle,
-                    alignItems: 'center',
-                    borderBottom: '1px solid rgba(255,255,255,0.08)',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    padding: '12px 16px',
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 100
-                }}
+                style={headerStyle}
+                className="sticky top-0 z-[100] flex items-center justify-between border-b border-white/10 px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
             >
                 <img className="h-[34px]" src={SrmLogo} alt="Logo" draggable={false} />
                 <button
-                    className="items-center rounded-[10px] cursor-pointer flex h-10 justify-center w-10 active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                    type="button"
+                    aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                    aria-expanded={mobileMenuOpen}
+                    aria-controls="mobile-nav-drawer"
+                    className={`inline-flex h-10 w-10 items-center justify-center rounded-[10px] border-none text-white cursor-pointer active:scale-[0.94] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${mobileMenuOpen ? 'bg-white/[0.2]' : 'bg-white/[0.1] hover:bg-white/[0.16]'}`}
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    style={{
-                        backgroundColor: mobileMenuOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
-                        border: 'none',
-                        color: 'white'
-                    }}
                 >
-                    <i className={`fas fa-${mobileMenuOpen ? 'times' : 'bars'}`}></i>
+                    <i
+                        className={`fas fa-${mobileMenuOpen ? 'times' : 'bars'} transition-transform duration-150 motion-reduce:transition-none`}
+                        aria-hidden="true"
+                    />
                 </button>
             </div>
             {mobileMenuOpen && (
                 <div
-                    className="bg-[rgba(0,0,0,0.5)] fixed z-[200]"
-                    style={{ bottom: 0, left: 0, right: 0, top: 0 }}
+                    id="mobile-nav-drawer"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Navigation"
+                    className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm animate-fade-in motion-reduce:animate-none"
                     onClick={() => setMobileMenuOpen(false)}
                 >
                     <div
-                        className="bg-bg-primary h-full overflow-y-auto absolute w-[280px]"
-                        style={{ boxShadow: 'var(--shadow)', padding: '20px', right: 0, top: 0 }}
+                        className="absolute right-0 top-0 h-full w-[280px] overflow-y-auto bg-bg-primary p-5 shadow-modal animate-slide-up motion-reduce:animate-none"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <MobileRegionSelect
@@ -132,7 +126,7 @@ export default function NavigationMobile({
                     </div>
                 </div>
             )}
-            <div className="flex-1 overflow-x-hidden overflow-y-auto relative" data-content-scroll>
+            <div className="relative flex-1 overflow-x-hidden overflow-y-auto" data-content-scroll>
                 {children}
             </div>
         </div>

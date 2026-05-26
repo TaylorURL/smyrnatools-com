@@ -8,8 +8,6 @@ import APIUtility from '../../../utils/APIUtility'
  * Password recovery form. Sends the user's email to the backend which
  * generates and emails a new password if the account exists. Uses a
  * deliberately vague success message to avoid leaking account existence.
- *
- * @param {Function} onBackToLogin - Callback to return to the login screen.
  */
 function PasswordRecoveryView({ onBackToLogin }) {
     const [email, setEmail] = useState('')
@@ -42,17 +40,22 @@ function PasswordRecoveryView({ onBackToLogin }) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-[#1e3a5f] p-4">
             <VideoBackground />
-            <div className="w-full max-w-md relative z-10">
-                <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden border border-white/20">
+            <div className="w-full max-w-md relative z-10 animate-fade-slide-in motion-reduce:animate-none">
+                <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-modal overflow-hidden border border-white/20">
                     <div className="bg-[#1e3a5f] p-6 text-center">
                         <img src={SrmLogo} alt="SRM" className="h-16 mx-auto mb-3" />
-                        <h1 className="text-xl font-bold text-white">Password Recovery</h1>
+                        <h1 className="font-heading text-xl font-bold tracking-tight text-white">
+                            Password Recovery
+                        </h1>
                         <p className="text-slate-300 text-sm">Enter your email to receive a new password</p>
                     </div>
                     <div className="p-6">
                         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                             <div className="relative">
-                                <i className="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+                                <i
+                                    className="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"
+                                    aria-hidden="true"
+                                />
                                 <input
                                     type="email"
                                     placeholder="Email Address"
@@ -60,25 +63,32 @@ function PasswordRecoveryView({ onBackToLogin }) {
                                     onChange={(e) => setEmail(e.target.value)}
                                     autoComplete="email"
                                     autoFocus
-                                    className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 transition-all"
+                                    className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 transition-[border-color,box-shadow] duration-150 ease-out motion-reduce:transition-none placeholder:text-slate-400"
                                     required
                                 />
                             </div>
                             {error && (
-                                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-text-primary text-sm">
-                                    <i className="fas fa-exclamation-circle" />
+                                <div
+                                    role="alert"
+                                    className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm animate-msg-in motion-reduce:animate-none"
+                                >
+                                    <i className="fas fa-exclamation-circle mt-0.5" aria-hidden="true" />
                                     <span>{error}</span>
                                 </div>
                             )}
                             {message && (
-                                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-text-primary text-sm">
-                                    <i className="fas fa-check-circle" />
+                                <div
+                                    role="status"
+                                    aria-live="polite"
+                                    className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm animate-msg-in motion-reduce:animate-none"
+                                >
+                                    <i className="fas fa-check-circle mt-0.5" aria-hidden="true" />
                                     <span>{message}</span>
                                 </div>
                             )}
                             <button
                                 type="submit"
-                                className="w-full py-3 bg-[#1e3a5f] hover:bg-[#15304f] text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full py-3 bg-[#1e3a5f] text-white font-semibold rounded-lg transition-[filter,transform,opacity] duration-150 ease-out motion-reduce:transition-none flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e3a5f]/50 focus-visible:ring-offset-2"
                                 disabled={submitting}
                             >
                                 {submitting ? (
@@ -86,7 +96,7 @@ function PasswordRecoveryView({ onBackToLogin }) {
                                 ) : (
                                     <>
                                         <span>Send New Password</span>
-                                        <i className="fas fa-paper-plane" />
+                                        <i className="fas fa-paper-plane" aria-hidden="true" />
                                     </>
                                 )}
                             </button>
@@ -94,10 +104,10 @@ function PasswordRecoveryView({ onBackToLogin }) {
                         <div className="mt-6 text-center">
                             <button
                                 type="button"
-                                className="text-text-primary hover:underline font-semibold text-sm inline-flex items-center gap-2"
+                                className="text-[#1e3a5f] font-semibold text-sm inline-flex items-center gap-2 transition-colors duration-150 ease-out motion-reduce:transition-none hover:underline focus-visible:outline-none focus-visible:underline focus-visible:ring-2 focus-visible:ring-[#1e3a5f]/40 rounded"
                                 onClick={onBackToLogin}
                             >
-                                <i className="fas fa-arrow-left" />
+                                <i className="fas fa-arrow-left" aria-hidden="true" />
                                 Back to Login
                             </button>
                         </div>

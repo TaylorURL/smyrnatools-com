@@ -19,17 +19,16 @@ const REASON_CONFIG = {
         title: 'Setup Incomplete'
     }
 }
-/** Fallback messaging when the lock reason is unrecognized. */
+
 const DEFAULT_REASON = {
     message: 'You must contact your district manager for them to approve your sign-up.',
     title: 'Access Pending'
 }
+
 /**
  * Full-screen portal overlay shown when user access is locked.
  * Displays contextual messaging based on the lock reason and provides
  * options to refresh or sign out.
- * @param {Object} props
- * @param {'invalid-session'|'no-plant'|string} props.reason - Lock reason key used to resolve the displayed message.
  */
 function LockedOverlay({ reason }) {
     const { signOut } = useAuth()
@@ -43,27 +42,38 @@ function LockedOverlay({ reason }) {
         } catch {}
     }
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85">
+        <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="locked-overlay-title"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm animate-fade-in motion-reduce:animate-none"
+        >
             <VideoBackground />
-            <div className="relative z-[10] w-[90%] max-w-[440px] rounded-[20px] bg-white p-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
-                <h1 className="mb-4 text-[28px] font-bold" style={{ color: accentColor }}>
+            <div className="relative z-[10] w-[90%] max-w-[440px] rounded-modal bg-bg-primary p-12 text-center shadow-modal animate-pop-in motion-reduce:animate-none">
+                <h1
+                    id="locked-overlay-title"
+                    className="mb-4 font-heading text-[28px] font-bold tracking-tight"
+                    style={{ color: accentColor }}
+                >
                     {title}
                 </h1>
-                <p className="mb-8 text-base leading-relaxed text-slate-500">{message}</p>
+                <p className="mb-8 text-base leading-relaxed text-text-secondary">{message}</p>
                 <div className="flex flex-col gap-3">
                     <button
-                        className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none px-6 py-3.5 text-[15px] font-semibold text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        type="button"
+                        className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none px-6 py-3.5 text-[15px] font-semibold text-white cursor-pointer active:scale-[0.98] transition-[transform,filter] duration-150 ease-out motion-reduce:transition-none hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                         style={{ backgroundColor: accentColor }}
                         onClick={() => window.location.reload()}
                     >
-                        <i className="fas fa-sync-alt" />
+                        <i className="fas fa-sync-alt" aria-hidden="true" />
                         Refresh Page
                     </button>
                     <button
-                        className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none bg-slate-100 px-6 py-3.5 text-[15px] font-semibold text-gray-700 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        type="button"
+                        className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border-light bg-bg-secondary px-6 py-3.5 text-[15px] font-semibold text-text-primary cursor-pointer active:scale-[0.98] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                         onClick={handleSignOut}
                     >
-                        <i className="fas fa-sign-out-alt" />
+                        <i className="fas fa-sign-out-alt" aria-hidden="true" />
                         Sign Out
                     </button>
                 </div>

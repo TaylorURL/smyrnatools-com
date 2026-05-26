@@ -9,14 +9,13 @@ import { useAccentColor } from '../../hooks/useAccentColor'
 
 /** Pool of background videos randomly selected on mount. */
 const BACKGROUND_VIDEOS = [vid1, vid2, vid3, vid4]
+const TRIM_END_SECONDS = 10
+const SKIP_START_SECONDS = 5
+
 /**
  * Ambient looping video background with a gradient underlay and dark overlay.
  * Randomly selects one video on mount; skips the first 5 seconds to avoid intro frames.
- * @param {Object} props
- * @param {string} [props.className] - Additional Tailwind classes for the outer container.
  */
-const TRIM_END_SECONDS = 10
-const SKIP_START_SECONDS = 5
 const VideoBackground = memo(function VideoBackground({ className = '' }) {
     const [currentVideoIndex, setCurrentVideoIndex] = useState(() =>
         Math.floor(Math.random() * BACKGROUND_VIDEOS.length)
@@ -53,7 +52,7 @@ const VideoBackground = memo(function VideoBackground({ className = '' }) {
         }
     }
     return (
-        <div className={`absolute inset-0 overflow-hidden ${className}`}>
+        <div className={`absolute inset-0 overflow-hidden ${className}`} aria-hidden="true">
             <div
                 className="absolute inset-0 z-[1]"
                 style={{ background: `linear-gradient(135deg, #0a1929 0%, ${accentColor} 100%)` }}
@@ -68,7 +67,7 @@ const VideoBackground = memo(function VideoBackground({ className = '' }) {
                 onCanPlay={handleCanPlay}
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={advanceVideo}
-                className={`absolute left-1/2 top-1/2 z-[2] min-h-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover transition-opacity duration-1000 ${showVideo ? 'opacity-100' : 'opacity-0'}`}
+                className={`absolute left-1/2 top-1/2 z-[2] min-h-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover transition-opacity duration-1000 motion-reduce:transition-none ${showVideo ? 'opacity-100' : 'opacity-0'}`}
             >
                 <source src={BACKGROUND_VIDEOS[currentVideoIndex]} type="video/mp4" />
             </video>

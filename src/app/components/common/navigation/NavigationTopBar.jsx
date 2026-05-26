@@ -15,36 +15,15 @@ import {
 import { TopBarIconButton, TopBarMessagesButton } from './NavigationActionButtons'
 import { TopBarRegionSelect } from './NavigationParts'
 
-/** Pill-style cell for a top-bar nav item. */
-const navItemStyle = (isActive, isTablet) => ({
-    alignItems: 'center',
-    backgroundColor: isActive ? 'rgba(255,255,255,0.15)' : 'transparent',
-    border: isActive ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
-    borderRadius: isTablet ? '6px' : '10px',
-    color: 'white',
-    cursor: 'pointer',
-    display: 'flex',
-    flexShrink: 0,
-    fontSize: isTablet ? '12px' : '14px',
-    fontWeight: isActive ? 600 : 500,
-    gap: isTablet ? '4px' : '8px',
-    padding: isTablet ? '6px 8px' : '10px 16px',
-    transition: 'all 0.2s ease',
-    whiteSpace: 'nowrap'
-})
-
-const dropdownStyle = {
-    backgroundColor: 'var(--bg-primary)',
-    border: '1px solid var(--border-light)',
-    borderRadius: '14px',
-    boxShadow: 'var(--shadow)',
-    left: 0,
-    marginTop: '8px',
-    minWidth: '220px',
-    padding: '10px',
-    position: 'absolute',
-    top: '100%',
-    zIndex: 1000
+/** Returns Tailwind classes for a top-bar nav item pill. The active state lifts
+ *  the background opacity and the border so the current section is unambiguous
+ *  on the colored header. */
+const navItemClasses = (isActive, isTablet) => {
+    const size = isTablet ? 'px-2 py-1.5 text-xs gap-1 rounded-md' : 'px-4 py-2.5 text-sm gap-2 rounded-[10px]'
+    const tone = isActive
+        ? 'bg-white/[0.18] border border-white/15 font-semibold'
+        : 'bg-transparent border border-transparent font-medium hover:bg-white/10'
+    return `inline-flex items-center cursor-pointer whitespace-nowrap text-white flex-shrink-0 transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${size} ${tone}`
 }
 
 /** Renders a category dropdown trigger and its menu of nav items. */
@@ -65,51 +44,46 @@ function TopBarDropdown({
 }) {
     return (
         <div className="relative" ref={isOpen ? onTriggerRef : null}>
-            <div
+            <button
+                type="button"
                 ref={registerMagnetic}
-                style={{ ...navItemStyle(isActive, isTablet), gap: isTablet ? '4px' : '6px' }}
+                className={navItemClasses(isActive, isTablet)}
                 onClick={onToggle}
+                aria-haspopup="menu"
+                aria-expanded={isOpen}
             >
-                <i className={`fas ${icon}`} style={{ fontSize: isTablet ? '13px' : '14px' }}></i>
+                <i className={`fas ${icon} ${isTablet ? 'text-[13px]' : 'text-sm'}`} aria-hidden="true" />
                 {!isTablet && <span>{label}</span>}
                 <i
-                    className={`fas fa-chevron-${isOpen ? 'up' : 'down'}`}
-                    style={{ fontSize: isTablet ? '9px' : '10px', marginLeft: isTablet ? '0' : '2px' }}
-                ></i>
-            </div>
+                    className={`fas fa-chevron-${isOpen ? 'up' : 'down'} ${isTablet ? 'text-[9px] ml-0' : 'text-[10px] ml-0.5'} transition-transform duration-150 motion-reduce:transition-none`}
+                    aria-hidden="true"
+                />
+            </button>
             {isOpen && (
-                <div style={dropdownStyle}>
+                <div
+                    role="menu"
+                    className="absolute left-0 top-full z-[1000] mt-2 min-w-[220px] origin-top-left rounded-card border border-border-light bg-bg-primary p-2 shadow-modal animate-pop-in motion-reduce:animate-none"
+                >
                     {items.map((itemId) => {
                         const item = visibleMenuItems.find((i) => i.id === itemId)
                         if (!item) return null
                         const isItemActive = selectedView === item.id
+                        const activeTint = `${accentColor}14`
                         return (
-                            <div
-                                className="items-center rounded-lg cursor-pointer flex"
+                            <button
+                                type="button"
+                                role="menuitem"
                                 key={item.id}
-                                style={{
-                                    backgroundColor: isItemActive ? `${accentColor}12` : 'transparent',
-                                    color: 'var(--text-primary)',
-                                    fontWeight: isItemActive ? 600 : 400,
-                                    gap: '10px',
-                                    padding: '10px 14px',
-                                    transition: 'all 0.15s'
-                                }}
+                                className={`flex w-full items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-sm text-text-primary cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary ${isItemActive ? 'font-semibold' : 'font-normal'}`}
+                                style={isItemActive ? { backgroundColor: activeTint } : undefined}
                                 onClick={() => onItemClick(item.id)}
-                                onMouseEnter={(e) =>
-                                    (e.currentTarget.style.backgroundColor = isItemActive
-                                        ? `${accentColor}12`
-                                        : 'var(--bg-secondary)')
-                                }
-                                onMouseLeave={(e) =>
-                                    (e.currentTarget.style.backgroundColor = isItemActive
-                                        ? `${accentColor}12`
-                                        : 'transparent')
-                                }
                             >
-                                <i className={`fas ${ICONS[item.id]} text-text-secondary text-sm w-[18px]`}></i>
-                                <span style={{ color: 'var(--text-primary)' }}>{item.text}</span>
-                            </div>
+                                <i
+                                    className={`fas ${ICONS[item.id]} w-[18px] text-sm text-text-secondary`}
+                                    aria-hidden="true"
+                                />
+                                <span>{item.text}</span>
+                            </button>
                         )
                     })}
                 </div>
@@ -157,44 +131,35 @@ export default function NavigationTopBar({
 }) {
     const headerStyle = buildHeaderStyle(accentColor)
     const dashboardItem = standaloneItems.find((i) => i.id === 'Dashboard')
+    const headerHeight = isTablet ? 'h-14' : 'h-[68px]'
+    const headerPadding = isTablet ? 'px-3' : 'px-6'
     return (
-        <div className="flex flex-col h-screen overflow-hidden w-full">
+        <div className="flex h-screen w-full flex-col overflow-hidden">
             <header
-                style={{
-                    ...headerStyle,
-                    alignItems: 'center',
-                    borderBottom: '1px solid rgba(255,255,255,0.08)',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                    display: 'flex',
-                    flexShrink: 0,
-                    height: isTablet ? '56px' : '68px',
-                    justifyContent: 'space-between',
-                    padding: isTablet ? '0 12px' : '0 24px',
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 100
-                }}
+                style={headerStyle}
+                className={`sticky top-0 z-[100] flex flex-shrink-0 items-center justify-between border-b border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.12)] ${headerHeight} ${headerPadding}`}
             >
-                <div className="items-center flex flex-1 min-w-0" style={{ gap: isTablet ? '10px' : '28px' }}>
+                <div className={`flex flex-1 items-center min-w-0 ${isTablet ? 'gap-2.5' : 'gap-7'}`}>
                     <div
-                        className="group items-center border-r border-[rgba(255,255,255,0.1)] cursor-pointer flex"
-                        style={{ flexShrink: 0, paddingRight: isTablet ? '10px' : '24px' }}
+                        className={`group flex flex-shrink-0 items-center cursor-pointer border-r border-white/10 ${isTablet ? 'pr-2.5' : 'pr-6'}`}
                     >
                         <img
                             src={SrmLogo}
                             alt="Smyrna Ready Mix"
-                            className="transition-all duration-300 ease-out group-hover:brightness-125 group-hover:drop-shadow-[0_0_6px_rgba(255,255,255,0.3)] group-hover:scale-105"
-                            style={{ height: isTablet ? '28px' : '40px' }}
+                            className={`transition-[transform,filter] duration-300 ease-out motion-reduce:transition-none group-hover:brightness-125 group-hover:scale-105 group-hover:drop-shadow-[0_0_6px_rgba(255,255,255,0.3)] ${isTablet ? 'h-7' : 'h-10'}`}
                             draggable={false}
                         />
                     </div>
-                    <nav className="items-center flex flex-1 min-w-0" style={{ gap: isTablet ? '2px' : '6px' }}>
+                    <nav
+                        aria-label="Primary"
+                        className={`flex flex-1 items-center min-w-0 ${isTablet ? 'gap-0.5' : 'gap-1.5'}`}
+                    >
                         {visibleMenuItems.length === 0 && (
                             <div className="flex items-center gap-2">
                                 {NAV_SKELETON_WIDTHS.map((w, i) => (
                                     <div
                                         key={i}
-                                        className="bg-white/10 animate-pulse rounded-lg h-8"
+                                        className="h-8 animate-pulse rounded-lg bg-white/10 motion-reduce:animate-none"
                                         style={{
                                             animationDelay: `${i * 80}ms`,
                                             animationFillMode: 'both',
@@ -205,18 +170,21 @@ export default function NavigationTopBar({
                             </div>
                         )}
                         {dashboardItem && (
-                            <div
+                            <button
+                                type="button"
                                 ref={registerMagnetic}
-                                style={navItemStyle(selectedView === 'Dashboard', isTablet)}
+                                className={navItemClasses(selectedView === 'Dashboard', isTablet)}
                                 onClick={() => onMenuClick('Dashboard')}
                                 title="Dashboard"
+                                aria-label="Dashboard"
+                                aria-current={selectedView === 'Dashboard' ? 'page' : undefined}
                             >
                                 <i
-                                    className={`fas ${ICONS.Dashboard}`}
-                                    style={{ fontSize: isTablet ? '13px' : '14px' }}
-                                ></i>
+                                    className={`fas ${ICONS.Dashboard} ${isTablet ? 'text-[13px]' : 'text-sm'}`}
+                                    aria-hidden="true"
+                                />
                                 {!isTablet && <span>Dashboard</span>}
-                            </div>
+                            </button>
                         )}
                         {DROPDOWN_CONFIGS.map((cfg) =>
                             groupFlags[cfg.activeKey] ? (
@@ -241,31 +209,26 @@ export default function NavigationTopBar({
                         {standaloneItems
                             .filter((i) => i.id !== 'Dashboard')
                             .map((item) => (
-                                <div
+                                <button
+                                    type="button"
                                     key={item.id}
                                     ref={registerMagnetic}
-                                    style={navItemStyle(selectedView === item.id, isTablet)}
+                                    className={navItemClasses(selectedView === item.id, isTablet)}
                                     onClick={() => onMenuClick(item.id)}
                                     title={item.text}
-                                    onMouseEnter={(e) => {
-                                        if (selectedView !== item.id)
-                                            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (selectedView !== item.id)
-                                            e.currentTarget.style.backgroundColor = 'transparent'
-                                    }}
+                                    aria-label={item.text}
+                                    aria-current={selectedView === item.id ? 'page' : undefined}
                                 >
                                     <i
-                                        className={`fas ${ICONS[item.id]}`}
-                                        style={{ fontSize: isTablet ? '13px' : '14px' }}
-                                    ></i>
+                                        className={`fas ${ICONS[item.id]} ${isTablet ? 'text-[13px]' : 'text-sm'}`}
+                                        aria-hidden="true"
+                                    />
                                     {!isTablet && <span>{item.text}</span>}
-                                </div>
+                                </button>
                             ))}
                     </nav>
                 </div>
-                <div className="items-center flex" style={{ flexShrink: 0, gap: isTablet ? '8px' : '16px' }}>
+                <div className={`flex flex-shrink-0 items-center ${isTablet ? 'gap-2' : 'gap-4'}`}>
                     <TopBarRegionSelect
                         regionCode={regionCode}
                         permittedRegions={permittedRegions}
@@ -298,7 +261,7 @@ export default function NavigationTopBar({
                     />
                 </div>
             </header>
-            <main className="flex-1 overflow-x-hidden overflow-y-auto relative" data-content-scroll>
+            <main className="relative flex-1 overflow-x-hidden overflow-y-auto" data-content-scroll>
                 {children}
             </main>
         </div>

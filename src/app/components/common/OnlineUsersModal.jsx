@@ -44,6 +44,15 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
         return () => UserPresenceService.removeOnlineUsersListener(handleUpdate)
     }, [isOpen])
 
+    useEffect(() => {
+        if (!isOpen) return
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') onClose()
+        }
+        document.addEventListener('keydown', handleEscape)
+        return () => document.removeEventListener('keydown', handleEscape)
+    }, [isOpen, onClose])
+
     const onlineUserIds = useMemo(() => onlineUsers.map((u) => u.id), [onlineUsers])
     const accentByUserId = useUserAccents(onlineUserIds)
 
@@ -64,57 +73,57 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
     const modal = (
         <div className="fixed inset-0 z-[999]" onClick={onClose}>
             <div
-                style={{
-                    ...modalStyle,
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-light)',
-                    borderRadius: 6
-                }}
-                className="flex max-h-[70vh] w-80 flex-col overflow-hidden"
+                role="dialog"
+                aria-modal="false"
+                aria-label="Online users"
+                style={modalStyle}
+                className="flex max-h-[70vh] w-80 flex-col overflow-hidden rounded border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex shrink-0 items-center justify-between px-3 py-2 border-b border-border-light">
+                <div className="flex shrink-0 items-center justify-between border-b border-border-light px-3 py-2">
                     <div className="flex items-center gap-2">
                         <div className="flex h-6 w-6 items-center justify-center rounded bg-bg-tertiary text-text-secondary">
-                            <i className="fas fa-users text-[11px]" />
+                            <i className="fas fa-users text-[11px]" aria-hidden="true" />
                         </div>
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
                             Online Users
                         </span>
                         {!isLoading && (
-                            <span className="font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-bg-tertiary text-text-secondary">
+                            <span className="rounded bg-bg-tertiary px-1.5 py-0.5 font-mono text-[9.5px] font-bold uppercase tracking-wider tabular-nums text-text-secondary">
                                 {onlineUsers.length}
                             </span>
                         )}
                     </div>
                     <button
-                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary text-text-secondary"
+                        type="button"
+                        className="flex h-6 w-6 items-center justify-center rounded text-text-secondary cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                         onClick={onClose}
-                        aria-label="Close"
+                        aria-label="Close online users"
                     >
-                        <i className="fas fa-times text-[11px]" />
+                        <i className="fas fa-times text-[11px]" aria-hidden="true" />
                     </button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                     {isLoading && onlineUsers.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-10 text-text-tertiary">
-                            <i className="fas fa-spinner fa-spin mb-2 text-xl" />
+                            <i className="fas fa-spinner fa-spin mb-2 text-xl" aria-hidden="true" />
                             <span className="text-[12px]">Loading users…</span>
                         </div>
                     ) : onlineUsers.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-10 text-text-tertiary">
-                            <i className="fas fa-user-slash mb-2 text-2xl" />
+                            <i className="fas fa-user-slash mb-2 text-2xl" aria-hidden="true" />
                             <span className="text-[12px] font-semibold text-text-primary">No users online</span>
                         </div>
                     ) : (
-                        <div>
+                        <div role="list">
                             {onlineUsers.map((user) => {
                                 const roleColor =
                                     (user.roles?.[0] && roleColorMap[user.roles[0].toLowerCase()]) ?? '#64748b'
                                 return (
                                     <div
                                         key={user.id}
-                                        className="px-3 py-2 transition-colors hover:bg-bg-tertiary border-b border-border-light"
+                                        role="listitem"
+                                        className="border-b border-border-light px-3 py-2 transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover"
                                     >
                                         <div className="flex items-start gap-2.5">
                                             <UserAvatar
@@ -124,8 +133,8 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                                                 rounded="md"
                                             >
                                                 <span
-                                                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-600"
-                                                    style={{ border: '2px solid var(--bg-primary)' }}
+                                                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-600 border-2 border-bg-primary motion-reduce:animate-none"
+                                                    aria-hidden="true"
                                                 />
                                             </UserAvatar>
                                             <div className="min-w-0 flex-1">
@@ -158,6 +167,7 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                                                             <i
                                                                 key={d}
                                                                 className={`fas fa-${d === 'mobile' ? 'mobile-alt' : 'desktop'} text-[9px]`}
+                                                                aria-hidden="true"
                                                             />
                                                         ))}
                                                     </span>
