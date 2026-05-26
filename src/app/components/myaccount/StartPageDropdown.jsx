@@ -42,6 +42,8 @@ export default function StartPageDropdown({ accentColor, onChange, value }) {
             </button>
             {open && (
                 <div
+                    role="listbox"
+                    aria-label="Start page"
                     className="absolute left-0 right-0 z-50 mt-1.5 max-h-72 overflow-y-auto rounded-lg py-1.5 bg-bg-primary border border-border-light"
                     style={{ boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.18))' }}
                 >
@@ -51,11 +53,13 @@ export default function StartPageDropdown({ accentColor, onChange, value }) {
                             <button
                                 key={id}
                                 type="button"
+                                role="option"
+                                aria-selected={isActive}
                                 onClick={() => {
                                     onChange(id)
                                     setOpen(false)
                                 }}
-                                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-primary active:scale-[0.97]"
+                                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-primary active:scale-[0.97] focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
                                 style={{
                                     background: isActive ? `${accentColor}14` : 'transparent',
                                     fontWeight: isActive ? 600 : 500

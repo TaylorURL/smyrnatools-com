@@ -250,13 +250,15 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                         return (
                                             <span
                                                 key={code}
-                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-lg text-xs font-medium text-blue-700"
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border border-[color:color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--accent)_10%,transparent)] text-[var(--accent)]"
                                             >
                                                 <span className="font-bold">{code}</span>
-                                                {p?.plant_name && <span className="text-blue-500">{p.plant_name}</span>}
+                                                {p?.plant_name && (
+                                                    <span className="opacity-80">{p.plant_name}</span>
+                                                )}
                                                 <button
                                                     type="button"
-                                                    className="ml-0.5 text-blue-400 hover:text-blue-600 cursor-pointer bg-transparent border-none text-sm leading-none active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                                    className="ml-0.5 cursor-pointer bg-transparent border-none text-sm leading-none opacity-70 hover:opacity-100 active:scale-[0.97] transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded"
                                                     onClick={() => removeChip(code)}
                                                     aria-label={`Remove ${code}`}
                                                 >
@@ -267,7 +269,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                     })}
                                     <button
                                         type="button"
-                                        className="inline-flex items-center px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-500 cursor-pointer hover:bg-slate-200 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                        className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer border border-border-light bg-bg-secondary text-text-secondary hover:bg-bg-tertiary hover:text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                         onClick={clearAllSelected}
                                     >
                                         Clear All
@@ -312,26 +314,29 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                 </button>
                             </div>
                             <div
-                                className="border border-slate-200 rounded-[10px] max-h-[280px] overflow-y-auto"
+                                className="border border-border-light rounded-[10px] max-h-[280px] overflow-y-auto bg-bg-primary"
                                 role="listbox"
                                 aria-label="All plants"
+                                aria-multiselectable="true"
                             >
                                 {filteredPlants.map((p) => {
                                     const isSelected = plantCodes.includes(p.plant_code)
                                     return (
                                         <label
                                             key={p.plant_code}
-                                            className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-100 ${isSelected ? 'bg-blue-50/50' : ''}`}
+                                            role="option"
+                                            aria-selected={isSelected}
+                                            className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors duration-150 border-b border-border-light hover:bg-bg-tertiary ${isSelected ? 'bg-[color:color-mix(in_srgb,var(--accent)_10%,transparent)]' : ''}`}
                                         >
                                             <input
                                                 type="checkbox"
                                                 checked={isSelected}
                                                 onChange={() => togglePlant(p.plant_code)}
-                                                className="size-4 rounded border-slate-300"
+                                                className="size-4 rounded border-border-medium"
                                                 aria-label={`Toggle ${p.plant_code}`}
                                             />
-                                            <span className="font-bold text-sm text-slate-700">{p.plant_code}</span>
-                                            <span className="text-sm text-slate-500">{p.plant_name}</span>
+                                            <span className="font-bold text-sm text-text-primary">{p.plant_code}</span>
+                                            <span className="text-sm text-text-secondary">{p.plant_name}</span>
                                         </label>
                                     )
                                 })}
@@ -411,17 +416,17 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                                 return (
                                                                     <span
                                                                         key={code}
-                                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-lg text-xs font-medium text-blue-700"
+                                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border border-[color:color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--accent)_10%,transparent)] text-[var(--accent)]"
                                                                     >
                                                                         <span className="font-bold">{code}</span>
                                                                         {p?.plant_name && (
-                                                                            <span className="text-blue-500">
+                                                                            <span className="opacity-80">
                                                                                 {p.plant_name}
                                                                             </span>
                                                                         )}
                                                                         <button
                                                                             type="button"
-                                                                            className="ml-0.5 text-blue-400 hover:text-blue-600 cursor-pointer bg-transparent border-none text-sm leading-none active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                                                            className="ml-0.5 cursor-pointer bg-transparent border-none text-sm leading-none opacity-70 hover:opacity-100 active:scale-[0.97] transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded"
                                                                             onClick={() =>
                                                                                 removeDistrictFromPlant(
                                                                                     code,

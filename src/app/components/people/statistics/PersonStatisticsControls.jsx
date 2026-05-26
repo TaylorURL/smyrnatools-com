@@ -19,6 +19,7 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
                 }}
                 aria-haspopup="listbox"
                 aria-expanded={open}
+                aria-label="Filter every chart and table to a single plant"
                 type="button"
             >
                 <i className="fas fa-industry text-[11px]" aria-hidden="true" />

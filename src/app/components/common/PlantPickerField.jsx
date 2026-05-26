@@ -21,14 +21,21 @@ function PlantPickerField({
 }) {
     return (
         <>
-            <div className="flex flex-col gap-1">
-                <label htmlFor={htmlFor}>{label}</label>
+            <div className="flex flex-col gap-1.5">
+                <label htmlFor={htmlFor} className="text-sm font-medium text-text-secondary">
+                    {label}
+                </label>
                 <button
                     type="button"
+                    id={htmlFor}
                     onClick={openPicker}
+                    aria-haspopup="dialog"
+                    aria-expanded={!!isPlantModalOpen}
                     aria-label={`Select ${label.replace('*', '').toLowerCase()}`}
+                    className="flex w-full items-center justify-between gap-2 rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-left text-sm text-text-primary outline-none transition-colors duration-150 hover:border-border-medium hover:bg-bg-tertiary focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 active:scale-[0.99] motion-reduce:active:scale-100"
                 >
-                    {plantDisplayText}
+                    <span className="truncate">{plantDisplayText}</span>
+                    <i className="fas fa-chevron-down text-[10px] text-text-tertiary" aria-hidden="true" />
                 </button>
             </div>
             {isPlantModalOpen && (

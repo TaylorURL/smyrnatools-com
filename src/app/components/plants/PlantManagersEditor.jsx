@@ -157,6 +157,8 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
         if (!pickerOpen || usersLoading || !dropdownStyle || typeof document === 'undefined') return null
         return createPortal(
             <div
+                role="listbox"
+                aria-label="Manager candidates"
                 className="fixed z-[1100] overflow-y-auto rounded-xl border border-border-light bg-bg-primary shadow-lg"
                 style={dropdownStyle}
             >
@@ -167,11 +169,13 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
                         <button
                             key={user.id}
                             type="button"
+                            role="option"
+                            aria-selected={false}
                             onMouseDown={(event) => {
                                 event.preventDefault()
                                 attachManager(user.id)
                             }}
-                            className="block w-full border-b border-border-light px-4 py-2.5 text-left text-sm last:border-b-0 hover:bg-bg-hover active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                            className="block w-full border-b border-border-light px-4 py-2.5 text-left text-sm last:border-b-0 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:bg-bg-hover focus-visible:ring-2 focus-visible:ring-accent/40 active:scale-[0.97]"
                         >
                             <div className="font-semibold text-text-primary">{formatUserLabel(user)}</div>
                             {user.email && (
@@ -227,6 +231,11 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
                 <input
                     ref={inputRef}
                     type="text"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded={pickerOpen && !usersLoading}
+                    aria-haspopup="listbox"
+                    aria-label="Search by name or email to attach a manager"
                     value={pickerQuery}
                     onChange={(event) => {
                         setPickerQuery(event.target.value)
@@ -236,7 +245,7 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
                     onBlur={() => setTimeout(() => setPickerOpen(false), 150)}
                     placeholder={usersLoading ? 'Loading users…' : 'Search by name or email to attach a manager…'}
                     disabled={usersLoading || disabled}
-                    className="w-full rounded-xl border border-border-light bg-bg-primary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent disabled:opacity-60"
+                    className="w-full rounded-xl border border-border-light bg-bg-primary px-4 py-3 text-sm text-text-primary outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
                 {renderDropdown()}
             </div>

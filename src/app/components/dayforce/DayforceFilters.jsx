@@ -93,7 +93,7 @@ function SearchPill({ accentColor, onChange, value }) {
             <i className="fas fa-magnifying-glass text-[11px]" aria-hidden="true" />
             <input
                 aria-label="Search operators"
-                className="bg-transparent border-none outline-none flex-1 min-w-0 text-text-primary placeholder:text-text-tertiary"
+                className="bg-transparent border-none outline-none flex-1 min-w-0 text-text-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="Search…"
                 type="search"
