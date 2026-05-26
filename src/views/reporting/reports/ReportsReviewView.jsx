@@ -1,8 +1,6 @@
-/* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useRef, useState } from 'react'
 
 import { OPERATOR_EXCLUSION_REASONS } from '../../../app/constants/reportConstants'
-import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useReviewData } from '../../../app/hooks/useReviewData'
 import { exportGeneralManagerReport } from '../../../utils/ExportUtility'
 import { DistrictManagerReviewPlugin } from './types/WeeklyDistrictManagerReport'
@@ -12,7 +10,6 @@ import { QualityControlManagerReviewPlugin } from './types/WeeklyQualityControlM
 import { ReadyMixInstructorReviewPlugin } from './types/WeeklyReadyMixInstructorReport'
 import { SafetyManagerReviewPlugin } from './types/WeeklySafetyManagerReport'
 
-/** Maps report type keys to their review-mode plugin components. */
 const PLUGINS = {
     district_manager: DistrictManagerReviewPlugin,
     general_manager: GeneralManagerReviewPlugin,
@@ -22,6 +19,7 @@ const PLUGINS = {
     safety_environmental_rep: SafetyManagerReviewPlugin,
     safety_manager: SafetyManagerReviewPlugin
 }
+
 const PLUGIN_ONLY_REPORTS = [
     'plant_production',
     'general_manager',
@@ -30,26 +28,40 @@ const PLUGIN_ONLY_REPORTS = [
     'quality_control_manager',
     'ready_mix_instructor'
 ]
+
+const FOCUS_RING =
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary'
+
+const REVIEW_SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider text-text-tertiary'
+const REVIEW_FIELD_CLASS =
+    'w-full rounded-md border border-border-light bg-bg-secondary px-2.5 py-1.5 text-[12.5px] text-text-primary outline-none box-border opacity-90 [color-scheme:light] dark:[color-scheme:dark]'
+
 const getFieldIcon = (fieldName) => {
     const iconMap = { total_hours: 'fa-clock' }
     return iconMap[fieldName] || 'fa-recycle'
 }
-const getFieldLabel = (field) => field.label
+
 const StatusBadge = ({ isSubmitted }) => (
     <div
-        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold ${isSubmitted ? 'bg-green-100 text-text-primary' : 'bg-amber-100 text-text-primary'}`}
+        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-semibold ${
+            isSubmitted
+                ? 'bg-status-active/15 text-status-active border border-status-active/30'
+                : 'bg-status-warning/15 text-status-warning border border-status-warning/30'
+        }`}
     >
-        <i className={`fas ${isSubmitted ? 'fa-check-circle' : 'fa-save'}`}></i>
+        <i className={`fas ${isSubmitted ? 'fa-check-circle' : 'fa-save'}`} aria-hidden="true" />
         <span className="hidden xs:inline">{isSubmitted ? 'Submitted' : 'Draft'}</span>
     </div>
 )
+
 const MetaItem = ({ icon, label, value }) => (
-    <div className="flex items-center gap-2 text-sm text-slate-500">
-        <i className={`${icon} text-slate-400`}></i>
+    <div className="flex items-center gap-2 text-sm text-text-secondary">
+        <i className={`${icon} text-text-tertiary`} aria-hidden="true" />
         <span>{label}</span>
-        <strong className="text-slate-800 font-semibold">{value}</strong>
+        <strong className="font-semibold text-text-primary">{value}</strong>
     </div>
 )
+
 /**
  * Read-only review view for a submitted report. Delegates rendering to a
  * type-specific review plugin (e.g. GeneralManagerReviewPlugin). Shows
@@ -86,8 +98,6 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         weekIso,
         weekVerbose
     } = useReviewData({ completedByUser, initialData, report, user })
-    const { preferences } = usePreferences()
-    const accentColor = preferences.accentColor || '#1e3a5f'
     const [summaryTab, setSummaryTab] = useState('summary')
     const [exporting, setExporting] = useState(false)
     const [exportError, setExportError] = useState('')
@@ -103,28 +113,15 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         }
         setExporting(false)
     }
-    /* Plan-tab compact form chrome — same tokens used by the redesigned
-     * Plant / District manager report bodies and the submit view. `color-scheme`
-     * lines up the native date / time popups with the active theme even on
-     * read-only previews. */
-    const REVIEW_SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
-    const REVIEW_FIELD_CLASS =
-        'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border opacity-90 [color-scheme:light] dark:[color-scheme:dark]'
-    const REVIEW_FIELD_STYLE = {
-        background: 'var(--bg-secondary)',
-        border: '1px solid var(--border-light)',
-        color: 'var(--text-primary)'
-    }
+
     const renderPlantManagerForm = () => (
-        <div className="rounded p-3 mb-2.5 bg-bg-primary border border-border-light">
+        <div className="rounded-card p-3 mb-2.5 bg-bg-primary border border-border-light">
             <div className="flex items-center gap-2 mb-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-secondary">
-                    <i className="fas fa-clipboard-list text-[11px]" />
+                    <i className="fas fa-clipboard-list text-[11px]" aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
-                    <div className={REVIEW_SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
-                        Production
-                    </div>
+                    <div className={REVIEW_SECTION_LABEL_CLASS}>Production</div>
                     <div className="text-[12.5px] font-semibold leading-tight text-text-primary">
                         Weekly Production Data
                     </div>
@@ -139,14 +136,14 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                     .map((field) => (
                         <div
                             key={field.name}
-                            className="flex flex-col gap-1.5 rounded p-2.5 bg-bg-secondary border border-border-light"
+                            className="flex flex-col gap-1.5 rounded-md p-2.5 bg-bg-secondary border border-border-light"
                         >
-                            <label className="flex items-center gap-1.5 text-text-tertiary">
+                            <label className="flex items-center gap-1.5">
                                 <i
-                                    className={`fas ${getFieldIcon(field.name)} text-[10px]`}
-                                    style={{ color: accentColor }}
+                                    className={`fas ${getFieldIcon(field.name)} text-[10px] text-accent`}
+                                    aria-hidden="true"
                                 />
-                                <span className={REVIEW_SECTION_LABEL_CLASS}>{getFieldLabel(field)}</span>
+                                <span className={REVIEW_SECTION_LABEL_CLASS}>{field.label}</span>
                             </label>
                             <input
                                 type={field.type}
@@ -154,15 +151,15 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                 readOnly
                                 disabled
                                 className={REVIEW_FIELD_CLASS}
-                                style={REVIEW_FIELD_STYLE}
                             />
                         </div>
                     ))}
             </div>
         </div>
     )
+
     const renderDefaultForm = () => (
-        <div className="rounded p-3 mb-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 bg-bg-primary border border-border-light">
+        <div className="rounded-card p-3 mb-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 bg-bg-primary border border-border-light">
             {report.fields
                 .filter(
                     (f) =>
@@ -173,11 +170,11 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 .map((field) => (
                     <div
                         key={field.name}
-                        className="flex flex-col gap-1.5 rounded p-2.5 bg-bg-secondary border border-border-light"
+                        className="flex flex-col gap-1.5 rounded-md p-2.5 bg-bg-secondary border border-border-light"
                     >
-                        <label className={REVIEW_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
-                            {getFieldLabel(field)}
-                            {field.required && <span className="ml-0.5 text-text-primary">*</span>}
+                        <label className={REVIEW_SECTION_LABEL_CLASS}>
+                            {field.label}
+                            {field.required && <span className="ml-0.5 text-status-danger">*</span>}
                         </label>
                         {field.type === 'textarea' ||
                         (typeof form[field.name] === 'string' && form[field.name].length > 80) ? (
@@ -187,7 +184,6 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                 disabled
                                 rows={4}
                                 className={`${REVIEW_FIELD_CLASS} resize-y min-h-[88px]`}
-                                style={REVIEW_FIELD_STYLE}
                             />
                         ) : field.type === 'select' ? (
                             <select
@@ -195,7 +191,6 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                 readOnly
                                 disabled
                                 className={`${REVIEW_FIELD_CLASS} appearance-none cursor-not-allowed pr-8`}
-                                style={REVIEW_FIELD_STYLE}
                             >
                                 <option value="">Select...</option>
                                 {field.options?.map((opt) => (
@@ -211,33 +206,36 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                 readOnly
                                 disabled
                                 className={REVIEW_FIELD_CLASS}
-                                style={REVIEW_FIELD_STYLE}
                             />
                         )}
                     </div>
                 ))}
         </div>
     )
+
     const renderAggregateTable = () => (
-        <div className="bg-bg-primary rounded-lg border border-border-light overflow-hidden mb-6">
+        <div className="bg-bg-primary rounded-card border border-border-light overflow-hidden mb-6">
             <table className="w-full border-collapse">
                 <thead>
                     <tr>
-                        <th className="bg-slate-50 px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide border-b border-border-light">
+                        <th className="bg-bg-secondary px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-tertiary border-b border-border-light">
                             Material
                         </th>
-                        <th className="bg-slate-50 px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide border-b border-border-light">
+                        <th className="bg-bg-secondary px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-tertiary border-b border-border-light">
                             Amount
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     {report.fields.map((field) => (
-                        <tr key={field.name} className="hover:bg-slate-50">
-                            <td className="px-4 py-3 text-sm text-slate-800 border-b border-border-light">
+                        <tr
+                            key={field.name}
+                            className="transition-colors duration-150 hover:bg-bg-hover"
+                        >
+                            <td className="px-4 py-3 text-sm text-text-primary border-b border-border-light">
                                 {field.label}
                             </td>
-                            <td className="px-4 py-3 text-sm text-slate-800 border-b border-border-light">
+                            <td className="px-4 py-3 text-sm text-text-primary border-b border-border-light tabular-nums">
                                 {form[field.name] || 0}
                             </td>
                         </tr>
@@ -246,21 +244,24 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
             </table>
         </div>
     )
+
     return (
-        <div ref={containerRef} className="bg-slate-50 min-h-screen w-full">
+        <div ref={containerRef} className="bg-bg-secondary min-h-screen w-full">
             <div className="flex items-center justify-between flex-wrap gap-4 bg-bg-primary border-b border-border-light px-6 py-4 sticky top-0 z-40">
                 <div className="flex items-center gap-4">
                     <button
-                        className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                        className={`w-10 h-10 flex items-center justify-center bg-bg-secondary text-text-secondary rounded-md hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 active:scale-[0.98] ${FOCUS_RING}`}
                         onClick={onBack}
                         type="button"
                         aria-label="Back"
                     >
-                        <i className="fas fa-arrow-left"></i>
+                        <i className="fas fa-arrow-left" aria-hidden="true" />
                     </button>
                     <div>
-                        <h1 className="text-xl font-bold text-slate-800 m-0">{report.title || 'Report Review'}</h1>
-                        <p className="text-sm text-slate-500 m-0">{weekVerbose}</p>
+                        <h1 className="font-heading text-xl font-semibold tracking-tight text-text-primary m-0">
+                            {report.title || 'Report Review'}
+                        </h1>
+                        <p className="text-sm text-text-secondary m-0">{weekVerbose}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -268,27 +269,27 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                     {report.name === 'general_manager' && (
                         <button
                             type="button"
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 transition-colors"
+                            className={`inline-flex items-center gap-2 px-4 py-2 bg-status-active text-white rounded-md text-sm font-semibold transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${FOCUS_RING}`}
                             disabled={exporting}
                             onClick={handleExport}
                         >
-                            <i className="fas fa-file-export"></i>
+                            <i className="fas fa-file-export" aria-hidden="true" />
                             {exporting ? 'Exporting...' : 'Export'}
                         </button>
                     )}
                     {hasManagerEditPermission && showManagerEditButton && (
                         <button
                             type="button"
-                            className="flex items-center gap-2 px-4 py-2 text-white rounded-lg text-sm font-semibold transition-colors"
-                            style={{ background: accentColor }}
+                            className={`inline-flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-md text-sm font-semibold transition-all duration-150 hover:bg-accent-hover active:scale-[0.98] ${FOCUS_RING}`}
                             onClick={() => onManagerEdit(report, initialData)}
                         >
-                            <i className="fas fa-edit"></i>Manager Edit
+                            <i className="fas fa-edit" aria-hidden="true" />
+                            Manager Edit
                         </button>
                     )}
                 </div>
             </div>
-            <div className="flex items-center flex-wrap gap-6 bg-slate-50 border-b border-border-light px-6 py-4">
+            <div className="flex items-center flex-wrap gap-6 bg-bg-secondary border-b border-border-light px-6 py-4">
                 {reportDateVerbose && (
                     <MetaItem icon="far fa-calendar-check" label="Report Date:" value={reportDateVerbose} />
                 )}
@@ -299,20 +300,29 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 )}
             </div>
             {exportError && (
-                <div className="bg-red-100 text-text-primary p-4 mx-6 my-4 rounded-lg text-sm font-medium">
-                    {exportError}
+                <div
+                    className="flex items-center gap-2 rounded-card border border-status-danger/30 bg-status-danger/10 p-4 mx-6 my-4 text-sm font-medium text-text-primary animate-fade-slide-in"
+                    role="alert"
+                >
+                    <i className="fas fa-exclamation-circle text-status-danger" aria-hidden="true" />
+                    <span>{exportError}</span>
                 </div>
             )}
             {isPlantShutdown && (
-                <div className="mx-6 mt-4 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-5">
+                <div className="mx-6 mt-4 rounded-card border border-status-warning/30 bg-status-warning/10 p-5">
                     <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-amber-200/60 flex items-center justify-center flex-shrink-0">
+                        <div className="w-10 h-10 rounded-md bg-status-warning/20 flex items-center justify-center flex-shrink-0">
                             <i
-                                className={`fas ${operatorExclusionReason === 'operators_sent_to_other_location' ? 'fa-truck-loading' : 'fa-industry'} text-text-primary text-sm`}
-                            ></i>
+                                className={`fas ${
+                                    operatorExclusionReason === 'operators_sent_to_other_location'
+                                        ? 'fa-truck-loading'
+                                        : 'fa-industry'
+                                } text-status-warning text-sm`}
+                                aria-hidden="true"
+                            />
                         </div>
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
                                 All Operators Excluded
                             </span>
                             <span className="text-sm font-semibold text-text-primary">

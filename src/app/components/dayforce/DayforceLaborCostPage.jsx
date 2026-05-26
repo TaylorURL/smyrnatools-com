@@ -25,11 +25,13 @@ const USD_CENTS = new Intl.NumberFormat('en-US', { currency: 'USD', maximumFract
 const fmtMoney = (n) => USD.format(Number(n) || 0)
 const fmtHours = (n) => `${fmtFloat(n, 1)}h`
 
+const SKELETON_HEIGHTS = ['h-[120px]', 'h-[56px]', 'h-[320px]', 'h-[220px]']
+
 function LoadingSkeleton() {
     return (
         <div className="flex flex-col gap-4 animate-pulse">
-            {[120, 56, 320, 220].map((h, i) => (
-                <div key={i} className="rounded bg-bg-secondary border border-border-light" style={{ height: h }} />
+            {SKELETON_HEIGHTS.map((h, i) => (
+                <div key={i} className={`rounded-card bg-bg-secondary border border-border-light ${h}`} />
             ))}
         </div>
     )
@@ -98,8 +100,8 @@ export function DayforceLaborCostPage({ accentColor, dateRange, plantCodes, sele
             <Panel title="Couldn't load Dayforce data" innerClassName="p-3">
                 <div className="flex items-start gap-3 text-[12.5px]">
                     <i
-                        className="fas fa-circle-exclamation text-[14px] mt-0.5"
-                        style={{ color: 'var(--text-primary)' }}
+                        className="fas fa-circle-exclamation text-[14px] mt-0.5 text-status-danger"
+                        aria-hidden="true"
                     />
                     <div className="flex flex-col gap-1 min-w-0">
                         <span className="font-semibold text-text-primary">Query error</span>
@@ -228,8 +230,11 @@ export function DayforceLaborCostPage({ accentColor, dateRange, plantCodes, sele
                                             {row.code}
                                         </span>
                                         <span className="flex-1 min-w-0 truncate text-text-secondary">{row.name}</span>
-                                        <div className="h-4 rounded-sm overflow-hidden relative shrink-0 bg-bg-tertiary w-28">
-                                            <div className="h-full" style={{ background: accent, width: `${pct}%` }} />
+                                        <div className="h-4 w-28 shrink-0 relative overflow-hidden rounded bg-bg-tertiary">
+                                            <div
+                                                className="h-full bg-accent transition-[width] duration-500 ease-out"
+                                                style={{ width: `${pct}%` }}
+                                            />
                                         </div>
                                         <span className="font-mono tabular-nums font-semibold w-24 text-right shrink-0 text-text-primary">
                                             {fmtMoney(row.cost)}
@@ -261,8 +266,11 @@ export function DayforceLaborCostPage({ accentColor, dateRange, plantCodes, sele
                                         <span className="font-mono tabular-nums w-20 shrink-0 text-text-primary">
                                             {row.week}
                                         </span>
-                                        <div className="h-4 rounded-sm overflow-hidden relative shrink-0 bg-bg-tertiary flex-1">
-                                            <div className="h-full" style={{ background: accent, width: `${pct}%` }} />
+                                        <div className="h-4 flex-1 shrink-0 relative overflow-hidden rounded bg-bg-tertiary">
+                                            <div
+                                                className="h-full bg-accent transition-[width] duration-500 ease-out"
+                                                style={{ width: `${pct}%` }}
+                                            />
                                         </div>
                                         <span className="font-mono tabular-nums font-semibold w-24 text-right shrink-0 text-text-primary">
                                             {fmtMoney(row.cost)}

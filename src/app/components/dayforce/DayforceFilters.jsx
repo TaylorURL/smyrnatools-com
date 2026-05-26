@@ -1,24 +1,22 @@
-/* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useRef, useState } from 'react'
 
 import { SORT_OPTIONS } from '../../hooks/useDayforceOperatorFilters'
 
+const FOCUS_RING =
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary'
+
 /**
  * Compact filter pill with a popover dropdown. Mirrors the visual
  * language used by PlantFilterMenu / ComparisonMenu in
- * PlanStatisticsControls — solid accent tint when an option other than
- * the default is active, neutral bg otherwise. No outer border/container.
+ * PlanStatisticsControls — accent-tinted active state, neutral bg otherwise.
  */
-function FilterPill({ accentColor, activeId, defaultId, icon, label, onSelect, options, title }) {
+function FilterPill({ activeId, defaultId, icon, label, onSelect, options, title }) {
     const [open, setOpen] = useState(false)
     const containerRef = useRef(null)
     const active = activeId !== defaultId
     const current = options.find((o) => o.id === activeId)
     const display = active ? `${label} · ${current?.label || activeId}` : label
 
-    // Click-outside to close — without it the popover hangs around when
-    // you tab to a different control. Matching the dispatch UI pattern
-    // (which uses the same plain DOM listener).
     useEffect(() => {
         if (!open) return
         function onDocClick(e) {
@@ -32,11 +30,11 @@ function FilterPill({ accentColor, activeId, defaultId, icon, label, onSelect, o
         <div className="relative" ref={containerRef}>
             <button
                 onClick={() => setOpen((s) => !s)}
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
-                style={{
-                    backgroundColor: active ? `${accentColor}20` : 'var(--bg-tertiary)',
-                    color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
-                }}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition-all duration-150 ease-out active:scale-[0.97] motion-reduce:transition-none ${FOCUS_RING} ${
+                    active
+                        ? 'bg-accent/15 text-text-primary border border-accent/30'
+                        : 'bg-bg-tertiary text-text-secondary hover:text-text-primary hover:bg-bg-hover border border-transparent'
+                }`}
                 title={title}
                 aria-haspopup="listbox"
                 aria-expanded={open}
@@ -48,7 +46,7 @@ function FilterPill({ accentColor, activeId, defaultId, icon, label, onSelect, o
             </button>
             {open && (
                 <div
-                    className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[180px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light"
+                    className="absolute right-0 top-full mt-1 min-w-[180px] max-h-[320px] z-10 overflow-y-auto overflow-hidden rounded-card border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in"
                     role="listbox"
                 >
                     {options.map((opt) => (
@@ -58,17 +56,17 @@ function FilterPill({ accentColor, activeId, defaultId, icon, label, onSelect, o
                                 onSelect(opt.id)
                                 setOpen(false)
                             }}
-                            className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:bg-bg-hover"
-                            style={{
-                                backgroundColor: activeId === opt.id ? `${accentColor}15` : 'transparent',
-                                color: 'var(--text-primary)'
-                            }}
+                            className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs font-semibold text-text-primary transition-colors duration-150 ease-out hover:bg-bg-hover motion-reduce:transition-none ${FOCUS_RING} focus-visible:bg-bg-hover ${
+                                activeId === opt.id ? 'bg-accent/10' : ''
+                            }`}
                             role="option"
                             aria-selected={activeId === opt.id}
                             type="button"
                         >
                             <span className="truncate">{opt.label}</span>
-                            {activeId === opt.id && <i className="fas fa-check text-[10px]" aria-hidden="true" />}
+                            {activeId === opt.id && (
+                                <i className="fas fa-check text-[10px] text-accent" aria-hidden="true" />
+                            )}
                         </button>
                     ))}
                 </div>
@@ -77,23 +75,21 @@ function FilterPill({ accentColor, activeId, defaultId, icon, label, onSelect, o
     )
 }
 
-/** Inline search input — matches the pill height + radius without
- *  fighting the same outer container. Grows on wider screens, stays
- *  compact on narrow. */
-function SearchPill({ accentColor, onChange, value }) {
+/** Inline search input — matches the pill height + radius. */
+function SearchPill({ onChange, value }) {
     const active = value.trim() !== ''
     return (
         <label
-            className="inline-flex items-center gap-1.5 rounded-lg cursor-text text-xs font-semibold px-3 py-2 flex-1 min-w-[160px] max-w-[260px] transition-colors duration-150 focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-1 focus-within:ring-offset-bg-primary"
-            style={{
-                backgroundColor: active ? `${accentColor}20` : 'var(--bg-tertiary)',
-                color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
-            }}
+            className={`inline-flex flex-1 min-w-[160px] max-w-[260px] cursor-text items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition-colors duration-150 focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-1 focus-within:ring-offset-bg-primary ${
+                active
+                    ? 'bg-accent/15 text-text-primary border border-accent/30'
+                    : 'bg-bg-tertiary text-text-secondary border border-transparent'
+            }`}
         >
             <i className="fas fa-magnifying-glass text-[11px]" aria-hidden="true" />
             <input
                 aria-label="Search operators"
-                className="bg-transparent border-none outline-none flex-1 min-w-0 text-text-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
+                className="min-w-0 flex-1 border-none bg-transparent text-text-primary outline-none placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="Search…"
                 type="search"
@@ -102,7 +98,7 @@ function SearchPill({ accentColor, onChange, value }) {
             {active && (
                 <button
                     aria-label="Clear search"
-                    className="border-none bg-transparent cursor-pointer text-[10px] text-text-primary rounded p-0.5 active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    className={`rounded p-0.5 text-[10px] text-text-secondary transition-all duration-150 ease-out hover:bg-bg-hover hover:text-text-primary active:scale-[0.97] motion-reduce:transition-none ${FOCUS_RING}`}
                     onClick={(e) => {
                         e.preventDefault()
                         onChange('')
@@ -120,13 +116,8 @@ function SearchPill({ accentColor, onChange, value }) {
  * Page-local filter bar for the Dayforce-sourced operator surfaces
  * (Hours, Labor Cost). Search + role/position + sort, plus a "X in view"
  * scope summary on the right.
- *
- * Visual rhythm matches PlanStatisticsControls — pill buttons + custom
- * popovers, no outer bordered container that boxes the row off from
- * the rest of the layout.
  */
 export function DayforceFilters({
-    accentColor,
     availablePositions,
     controls,
     excluded,
@@ -137,7 +128,6 @@ export function DayforceFilters({
     sortIds,
     visibleCount
 }) {
-    const accent = accentColor || '#1e3a5f'
     const positionOptions = [{ id: 'all', label: 'All roles' }, ...availablePositions.map((p) => ({ id: p, label: p }))]
     const sortOptions = sortIds.map((id) => ({ id, label: SORT_OPTIONS[id]?.label || id }))
     const isFiltered = controls.search.trim() !== '' || controls.position !== 'all'
@@ -145,10 +135,9 @@ export function DayforceFilters({
 
     return (
         <div className="flex items-center flex-wrap gap-2">
-            <SearchPill accentColor={accent} onChange={setSearch} value={controls.search} />
+            <SearchPill onChange={setSearch} value={controls.search} />
 
             <FilterPill
-                accentColor={accent}
                 activeId={controls.position}
                 defaultId="all"
                 icon="fa-user-tag"
@@ -159,7 +148,6 @@ export function DayforceFilters({
             />
 
             <FilterPill
-                accentColor={accent}
                 activeId={controls.sort}
                 defaultId={sortIds[0]}
                 icon="fa-arrow-down-wide-short"
@@ -171,25 +159,25 @@ export function DayforceFilters({
 
             {isFiltered && (
                 <button
-                    className="text-[11px] font-semibold border-none bg-transparent cursor-pointer px-2 py-1 text-text-tertiary hover:text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                    className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold text-text-tertiary transition-all duration-150 ease-out hover:bg-bg-hover hover:text-text-primary active:scale-[0.97] motion-reduce:transition-none ${FOCUS_RING}`}
                     onClick={onReset}
                     title="Clear all filters"
                     type="button"
                 >
-                    <i className="fas fa-rotate-left mr-1 text-[10px]" />
+                    <i className="fas fa-rotate-left text-[10px]" aria-hidden="true" />
                     Reset
                 </button>
             )}
 
             <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] text-text-tertiary">
                 <span>
-                    <span className="font-semibold text-text-primary">{visibleCount}</span> in view
+                    <span className="font-semibold text-text-primary tabular-nums">{visibleCount}</span> in view
                 </span>
                 {excludedTotal > 0 && (
                     <span
                         title={`Excluded: ${excluded.unmatched} not in operator roster, ${excluded.otherPosition} non-operator role (plant managers, office, etc.)`}
                     >
-                        · <span className="font-semibold">{excludedTotal}</span> excluded
+                        · <span className="font-semibold tabular-nums">{excludedTotal}</span> excluded
                     </span>
                 )}
             </span>

@@ -336,11 +336,14 @@ function ReportsView() {
     const onPickWeek = (iso) => iso && setActiveWeekIso(iso)
 
     return (
-        <div className="bg-slate-50 min-h-screen w-full pb-16">
+        <div className="bg-bg-secondary min-h-screen w-full pb-16">
             {loadError && (
-                <div className="flex items-center gap-2 m-3 sm:m-4 p-3 sm:p-4 bg-red-100 text-text-primary rounded-lg text-sm font-medium">
-                    <i className="fas fa-exclamation-circle" />
-                    {loadError}
+                <div
+                    className="m-3 flex items-center gap-2 rounded-card border border-status-danger/30 bg-status-danger/10 p-3 text-sm font-medium text-text-primary animate-fade-slide-in sm:m-4 sm:p-4"
+                    role="alert"
+                >
+                    <i className="fas fa-exclamation-circle text-status-danger" aria-hidden="true" />
+                    <span>{loadError}</span>
                 </div>
             )}
             <ReportsToolbar

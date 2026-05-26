@@ -71,8 +71,8 @@ export function DayforceSchedulesPage({ accentColor, dateRange, plantCodes, sele
             <Panel title="Couldn't load Dayforce data" innerClassName="p-3">
                 <div className="flex items-start gap-3 text-[12.5px]">
                     <i
-                        className="fas fa-circle-exclamation text-[14px] mt-0.5"
-                        style={{ color: 'var(--text-primary)' }}
+                        className="fas fa-circle-exclamation text-[14px] mt-0.5 text-status-danger"
+                        aria-hidden="true"
                     />
                     <div className="flex flex-col gap-1 min-w-0">
                         <span className="font-semibold text-text-primary">Query error</span>

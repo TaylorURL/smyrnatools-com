@@ -222,7 +222,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                         <div className="grid grid-cols-1 gap-4">
                             <div className="flex flex-col gap-2 min-w-0">
                                 <div className="flex items-center justify-between">
-                                    <label htmlFor="description" className="text-sm font-medium text-slate-700">
+                                    <label htmlFor="description" className="text-sm font-medium text-text-primary">
                                         Description*
                                     </label>
                                     <div className="flex items-center gap-2">
@@ -232,13 +232,13 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                                     type="button"
                                                     onClick={handleImproveDescription}
                                                     disabled={isImprovingDescription}
-                                                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-accent bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+                                                    className="inline-flex items-center gap-1.5 rounded-md border border-accent/20 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                                                     title="AI will improve and add context to your description"
                                                 >
                                                     {isImprovingDescription ? (
-                                                        <i className="fas fa-circle-notch fa-spin"></i>
+                                                        <i className="fas fa-circle-notch fa-spin" aria-hidden="true" />
                                                     ) : (
-                                                        <i className="fas fa-magic"></i>
+                                                        <i className="fas fa-magic" aria-hidden="true" />
                                                     )}
                                                     <span className="hidden sm:inline">Improve</span>
                                                 </button>
@@ -246,13 +246,13 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                                     type="button"
                                                     onClick={() => fetchSuggestions(description)}
                                                     disabled={isLoadingSuggestions}
-                                                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-accent bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+                                                    className="inline-flex items-center gap-1.5 rounded-md border border-accent/20 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                                                     title="Get AI task suggestions based on your input"
                                                 >
                                                     {isLoadingSuggestions ? (
-                                                        <i className="fas fa-circle-notch fa-spin"></i>
+                                                        <i className="fas fa-circle-notch fa-spin" aria-hidden="true" />
                                                     ) : (
-                                                        <i className="fas fa-lightbulb"></i>
+                                                        <i className="fas fa-lightbulb" aria-hidden="true" />
                                                     )}
                                                     <span className="hidden sm:inline">Suggest</span>
                                                 </button>
@@ -276,23 +276,30 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                         autoFocus
                                     />
                                     {aiError && (
-                                        <div className="flex items-center gap-2 mt-1 text-text-primary text-xs bg-red-50 rounded-lg px-3 py-2">
-                                            <i className="fas fa-exclamation-triangle text-[10px]" />
+                                        <div
+                                            className="mt-1 flex items-center gap-2 rounded-md border border-status-danger/30 bg-status-danger/10 px-3 py-2 text-xs text-text-primary animate-fade-slide-in"
+                                            role="alert"
+                                        >
+                                            <i
+                                                className="fas fa-exclamation-triangle text-[10px] text-status-danger"
+                                                aria-hidden="true"
+                                            />
                                             <span>{aiError}</span>
                                         </div>
                                     )}
                                     {showSuggestions && aiSuggestions.length > 0 && (
-                                        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
-                                            <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
-                                                <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                                                    <i className="fas fa-robot text-accent"></i>
+                                        <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-card border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in">
+                                            <div className="border-b border-border-light bg-bg-secondary px-3 py-2">
+                                                <div className="flex items-center gap-2 text-xs font-medium text-text-secondary">
+                                                    <i className="fas fa-robot text-accent" aria-hidden="true" />
                                                     <span>AI Suggestions</span>
                                                     <button
                                                         type="button"
                                                         onClick={() => setShowSuggestions(false)}
-                                                        className="ml-auto text-slate-400 hover:text-slate-600"
+                                                        className="ml-auto rounded p-1 text-text-tertiary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                                                        aria-label="Close suggestions"
                                                     >
-                                                        <i className="fas fa-times"></i>
+                                                        <i className="fas fa-times" aria-hidden="true" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -302,7 +309,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                                         key={idx}
                                                         type="button"
                                                         onClick={() => handleSelectSuggestion(suggestion)}
-                                                        className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-blue-50 border-b border-slate-100 last:border-b-0 transition-colors"
+                                                        className="w-full border-b border-border-light px-4 py-2.5 text-left text-sm text-text-primary transition-colors duration-150 last:border-b-0 hover:bg-bg-hover focus-visible:bg-bg-hover focus-visible:outline-none"
                                                     >
                                                         {suggestion}
                                                     </button>
@@ -317,7 +324,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 gap-4 min-w-0">
                             <div className="flex flex-col gap-2 min-w-0">
-                                <label htmlFor="plantCode" className="text-sm font-medium text-slate-700">
+                                <label htmlFor="plantCode" className="text-sm font-medium text-text-primary">
                                     {selectedPlantCodes.length > 0 ? 'Plants*' : 'Plant*'}
                                 </label>
                                 {!item ? (
@@ -339,14 +346,14 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                                     return (
                                                         <div
                                                             key={code}
-                                                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-text-primary rounded-lg text-sm"
+                                                            className="inline-flex items-center gap-2 rounded-md border border-accent/20 bg-accent/10 px-3 py-1.5 text-sm text-text-primary"
                                                         >
                                                             <span>
                                                                 ({plant?.plant_code}) {plant?.plant_name}
                                                             </span>
                                                             <button
                                                                 type="button"
-                                                                className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-200 text-text-primary hover:bg-blue-300 transition-colors"
+                                                                className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/20 text-text-primary transition-colors duration-150 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                                                 onClick={() =>
                                                                     setSelectedPlantCodes((prev) =>
                                                                         prev.filter((c) => c !== code)
@@ -354,7 +361,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                                                 }
                                                                 aria-label="Remove plant"
                                                             >
-                                                                <i className="fas fa-times text-xs"></i>
+                                                                <i className="fas fa-times text-xs" aria-hidden="true" />
                                                             </button>
                                                         </div>
                                                     )
@@ -376,7 +383,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-w-0">
                             <div className="flex flex-col gap-2 min-w-0">
-                                <label htmlFor="priority" className="text-sm font-medium text-slate-700">
+                                <label htmlFor="priority" className="text-sm font-medium text-text-primary">
                                     Priority
                                 </label>
                                 <select
@@ -393,7 +400,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                 </select>
                             </div>
                             <div className="flex flex-col gap-2 min-w-0">
-                                <label htmlFor="status" className="text-sm font-medium text-slate-700">
+                                <label htmlFor="status" className="text-sm font-medium text-text-primary">
                                     Status
                                 </label>
                                 <select
@@ -410,7 +417,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                 </select>
                             </div>
                             <div className="flex flex-col gap-2 min-w-0">
-                                <label htmlFor="responsibleRole" className="text-sm font-medium text-slate-700">
+                                <label htmlFor="responsibleRole" className="text-sm font-medium text-text-primary">
                                     Responsible
                                 </label>
                                 <select
@@ -431,7 +438,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 gap-4">
                             <div className="flex flex-col gap-2 min-w-0">
-                                <label htmlFor="comments" className="text-sm font-medium text-slate-700">
+                                <label htmlFor="comments" className="text-sm font-medium text-text-primary">
                                     Comments
                                 </label>
                                 <textarea
@@ -448,9 +455,10 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                     <div className="flex justify-end pt-4">
                         <button
                             type="submit"
-                            className="px-6 py-3 bg-accent text-white rounded-xl text-sm font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                             disabled={isSaving}
                         >
+                            {isSaving && <i className="fas fa-circle-notch fa-spin" aria-hidden="true" />}
                             {isSaving
                                 ? 'Saving...'
                                 : item
@@ -460,8 +468,16 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                     : 'Add Item'}
                         </button>
                     </div>
-                    {errors.description && <div className="text-text-primary text-sm mt-2">{errors.description}</div>}
-                    {errors.plantCode && <div className="text-text-primary text-sm mt-2">{errors.plantCode}</div>}
+                    {errors.description && (
+                        <div className="mt-2 text-sm text-status-danger" role="alert">
+                            {errors.description}
+                        </div>
+                    )}
+                    {errors.plantCode && (
+                        <div className="mt-2 text-sm text-status-danger" role="alert">
+                            {errors.plantCode}
+                        </div>
+                    )}
                 </form>
             </AddViewSection>
             {isPlantModalOpen && (

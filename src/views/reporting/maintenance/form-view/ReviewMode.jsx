@@ -97,8 +97,14 @@ export function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, su
                         style={FIELD_STYLE}
                     />
                     {error && (
-                        <div className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-text-primary">
-                            <i className="fas fa-exclamation-circle text-[11px]" />
+                        <div
+                            className="mt-2 flex items-center gap-1.5 rounded-md border border-status-danger/30 bg-status-danger/10 px-2.5 py-1.5 text-[11.5px] font-medium text-text-primary animate-fade-slide-in"
+                            role="alert"
+                        >
+                            <i
+                                className="fas fa-exclamation-circle text-[11px] text-status-danger"
+                                aria-hidden="true"
+                            />
                             {error}
                         </div>
                     )}
@@ -107,18 +113,18 @@ export function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, su
                             type="button"
                             onClick={() => handleReview('approved')}
                             disabled={submitting}
-                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-3 py-1.5 border-none cursor-pointer disabled:opacity-50 bg-green-600"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-status-active px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-wider text-white shadow-sm transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-active focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                         >
-                            <i className="fas fa-check text-[10px]" />
+                            <i className="fas fa-check text-[10px]" aria-hidden="true" />
                             Approve
                         </button>
                         <button
                             type="button"
                             onClick={() => handleReview('rejected')}
                             disabled={submitting}
-                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-3 py-1.5 border-none cursor-pointer disabled:opacity-50 bg-red-600"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-status-danger px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-wider text-white shadow-sm transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                         >
-                            <i className="fas fa-times text-[10px]" />
+                            <i className="fas fa-times text-[10px]" aria-hidden="true" />
                             Reject
                         </button>
                     </div>

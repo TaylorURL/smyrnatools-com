@@ -203,14 +203,26 @@ export function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubm
                         style={FIELD_STYLE}
                     />
                     {error && (
-                        <div className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-text-primary">
-                            <i className="fas fa-exclamation-circle text-[11px]" />
+                        <div
+                            className="mt-2 flex items-center gap-1.5 rounded-md border border-status-danger/30 bg-status-danger/10 px-2.5 py-1.5 text-[11.5px] font-medium text-text-primary animate-fade-slide-in"
+                            role="alert"
+                        >
+                            <i
+                                className="fas fa-exclamation-circle text-[11px] text-status-danger"
+                                aria-hidden="true"
+                            />
                             {error}
                         </div>
                     )}
                     {success && (
-                        <div className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-[rgba(22,_163,_74,_0.12)] border border-[rgba(22,_163,_74,_0.45)] text-text-primary">
-                            <i className="fas fa-check-circle text-[11px]" />
+                        <div
+                            className="mt-2 flex items-center gap-1.5 rounded-md border border-status-active/30 bg-status-active/10 px-2.5 py-1.5 text-[11.5px] font-medium text-text-primary animate-fade-slide-in"
+                            role="status"
+                        >
+                            <i
+                                className="fas fa-check-circle text-[11px] text-status-active"
+                                aria-hidden="true"
+                            />
                             Submitted for review.
                         </div>
                     )}

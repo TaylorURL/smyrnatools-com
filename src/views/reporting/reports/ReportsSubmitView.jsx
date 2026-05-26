@@ -363,7 +363,7 @@ function ReportsSubmitView({
         return null
     }
     return (
-        <div className="bg-slate-50 min-h-screen w-full">
+        <div className="bg-bg-secondary min-h-screen w-full">
             <SubmitHeader
                 report={report}
                 weekVerbose={weekVerbose}
@@ -382,7 +382,9 @@ function ReportsSubmitView({
             />
             <form className="w-full px-3 py-4 sm:px-4 sm:py-6 md:px-6 flex flex-col gap-2.5" onSubmit={handleSubmit}>
                 {!EXCLUDED_REPORT_TYPES.includes(report.name) && (
-                    <div className="rounded p-3 bg-bg-primary border border-border-light">{renderFormSection()}</div>
+                    <div className="rounded-card p-4 bg-bg-primary border border-border-light shadow-sm">
+                        {renderFormSection()}
+                    </div>
                 )}
                 {PluginComponent && (
                     <PluginComponent
@@ -404,13 +406,21 @@ function ReportsSubmitView({
                     />
                 )}
                 {success && (
-                    <div className="bg-green-100 text-text-primary p-4 rounded-lg mx-4 my-4 text-sm font-medium">
-                        Report submitted successfully.
+                    <div
+                        className="mx-4 my-4 flex items-center gap-2 rounded-card border border-status-active/30 bg-status-active/10 p-4 text-sm font-medium text-text-primary animate-fade-slide-in"
+                        role="status"
+                    >
+                        <i className="fas fa-check-circle text-status-active" aria-hidden="true" />
+                        <span>Report submitted successfully.</span>
                     </div>
                 )}
                 {saveMessage && (
-                    <div className="bg-green-100 text-text-primary p-4 rounded-lg mx-4 my-4 text-sm font-medium">
-                        {saveMessage}
+                    <div
+                        className="mx-4 my-4 flex items-center gap-2 rounded-card border border-status-active/30 bg-status-active/10 p-4 text-sm font-medium text-text-primary animate-fade-slide-in"
+                        role="status"
+                    >
+                        <i className="fas fa-check-circle text-status-active" aria-hidden="true" />
+                        <span>{saveMessage}</span>
                     </div>
                 )}
                 {!readOnly && (
