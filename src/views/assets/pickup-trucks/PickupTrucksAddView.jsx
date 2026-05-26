@@ -7,6 +7,13 @@ import usePlantPicker from '../../../app/hooks/usePlantPicker'
 import { PickupTruckService } from '../../../services/PickupTruckService'
 import { getSessionUserId } from '../../../services/SessionService'
 
+// Theme-aware native <select> styling. `appearance-none` strips the browser
+// chevron so the inline-SVG (uses `currentColor`, so it follows --text-primary
+// across dark/light/grayed themes) renders consistently. Matches the input
+// height ladder and focus treatment used elsewhere in the add-view forms.
+const SELECT_CLS =
+    'h-11 w-full cursor-pointer rounded-xl bg-bg-secondary border border-border-light text-text-primary text-sm px-4 pr-10 appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[length:1rem_1rem] bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2024%2024%27%20stroke%3D%27currentColor%27%3E%3Cpath%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%272%27%20d%3D%27M19%209l-7%207-7-7%27%2F%3E%3C%2Fsvg%3E")] hover:border-border-medium focus:outline-none focus-visible:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 [color-scheme:light] dark:[color-scheme:dark]'
+
 /**
  * Slide-in form for creating a new pickup truck record. Supports VIN
  * (with I/O/Q letter stripping), make/model/year, assignee, mileage,
@@ -75,7 +82,11 @@ function PickupTrucksAddView({ onClose, onAdded }) {
                         <PlantPickerField {...picker} label="Plant*" />
                         <div className="flex flex-col gap-1">
                             <label>Status</label>
-                            <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                            <select
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                                className={SELECT_CLS}
+                            >
                                 <option value="Active">Active</option>
                                 <option value="Stationary">Stationary</option>
                                 <option value="Spare">Spare</option>
