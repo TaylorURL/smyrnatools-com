@@ -1,8 +1,30 @@
-/* eslint-disable react/forbid-dom-props */
-import React from 'react'
+import React, { useEffect } from 'react'
 import ReactDOM from 'react-dom'
 
-import { useAccentColor } from '../../hooks/useAccentColor'
+/**
+ * Visual config per variant — keeps the dialog body, icon, and confirm button
+ * in a consistent semantic family. Tokens drive all colors so the dialog reads
+ * cleanly in dark / light / gray themes.
+ */
+const VARIANT_CONFIG = {
+    danger: {
+        icon: 'fa-trash-alt',
+        iconWrap: 'bg-status-danger/10 text-status-danger',
+        confirmButton:
+            'bg-status-danger text-white hover:bg-status-danger/90 focus-visible:ring-status-danger'
+    },
+    warning: {
+        icon: 'fa-exclamation-triangle',
+        iconWrap: 'bg-status-warning/10 text-status-warning',
+        confirmButton:
+            'bg-status-warning text-white hover:bg-status-warning/90 focus-visible:ring-status-warning'
+    },
+    default: {
+        icon: 'fa-question-circle',
+        iconWrap: 'bg-accent/10 text-accent',
+        confirmButton: 'bg-accent text-white hover:bg-accent-hover focus-visible:ring-accent'
+    }
+}
 
 /**
  * Styled confirmation dialog rendered as a portal overlay.
@@ -27,61 +49,57 @@ function ConfirmDialog({
     cancelLabel = 'Cancel',
     variant = 'danger'
 }) {
-    const accentColor = useAccentColor()
-    if (!isOpen) return null
-    const variantStyles = {
-        danger: {
-            bg: '#ef4444',
-            icon: 'fa-trash-alt',
-            iconBg: 'rgba(239,68,68,0.1)',
-            iconColor: '#ef4444'
-        },
-        default: {
-            bg: accentColor,
-            icon: 'fa-question-circle',
-            iconBg: `${accentColor}15`,
-            iconColor: accentColor
-        },
-        warning: {
-            bg: '#f59e0b',
-            icon: 'fa-exclamation-triangle',
-            iconBg: 'rgba(245,158,11,0.1)',
-            iconColor: '#f59e0b'
+    useEffect(() => {
+        if (!isOpen) return undefined
+        const handleKey = (event) => {
+            if (event.key === 'Escape') onCancel?.()
+            if (event.key === 'Enter') onConfirm?.()
         }
-    }
-    const v = variantStyles[variant] || variantStyles.danger
+        document.addEventListener('keydown', handleKey)
+        return () => document.removeEventListener('keydown', handleKey)
+    }, [isOpen, onCancel, onConfirm])
+
+    if (!isOpen) return null
+    const v = VARIANT_CONFIG[variant] || VARIANT_CONFIG.danger
+
     return ReactDOM.createPortal(
         <div
-            className="fixed inset-0 z-[10100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[10100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-fade-in-fast motion-reduce:animate-none"
             onClick={onCancel}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
         >
             <div
-                className="w-full max-w-[380px] overflow-hidden rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)] animate-confirm-slide-in bg-bg-primary border border-border-light"
-                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-sm overflow-hidden rounded-modal bg-bg-secondary border border-border-light shadow-modal animate-pop-in motion-reduce:animate-none"
+                onClick={(event) => event.stopPropagation()}
             >
                 <div className="flex flex-col items-center px-6 pt-7 pb-2">
                     <div
-                        className="mb-4 flex h-14 w-14 items-center justify-center rounded-full"
-                        style={{ background: v.iconBg }}
+                        className={`mb-4 flex h-14 w-14 items-center justify-center rounded-full ${v.iconWrap}`}
+                        aria-hidden="true"
                     >
-                        <i className={`fas ${v.icon} text-xl`} style={{ color: v.iconColor }} />
+                        <i className={`fas ${v.icon} text-xl`} />
                     </div>
-                    <h3 className="m-0 mb-2 text-center text-lg font-bold text-text-primary">{title}</h3>
+                    <h3 className="m-0 mb-2 text-center font-heading text-lg font-semibold text-text-primary">
+                        {title}
+                    </h3>
                     {message && (
                         <p className="m-0 text-center text-sm leading-relaxed text-text-secondary">{message}</p>
                     )}
                 </div>
                 <div className="flex gap-3 px-6 pt-4 pb-6">
                     <button
+                        type="button"
                         onClick={onCancel}
-                        className="flex-1 cursor-pointer rounded-xl border py-3 text-sm font-semibold transition-colors duration-150 hover:brightness-95 bg-bg-secondary border-border-light text-text-primary"
+                        className="flex-1 cursor-pointer rounded-md border border-border-light bg-bg-tertiary text-text-primary py-3 text-sm font-semibold transition-colors duration-150 hover:bg-bg-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none"
                     >
                         {cancelLabel}
                     </button>
                     <button
+                        type="button"
                         onClick={onConfirm}
-                        className="flex-1 cursor-pointer rounded-xl border-none py-3 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90"
-                        style={{ background: v.bg }}
+                        className={`flex-1 cursor-pointer rounded-md border-0 py-3 text-sm font-semibold transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none ${v.confirmButton}`}
                     >
                         {confirmLabel}
                     </button>
@@ -91,4 +109,5 @@ function ConfirmDialog({
         document.body
     )
 }
+
 export default ConfirmDialog
