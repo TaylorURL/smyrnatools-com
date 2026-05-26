@@ -11,12 +11,17 @@ import { STATISTICS_PERIODS } from '../../hooks/useStatisticsPeriod'
  *  data (rosters, fleet snapshots) that aren't natively time-series. */
 function PeriodSelector({ accentColor, period, setPeriod }) {
     return (
-        <div className="flex items-center rounded-lg p-0.5 bg-bg-tertiary border border-border-light">
+        <div
+            role="group"
+            aria-label="Statistics time period"
+            className="flex items-center rounded-lg p-0.5 bg-bg-tertiary border border-border-light"
+        >
             {STATISTICS_PERIODS.map(({ id, label }) => (
                 <button
                     key={id}
                     onClick={() => setPeriod(id)}
-                    className="rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                    aria-pressed={period === id}
+                    className="rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                     style={{
                         backgroundColor: period === id ? accentColor : 'transparent',
                         color: period === id ? '#fff' : 'var(--text-secondary)'
@@ -77,16 +82,18 @@ function PeriodNavigator({
         <div className="inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1 py-0.5 bg-bg-tertiary border border-border-light">
             <button
                 onClick={() => setAnchor(shiftAnchor(anchor, period, -1))}
-                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors duration-150 active:scale-[0.92] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                 title="Previous period"
+                aria-label="Previous period"
             >
                 <i className="fas fa-chevron-left text-xs" />
             </button>
             <span className="px-2 text-xs font-semibold text-text-primary">{periodLabel}</span>
             <button
                 onClick={() => setAnchor(shiftAnchor(anchor, period, 1))}
-                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors duration-150 active:scale-[0.92] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                 title="Next period"
+                aria-label="Next period"
             >
                 <i className="fas fa-chevron-right text-xs" />
             </button>

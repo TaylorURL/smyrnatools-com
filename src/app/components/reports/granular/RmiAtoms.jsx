@@ -108,7 +108,8 @@ export function TableRowActionButton({ onClick, title }) {
             type="button"
             onClick={onClick}
             title={title}
-            className="flex items-center justify-center rounded border-none cursor-pointer bg-[rgba(220,_38,_38,_0.12)] text-text-primary h-[22px] w-[22px]"
+            aria-label={title}
+            className="flex items-center justify-center rounded border-none cursor-pointer bg-[rgba(220,_38,_38,_0.12)] text-text-primary h-[22px] w-[22px] hover:bg-[rgba(220,_38,_38,_0.2)] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
         >
             <i className="fas fa-times text-[10px]" />
         </button>
@@ -142,7 +143,8 @@ export function FormModal({ children, icon, isOpen, onClose, onSubmit, sub, subm
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded border-none cursor-pointer bg-bg-tertiary text-text-secondary h-6 w-6"
+                        aria-label="Close"
+                        className="rounded border-none cursor-pointer bg-bg-tertiary text-text-secondary h-6 w-6 hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                     >
                         <i className="fas fa-times text-[10px]" />
                     </button>

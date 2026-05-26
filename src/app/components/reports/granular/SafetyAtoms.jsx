@@ -148,7 +148,8 @@ export function IssueCardHeader({ idx, issue, onRemove, readOnly }) {
                     type="button"
                     onClick={onRemove}
                     title="Remove issue"
-                    className="flex items-center justify-center rounded border-none cursor-pointer bg-[rgba(220,_38,_38,_0.12)] text-text-primary h-6 w-6"
+                    aria-label="Remove issue"
+                    className="flex items-center justify-center rounded border-none cursor-pointer bg-[rgba(220,_38,_38,_0.12)] text-text-primary h-6 w-6 hover:bg-[rgba(220,_38,_38,_0.2)] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                 >
                     <i className="fas fa-trash-alt text-[10px]" />
                 </button>

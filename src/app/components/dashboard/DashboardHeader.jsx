@@ -47,8 +47,9 @@ export default function DashboardHeader({
                         type="button"
                         onClick={onRefresh}
                         disabled={refreshing}
-                        className="inline-flex items-center justify-center w-[30px] h-[30px] rounded cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-bg-secondary border border-border-light text-text-primary"
+                        className="inline-flex items-center justify-center w-[30px] h-[30px] rounded cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-bg-secondary border border-border-light text-text-primary hover:bg-bg-tertiary hover:border-border-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         title="Refresh"
+                        aria-label="Refresh"
                     >
                         <i className={`fas fa-arrows-rotate text-[11px] ${refreshing ? 'animate-spin' : ''}`} />
                     </button>

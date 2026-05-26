@@ -406,7 +406,7 @@ function ListDetailView({ itemId, onClose }) {
                                 onChange={handleChange}
                                 disabled={!canEdit || !canEditList}
                                 required
-                                className="form-control"
+                                className="form-control [color-scheme:light] dark:[color-scheme:dark]"
                             />
                         </div>
                         <div className="form-group">

@@ -14,7 +14,8 @@ export default function DetailViewHeader({ headerActions, icon, onBack, onClose,
             <div className="dv-header relative flex items-center gap-4 px-6 py-4">
                 <button
                     onClick={onBack || onClose}
-                    className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border-none bg-slate-100 text-base text-slate-500 cursor-pointer transition-all duration-150 hover:bg-slate-200 hover:text-slate-700"
+                    aria-label="Back"
+                    className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border-none bg-slate-100 text-base text-slate-500 cursor-pointer transition-all duration-150 hover:bg-slate-200 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                 >
                     <i className="fas fa-arrow-left"></i>
                 </button>

@@ -164,7 +164,8 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
                         <>
                             <button
                                 onClick={() => setZoom((z) => Math.max(z - 0.5, 0.5))}
-                                className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors"
+                                aria-label="Zoom out"
+                                className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                             >
                                 <i className="fas fa-search-minus text-xs" />
                             </button>
@@ -173,13 +174,15 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
                             </span>
                             <button
                                 onClick={() => setZoom((z) => Math.min(z + 0.5, 5))}
-                                className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors"
+                                aria-label="Zoom in"
+                                className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                             >
                                 <i className="fas fa-search-plus text-xs" />
                             </button>
                             <button
                                 onClick={resetView}
-                                className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors hidden sm:flex"
+                                aria-label="Reset view"
+                                className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors hidden sm:flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                             >
                                 <i className="fas fa-compress text-xs" />
                             </button>
@@ -190,13 +193,15 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
                         href={item?.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 flex items-center justify-center transition-colors hidden sm:flex"
+                        aria-label="Open in new tab"
+                        className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 flex items-center justify-center transition-colors hidden sm:flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                     >
                         <i className="fas fa-external-link-alt text-xs" />
                     </a>
                     <button
                         onClick={onClose}
-                        className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors"
+                        aria-label="Close"
+                        className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                     >
                         <i className="fas fa-times text-sm" />
                     </button>

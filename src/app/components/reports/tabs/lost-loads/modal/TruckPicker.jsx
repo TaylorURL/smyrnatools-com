@@ -18,7 +18,10 @@ function TruckPicker({
             <button
                 type="button"
                 onClick={() => setTruckPickerOpen((v) => !v)}
-                className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm text-left transition-colors bg-bg-primary border border-border-light text-text-primary"
+                aria-haspopup="listbox"
+                aria-expanded={truckPickerOpen}
+                aria-label="Select truck"
+                className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm text-left transition-colors duration-150 bg-bg-primary border border-border-light text-text-primary hover:border-border-medium focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
             >
                 {truckNumber ? (
                     <span className="flex items-center gap-2 text-text-primary">
@@ -42,11 +45,12 @@ function TruckPicker({
                 <div className="rounded-lg overflow-hidden shadow-md bg-bg-primary border border-border-light">
                     <div className="p-2 border-b border-border-light">
                         <input
-                            type="text"
+                            type="search"
                             value={truckSearch}
                             onChange={(e) => setTruckSearch(e.target.value)}
                             placeholder="Search truck #, operator, or plant..."
-                            className="w-full rounded-md px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent bg-bg-secondary border border-border-light text-text-primary"
+                            aria-label="Search trucks"
+                            className="w-full rounded-md px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent bg-bg-secondary border border-border-light text-text-primary [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
                             autoFocus
                         />
                     </div>
@@ -56,7 +60,7 @@ function TruckPicker({
                             No mixers found
                         </div>
                     ) : (
-                        <div className="max-h-48 overflow-y-auto border-border-light">
+                        <div role="listbox" aria-label="Trucks" className="max-h-48 overflow-y-auto border-border-light">
                             {regionalMixers.map((m) => {
                                 const opName = operatorMap[m.assignedOperator] || null
                                 const isSelected = truckNumber === m.truckNumber
@@ -64,12 +68,14 @@ function TruckPicker({
                                     <button
                                         key={m.id}
                                         type="button"
+                                        role="option"
+                                        aria-selected={isSelected}
                                         onClick={() => {
                                             setTruckNumber(m.truckNumber)
                                             setTruckPickerOpen(false)
                                             setTruckSearch('')
                                         }}
-                                        className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors"
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-inset"
                                         style={isSelected ? { backgroundColor: `${accentColor}08` } : {}}
                                     >
                                         <span

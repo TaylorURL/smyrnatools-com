@@ -251,9 +251,10 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
             <div className="flex items-center justify-between flex-wrap gap-4 bg-bg-primary border-b border-border-light px-6 py-4 sticky top-0 z-40">
                 <div className="flex items-center gap-4">
                     <button
-                        className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors"
+                        className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                         onClick={onBack}
                         type="button"
+                        aria-label="Back"
                     >
                         <i className="fas fa-arrow-left"></i>
                     </button>

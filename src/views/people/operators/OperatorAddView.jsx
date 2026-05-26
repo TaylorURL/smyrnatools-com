@@ -255,6 +255,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                                         type="date"
                                         value={pendingStartDate}
                                         onChange={(e) => setPendingStartDate(e.target.value)}
+                                        className="[color-scheme:light] dark:[color-scheme:dark]"
                                     />
                                 </div>
                             </div>

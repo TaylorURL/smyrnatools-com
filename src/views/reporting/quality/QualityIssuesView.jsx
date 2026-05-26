@@ -259,7 +259,7 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         placeholder="Search title, description, plant…"
-                                        className="flex-1 rounded px-2.5 py-1.5 text-[12.5px] outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary placeholder:text-text-tertiary"
+                                        className="flex-1 rounded px-2.5 py-1.5 text-[12.5px] outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
                                         style={FIELD_STYLE}
                                     />
                                     <select

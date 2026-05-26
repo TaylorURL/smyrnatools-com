@@ -23,8 +23,9 @@ export default function Modal({ children, onClose, title, titleIcon }) {
                         {title}
                     </h3>
                     <button
-                        className="rounded-md bg-transparent p-2 text-xl text-gray-400 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-gray-100 hover:text-gray-900 active:scale-[0.92]"
+                        className="rounded-md bg-transparent p-2 text-xl text-gray-400 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-gray-100 hover:text-gray-900 active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         onClick={onClose}
+                        aria-label="Close"
                     >
                         <i className="fas fa-times" />
                     </button>

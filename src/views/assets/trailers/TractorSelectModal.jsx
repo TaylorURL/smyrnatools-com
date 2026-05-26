@@ -85,7 +85,7 @@ function TractorSelectModal({
                         <input
                             type="search"
                             aria-label="Search tractors"
-                            className="w-full pl-11 pr-10 py-3 rounded-xl text-sm bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary hover:border-border-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent transition-colors duration-150"
+                            className="w-full pl-11 pr-10 py-3 rounded-xl text-sm bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary hover:border-border-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent transition-colors duration-150 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
                             placeholder="Search tractors..."
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}

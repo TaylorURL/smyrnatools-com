@@ -65,9 +65,10 @@ function SubmitHeader({
             <div className="flex items-center justify-between gap-3 flex-wrap px-4 sm:px-6 py-3 sm:py-4 bg-bg-primary border-b border-gray-200 sticky top-0 z-40">
                 <div className="flex items-center gap-3">
                     <button
-                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors"
+                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                         onClick={onBack}
                         type="button"
+                        aria-label="Back"
                     >
                         <i className="fas fa-arrow-left text-sm" />
                     </button>
