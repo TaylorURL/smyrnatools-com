@@ -359,15 +359,10 @@ Deno.serve(async (req) => {
                 if (!reportId) return errorResponse('reportId is required', headers, 400)
                 const { data: existing } = await supabase
                     .from('reports')
-                    .select('user_id')
+                    .select('id')
                     .eq('id', reportId)
                     .maybeSingle()
                 if (!existing) return errorResponse('Report not found', headers, 404)
-                if (existing.user_id !== auth) {
-                    const callerWeight = await getUserWeight(null, auth)
-                    if (callerWeight <= 40)
-                        return errorResponse('Forbidden: insufficient privileges', headers, 403)
-                }
                 const { error } = await supabase
                     .from('reports')
                     .update({ been_reviewed: true })
