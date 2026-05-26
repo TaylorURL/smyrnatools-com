@@ -58,30 +58,37 @@ export const filterExceptionText = (raw) => {
         .join(', ')
 }
 
+/** Long shift (>14h) is the sole red-tier flag — it's the only
+ *  hours-of-service signal severe enough to demand the most urgent
+ *  treatment. Low YPH and late punches are real signals but live in
+ *  the lower-severity orange tier. */
 export const shiftHasRedFlag = (shift) => {
     if (!shift || shift.isPto) return false
-    if (isShiftLong(shift.actualHours)) return true
-    if (isPunchLate(shift.actualInPunchAt || shift.actualInAt, shift.scheduledInAt)) return true
-    return false
+    return isShiftLong(shift.actualHours)
 }
 
-/** Tints for the weekly grid's day cells. Sky tint = PTO, red tint = red
- *  flag (long shift / late punch / low YPH), amber tint = a non-padded
- *  exception, transparent otherwise. Exposed as its own helper so
- *  WeekTable can apply the colour to the `<td>` itself — pinning the bg
- *  on the inner div leaves a 5–10 px gap at the bottom of taller rows
- *  because table cells don't propagate `height: 100%` to children. */
+/** Tints for the weekly grid's day cells, in descending severity:
+ *  sky = PTO, red = long shift (>14h) only, orange = low YPH or late
+ *  clock-in (performance warnings), amber = non-padded Dayforce
+ *  exception, transparent otherwise. Long shift always wins so an
+ *  HOS overage is never masked by a co-occurring orange or amber
+ *  condition. Exposed as its own helper so WeekTable can apply the
+ *  colour to the `<td>` itself — pinning the bg on the inner div
+ *  leaves a 5–10 px gap at the bottom of taller rows because table
+ *  cells don't propagate `height: 100%` to children. */
 export const PTO_CELL_BG = 'rgba(14, 165, 233, 0.08)'
 export const RED_FLAG_CELL_BG = 'rgba(220, 38, 38, 0.08)'
+export const LOW_YPH_CELL_BG = 'rgba(234, 88, 12, 0.10)'
 export const EXCEPTION_CELL_BG = 'rgba(217, 119, 6, 0.06)'
 
 export const getShiftCellBackground = ({ exceptionText, shift, shiftYph, yphTarget }) => {
     if (!shift) return 'transparent'
     if (shift.isPto) return PTO_CELL_BG
-    const effectiveException = filterExceptionText(exceptionText ?? shift.exceptionText)
+    if (shiftHasRedFlag(shift)) return RED_FLAG_CELL_BG
     const isLowYph = shiftYph != null && shiftYph < yphTarget
-    const hasRedFlag = shiftHasRedFlag(shift) || isLowYph
-    if (hasRedFlag) return RED_FLAG_CELL_BG
+    const isLatePunch = isPunchLate(shift.actualInPunchAt || shift.actualInAt, shift.scheduledInAt)
+    if (isLowYph || isLatePunch) return LOW_YPH_CELL_BG
+    const effectiveException = filterExceptionText(exceptionText ?? shift.exceptionText)
     if (effectiveException) return EXCEPTION_CELL_BG
     return 'transparent'
 }

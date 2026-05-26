@@ -44,7 +44,7 @@ export function ActivityToolbar({
                             type="button"
                             onClick={() => onTimeRangeChange(opt.key)}
                             disabled={isLoading}
-                            className="text-[11.5px] font-semibold px-2.5 py-1.5 border-none cursor-pointer disabled:opacity-60 transition-colors"
+                            className="text-[11.5px] font-semibold px-2.5 py-1.5 border-none cursor-pointer disabled:opacity-60 active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                             style={{
                                 background: active ? 'var(--accent)' : 'var(--bg-secondary)',
                                 color: active ? '#fff' : 'var(--text-secondary)'
@@ -59,7 +59,7 @@ export function ActivityToolbar({
                 <button
                     type="button"
                     onClick={onClearOutcome}
-                    className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     style={{
                         background: `${CALL_OUTCOME_COLORS[outcomeFilter]}1A`,
                         color: CALL_OUTCOME_COLORS[outcomeFilter]
@@ -74,7 +74,7 @@ export function ActivityToolbar({
             <button
                 type="button"
                 onClick={onRefresh}
-                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-tertiary text-text-secondary"
+                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-tertiary text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 title="Reload activity feed"
             >
                 <i className="fas fa-rotate text-[10px]" />

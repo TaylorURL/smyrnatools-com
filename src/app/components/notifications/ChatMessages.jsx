@@ -100,26 +100,32 @@ export default function ChatMessages({ accentColor, conversation, onAttachmentCl
                                                 msg.attachmentType,
                                                 msg.attachmentMeta
                                             )
-                                            return (
-                                                <div
-                                                    className={`rounded p-2 mb-1.5 ${isViewable ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
-                                                    style={{
-                                                        background: isMine
-                                                            ? 'rgba(255,255,255,0.12)'
-                                                            : 'var(--bg-secondary)',
-                                                        border: `1px solid ${isMine ? 'rgba(255,255,255,0.18)' : 'var(--border-light)'}`
-                                                    }}
+                                            const previewStyle = {
+                                                background: isMine ? 'rgba(255,255,255,0.12)' : 'var(--bg-secondary)',
+                                                border: `1px solid ${isMine ? 'rgba(255,255,255,0.18)' : 'var(--border-light)'}`
+                                            }
+                                            const preview = (
+                                                <AttachmentPreview
+                                                    type={msg.attachmentType}
+                                                    meta={msg.attachmentMeta}
+                                                    accentColor={accentColor}
+                                                    light={isMine}
+                                                />
+                                            )
+                                            return isViewable ? (
+                                                <button
+                                                    type="button"
+                                                    className="w-full text-left border-none bg-transparent rounded p-2 mb-1.5 cursor-pointer hover:opacity-80 active:scale-[0.99] active:opacity-70 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none"
+                                                    style={previewStyle}
                                                     onClick={() =>
-                                                        isViewable &&
                                                         onAttachmentClick?.(msg.attachmentType, msg.attachmentMeta)
                                                     }
                                                 >
-                                                    <AttachmentPreview
-                                                        type={msg.attachmentType}
-                                                        meta={msg.attachmentMeta}
-                                                        accentColor={accentColor}
-                                                        light={isMine}
-                                                    />
+                                                    {preview}
+                                                </button>
+                                            ) : (
+                                                <div className="rounded p-2 mb-1.5" style={previewStyle}>
+                                                    {preview}
                                                 </div>
                                             )
                                         })()}

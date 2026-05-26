@@ -99,7 +99,7 @@ function WindowSelector({ activeDays, isLoading, onSelect }) {
                             type="button"
                             onClick={() => onSelect && onSelect(days)}
                             disabled={isLoading}
-                            className="text-[11.5px] font-semibold px-2.5 py-1.5 border-none cursor-pointer disabled:opacity-60 transition-colors"
+                            className="text-[11.5px] font-semibold px-2.5 py-1.5 border-none cursor-pointer disabled:opacity-60 active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                             style={{
                                 background: active ? 'var(--accent)' : 'var(--bg-secondary)',
                                 color: active ? '#fff' : 'var(--text-secondary)'

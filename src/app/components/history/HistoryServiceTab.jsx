@@ -102,7 +102,7 @@ function IssueCardFooter({ entry, getCreatorName, issue, onCompleteIssue }) {
                 <button
                     onClick={() => onCompleteIssue(issue.id)}
                     title="Mark as resolved"
-                    className="inline-flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider rounded px-2 py-0.5 cursor-pointer border-none bg-[rgba(22,_163,_74,_0.12)] text-text-primary"
+                    className="inline-flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider rounded px-2 py-0.5 cursor-pointer border-none bg-[rgba(22,_163,_74,_0.12)] text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     <i className="fas fa-check text-[9px]" />
                     Mark Resolved
@@ -148,7 +148,7 @@ function IssueRow({ entry, getCreatorName, isLast, onCompleteIssue, onDeleteIssu
                     <button
                         onClick={() => onDeleteIssue(issue.id)}
                         title="Delete issue"
-                        className="rounded border-none cursor-pointer flex items-center justify-center bg-[rgba(220,_38,_38,_0.12)] text-text-primary h-[22px] w-[22px]"
+                        className="rounded border-none cursor-pointer flex items-center justify-center bg-[rgba(220,_38,_38,_0.12)] text-text-primary h-[22px] w-[22px] active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     >
                         <i className="fas fa-trash text-[10px]" />
                     </button>

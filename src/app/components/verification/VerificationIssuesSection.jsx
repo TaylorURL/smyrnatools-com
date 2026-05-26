@@ -99,7 +99,7 @@ function AddIssueComposer({ accentColor, onAddIssue }) {
             <button
                 type="button"
                 onClick={() => setIsOpen(true)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border-light bg-transparent px-3 py-2 text-[12px] font-medium text-text-secondary transition-colors hover:bg-bg-tertiary"
+                className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border-light bg-transparent px-3 py-2 text-[12px] font-medium text-text-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary active:scale-[0.97]"
             >
                 <i className="fas fa-plus text-[10px]" />
                 Add an issue
@@ -127,7 +127,7 @@ function AddIssueComposer({ accentColor, onAddIssue }) {
                                 key={sev}
                                 type="button"
                                 onClick={() => setSeverity(sev)}
-                                className="rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition-opacity"
+                                className="rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.99] active:opacity-70"
                                 style={{
                                     background: active ? palette.bg : 'var(--bg-tertiary)',
                                     color: active ? palette.fg : 'var(--text-secondary)',
@@ -143,7 +143,7 @@ function AddIssueComposer({ accentColor, onAddIssue }) {
                     <button
                         type="button"
                         onClick={reset}
-                        className="rounded-md px-2.5 py-1.5 text-[11.5px] font-medium text-text-secondary transition-colors hover:bg-bg-tertiary"
+                        className="rounded-md px-2.5 py-1.5 text-[11.5px] font-medium text-text-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary active:scale-[0.97]"
                     >
                         Cancel
                     </button>
@@ -151,10 +151,10 @@ function AddIssueComposer({ accentColor, onAddIssue }) {
                         type="button"
                         onClick={handleSubmit}
                         disabled={!text.trim() || isSubmitting}
-                        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11.5px] font-semibold text-white transition-[filter] hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11.5px] font-semibold text-white transition-[filter] hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] disabled:active:scale-100"
                         style={{ background: accentColor }}
                     >
-                        <i className={`fas ${isSubmitting ? 'fa-spinner fa-spin' : 'fa-plus'} text-[10px]`} />
+                        <i className={`fas ${isSubmitting ? 'fa-spinner animate-dv-spin' : 'fa-plus'} text-[10px]`} />
                         {isSubmitting ? 'Adding' : 'Add issue'}
                     </button>
                 </div>

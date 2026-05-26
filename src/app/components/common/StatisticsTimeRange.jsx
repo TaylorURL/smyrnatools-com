@@ -16,7 +16,7 @@ function PeriodSelector({ accentColor, period, setPeriod }) {
                 <button
                     key={id}
                     onClick={() => setPeriod(id)}
-                    className="rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5"
+                    className="rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     style={{
                         backgroundColor: period === id ? accentColor : 'transparent',
                         color: period === id ? '#fff' : 'var(--text-secondary)'
@@ -70,7 +70,7 @@ function PeriodNavigator({
         <div className="inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1 py-0.5 bg-bg-tertiary border border-border-light">
             <button
                 onClick={() => setAnchor(shiftAnchor(anchor, period, -1))}
-                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary"
+                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 title="Previous period"
             >
                 <i className="fas fa-chevron-left text-xs" />
@@ -78,14 +78,14 @@ function PeriodNavigator({
             <span className="px-2 text-xs font-semibold text-text-primary">{periodLabel}</span>
             <button
                 onClick={() => setAnchor(shiftAnchor(anchor, period, 1))}
-                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary"
+                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 title="Next period"
             >
                 <i className="fas fa-chevron-right text-xs" />
             </button>
             <button
                 onClick={() => setAnchor(getTodayDate())}
-                className="border-none bg-transparent cursor-pointer px-2 py-1 rounded text-xs font-semibold"
+                className="border-none bg-transparent cursor-pointer px-2 py-1 rounded text-xs font-semibold active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{ color: accentColor }}
             >
                 Today

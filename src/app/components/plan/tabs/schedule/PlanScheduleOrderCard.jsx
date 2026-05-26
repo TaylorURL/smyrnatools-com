@@ -99,7 +99,7 @@ export default function PlanScheduleOrderCard({
                                 <button
                                     type="button"
                                     onClick={() => onPickStatus(status.kind)}
-                                    className="border-none bg-transparent p-0 cursor-pointer shrink-0"
+                                    className="border-none bg-transparent p-0 cursor-pointer shrink-0 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     title={`Filter to ${status.label.toLowerCase()} orders`}
                                 >
                                     <OrderStatusBadge status={status} />
@@ -117,7 +117,7 @@ export default function PlanScheduleOrderCard({
                                 <button
                                     type="button"
                                     onClick={() => onPickPlant(plantCode)}
-                                    className="font-semibold underline-offset-2 hover:underline border-none bg-transparent p-0 cursor-pointer"
+                                    className="font-semibold underline-offset-2 hover:underline border-none bg-transparent p-0 cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     style={{ color: 'var(--text-primary)' }}
                                     title={`Filter to plant ${plantCode}`}
                                 >
@@ -148,7 +148,7 @@ export default function PlanScheduleOrderCard({
                                 <button
                                     type="button"
                                     onClick={() => onOpenLocation(order)}
-                                    className="text-[12px] flex items-center gap-1.5 border-none bg-transparent p-0 cursor-pointer underline-offset-2 hover:underline w-full text-left"
+                                    className="text-[12px] flex items-center gap-1.5 border-none bg-transparent p-0 cursor-pointer underline-offset-2 hover:underline w-full text-left active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     style={{ color: 'var(--text-primary)' }}
                                     title="Open route map"
                                 >
@@ -188,7 +188,7 @@ export default function PlanScheduleOrderCard({
                     <button
                         type="button"
                         onClick={() => onPickProduct(clean(order.productCode))}
-                        className="rounded-md px-2.5 py-1.5 flex items-center gap-2 border cursor-pointer text-left bg-bg-secondary border-border-light"
+                        className="rounded-md px-2.5 py-1.5 flex items-center gap-2 border cursor-pointer text-left bg-bg-secondary border-border-light active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         title={`Filter to product ${clean(order.productCode)}`}
                     >
                         <i className="fas fa-cube text-[10px]" style={{ color: 'var(--text-primary)' }} />

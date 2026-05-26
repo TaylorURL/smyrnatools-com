@@ -17,7 +17,7 @@ export function TimeModeToggle({ accentColor, isCustom, onModeChange }) {
                             type="button"
                             onClick={() => onModeChange(modeOption)}
                             aria-pressed={active}
-                            className="border-none cursor-pointer text-[12px] font-semibold py-2"
+                            className="border-none cursor-pointer text-[12px] font-semibold py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             style={{
                                 background: active ? accentColor : 'transparent',
                                 color: active ? '#fff' : 'var(--text-secondary)'

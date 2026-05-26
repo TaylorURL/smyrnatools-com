@@ -28,7 +28,7 @@ export function PrimaryButton({ accentColor, children, disabled, icon, onClick, 
             type={type}
             onClick={onClick}
             disabled={disabled}
-            className="inline-flex items-center gap-2 rounded-lg text-[12px] font-semibold uppercase tracking-wider text-white px-4 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-lg text-[12px] font-semibold uppercase tracking-wider text-white px-4 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
             style={{ background: accentColor }}
         >
             {icon && <i className={`fas ${icon} text-[12px]`} />}
@@ -44,7 +44,7 @@ export function SubtleButton({ children, danger = false, disabled = false, icon,
             type={type}
             onClick={onClick}
             disabled={disabled}
-            className="inline-flex items-center gap-2 rounded-lg text-[12px] font-semibold uppercase tracking-wider px-3.5 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:brightness-95"
+            className="inline-flex items-center gap-2 rounded-lg text-[12px] font-semibold uppercase tracking-wider px-3.5 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 active:scale-[0.97] disabled:active:scale-100"
             style={{
                 background: danger ? 'rgba(220, 38, 38, 0.12)' : 'var(--bg-secondary)',
                 border: `1px solid ${danger ? 'rgba(220, 38, 38, 0.35)' : 'var(--border-light)'}`,
@@ -66,7 +66,7 @@ export function Toggle({ accentColor, ariaLabel, checked, onChange }) {
             aria-checked={checked}
             aria-label={ariaLabel}
             onClick={onChange}
-            className="relative inline-flex shrink-0 rounded-full transition-colors border border-border-light h-6 w-11"
+            className="relative inline-flex shrink-0 rounded-full transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none border border-border-light h-6 w-11 active:scale-[0.97]"
             style={{ background: checked ? accentColor : 'var(--bg-tertiary)' }}
         >
             <span
@@ -88,7 +88,7 @@ export function SegmentedControl({ accentColor, onChange, options, value }) {
                         key={opt.value}
                         type="button"
                         onClick={() => onChange(opt.value)}
-                        className="rounded-md text-[12.5px] font-semibold uppercase tracking-wider px-3.5 py-2 transition-colors flex items-center gap-2"
+                        className="rounded-md text-[12.5px] font-semibold uppercase tracking-wider px-3.5 py-2 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none flex items-center gap-2 active:scale-[0.97]"
                         style={{
                             background: active ? accentColor : 'transparent',
                             color: active ? '#fff' : 'var(--text-secondary)'

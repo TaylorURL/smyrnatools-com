@@ -25,7 +25,7 @@ export function PlanChartModeToggle({ accentColor, onChange, options, value }) {
                         key={option.key}
                         type="button"
                         onClick={() => onChange(option.key)}
-                        className="flex items-center gap-1.5 rounded text-[12px] font-medium cursor-pointer px-2.5 py-1 whitespace-nowrap"
+                        className="flex items-center gap-1.5 rounded text-[12px] font-medium cursor-pointer px-2.5 py-1 whitespace-nowrap active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{
                             background: isActive ? accentColor : 'var(--bg-secondary)',
                             border: `1px solid ${isActive ? accentColor : 'var(--border-light)'}`,

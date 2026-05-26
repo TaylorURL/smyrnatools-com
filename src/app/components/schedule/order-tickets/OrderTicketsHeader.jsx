@@ -48,7 +48,7 @@ function OrderTicketsHeader({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="w-8 h-8 rounded-md flex items-center justify-center bg-transparent border-0 cursor-pointer text-text-secondary"
+                        className="w-8 h-8 rounded-md flex items-center justify-center bg-transparent border-0 cursor-pointer text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         aria-label="Close"
                         title="Close"
                     >

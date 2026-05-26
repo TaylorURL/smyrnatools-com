@@ -245,12 +245,12 @@ export default function VerificationRequirementsModal({
         <>
             {ReactDOM.createPortal(
                 <div
-                    className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-[rgba(15,23,42,0.55)] backdrop-blur-sm"
+                    className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-[rgba(15,23,42,0.55)] backdrop-blur-sm animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="verification-modal-title"
                 >
-                    <div className="flex w-full max-w-[560px] flex-col overflow-hidden rounded-lg max-h-[90vh] bg-bg-primary border border-border-light shadow-2xl">
+                    <div className="flex w-full max-w-[560px] flex-col overflow-hidden rounded-lg max-h-[90vh] bg-bg-primary border border-border-light shadow-2xl animate-[popIn_220ms_cubic-bezier(0.23,1,0.32,1)_both] motion-reduce:animate-none">
                         <div className="px-5 pt-4 pb-3 shrink-0 border-b border-border-light">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
@@ -265,7 +265,7 @@ export default function VerificationRequirementsModal({
                                     </p>
                                 </div>
                                 <button
-                                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-bg-tertiary text-text-secondary"
+                                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.92]"
                                     onClick={onClose}
                                     title="Close"
                                     aria-label="Close"
@@ -372,14 +372,14 @@ export default function VerificationRequirementsModal({
                         <div className="flex gap-2 px-4 py-3 shrink-0 bg-bg-primary border-t border-border-light">
                             <button
                                 onClick={onClose}
-                                className="rounded-md px-4 py-2 text-[12.5px] font-medium cursor-pointer transition-colors hover:bg-bg-tertiary text-text-secondary"
+                                className="rounded-md px-4 py-2 text-[12.5px] font-medium cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.97]"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSaveAndVerify}
                                 disabled={!canVerify}
-                                className="flex-1 flex items-center justify-center gap-2 rounded-md px-4 py-2 text-[12.5px] font-semibold text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-[filter] hover:brightness-105"
+                                className="flex-1 flex items-center justify-center gap-2 rounded-md px-4 py-2 text-[12.5px] font-semibold text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-[filter,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-105 active:scale-[0.97] disabled:active:scale-100"
                                 style={{ background: canVerify ? accentColor : 'var(--text-tertiary)' }}
                             >
                                 <i className="fas fa-check text-[11px]" />

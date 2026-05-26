@@ -2,8 +2,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import useFixedDropdownPosition from '../../hooks/useFixedDropdownPosition'
 import { getTodayDate, getTomorrowDate, offsetDateSkipSunday, skipSundayDate } from '../../../utils/PlanUtility'
+import useFixedDropdownPosition from '../../hooks/useFixedDropdownPosition'
 
 /** Display variant for the realtime tab — date is locked to today and
  *  rendered as a read-only pill. Switching to realtime always anchors the
@@ -98,7 +98,7 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
     return (
         <div
             ref={menuRef}
-            className="fixed z-50 rounded-lg p-2 bg-bg-primary border border-border-light"
+            className="fixed z-50 rounded-lg p-2 bg-bg-primary border border-border-light origin-top animate-[fadeSlideIn_180ms_ease-out_both] motion-reduce:animate-none"
             style={{ boxShadow: 'var(--shadow-lg)', left: pos.left, minWidth: 240, top: pos.top }}
             role="dialog"
             aria-label="Pick a date"
@@ -107,7 +107,7 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
                 <button
                     type="button"
                     onClick={() => stepMonth(-1)}
-                    className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center text-text-secondary"
+                    className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     title="Previous month"
                     aria-label="Previous month"
                 >
@@ -119,7 +119,7 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
                 <button
                     type="button"
                     onClick={() => stepMonth(1)}
-                    className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center text-text-secondary"
+                    className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     title="Next month"
                     aria-label="Next month"
                 >
@@ -146,7 +146,7 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
                             type="button"
                             onClick={() => !isSunday && pickDate(cell.iso)}
                             disabled={isSunday}
-                            className="text-[12px] py-1.5 rounded border-none transition-colors"
+                            className="text-[12px] py-1.5 rounded border-none transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] disabled:active:scale-100"
                             style={{
                                 background: isSelected ? 'var(--bg-tertiary)' : 'transparent',
                                 boxShadow: isToday && !isSelected ? 'inset 0 0 0 1px var(--border-medium)' : 'none',
@@ -166,14 +166,14 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
                 <button
                     type="button"
                     onClick={() => pickDate(skipSundayDate(getTodayDate(), 1))}
-                    className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer bg-bg-secondary border border-border-light text-text-primary"
+                    className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer bg-bg-secondary border border-border-light text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     Today
                 </button>
                 <button
                     type="button"
                     onClick={() => pickDate(skipSundayDate(getTomorrowDate(), 1))}
-                    className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer bg-bg-secondary border border-border-light text-text-primary"
+                    className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer bg-bg-secondary border border-border-light text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     Tomorrow
                 </button>
@@ -236,7 +236,7 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
                 type="button"
                 onClick={() => !disabled && onChange(offsetDateSkipSunday(planDate, -1))}
                 disabled={disabled}
-                className="border-none bg-transparent p-1 rounded inline-flex items-center justify-center text-text-secondary"
+                className="border-none bg-transparent p-1 rounded inline-flex items-center justify-center text-text-secondary active:scale-[0.92] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{ cursor: buttonCursor }}
                 title={disabled ? disabledReason : 'Previous day'}
                 aria-label="Previous day"
@@ -248,7 +248,7 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
                 type="button"
                 onClick={() => !disabled && setOpen((v) => !v)}
                 disabled={disabled}
-                className="border-none bg-transparent px-2 py-0.5 rounded font-semibold text-sm inline-flex items-center gap-1.5 text-text-primary"
+                className="border-none bg-transparent px-2 py-0.5 rounded font-semibold text-sm inline-flex items-center gap-1.5 text-text-primary active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{ cursor: buttonCursor }}
                 title={disabled ? disabledReason : 'Click to pick a date'}
                 aria-haspopup={disabled ? undefined : 'dialog'}
@@ -265,7 +265,7 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
                 type="button"
                 onClick={() => !disabled && onChange(offsetDateSkipSunday(planDate, 1))}
                 disabled={disabled}
-                className="border-none bg-transparent p-1 rounded inline-flex items-center justify-center text-text-secondary"
+                className="border-none bg-transparent p-1 rounded inline-flex items-center justify-center text-text-secondary active:scale-[0.92] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{ cursor: buttonCursor }}
                 title={disabled ? disabledReason : 'Next day'}
                 aria-label="Next day"
@@ -300,7 +300,7 @@ function TomorrowButton({ accentColor, disabled = false, disabledReason, isDark,
             onClick={() => !disabled && onChange(tomorrowTarget)}
             disabled={disabled}
             title={disabled ? disabledReason : undefined}
-            className="border-none rounded-lg text-xs font-semibold px-2.5 py-1.5"
+            className="border-none rounded-lg text-xs font-semibold px-2.5 py-1.5 active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
             style={{
                 background: isTomorrow ? `${accentColor}${isDark ? '30' : '15'}` : 'var(--bg-tertiary)',
                 color: isTomorrow ? accentColor : 'var(--text-secondary)',

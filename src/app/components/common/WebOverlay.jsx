@@ -19,7 +19,7 @@ function WebOverlay({ url, onClose }) {
                 style={{ backgroundColor: accentColor, borderBottomColor: `${accentColor}cc` }}
             >
                 <button
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border-none bg-white/20 text-base text-white hover:bg-white/30"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border-none bg-white/20 text-base text-white hover:bg-white/30 active:scale-[0.92] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                     onClick={onClose}
                 >
                     <i className="fas fa-times" />

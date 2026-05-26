@@ -80,7 +80,7 @@ export function PlanPresenceOverlay({ users }) {
                 <button
                     type="button"
                     onClick={() => setExpanded(true)}
-                    className="flex h-7 min-w-[28px] items-center justify-center rounded-full bg-bg-tertiary px-1.5 text-[11px] font-semibold text-text-secondary hover:bg-bg-hover"
+                    className="flex h-7 min-w-[28px] items-center justify-center rounded-full bg-bg-tertiary px-1.5 text-[11px] font-semibold text-text-secondary hover:bg-bg-hover active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                     title={`Show ${hidden} more`}
                 >
                     +{hidden}

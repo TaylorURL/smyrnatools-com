@@ -426,7 +426,7 @@ export function DayforceEfficiencyPage({ accentColor, dateRange, plantCodes, sel
                     <button
                         type="button"
                         onClick={() => setOperatorDetailOpen((s) => !s)}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-border-light px-2.5 py-1 text-[11px] font-semibold cursor-pointer bg-bg-tertiary text-text-secondary hover:text-text-primary"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border-light px-2.5 py-1 text-[11px] font-semibold cursor-pointer bg-bg-tertiary text-text-secondary hover:text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     >
                         <i className={`fas fa-chevron-${operatorDetailOpen ? 'up' : 'down'} text-[9px]`} />
                         {operatorDetailOpen ? 'Hide table' : `Show all ${operatorRows.length} operators`}

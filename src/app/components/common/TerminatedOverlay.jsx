@@ -19,8 +19,8 @@ function TerminatedOverlay() {
         } catch {}
     }
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85">
-            <div className="w-[90%] max-w-[440px] rounded-[20px] bg-white p-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none">
+            <div className="w-[90%] max-w-[440px] rounded-[20px] bg-white p-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.4)] animate-[popIn_220ms_cubic-bezier(0.23,1,0.32,1)_both] motion-reduce:animate-none">
                 <img src={SmyrnaLogo} alt="Smyrna Logo" className="mb-6 h-auto w-[120px]" />
                 <h1 className="mb-4 text-[28px] font-bold text-text-primary">Access Revoked</h1>
                 <p className="mb-8 text-base leading-relaxed text-slate-500">
@@ -28,7 +28,7 @@ function TerminatedOverlay() {
                     information.
                 </p>
                 <button
-                    className="inline-flex w-full items-center justify-center gap-2.5 rounded-xl border-none px-8 py-3.5 text-[15px] font-semibold text-white"
+                    className="inline-flex w-full items-center justify-center gap-2.5 rounded-xl border-none px-8 py-3.5 text-[15px] font-semibold text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     style={{ backgroundColor: accentColor }}
                     onClick={handleSignOut}
                 >

@@ -58,7 +58,7 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
 
     return (
         <div
-            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 px-4"
+            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 px-4 animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
             onClick={() => {
                 if (!isSaving) onClose?.()
             }}
@@ -81,7 +81,7 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                         type="button"
                         onClick={onClose}
                         disabled={isSaving}
-                        className="rounded-lg border border-border-light bg-bg-primary px-2.5 py-1 text-text-secondary transition-colors hover:bg-bg-hover disabled:opacity-50"
+                        className="rounded-lg border border-border-light bg-bg-primary px-2.5 py-1 text-text-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover disabled:opacity-50 active:scale-[0.97] disabled:active:scale-100"
                         aria-label="Close"
                     >
                         <i className="fas fa-times text-[12px]" />
@@ -100,7 +100,7 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                         type="button"
                         onClick={onClose}
                         disabled={isSaving}
-                        className="rounded-xl border border-border-light bg-bg-primary px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-bg-hover disabled:opacity-50"
+                        className="rounded-xl border border-border-light bg-bg-primary px-4 py-2 text-sm font-semibold text-text-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover disabled:opacity-50 active:scale-[0.97] disabled:active:scale-100"
                     >
                         Cancel
                     </button>
@@ -108,7 +108,7 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                         type="button"
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+                        className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-accent-hover disabled:opacity-50 active:scale-[0.97] disabled:active:scale-100"
                     >
                         {isSaving ? 'Saving…' : 'Save Managers'}
                     </button>

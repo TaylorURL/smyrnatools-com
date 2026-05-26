@@ -36,7 +36,7 @@ export function ActivityOutcomeBreakdown({ isLoading, metrics, onSelectOutcome, 
                             type="button"
                             onClick={() => onSelectOutcome(key)}
                             title={`${CALL_OUTCOME_LABELS[key]} · ${count} (${Math.round(pct)}%)`}
-                            className="h-full border-none cursor-pointer transition-opacity"
+                            className="h-full border-none cursor-pointer transition-opacity active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             style={{
                                 background: CALL_OUTCOME_COLORS[key],
                                 opacity: selectedOutcome === 'all' || selectedOutcome === key ? 1 : 0.35,
@@ -57,7 +57,7 @@ export function ActivityOutcomeBreakdown({ isLoading, metrics, onSelectOutcome, 
                             key={key}
                             type="button"
                             onClick={() => onSelectOutcome(key)}
-                            className="inline-flex items-center gap-1.5 text-[11px] cursor-pointer bg-transparent border-none p-0"
+                            className="inline-flex items-center gap-1.5 text-[11px] cursor-pointer bg-transparent border-none p-0 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             style={{
                                 color: isActive ? CALL_OUTCOME_COLORS[key] : 'var(--text-secondary)',
                                 fontWeight: isActive ? 700 : 500

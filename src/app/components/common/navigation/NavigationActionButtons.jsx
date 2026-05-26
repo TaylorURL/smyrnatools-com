@@ -15,7 +15,7 @@ export function TwoLevelIconButton({
 }) {
     return (
         <button
-            className="relative flex items-center justify-center cursor-pointer bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] rounded-lg text-[rgba(255,255,255,0.7)] h-[34px]"
+            className="relative flex items-center justify-center cursor-pointer bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] rounded-lg text-[rgba(255,255,255,0.7)] h-[34px] active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
             title={title}
             style={{ gap: 4, outline: 'none', width }}
             onClick={onClick}
@@ -51,7 +51,7 @@ export function TwoLevelUserAvatar({ accentColor, initials, title, onClick }) {
             type="button"
             onClick={onClick}
             title={title}
-            className="cursor-pointer border border-[rgba(255,255,255,0.1)] rounded-lg p-0"
+            className="cursor-pointer border border-[rgba(255,255,255,0.1)] rounded-lg p-0 active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
             style={{ background: 'transparent' }}
         >
             <UserAvatar accentColor={accentColor} initials={initials} size={34} rounded="lg" />

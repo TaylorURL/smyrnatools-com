@@ -105,11 +105,11 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose()
             }}
-            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.6)]"
+            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.6)] animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-[460px] max-h-[85vh] flex flex-col overflow-hidden rounded-2xl bg-bg-secondary"
+                className="w-full max-w-[460px] max-h-[85vh] flex flex-col overflow-hidden rounded-2xl bg-bg-secondary animate-[popIn_220ms_cubic-bezier(0.23,1,0.32,1)_both] motion-reduce:animate-none"
                 style={{ boxShadow: '0 16px 40px rgba(0, 0, 0, 0.25)' }}
             >
                 {/* Header */}
@@ -118,7 +118,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                     <button
                         onClick={onClose}
                         aria-label="Close"
-                        className="flex items-center justify-center w-8 h-8 rounded-lg border-none cursor-pointer text-sm bg-bg-hover text-text-secondary"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg border-none cursor-pointer text-sm bg-bg-hover text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     >
                         <i className="fas fa-times" />
                     </button>
@@ -133,7 +133,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                             </span>
                             <button
                                 onClick={onClose}
-                                className="mt-2 px-5 py-2 rounded-lg border-none text-sm font-medium text-white cursor-pointer"
+                                className="mt-2 px-5 py-2 rounded-lg border-none text-sm font-medium text-white cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 style={{ background: accentColor }}
                             >
                                 Done
@@ -165,7 +165,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                     <button
                                         type="button"
                                         onClick={() => setDropdownOpen((prev) => !prev)}
-                                        className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-left cursor-pointer bg-bg-primary"
+                                        className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-left cursor-pointer bg-bg-primary active:scale-[0.99] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                         style={{
                                             border: dropdownOpen
                                                 ? `1.5px solid ${accentColor}`
@@ -243,7 +243,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                                     setDropdownOpen(false)
                                                                     setRecipientSearch('')
                                                                 }}
-                                                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left border-none cursor-pointer"
+                                                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left border-none cursor-pointer active:scale-[0.99] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                                                 style={{
                                                                     background: isSelected
                                                                         ? `${accentColor}12`
@@ -326,7 +326,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                             <button
                                 onClick={handleSend}
                                 disabled={disabled}
-                                className="w-full flex items-center justify-center gap-2 rounded-lg border-none text-sm font-semibold py-2.5 transition-opacity"
+                                className="w-full flex items-center justify-center gap-2 rounded-lg border-none text-sm font-semibold py-2.5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] disabled:active:scale-100"
                                 style={{
                                     background: disabled ? 'var(--border-medium)' : accentColor,
                                     color: disabled ? 'var(--text-secondary)' : 'white',
@@ -334,7 +334,9 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                     opacity: disabled ? 0.6 : 1
                                 }}
                             >
-                                <i className={`fas ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-xs`} />
+                                <i
+                                    className={`fas ${sending ? 'fa-spinner animate-dv-spin' : 'fa-paper-plane'} text-xs`}
+                                />
                                 {sending ? 'Sending...' : 'Send'}
                             </button>
                         </>

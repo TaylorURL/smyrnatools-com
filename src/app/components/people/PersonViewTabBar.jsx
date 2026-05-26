@@ -23,7 +23,7 @@ export default function PersonViewTabBar({ accentColor, activeTab, onChange }) {
                         role="tab"
                         aria-selected={active}
                         onClick={() => onChange(tab.id)}
-                        className="flex items-center gap-1.5 rounded-md text-[12px] font-semibold border-none cursor-pointer px-3 py-1.5 transition-colors"
+                        className="flex items-center gap-1.5 rounded-md text-[12px] font-semibold border-none cursor-pointer px-3 py-1.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
                         style={{
                             background: active ? accentColor : 'transparent',
                             color: active ? '#fff' : 'var(--text-secondary)'

@@ -139,7 +139,7 @@ export function OperatorActionButtons({ onComments, onHistory, operator }) {
                     onComments?.(operator)
                 }}
                 title="Operator comments"
-                className="inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer transition-colors hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary"
+                className="inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             >
                 <i className="fas fa-comment text-[8px]" />
                 <span>Comments</span>
@@ -151,7 +151,7 @@ export function OperatorActionButtons({ onComments, onHistory, operator }) {
                     onHistory?.(operator)
                 }}
                 title="Operator history"
-                className="inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer transition-colors hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary"
+                className="inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             >
                 <i className="fas fa-history text-[8px]" />
                 <span>History</span>

@@ -25,10 +25,18 @@ function CardSection({
             onSelect(item.id)
         }
     }
-    const cardProps = onSelect ? { onClick: handleCardClick } : {}
+    const handleCardKeyDown = (e) => {
+        if (onSelect && typeof onSelect === 'function' && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault()
+            onSelect(item.id)
+        }
+    }
+    const cardProps = onSelect
+        ? { onClick: handleCardClick, onKeyDown: handleCardKeyDown, role: 'button', tabIndex: 0 }
+        : {}
     return (
         <div
-            className={`relative bg-bg-primary border border-border-light rounded-card shadow-card overflow-hidden mb-6 transition-all duration-200 ${onSelect ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0' : ''}`}
+            className={`relative bg-bg-primary border border-border-light rounded-card shadow-card overflow-hidden mb-6 transition-[colors,transform,box-shadow] duration-200 motion-reduce:transition-none ${onSelect ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] active:opacity-80' : ''}`}
             {...cardProps}
         >
             {/* Status color bar */}

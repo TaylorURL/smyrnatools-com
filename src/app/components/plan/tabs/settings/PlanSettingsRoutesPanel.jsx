@@ -53,7 +53,7 @@ export function PlanSettingsRoutesPanel({
                     />
                     <button
                         onClick={addTravelTime}
-                        className="border-none rounded-lg cursor-pointer text-sm font-semibold px-3 py-1.5 text-white"
+                        className="border-none rounded-lg cursor-pointer text-sm font-semibold px-3 py-1.5 text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{ background: accentColor }}
                     >
                         Add
@@ -103,7 +103,7 @@ function RouteRow({ accentColor, minutes, onRemove, routeKey }) {
                 </span>
                 <button
                     onClick={onRemove}
-                    className="bg-transparent border-none cursor-pointer p-1 rounded text-text-secondary"
+                    className="bg-transparent border-none cursor-pointer p-1 rounded text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     <i className="fas fa-trash text-[10px]" />
                 </button>

@@ -32,7 +32,7 @@ function SearchInput({ onChange, onClear, placeholder, value }) {
                     type="button"
                     onClick={onClear}
                     aria-label="Clear search"
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded text-[10px] cursor-pointer border-none bg-bg-tertiary text-text-secondary"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded text-[10px] cursor-pointer border-none bg-bg-tertiary text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     <i className="fas fa-times" />
                 </button>
@@ -67,7 +67,7 @@ function ResetButton({ onClick }) {
             onClick={onClick}
             aria-label="Reset filters"
             title="Reset filters"
-            className="flex items-center justify-center w-7 h-7 rounded text-[12px] cursor-pointer border-none bg-bg-secondary border border-border-light text-text-secondary"
+            className="flex items-center justify-center w-7 h-7 rounded text-[12px] cursor-pointer border-none bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
         >
             <i className="fas fa-undo" />
         </button>
@@ -84,7 +84,7 @@ function CountPill({ accentColor, active, count, label, onClick }) {
             type="button"
             onClick={onClick}
             aria-pressed={active}
-            className="inline-flex items-center gap-1 rounded text-[11px] font-semibold border cursor-pointer px-1.5 py-0.5 transition-colors text-text-primary"
+            className="inline-flex items-center gap-1 rounded text-[11px] font-semibold border cursor-pointer px-1.5 py-0.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none text-text-primary active:scale-[0.97]"
             style={{
                 background: active ? `${tint}26` : `${tint}14`,
                 borderColor: active ? tint : `${tint}30`

@@ -38,7 +38,7 @@ export function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, v
                 onClick={decrement}
                 disabled={atMin}
                 aria-label="Decrease"
-                className="px-3 text-[14px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-text-secondary border-r border-border-light"
+                className="px-3 text-[14px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-text-secondary border-r border-border-light active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
             >
                 −
             </button>
@@ -59,7 +59,7 @@ export function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, v
                 onClick={increment}
                 disabled={atMax}
                 aria-label="Increase"
-                className="px-3 text-[14px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-text-secondary border-l border-border-light"
+                className="px-3 text-[14px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-text-secondary border-l border-border-light active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
             >
                 +
             </button>

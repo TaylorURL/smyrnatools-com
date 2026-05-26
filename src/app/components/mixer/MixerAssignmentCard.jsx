@@ -45,7 +45,7 @@ export default function MixerAssignmentCard({
             <div className="form-group">
                 <label>Assigned Plant</label>
                 <button
-                    className="operator-select-button form-control"
+                    className="operator-select-button form-control active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
                     onClick={() => canEditMixer && onOpenPlantModal()}
                     type="button"
                     disabled={!canEditMixer}
@@ -60,7 +60,7 @@ export default function MixerAssignmentCard({
                 <label>Assigned Operator</label>
                 <div className="operator-select-container">
                     <button
-                        className="operator-select-button form-control"
+                        className="operator-select-button form-control active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
                         onClick={onOpenOperatorModal}
                         type="button"
                         disabled={!canEditMixer || isCleanlinessBlocking}
@@ -73,7 +73,7 @@ export default function MixerAssignmentCard({
                     {canEditMixer &&
                         (assignedOperator ? (
                             <button
-                                className="unassign-operator-button"
+                                className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 title="Unassign Operator"
                                 onClick={onUnassignOperator}
                                 type="button"
@@ -83,7 +83,7 @@ export default function MixerAssignmentCard({
                         ) : (
                             lastUnassignedOperatorId && (
                                 <button
-                                    className="undo-operator-button unassign-operator-button bg-[var(--success)] rounded text-[var(--text-light)] cursor-pointer text-[1rem] h-[38px]"
+                                    className="undo-operator-button unassign-operator-button bg-[var(--success)] rounded text-[var(--text-light)] cursor-pointer text-[1rem] h-[38px] active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     title="Undo Unassign"
                                     onClick={onUndoUnassignOperator}
                                     type="button"

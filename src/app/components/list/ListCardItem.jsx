@@ -33,7 +33,7 @@ export default function ListCardItem({ accentColor, isSelected, item, onSelectIt
                         e.stopPropagation()
                         onToggleSelect(item.id)
                     }}
-                    className="flex items-center justify-center h-4 w-4 mt-[1px] rounded shrink-0 transition-colors border-none cursor-pointer"
+                    className="flex items-center justify-center h-4 w-4 mt-[1px] rounded shrink-0 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none border-none cursor-pointer active:scale-[0.97]"
                     style={{
                         background: isSelected ? accentColor : 'transparent',
                         border: `1.5px solid ${isSelected ? accentColor : 'var(--border-medium)'}`

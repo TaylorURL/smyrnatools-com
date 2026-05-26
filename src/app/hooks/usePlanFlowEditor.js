@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { createEmptyAssignment } from '../../utils/PlanUtility'
+import { useConfirm } from '../context/ConfirmContext'
 
 const PANEL_MODE_OVERVIEW = 'overview'
 const PANEL_MODE_ADD = 'add'
@@ -13,6 +14,7 @@ const PANEL_MODE_EDIT = 'edit'
  * a destination flows back into the active draft.
  */
 export function usePlanFlowEditor({ assignments, setAssignments }) {
+    const confirm = useConfirm()
     const [selectedCode, setSelectedCode] = useState(null)
     const [panelMode, setPanelMode] = useState(PANEL_MODE_OVERVIEW)
     const [draft, setDraft] = useState(null)
@@ -105,10 +107,14 @@ export function usePlanFlowEditor({ assignments, setAssignments }) {
         cancelEditor()
     }
 
-    const deleteAssignment = (assignmentIndex) => {
+    const deleteAssignment = async (assignmentIndex) => {
         const assignment = assignments[assignmentIndex]
         if (!assignment) return
-        if (!window.confirm(`Delete ${assignment.fromPlant || '?'} → ${assignment.toPlant || '?'} route?`)) return
+        const ok = await confirm({
+            title: `Delete ${assignment.fromPlant || '?'} → ${assignment.toPlant || '?'} route?`,
+            confirmLabel: 'Delete'
+        })
+        if (!ok) return
         setAssignments((prev) => prev.filter((_, idx) => idx !== assignmentIndex))
         cancelEditor()
     }

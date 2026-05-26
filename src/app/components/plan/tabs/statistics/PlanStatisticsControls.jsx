@@ -2,7 +2,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import useFixedDropdownPosition from '../../../../hooks/useFixedDropdownPosition'
 import {
     formatPeriodLabel,
     PLAN_STATS_COMPARISONS,
@@ -10,6 +9,7 @@ import {
     shiftAnchor
 } from '../../../../../utils/PlanStatisticsUtility'
 import { getTodayDate } from '../../../../../utils/PlanUtility'
+import useFixedDropdownPosition from '../../../../hooks/useFixedDropdownPosition'
 
 /** Closes the menu when the user clicks outside both the trigger and the
  *  portaled menu. Needed because the menu lives outside the React tree's
@@ -36,7 +36,7 @@ function PeriodSelector({ accentColor, period, setPeriod }) {
                 <button
                     key={id}
                     onClick={() => setPeriod(id)}
-                    className="rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5"
+                    className="rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     style={{
                         backgroundColor: period === id ? accentColor : 'transparent',
                         color: period === id ? '#fff' : 'var(--text-secondary)'
@@ -88,7 +88,7 @@ function PeriodNavigator({
         <div className="inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1 py-0.5 bg-bg-tertiary border border-border-light">
             <button
                 onClick={() => setAnchor(shiftAnchor(anchor, period, -1))}
-                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary"
+                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 title="Previous period"
             >
                 <i className="fas fa-chevron-left text-xs" />
@@ -96,14 +96,14 @@ function PeriodNavigator({
             <span className="px-2 text-xs font-semibold text-text-primary">{periodLabel}</span>
             <button
                 onClick={() => setAnchor(shiftAnchor(anchor, period, 1))}
-                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary"
+                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 title="Next period"
             >
                 <i className="fas fa-chevron-right text-xs" />
             </button>
             <button
                 onClick={() => setAnchor(getTodayDate())}
-                className="border-none bg-transparent cursor-pointer px-2 py-1 rounded text-xs font-semibold"
+                className="border-none bg-transparent cursor-pointer px-2 py-1 rounded text-xs font-semibold active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{ color: 'var(--text-primary)' }}
             >
                 Today
@@ -124,7 +124,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
             <button
                 ref={triggerRef}
                 onClick={() => setOpen((s) => !s)}
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
+                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{
                     backgroundColor: selectedPlant ? `${accentColor}20` : 'var(--bg-tertiary)',
                     color: selectedPlant ? 'var(--text-primary)' : 'var(--text-secondary)'
@@ -144,7 +144,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                 createPortal(
                     <div
                         ref={menuRef}
-                        className="fixed rounded-lg overflow-hidden shadow-lg z-50 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light"
+                        className="fixed rounded-lg overflow-hidden shadow-lg z-50 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light origin-top-right animate-[fadeSlideIn_180ms_ease-out_both] motion-reduce:animate-none"
                         style={{ right: pos.right, top: pos.top }}
                     >
                         <button
@@ -152,7 +152,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                                 setSelectedPlant(null)
                                 setOpen(false)
                             }}
-                            className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                            className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             style={{
                                 backgroundColor: !selectedPlant ? `${accentColor}15` : 'transparent',
                                 color: 'var(--text-primary)'
@@ -171,7 +171,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                                         setSelectedPlant(code)
                                         setOpen(false)
                                     }}
-                                    className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                                    className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     style={{
                                         backgroundColor: selectedPlant === code ? `${accentColor}15` : 'transparent',
                                         color: 'var(--text-primary)'
@@ -201,7 +201,7 @@ function ComparisonMenu({ accentColor, comparison, setComparison }) {
             <button
                 ref={triggerRef}
                 onClick={() => setOpen((s) => !s)}
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
+                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{
                     backgroundColor: comparison !== 'none' ? `${accentColor}20` : 'var(--bg-tertiary)',
                     color: comparison !== 'none' ? 'var(--text-primary)' : 'var(--text-secondary)'
@@ -221,7 +221,7 @@ function ComparisonMenu({ accentColor, comparison, setComparison }) {
                 createPortal(
                     <div
                         ref={menuRef}
-                        className="fixed rounded-lg overflow-hidden shadow-lg z-50 min-w-[160px] bg-bg-primary border border-border-light"
+                        className="fixed rounded-lg overflow-hidden shadow-lg z-50 min-w-[160px] bg-bg-primary border border-border-light origin-top-right animate-[fadeSlideIn_180ms_ease-out_both] motion-reduce:animate-none"
                         style={{ right: pos.right, top: pos.top }}
                     >
                         {PLAN_STATS_COMPARISONS.map(({ id, label }) => (
@@ -231,7 +231,7 @@ function ComparisonMenu({ accentColor, comparison, setComparison }) {
                                     setComparison(id)
                                     setOpen(false)
                                 }}
-                                className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                                className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 style={{
                                     backgroundColor: comparison === id ? `${accentColor}15` : 'transparent',
                                     color: 'var(--text-primary)'

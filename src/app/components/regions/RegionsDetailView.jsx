@@ -169,7 +169,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
             footerActions={
                 <>
                     <button
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-100"
                         onClick={handleSave}
                         disabled={saving || loading}
                     >
@@ -177,7 +177,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                         <span>{saving ? 'Saving...' : 'Save'}</span>
                     </button>
                     <button
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-100"
                         onClick={() => setShowDeleteConfirmation(true)}
                         disabled={saving || loading}
                     >
@@ -250,7 +250,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                 {p?.plant_name && <span className="text-blue-500">{p.plant_name}</span>}
                                                 <button
                                                     type="button"
-                                                    className="ml-0.5 text-blue-400 hover:text-blue-600 cursor-pointer bg-transparent border-none text-sm leading-none"
+                                                    className="ml-0.5 text-blue-400 hover:text-blue-600 cursor-pointer bg-transparent border-none text-sm leading-none active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                                     onClick={() => removeChip(code)}
                                                     aria-label={`Remove ${code}`}
                                                 >
@@ -261,7 +261,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                     })}
                                     <button
                                         type="button"
-                                        className="inline-flex items-center px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-500 cursor-pointer hover:bg-slate-200"
+                                        className="inline-flex items-center px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-500 cursor-pointer hover:bg-slate-200 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                         onClick={clearAllSelected}
                                     >
                                         Clear All
@@ -282,7 +282,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                 </span>
                                 <button
                                     type="button"
-                                    className="flex items-center gap-2 rounded-xl border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-colors hover:bg-bg-hover"
+                                    className="flex items-center gap-2 rounded-xl border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-100"
                                     onClick={selectAllFiltered}
                                     disabled={!filteredPlants.length}
                                 >
@@ -341,7 +341,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                 />
                                 <button
                                     type="button"
-                                    className="flex items-center gap-1 rounded-xl border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-colors hover:bg-bg-hover"
+                                    className="flex items-center gap-1 rounded-xl border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-100"
                                     onClick={addNewDistrict}
                                     disabled={
                                         !newDistrictName.trim() || allDistrictNames.includes(newDistrictName.trim())
@@ -399,7 +399,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                                         )}
                                                                         <button
                                                                             type="button"
-                                                                            className="ml-0.5 text-blue-400 hover:text-blue-600 cursor-pointer bg-transparent border-none text-sm leading-none"
+                                                                            className="ml-0.5 text-blue-400 hover:text-blue-600 cursor-pointer bg-transparent border-none text-sm leading-none active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                                                             onClick={() =>
                                                                                 removeDistrictFromPlant(
                                                                                     code,

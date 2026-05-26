@@ -91,7 +91,7 @@ function MyOneOffRail({ reports = [], title = 'Your submissions', onEdit, emptyL
                                 <button
                                     type="button"
                                     onClick={() => onEdit?.(report)}
-                                    className="px-2.5 py-1 text-[10.5px] font-semibold rounded-md border shrink-0 mt-0.5 inline-flex items-center gap-1 cursor-pointer hover:opacity-90 bg-bg-primary border-border-light text-text-primary"
+                                    className="px-2.5 py-1 text-[10.5px] font-semibold rounded-md border shrink-0 mt-0.5 inline-flex items-center gap-1 cursor-pointer hover:opacity-90 bg-bg-primary border-border-light text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 >
                                     <i className="fas fa-pen text-[9px]" /> Edit
                                 </button>

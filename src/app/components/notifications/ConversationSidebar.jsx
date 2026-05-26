@@ -44,7 +44,7 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
         <button
             type="button"
             onClick={() => onSelect(conversation)}
-            className="flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-bg-tertiary border-b border-border-light"
+            className="flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary border-b border-border-light active:scale-[0.97]"
             style={{
                 background: active ? `${accentColor}14` : hasUnread ? `${accentColor}0A` : 'transparent',
                 borderLeft: active ? `2px solid ${accentColor}` : '2px solid transparent'
@@ -179,9 +179,9 @@ export default function ConversationSidebar({
                             key={id}
                             type="button"
                             onClick={() => onFilterChange?.(id)}
-                            className={`inline-flex items-center gap-1 rounded text-[11px] font-semibold border cursor-pointer px-1.5 py-0.5 transition-colors ${
+                            className={`inline-flex items-center gap-1 rounded text-[11px] font-semibold border cursor-pointer px-1.5 py-0.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none ${
                                 isActive ? 'force-white-text' : ''
-                            }`}
+                            } active:scale-[0.97]`}
                             style={{
                                 background: isActive ? accentColor : 'var(--bg-secondary)',
                                 borderColor: isActive ? accentColor : 'var(--border-light)',

@@ -46,7 +46,7 @@ function TruckPicker({
                             value={truckSearch}
                             onChange={(e) => setTruckSearch(e.target.value)}
                             placeholder="Search truck #, operator, or plant..."
-                            className="w-full rounded-md px-3 py-2 text-sm focus:outline-none bg-bg-secondary border border-border-light text-text-primary"
+                            className="w-full rounded-md px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent bg-bg-secondary border border-border-light text-text-primary"
                             autoFocus
                         />
                     </div>

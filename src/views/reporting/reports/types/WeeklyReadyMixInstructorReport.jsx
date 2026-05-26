@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
+import { useConfirm } from '../../../../app/context/ConfirmContext'
 import RmiAddPendingModal from '../../../../app/components/reports/granular/RmiAddPendingModal'
 import RmiAddTrainerModal from '../../../../app/components/reports/granular/RmiAddTrainerModal'
 import { ActionChip } from '../../../../app/components/reports/granular/RmiAtoms'
@@ -19,6 +20,7 @@ import { OperatorService } from '../../../../services/OperatorService'
 /* ── Submit-mode plugin ─────────────────────────────────────────────────── */
 
 export function ReadyMixInstructorSubmitPlugin({ form, plants, readOnly, setForm, userId, userPlantCode, weekIso }) {
+    const confirm = useConfirm()
     const [showAddTrainerModal, setShowAddTrainerModal] = useState(false)
     const [showAddPendingModal, setShowAddPendingModal] = useState(false)
     const [showPlantModal, setShowPlantModal] = useState(false)
@@ -184,8 +186,13 @@ export function ReadyMixInstructorSubmitPlugin({ form, plants, readOnly, setForm
     const removePending = buildRemoveFn('mixer_pending', 'tractor_pending')
     const removeTraining = buildRemoveFn('mixer_training', 'tractor_training')
 
-    const clearData = (key) => {
-        if (!confirm(`Are you sure you want to clear all ${key.replace(/_/g, ' ')} data?`)) return
+    const clearData = async (key) => {
+        const ok = await confirm({
+            title: `Clear all ${key.replace(/_/g, ' ')} data?`,
+            message: 'This action cannot be undone.',
+            confirmLabel: 'Clear'
+        })
+        if (!ok) return
         updateSnapshotData(key, [])
     }
 

@@ -29,7 +29,7 @@ export function PlanLoadErrorBanner({ message, onRetry }) {
                 <button
                     type="button"
                     onClick={onRetry}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-red-300 dark:border-red-700 bg-bg-primary text-text-primary cursor-pointer text-[11px] font-bold hover:bg-bg-secondary"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-red-300 dark:border-red-700 bg-bg-primary text-text-primary cursor-pointer text-[11px] font-bold hover:bg-bg-secondary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                 >
                     <i className="fas fa-rotate text-[10px]" />
                     Retry

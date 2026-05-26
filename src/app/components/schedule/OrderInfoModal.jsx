@@ -199,7 +199,7 @@ function OrderInfoModal({
                         <button
                             type="button"
                             onClick={() => onOpenLocation(order)}
-                            className="text-[12px] px-2.5 py-1.5 rounded border border-border-light bg-transparent cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-tertiary"
+                            className="text-[12px] px-2.5 py-1.5 rounded border border-border-light bg-transparent cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-tertiary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             title="Open route map"
                         >
                             Map
@@ -209,7 +209,7 @@ function OrderInfoModal({
                         <button
                             type="button"
                             onClick={() => onViewTickets(order)}
-                            className="text-[12px] px-2.5 py-1.5 rounded border border-border-light bg-transparent cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-tertiary"
+                            className="text-[12px] px-2.5 py-1.5 rounded border border-border-light bg-transparent cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-tertiary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             title="View loaded tickets"
                         >
                             Tickets{ticketCount != null && ticketCount > 0 ? ` (${ticketCount})` : ''}
@@ -219,7 +219,7 @@ function OrderInfoModal({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="w-7 h-7 ml-1 rounded flex items-center justify-center bg-transparent border-0 cursor-pointer text-text-tertiary hover:text-text-primary"
+                            className="w-7 h-7 ml-1 rounded flex items-center justify-center bg-transparent border-0 cursor-pointer text-text-tertiary hover:text-text-primary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             aria-label="Close"
                             title="Close (Esc)"
                         >
@@ -252,7 +252,7 @@ function OrderInfoModal({
                             key={t.id}
                             type="button"
                             onClick={() => setTab(t.id)}
-                            className="relative bg-transparent border-0 cursor-pointer py-2.5 text-[12.5px] font-medium"
+                            className="relative bg-transparent border-0 cursor-pointer py-2.5 text-[12.5px] font-medium active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             style={{
                                 borderBottom: active ? `2px solid ${accentColor}` : '2px solid transparent',
                                 color: active ? 'var(--text-primary)' : 'var(--text-secondary)',

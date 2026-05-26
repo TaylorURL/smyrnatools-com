@@ -55,7 +55,7 @@ function ContextActionButton({ accentColor, active = false, danger = false, icon
         <button
             type="button"
             onClick={onClick}
-            className="flex items-center gap-2 rounded px-3 py-2 text-[12px] font-semibold cursor-pointer transition-colors hover:brightness-95 border"
+            className="flex items-center gap-2 rounded px-3 py-2 text-[12px] font-semibold cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 border active:scale-[0.97]"
             style={styles}
         >
             <i className={`fas ${icon} text-[11px] text-center w-3.5`} />
@@ -157,7 +157,7 @@ export default function ConversationContextRail({
                                         type="button"
                                         onClick={() => isViewable && onAttachmentClick?.(type, meta)}
                                         disabled={!isViewable}
-                                        className="flex items-center gap-2 rounded text-left transition-colors hover:bg-bg-tertiary px-2.5 py-1.5 cursor-pointer disabled:cursor-default bg-bg-primary border border-border-light"
+                                        className="flex items-center gap-2 rounded text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary px-2.5 py-1.5 cursor-pointer disabled:cursor-default bg-bg-primary border border-border-light active:scale-[0.97] disabled:active:scale-100"
                                     >
                                         <i className={`${icon} text-[11px]`} style={{ color: accentColor }} />
                                         <span className="font-mono tabular-nums text-[11.5px] font-bold text-text-primary">

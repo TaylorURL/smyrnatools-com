@@ -83,14 +83,14 @@ const DateRange = ({ from, to, onFromChange, onToChange }) => (
             type="date"
             value={from}
             onChange={(e) => onFromChange(e.target.value)}
-            className="text-[12px] bg-transparent focus:outline-none flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary"
+            className="text-[12px] bg-transparent focus:outline-none focus-visible:ring-1 focus-visible:ring-accent/40 rounded-sm flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary"
         />
         <span className="text-[10px] select-none mx-0.5 text-text-tertiary">–</span>
         <input
             type="date"
             value={to}
             onChange={(e) => onToChange(e.target.value)}
-            className="text-[12px] bg-transparent focus:outline-none flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary"
+            className="text-[12px] bg-transparent focus:outline-none focus-visible:ring-1 focus-visible:ring-accent/40 rounded-sm flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary"
         />
     </div>
 )

@@ -55,7 +55,7 @@ export default function NavigationMobile({
             >
                 <img className="h-[34px]" src={SrmLogo} alt="Logo" draggable={false} />
                 <button
-                    className="items-center rounded-[10px] cursor-pointer flex h-10 justify-center w-10"
+                    className="items-center rounded-[10px] cursor-pointer flex h-10 justify-center w-10 active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     style={{
                         backgroundColor: mobileMenuOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',

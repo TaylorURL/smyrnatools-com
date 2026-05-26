@@ -75,7 +75,7 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
                 <button
                     type="button"
                     onClick={() => onOpenLocation?.(orderForMap)}
-                    className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 font-semibold uppercase tracking-wide text-text-primary"
+                    className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 font-semibold uppercase tracking-wide text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     style={{ fontSize: 12 }}
                     title={`Open map for ${composeAddress(orderForMap)}`}
                 >

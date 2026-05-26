@@ -22,7 +22,7 @@ export default function StartPageDropdown({ accentColor, onChange, value }) {
             <button
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
-                className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors"
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
                 style={FieldStyle}
             >
                 <span className="flex items-center gap-3">
@@ -53,7 +53,7 @@ export default function StartPageDropdown({ accentColor, onChange, value }) {
                                     onChange(id)
                                     setOpen(false)
                                 }}
-                                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] transition-colors hover:bg-bg-tertiary text-text-primary"
+                                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-primary active:scale-[0.97]"
                                 style={{
                                     background: isActive ? `${accentColor}14` : 'transparent',
                                     fontWeight: isActive ? 600 : 500

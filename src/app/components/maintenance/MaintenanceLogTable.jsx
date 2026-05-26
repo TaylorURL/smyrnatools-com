@@ -148,7 +148,7 @@ export function MaintenanceLogTable({
                             <td className="py-2 px-3">
                                 <button
                                     type="button"
-                                    className="flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer transition-colors hover:brightness-95"
+                                    className="flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 active:scale-[0.92]"
                                     style={{
                                         background:
                                             item.service_status === 'overdue'

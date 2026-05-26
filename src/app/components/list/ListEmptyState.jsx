@@ -20,7 +20,7 @@ export default function ListEmptyState({ accentColor, hasSearchOrPlant, onAddCli
             <p className="text-text-secondary text-[0.9375rem] mb-6 m-0">{message}</p>
             <button
                 onClick={onAddClick}
-                className="flex items-center border-none rounded text-white cursor-pointer text-sm font-semibold gap-2 outline-none px-5 py-2.5 transition-all duration-200"
+                className="flex items-center border-none rounded text-white cursor-pointer text-sm font-semibold gap-2 outline-none px-5 py-2.5 transition-all duration-200 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{ background: accentColor }}
             >
                 <i className="fas fa-plus" />

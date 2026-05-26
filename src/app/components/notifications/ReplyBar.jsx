@@ -54,7 +54,7 @@ export default function ReplyBar({ accentColor, onSend, otherName }) {
             <button
                 onClick={handleSend}
                 disabled={!canSend}
-                className="h-8 w-8 flex items-center justify-center rounded text-white shrink-0"
+                className="h-8 w-8 flex items-center justify-center rounded text-white shrink-0 active:scale-[0.92] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{
                     background: canSend ? accentColor : 'var(--bg-tertiary)',
                     color: canSend ? '#fff' : 'var(--text-tertiary)',
@@ -62,7 +62,7 @@ export default function ReplyBar({ accentColor, onSend, otherName }) {
                 }}
                 aria-label="Send message"
             >
-                <i className={`fas ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-[12px]`} />
+                <i className={`fas ${sending ? 'fa-spinner animate-dv-spin' : 'fa-paper-plane'} text-[12px]`} />
             </button>
         </div>
     )

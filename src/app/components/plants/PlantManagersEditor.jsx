@@ -171,7 +171,7 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
                                 event.preventDefault()
                                 attachManager(user.id)
                             }}
-                            className="block w-full border-b border-border-light px-4 py-2.5 text-left text-sm last:border-b-0 hover:bg-bg-hover"
+                            className="block w-full border-b border-border-light px-4 py-2.5 text-left text-sm last:border-b-0 hover:bg-bg-hover active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         >
                             <div className="font-semibold text-text-primary">{formatUserLabel(user)}</div>
                             {user.email && (
@@ -213,7 +213,7 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
                                 type="button"
                                 onClick={() => removeManager(id)}
                                 disabled={disabled}
-                                className="rounded-lg border border-border-light bg-bg-primary px-2.5 py-1 text-[11.5px] font-semibold text-text-primary transition-colors hover:bg-bg-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="rounded-lg border border-border-light bg-bg-primary px-2.5 py-1 text-[11.5px] font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] disabled:active:scale-100"
                                 title="Remove manager"
                             >
                                 <i className="fas fa-times mr-1 text-[10px]" />

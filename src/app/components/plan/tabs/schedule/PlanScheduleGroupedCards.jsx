@@ -39,7 +39,7 @@ export default function PlanScheduleGroupedCards({
                             <button
                                 type="button"
                                 onClick={() => onPickPlant(code)}
-                                className="border-none bg-transparent p-0 cursor-pointer"
+                                className="border-none bg-transparent p-0 cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 title={
                                     plantFilterSet.has(code)
                                         ? 'Tap to remove plant from filter'

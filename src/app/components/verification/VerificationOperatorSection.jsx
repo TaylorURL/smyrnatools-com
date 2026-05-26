@@ -37,7 +37,7 @@ function RatingStars({ onSelect, rating }) {
                     key={star}
                     type="button"
                     onClick={() => onSelect(star)}
-                    className="border-none bg-transparent p-0 cursor-pointer transition-transform hover:scale-110"
+                    className="border-none bg-transparent p-0 cursor-pointer transition-transform duration-150 ease-out motion-reduce:transition-none hover:scale-110 active:scale-[0.97]"
                     aria-label={`Rate ${star} of 5`}
                 >
                     <i
@@ -82,11 +82,11 @@ function PhoneControl({ accentColor, isSavingPhone, onChange, onSave, phoneOk, v
                 <button
                     onClick={onSave}
                     disabled={isSavingPhone || !value.trim()}
-                    className="flex h-9 w-9 items-center justify-center rounded-md text-white border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:brightness-95"
+                    className="flex h-9 w-9 items-center justify-center rounded-md text-white border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 active:scale-[0.92] disabled:active:scale-100"
                     style={{ background: accentColor }}
                     aria-label="Save phone"
                 >
-                    <i className={`fas ${isSavingPhone ? 'fa-spinner fa-spin' : 'fa-save'} text-[12px]`} />
+                    <i className={`fas ${isSavingPhone ? 'fa-spinner animate-dv-spin' : 'fa-save'} text-[12px]`} />
                 </button>
             </div>
             {!phoneOk && <RequiredHint>Phone is required to verify</RequiredHint>}

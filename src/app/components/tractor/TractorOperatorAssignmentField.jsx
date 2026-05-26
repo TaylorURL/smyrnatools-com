@@ -90,7 +90,7 @@ function TractorOperatorAssignmentField({
             <div className="form-group">
                 <label>Assigned Plant</label>
                 <button
-                    className="operator-select-button form-control"
+                    className="operator-select-button form-control active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
                     onClick={() => canEditTractor && setShowPlantModal(true)}
                     type="button"
                     disabled={!canEditTractor}
@@ -105,7 +105,7 @@ function TractorOperatorAssignmentField({
                 <label>Assigned Operator</label>
                 <div className="operator-select-container">
                     <button
-                        className="operator-select-button form-control"
+                        className="operator-select-button form-control active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
                         onClick={async () => {
                             if (canEditTractor) {
                                 await fetchOperatorsForModal()
@@ -123,7 +123,7 @@ function TractorOperatorAssignmentField({
                     {canEditTractor &&
                         (assignedOperator ? (
                             <button
-                                className="unassign-operator-button"
+                                className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 title="Unassign Operator"
                                 onClick={handleUnassign}
                                 type="button"
@@ -133,7 +133,7 @@ function TractorOperatorAssignmentField({
                         ) : (
                             lastUnassignedOperatorId && (
                                 <button
-                                    className="undo-operator-button unassign-operator-button bg-[var(--success)] rounded text-[var(--text-light)] cursor-pointer text-[1rem] h-[38px]"
+                                    className="undo-operator-button unassign-operator-button bg-[var(--success)] rounded text-[var(--text-light)] cursor-pointer text-[1rem] h-[38px] active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     title="Undo Unassign"
                                     onClick={handleUndoUnassign}
                                     type="button"

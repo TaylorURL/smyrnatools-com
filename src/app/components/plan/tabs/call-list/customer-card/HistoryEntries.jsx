@@ -3,10 +3,12 @@ import React, { useState } from 'react'
 
 import { CALL_OUTCOME_COLORS, CALL_OUTCOME_LABELS } from '../../../../../../utils/CallListUtility'
 import DateUtility from '../../../../../../utils/DateUtility'
+import { useConfirm } from '../../../../../context/ConfirmContext'
 import { SkelBar } from './SkelBar'
 
 export function HistoryEntries({ currentUserId, entries, isLoading, onDelete }) {
     const [deletingId, setDeletingId] = useState(null)
+    const confirm = useConfirm()
     if (isLoading) {
         return <HistoryEntriesSkeleton />
     }
@@ -15,7 +17,11 @@ export function HistoryEntries({ currentUserId, entries, isLoading, onDelete }) 
     }
     const handleDelete = async (entry) => {
         if (!onDelete) return
-        const ok = window.confirm('Delete this entry? This cannot be undone.')
+        const ok = await confirm({
+            title: 'Delete this entry?',
+            message: 'This cannot be undone.',
+            confirmLabel: 'Delete'
+        })
         if (!ok) return
         setDeletingId(entry.id)
         try {
@@ -59,7 +65,7 @@ export function HistoryEntries({ currentUserId, entries, isLoading, onDelete }) 
                                         onClick={() => handleDelete(entry)}
                                         disabled={deletingId === entry.id}
                                         title="Delete this entry"
-                                        className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded border-none cursor-pointer disabled:opacity-40 bg-transparent text-text-tertiary"
+                                        className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded border-none cursor-pointer disabled:opacity-40 bg-transparent text-text-tertiary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                                     >
                                         <i className="fas fa-trash text-[10px]" />
                                     </button>

@@ -21,7 +21,7 @@ function ChatHeaderIconButton({ accentColor, active = false, danger = false, ico
             onClick={onClick}
             title={title}
             aria-label={title}
-            className="flex h-8 w-8 items-center justify-center rounded cursor-pointer transition-colors hover:brightness-95 border"
+            className="flex h-8 w-8 items-center justify-center rounded cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 border active:scale-[0.92]"
             style={styles}
         >
             <i className={`fas ${icon} text-[11px]`} />
@@ -51,7 +51,7 @@ export default function ChatHeader({
             {isMobile && (
                 <button
                     onClick={onBack}
-                    className="flex h-8 w-8 items-center justify-center rounded transition-colors hover:bg-bg-tertiary text-text-secondary"
+                    className="flex h-8 w-8 items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.92]"
                     aria-label="Back to inbox"
                 >
                     <i className="fas fa-arrow-left text-[12px]" />

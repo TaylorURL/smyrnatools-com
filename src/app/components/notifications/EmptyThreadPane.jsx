@@ -15,7 +15,7 @@ export default function EmptyThreadPane({ accentColor, onCompose }) {
             <div className="text-[10.5px] mt-1">Pick a thread on the left or start a new message</div>
             <button
                 onClick={onCompose}
-                className="mt-3 flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 text-white"
+                className="mt-3 flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{ background: accentColor }}
             >
                 <i className="fas fa-pen text-[10px]" />

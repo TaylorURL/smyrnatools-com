@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
+import { useConfirm } from '../../../../app/context/ConfirmContext'
 import { NRMCAService } from '../../../../services/NRMCAService'
 import { LogRenewalModal } from './LogRenewalModal'
 import { daysFromNow, fmt, getRenewalStatus } from './nrmcaHelpers'
@@ -16,6 +17,7 @@ import { ScaleRow } from './ScaleRow'
  * aesthetic used throughout the Plan tab.
  */
 export function PlantCard({ plant, scales, allPlants, regionPlants, onReload, accentColor }) {
+    const confirm = useConfirm()
     const [renewModal, setRenewModal] = useState(false)
     const [editModal, setEditModal] = useState(false)
     const [addScaleModal, setAddScaleModal] = useState(false)
@@ -32,9 +34,13 @@ export function PlantCard({ plant, scales, allPlants, regionPlants, onReload, ac
           ? `Renewed ${fmt(plant.renewed_at)}`
           : 'No certification on file'
 
-    function confirmDeletePlant() {
-        if (!window.confirm(`Delete "${plant.plant_label}"? This will also remove all associated scales and history.`))
-            return
+    async function confirmDeletePlant() {
+        const ok = await confirm({
+            title: `Delete "${plant.plant_label}"?`,
+            message: 'This will also remove all associated scales and history.',
+            confirmLabel: 'Delete'
+        })
+        if (!ok) return
         NRMCAService.deletePlant(plant.id)
             .then(onReload)
             .catch((e) => alert(e?.message))

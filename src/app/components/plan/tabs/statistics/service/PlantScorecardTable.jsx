@@ -3,8 +3,7 @@ import React, { useMemo, useState } from 'react'
 
 import { fmtInt } from '../../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../../utils/PlantColocationUtility'
-import ScorePercent from '../ScorePercent'
-import { fmtMinutes } from './serviceShared'
+import { fmtMinutes, goodPctColor } from './serviceShared'
 
 function ColumnHeader({ active, direction, label, numeric, onClick, title }) {
     const arrow = !active ? '' : direction === 'asc' ? ' ↑' : ' ↓'
@@ -166,9 +165,16 @@ export default function PlantScorecardTable({ colocationMap, plantNameByCode, ro
                                     {fmtInt(row.slowJobs)}
                                 </td>
                                 <td className="px-3 py-2 text-right">
-                                    <div className="flex items-center gap-2 justify-end">
-                                        <ScorePercent size="sm" value={row.goodPct} />
-                                    </div>
+                                    {row.goodPct == null || !Number.isFinite(row.goodPct) ? (
+                                        <span className="text-text-tertiary">—</span>
+                                    ) : (
+                                        <span
+                                            className="inline-flex items-center justify-center rounded-md px-2 py-0.5 text-[11px] font-bold tabular-nums text-white whitespace-nowrap"
+                                            style={{ background: goodPctColor(row.goodPct) }}
+                                        >
+                                            {Math.round(row.goodPct * 100)}%
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="px-3 py-2 text-right text-[12.5px] tabular-nums text-text-secondary">
                                     {row.lateJobs > 0 ? fmtMinutes(row.avgLateMin) : '—'}

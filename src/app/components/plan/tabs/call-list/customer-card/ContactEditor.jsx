@@ -65,7 +65,7 @@ export function ContactEditor({ initial, isSaving, onCancel, onSave }) {
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold cursor-pointer border-none bg-transparent p-0 text-text-tertiary hover:underline"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold cursor-pointer border-none bg-transparent p-0 text-text-tertiary hover:underline active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     >
                         Cancel
                     </button>
@@ -73,7 +73,7 @@ export function ContactEditor({ initial, isSaving, onCancel, onSave }) {
                         type="button"
                         onClick={submit}
                         disabled={!canSave}
-                        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none cursor-pointer disabled:opacity-40"
+                        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none cursor-pointer disabled:opacity-40 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                         style={{
                             background: '#2563eb22',
                             boxShadow: 'inset 0 0 0 1px #2563eb55',

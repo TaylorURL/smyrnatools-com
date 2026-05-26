@@ -48,7 +48,7 @@ export default function HistoryAiSummary({
                 <p className="m-0 text-[12.5px] font-semibold text-text-primary">Failed to generate analysis.</p>
                 <button
                     onClick={handleRegenerateAISummary}
-                    className="mt-1 inline-flex items-center gap-1.5 rounded text-[10.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none bg-[var(--accent, #1e3a5f)]"
+                    className="mt-1 inline-flex items-center gap-1.5 rounded text-[10.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none bg-[var(--accent, #1e3a5f)] active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     <i className="fas fa-sync-alt text-[10px]" />
                     Try Again
@@ -103,7 +103,7 @@ export default function HistoryAiSummary({
             {isTypingComplete && (
                 <button
                     onClick={handleRegenerateAISummary}
-                    className="w-full py-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider inline-flex items-center justify-center gap-1.5 transition-colors bg-bg-secondary border border-border-light text-text-primary"
+                    className="w-full py-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider inline-flex items-center justify-center gap-1.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none bg-bg-secondary border border-border-light text-text-primary active:scale-[0.97]"
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-secondary)')}
                 >

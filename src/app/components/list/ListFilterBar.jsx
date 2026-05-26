@@ -59,7 +59,7 @@ export default function ListFilterBar({
                     onClick={() => onLayoutChange('list')}
                     className={`flex items-center text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer ${
                         !isCards ? 'bg-gray-900 text-white' : 'bg-transparent text-gray-500'
-                    }`}
+                    } active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none`}
                     aria-label="List view"
                     aria-pressed={!isCards}
                 >
@@ -70,7 +70,7 @@ export default function ListFilterBar({
                     onClick={() => onLayoutChange('cards')}
                     className={`flex items-center text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer ${
                         isCards ? 'bg-gray-900 text-white' : 'bg-transparent text-gray-500'
-                    }`}
+                    } active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none`}
                     aria-label="Cards view"
                     aria-pressed={isCards}
                 >
@@ -88,7 +88,7 @@ export default function ListFilterBar({
                                 viewMode === mode.id
                                     ? 'bg-gray-900 text-white border-none'
                                     : 'bg-transparent text-gray-500 border border-border-light'
-                            }`}
+                            } active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none`}
                         >
                             <i className={`fas ${mode.icon} text-[11px]`} />
                             {mode.label}
@@ -100,7 +100,7 @@ export default function ListFilterBar({
             {statusFilter ? (
                 <button
                     onClick={onClearStatusFilter}
-                    className="flex items-center rounded-md text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer"
+                    className="flex items-center rounded-md text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     style={{
                         background: `${accentColor}10`,
                         border: `1px solid ${accentColor}30`,
@@ -160,7 +160,7 @@ export default function ListFilterBar({
             {roleFilter ? (
                 <button
                     onClick={onClearRoleFilter}
-                    className="flex items-center rounded-md text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer"
+                    className="flex items-center rounded-md text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     style={{
                         background: `${accentColor}10`,
                         border: `1px solid ${accentColor}30`,

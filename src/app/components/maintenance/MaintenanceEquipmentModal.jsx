@@ -104,7 +104,7 @@ export function MaintenanceEquipmentModal({
 
     return (
         <div
-            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)] z-[120]"
+            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)] z-[120] animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
             onClick={onClose}
         >
             <div
@@ -127,7 +127,7 @@ export function MaintenanceEquipmentModal({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer text-text-secondary"
+                        className="flex h-6 w-6 items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary border-none cursor-pointer text-text-secondary active:scale-[0.92]"
                         aria-label="Close"
                     >
                         <i className="fas fa-times text-[11px]" />
@@ -180,7 +180,7 @@ export function MaintenanceEquipmentModal({
                         </label>
                         <button
                             type="button"
-                            className={`${FIELD_INPUT_CLS} text-left cursor-pointer`}
+                            className={`${FIELD_INPUT_CLS} text-left cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none`}
                             style={FIELD_INPUT_STYLE}
                             onClick={() => setShowPlantPicker(true)}
                         >
@@ -285,7 +285,7 @@ export function MaintenanceEquipmentModal({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 transition-colors hover:brightness-95 bg-bg-primary border border-border-light text-text-secondary"
+                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 bg-bg-primary border border-border-light text-text-secondary active:scale-[0.97]"
                     >
                         Cancel
                     </button>
@@ -293,10 +293,10 @@ export function MaintenanceEquipmentModal({
                         type="button"
                         onClick={handleSave}
                         disabled={saving}
-                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{ background: accentColor }}
                     >
-                        <i className={`fas ${saving ? 'fa-spinner fa-spin' : saveIcon} text-[10px]`} />
+                        <i className={`fas ${saving ? 'fa-spinner animate-dv-spin' : saveIcon} text-[10px]`} />
                         {saving ? 'Saving\u2026' : saveLabel}
                     </button>
                 </div>

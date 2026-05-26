@@ -211,7 +211,7 @@ function PlantRow({ accentColor, isActive, onClick, onDelete, row }) {
                             event.stopPropagation()
                             onDelete(event, item.id)
                         }}
-                        className="w-5 h-5 flex items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none bg-transparent cursor-pointer text-text-tertiary"
+                        className="w-5 h-5 flex items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary border-none bg-transparent cursor-pointer text-text-tertiary active:scale-[0.92]"
                         title="Delete submission"
                     >
                         <i className="fas fa-trash-alt text-[9px]" />

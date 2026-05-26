@@ -152,7 +152,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                 onChange={(e) => {
                                     setPlant(e.target.value)
                                 }}
-                                className={`w-full appearance-none rounded-lg pl-3 pr-9 py-2.5 text-sm font-medium focus:outline-none cursor-pointer transition-colors bg-bg-secondary border border-border-light ${plant ? 'text-text-primary' : 'text-text-secondary'}`}
+                                className={`w-full appearance-none rounded-lg pl-3 pr-9 py-2.5 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent cursor-pointer transition-colors bg-bg-secondary border border-border-light ${plant ? 'text-text-primary' : 'text-text-secondary'}`}
                             >
                                 <option value="">Select plant...</option>
                                 {plants.map((p) => (
@@ -172,7 +172,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             type="date"
                             value={lostLoadDate}
                             onChange={(e) => setLostLoadDate(e.target.value)}
-                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-bg-secondary border border-border-light text-text-primary"
+                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent bg-bg-secondary border border-border-light text-text-primary"
                         />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -184,7 +184,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             value={yardage}
                             onChange={(e) => setYardage(e.target.value)}
                             placeholder="Enter yardage..."
-                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-bg-primary border border-border-light text-text-primary"
+                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent bg-bg-primary border border-border-light text-text-primary"
                             min="0"
                         />
                     </div>
@@ -208,7 +208,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             value={customerName}
                             onChange={(e) => setCustomerName(e.target.value)}
                             placeholder="Enter customer name..."
-                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-bg-primary border border-border-light text-text-primary"
+                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent bg-bg-primary border border-border-light text-text-primary"
                         />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -220,7 +220,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             value={ticketNumber}
                             onChange={(e) => setTicketNumber(e.target.value)}
                             placeholder="Enter ticket number..."
-                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-bg-primary border border-border-light text-text-primary"
+                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent bg-bg-primary border border-border-light text-text-primary"
                         />
                     </div>
                     <AttachmentField
@@ -248,7 +248,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                 onChange={(e) => setDumpLocationOther(e.target.value)}
                                 placeholder="Specify where concrete was dumped..."
                                 autoFocus
-                                className="rounded-lg px-3 py-2.5 text-sm focus:outline-none mt-1 bg-bg-primary border border-border-light text-text-primary"
+                                className="rounded-lg px-3 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent mt-1 bg-bg-primary border border-border-light text-text-primary"
                             />
                         )}
                     </OptionRadioGroup>
@@ -269,7 +269,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                 placeholder="Explain what happened and what will be done to prevent this..."
                                 rows={3}
                                 autoFocus
-                                className="rounded-lg px-3 py-2.5 text-sm resize-none focus:outline-none mt-1 bg-bg-primary border border-border-light text-text-primary"
+                                className="rounded-lg px-3 py-2.5 text-sm resize-none focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent mt-1 bg-bg-primary border border-border-light text-text-primary"
                             />
                         )}
                     </OptionRadioGroup>

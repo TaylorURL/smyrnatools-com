@@ -308,7 +308,7 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
                                             <button
                                                 type="button"
                                                 onClick={() => onSelectAsset?.(row)}
-                                                className="font-mono tabular-nums font-semibold bg-transparent border-none cursor-pointer p-0 text-left text-text-primary"
+                                                className="font-mono tabular-nums font-semibold bg-transparent border-none cursor-pointer p-0 text-left text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                             >
                                                 {row.identifier}
                                             </button>

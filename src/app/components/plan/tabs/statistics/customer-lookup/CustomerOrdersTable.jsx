@@ -4,7 +4,7 @@ import React from 'react'
 import { fmtDate } from '../../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../../utils/PlantColocationUtility'
 import ScorePercent from '../ScorePercent'
-import { fmtMinutes, fmtYards, SAME_DAY, verdictLabel } from './customerLookupShared'
+import { fmtMinutes, fmtYards, SAME_DAY, verdictColor, verdictLabel } from './customerLookupShared'
 
 export default function CustomerOrdersTable({ colocationMap, orders, plantNameByCode }) {
     if (!orders.length) {
@@ -62,9 +62,14 @@ export default function CustomerOrdersTable({ colocationMap, orders, plantNameBy
                                     </span>
                                     {formatColocatedPlantLabel(m.plantCode, plantNameByCode, colocationMap)}
                                 </td>
-                                <td className="px-3 py-2 text-[12px] font-semibold">
+                                <td className="px-3 py-2">
                                     <div className="flex items-center gap-1.5">
-                                        <span>{verdictLabel(m)}</span>
+                                        <span
+                                            className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap"
+                                            style={{ background: verdictColor(m) }}
+                                        >
+                                            {verdictLabel(m)}
+                                        </span>
                                         {m.isSameDay && (
                                             <span
                                                 title="Same-day order — booked the day it ran (15:00 sentinel)"

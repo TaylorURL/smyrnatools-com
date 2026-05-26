@@ -141,7 +141,7 @@ export function PlanFlowRouteEditor({
             <div className="flex items-center gap-2">
                 <button
                     onClick={onCancel}
-                    className="border-none bg-transparent cursor-pointer flex items-center gap-1 text-[12px] font-semibold text-text-secondary"
+                    className="border-none bg-transparent cursor-pointer flex items-center gap-1 text-[12px] font-semibold text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     <i className="fas fa-chevron-left text-[10px]" /> Back
                 </button>
@@ -172,7 +172,7 @@ export function PlanFlowRouteEditor({
                     </select>
                     <button
                         onClick={() => setPickingDestination((value) => !value)}
-                        className="px-3 rounded-lg text-[12px] font-semibold border cursor-pointer flex items-center gap-1.5"
+                        className="px-3 rounded-lg text-[12px] font-semibold border cursor-pointer flex items-center gap-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{
                             background: pickingDestination ? '#f59e0b' : 'var(--bg-primary)',
                             borderColor: pickingDestination ? '#f59e0b' : 'var(--border-medium)',
@@ -272,21 +272,21 @@ export function PlanFlowRouteEditor({
                 {onDelete && (
                     <button
                         onClick={onDelete}
-                        className="px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer border bg-bg-primary border-border-medium text-text-primary"
+                        className="px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer border bg-bg-primary border-border-medium text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     >
                         <i className="fas fa-trash mr-1" /> Delete
                     </button>
                 )}
                 <button
                     onClick={onCancel}
-                    className="px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer border bg-bg-primary border-border-medium text-text-secondary"
+                    className="px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer border bg-bg-primary border-border-medium text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     Cancel
                 </button>
                 <button
                     onClick={onSubmit}
                     disabled={!draft.toPlant}
-                    className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold text-white border-none cursor-pointer disabled:opacity-50"
+                    className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold text-white border-none cursor-pointer disabled:opacity-50 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                     style={{ background: accentColor }}
                 >
                     <i className="fas fa-check mr-1" /> {mode === 'edit' ? 'Save changes' : 'Create route'}

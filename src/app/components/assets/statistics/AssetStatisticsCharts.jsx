@@ -108,7 +108,7 @@ export function CategoricalBarChart({ accent, data, height = 220, valueKey = 'co
 export function AssetStatsEmpty({ icon = 'fa-circle-info', loading, message }) {
     return (
         <div className="flex items-center justify-center gap-2 py-8 text-[12px] text-text-tertiary">
-            <i className={`fas ${loading ? 'fa-spinner fa-spin' : icon} text-[14px]`} />
+            <i className={`fas ${loading ? 'fa-spinner animate-dv-spin' : icon} text-[14px]`} />
             <span>{message}</span>
         </div>
     )

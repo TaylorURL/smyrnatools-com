@@ -24,8 +24,9 @@ export function MobileSection({ title, children }) {
 /** Single tappable row in the mobile navigation drawer. */
 export function MobileMenuItem({ item, isActive, onClick, accentColor = '#1e3a5f' }) {
     return (
-        <div
-            className="items-center rounded-[10px] cursor-pointer flex"
+        <button
+            type="button"
+            className="items-center rounded-[10px] cursor-pointer flex w-full text-left border-none active:scale-[0.99] active:opacity-80 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             onClick={onClick}
             style={{
                 backgroundColor: isActive ? `${accentColor}12` : 'transparent',
@@ -33,8 +34,7 @@ export function MobileMenuItem({ item, isActive, onClick, accentColor = '#1e3a5f
                 fontWeight: isActive ? 600 : 400,
                 gap: '12px',
                 marginBottom: '4px',
-                padding: '12px',
-                transition: 'all 0.15s'
+                padding: '12px'
             }}
         >
             <i
@@ -42,7 +42,7 @@ export function MobileMenuItem({ item, isActive, onClick, accentColor = '#1e3a5f
                 style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}
             ></i>
             <span className="text-[15px]">{item.text}</span>
-        </div>
+        </button>
     )
 }
 

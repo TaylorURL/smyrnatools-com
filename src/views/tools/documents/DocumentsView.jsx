@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react'
 
 import Modal, { ModalBody } from '../../../app/components/common/Modal'
 import TopSection from '../../../app/components/sections/TopSection'
+import { useConfirm } from '../../../app/context/ConfirmContext'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 import { useDocumentsData } from '../../../app/hooks/useDocumentsData'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
@@ -302,6 +303,7 @@ function Pagination({ currentPage, totalPages, pageSize, onPageSizeChange, onPag
  */
 export default function DocumentsView() {
     const accentColor = useAccentColor()
+    const confirm = useConfirm()
     const isMobile = useIsMobile()
     const { canUpload, deleteDocument, documents, error, loading, profiles, uploadFile, uploading } = useDocumentsData()
 
@@ -324,10 +326,11 @@ export default function DocumentsView() {
     )
 
     const handleDelete = useCallback(
-        (doc) => {
-            if (window.confirm(`Delete "${doc.name}"?`)) deleteDocument(doc)
+        async (doc) => {
+            const ok = await confirm({ title: `Delete "${doc.name}"?`, confirmLabel: 'Delete' })
+            if (ok) deleteDocument(doc)
         },
-        [deleteDocument]
+        [confirm, deleteDocument]
     )
 
     const searchLower = searchInput.toLowerCase().trim()

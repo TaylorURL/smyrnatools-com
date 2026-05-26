@@ -18,7 +18,7 @@ export default function PlanScheduleRowContextMenu({ onOpenAudit, onViewOrder, o
             // INSIDE from dismissing.
             onClick={(e) => e.stopPropagation()}
             onContextMenu={(e) => e.preventDefault()}
-            className="rounded-md py-1 min-w-[180px] bg-bg-primary border border-border-light fixed z-[9999]"
+            className="rounded-md py-1 min-w-[180px] bg-bg-primary border border-border-light fixed z-[9999] origin-top-left animate-[fadeSlideIn_180ms_ease-out_both]"
             style={{
                 boxShadow: '0 8px 24px rgba(0, 0, 0, 0.18)',
                 left: Math.min(rowMenu.x, window.innerWidth - 200),
@@ -28,7 +28,7 @@ export default function PlanScheduleRowContextMenu({ onOpenAudit, onViewOrder, o
             <button
                 type="button"
                 onClick={onViewOrder}
-                className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)] text-text-primary"
+                className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)] text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             >
                 <i className="fas fa-clipboard-list text-[12px] text-text-tertiary" />
                 View order
@@ -36,7 +36,7 @@ export default function PlanScheduleRowContextMenu({ onOpenAudit, onViewOrder, o
             <button
                 type="button"
                 onClick={onViewTickets}
-                className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)] text-text-primary"
+                className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)] text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             >
                 <i className="fas fa-ticket text-[12px] text-text-tertiary" />
                 View tickets
@@ -45,7 +45,7 @@ export default function PlanScheduleRowContextMenu({ onOpenAudit, onViewOrder, o
                 <button
                     type="button"
                     onClick={onOpenAudit}
-                    className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)] text-text-primary"
+                    className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)] text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                 >
                     <i className="fas fa-clock-rotate-left text-[12px] text-text-tertiary" />
                     Order audit

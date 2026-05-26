@@ -56,7 +56,7 @@ export default function PlanScheduleLoadedCell({ detail, homePlantCode, total })
               const top = fitsBelow ? anchorRect.bottom + 4 : anchorRect.top - popoverHeightEstimate - 4
               return createPortal(
                   <div
-                      className="rounded-md p-2.5 text-left whitespace-nowrap pointer-events-none"
+                      className="rounded-md p-2.5 text-left whitespace-nowrap pointer-events-none origin-top animate-[fadeSlideIn_180ms_ease-out_both] motion-reduce:animate-none"
                       style={{
                           background: 'var(--bg-primary)',
                           border: '1px solid var(--border-light)',

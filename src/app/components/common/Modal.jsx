@@ -10,11 +10,11 @@ import React from 'react'
 export default function Modal({ children, onClose, title, titleIcon }) {
     return (
         <div
-            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-8 backdrop-blur-sm"
+            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-8 backdrop-blur-sm animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
             onClick={onClose}
         >
             <div
-                className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-xl bg-white shadow-modal"
+                className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-xl bg-white shadow-modal animate-[popIn_220ms_cubic-bezier(0.23,1,0.32,1)_both] motion-reduce:animate-none"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between border-b border-gray-200 px-8 py-6">
@@ -23,7 +23,7 @@ export default function Modal({ children, onClose, title, titleIcon }) {
                         {title}
                     </h3>
                     <button
-                        className="rounded-md bg-transparent p-2 text-xl text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-900"
+                        className="rounded-md bg-transparent p-2 text-xl text-gray-400 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-gray-100 hover:text-gray-900 active:scale-[0.92]"
                         onClick={onClose}
                     >
                         <i className="fas fa-times" />

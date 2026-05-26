@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import { useConfirm } from '../../../../../app/context/ConfirmContext'
 import { usePreferences } from '../../../../../app/context/PreferencesContext'
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 9999]
@@ -61,6 +62,7 @@ const Pagination = ({ currentPage, totalPages, pageSize, onPageSizeChange, onPag
 )
 
 const LostLoadRow = ({ report, getUserName, accentColor, canDelete, onDelete, onClick }) => {
+    const confirm = useConfirm()
     const lostDate = report.data?.lost_load_date
         ? new Date(report.data.lost_load_date + 'T12:00:00')
         : report.submitted_at
@@ -114,9 +116,11 @@ const LostLoadRow = ({ report, getUserName, accentColor, canDelete, onDelete, on
             {canDelete && (
                 <button
                     type="button"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                         e.stopPropagation()
-                        if (window.confirm('Delete this lost load report?')) onDelete(report.id)
+                        if (await confirm({ title: 'Delete this lost load report?', confirmLabel: 'Delete' })) {
+                            onDelete(report.id)
+                        }
                     }}
                     className="w-6 h-6 flex items-center justify-center rounded shrink-0 ml-1.5 hidden sm:flex transition-colors hover:bg-bg-tertiary text-text-tertiary"
                     title="Delete"

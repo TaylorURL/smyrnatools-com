@@ -62,7 +62,7 @@ export default function PreferencesTab({
                                         <button
                                             key={color}
                                             onClick={() => updatePreferences('accentColor', color)}
-                                            className="relative h-10 w-10 rounded-lg transition-transform hover:scale-105"
+                                            className="relative h-10 w-10 rounded-lg transition-transform duration-150 ease-out motion-reduce:transition-none hover:scale-105 active:scale-[0.97]"
                                             style={{
                                                 background: color,
                                                 boxShadow: isActive
@@ -207,7 +207,7 @@ export default function PreferencesTab({
                     <div className="px-5 py-5">
                         <SubtleButton
                             disabled={cacheClearing}
-                            icon={cacheClearing ? 'fa-spinner fa-spin' : 'fa-broom'}
+                            icon={cacheClearing ? 'fa-spinner animate-dv-spin' : 'fa-broom'}
                             onClick={onClearCache}
                         >
                             {cacheClearing ? 'Clearing…' : 'Clear All Caches'}

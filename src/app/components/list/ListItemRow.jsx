@@ -29,7 +29,7 @@ export default function ListItemRow({ accentColor, isMobile, isSelected, item, o
                     e.stopPropagation()
                     onToggleSelect(item.id)
                 }}
-                className="flex items-center justify-center h-4 w-4 rounded shrink-0 transition-colors border-none cursor-pointer"
+                className="flex items-center justify-center h-4 w-4 rounded shrink-0 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none border-none cursor-pointer active:scale-[0.97]"
                 style={{
                     background: isSelected ? accentColor : 'transparent',
                     border: `1.5px solid ${isSelected ? accentColor : 'var(--border-medium)'}`

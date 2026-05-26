@@ -24,8 +24,9 @@
   the version bump step — it computes the next CalVer version and writes it to both `package.json` and `public/release.json`.
   Do NOT manually pick semver bump types (patch/minor/major). The calver script handles week/year rollovers
   automatically.
-- **SQL delivery: always do BOTH.** Whenever you produce SQL, paste it inline in chat in a fenced ```sql block AND write
-  it to a `.sql` file in the repo root (or appropriate migrations folder). Never one or the other — always both.
+- **SQL delivery: chat only, no files.** Whenever you produce SQL, write it inline in chat in a fenced ```sql block.
+  Do NOT save it to a `.sql` file in the repo. Ad-hoc queries, migrations, and audits all stay in the chat unless the
+  user explicitly asks for a file.
 - **Imports must satisfy `simple-import-sort`.** This project's eslint config enforces `simple-import-sort/imports` —
   CRA does NOT auto-fix on save and the dev server fails to compile on violations. Whenever you add, move, or rename an
   import in any `.js` / `.jsx` file you touch, sort the imports yourself before considering the change done. The rules:

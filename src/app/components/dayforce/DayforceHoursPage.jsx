@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import { fmtFloat, fmtInt, fmtRange } from '../../../utils/PlanStatisticsFormatUtility'
 import useDayforceOperatorFilters from '../../hooks/useDayforceOperatorFilters'
@@ -16,6 +16,13 @@ const HOURS_SORT_IDS = ['hours', 'ot', 'name']
 const OT_THRESHOLD = 40
 const APPROACHING_OT_THRESHOLD = 35
 const UNDERUTILIZED_THRESHOLD = 30
+
+/* Status colors used across the page so OT-related surfaces (spotlights,
+ * plant bars, day strip) read as one visual system. */
+const COLOR_DANGER = '#b91c1c'
+const COLOR_WARN = '#b45309'
+const COLOR_CALM = '#1d4ed8'
+const COLOR_PTO = '#0ea5e9'
 
 const USD = new Intl.NumberFormat('en-US', { currency: 'USD', maximumFractionDigits: 0, style: 'currency' })
 
@@ -36,7 +43,7 @@ const computeAvgWeeklyHours = (perOperator, perWeek) => {
 function LoadingSkeleton() {
     return (
         <div className="flex flex-col gap-4 animate-pulse">
-            {[120, 56, 200, 320, 220].map((h, i) => (
+            {[120, 56, 180, 240, 320].map((h, i) => (
                 <div key={i} className="rounded bg-bg-secondary border border-border-light" style={{ height: h }} />
             ))}
         </div>
@@ -44,12 +51,16 @@ function LoadingSkeleton() {
 }
 
 /** Compact operator chip used inside the spotlight callouts — name +
- *  badge + the headline number for the bucket (hours, OT hours, etc.).
- *  Designed to read instantly: dispatcher sees the name and the number
- *  without parsing a row. */
-function SpotlightChip({ accent, primary, secondary, row }) {
+ *  badge + the headline number for the bucket. Whole chip is a button
+ *  so clicking it filters the operator table to just this person. */
+function SpotlightChip({ accent, onClick, primary, secondary, row }) {
     return (
-        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded border border-border-light bg-bg-primary text-[12px]">
+        <button
+            type="button"
+            onClick={onClick}
+            title={`Filter table to ${row.name}`}
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded border border-border-light bg-bg-primary text-[12px] text-left w-full hover:bg-bg-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
+        >
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
                     <span className="font-semibold text-text-primary truncate">{row.name}</span>
@@ -64,10 +75,8 @@ function SpotlightChip({ accent, primary, secondary, row }) {
                 </div>
                 {secondary && <div className="text-[10.5px] text-text-tertiary truncate">{secondary}</div>}
             </div>
-            <span className="font-mono tabular-nums font-semibold shrink-0" style={{ color: 'var(--text-primary)' }}>
-                {primary}
-            </span>
-        </div>
+            <span className="font-mono tabular-nums font-semibold shrink-0 text-text-primary">{primary}</span>
+        </button>
     )
 }
 
@@ -88,10 +97,7 @@ function SpotlightColumn({ accentColor, children, count, emptyMessage, hint, ico
                     <div className="text-[12.5px] font-semibold text-text-primary truncate">{title}</div>
                     {hint && <div className="text-[10.5px] text-text-tertiary truncate">{hint}</div>}
                 </div>
-                <span
-                    className="font-mono tabular-nums text-[12.5px] font-bold shrink-0"
-                    style={{ color: 'var(--text-primary)' }}
-                >
+                <span className="font-mono tabular-nums text-[12.5px] font-bold shrink-0 text-text-primary">
                     {fmtInt(count)}
                 </span>
             </div>
@@ -104,17 +110,184 @@ function SpotlightColumn({ accentColor, children, count, emptyMessage, hint, ico
     )
 }
 
-/** Single operator row — actual / OT / OT% / PTO. Scheduled column
- *  dropped per design intent: dispatcher cares about what was worked,
- *  not what was on the schedule. */
-function OperatorHoursRow({ accent, maxHours, row }) {
+/** Plant pressure table — matches the visual vocabulary of
+ *  PlantScorecardTable on the Service tab: real <table>, bg-bg-tertiary
+ *  headers in 10.5px uppercase, 12.5px row cells. The single difference
+ *  is a "Pressure" column with an inline bar showing relative OT cost,
+ *  and that each row is clickable to scope the page to that plant. */
+function PlantPressureTable({ focusedPlantCode, maxOtCost, onTogglePlant, plants }) {
+    return (
+        <div className="overflow-x-auto rounded border border-border-light">
+            <table className="w-full min-w-[680px] border-collapse">
+                <thead>
+                    <tr>
+                        <th className="text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap border-b border-border-light bg-bg-tertiary text-text-tertiary text-left">
+                            Plant
+                        </th>
+                        <th className="text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap border-b border-border-light bg-bg-tertiary text-text-tertiary text-left hidden sm:table-cell">
+                            Pressure (rel. OT cost)
+                        </th>
+                        <th
+                            className="text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap border-b border-border-light bg-bg-tertiary text-text-tertiary text-right"
+                            title="Operators in OT / total operators at plant"
+                        >
+                            In OT
+                        </th>
+                        <th className="text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap border-b border-border-light bg-bg-tertiary text-text-tertiary text-right">
+                            OT hrs
+                        </th>
+                        <th className="text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap border-b border-border-light bg-bg-tertiary text-text-tertiary text-right">
+                            OT cost
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {plants.map((plant) => {
+                        const isSelected = focusedPlantCode === plant.code
+                        const otCostPct = maxOtCost > 0 ? (plant.otCost / maxOtCost) * 100 : 0
+                        return (
+                            <tr
+                                key={plant.code}
+                                onClick={() => onTogglePlant(plant.code)}
+                                title={isSelected ? 'Clear plant filter' : `Filter to ${plant.code}`}
+                                className={`border-t border-border-light cursor-pointer transition-colors ${
+                                    isSelected ? 'bg-bg-secondary' : 'hover:bg-bg-secondary'
+                                }`}
+                            >
+                                <td className="px-3 py-2 text-[12.5px] text-text-primary">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-mono text-[11px] tabular-nums text-text-tertiary">
+                                            {plant.code || '—'}
+                                        </span>
+                                        <span className="font-semibold truncate">
+                                            {plant.name || plant.code || '—'}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td className="px-3 py-2 hidden sm:table-cell">
+                                    <div className="h-2 rounded-sm overflow-hidden bg-bg-tertiary w-full max-w-[240px]">
+                                        <div
+                                            className="h-full"
+                                            style={{ background: COLOR_WARN, width: `${otCostPct}%` }}
+                                        />
+                                    </div>
+                                </td>
+                                <td className="px-3 py-2 text-right text-[12.5px] tabular-nums text-text-secondary">
+                                    {plant.operatorsOverOt > 0
+                                        ? `${plant.operatorsOverOt}/${plant.operatorCount}`
+                                        : '—'}
+                                </td>
+                                <td className="px-3 py-2 text-right text-[12.5px] tabular-nums font-semibold text-text-primary">
+                                    {plant.otHours > 0 ? fmtHours(plant.otHours) : '—'}
+                                </td>
+                                <td className="px-3 py-2 text-right text-[12.5px] tabular-nums font-semibold text-text-primary">
+                                    {plant.otCost > 0 ? fmtMoney(plant.otCost) : '—'}
+                                </td>
+                            </tr>
+                        )
+                    })}
+                </tbody>
+            </table>
+        </div>
+    )
+}
+
+/** Inline 7-day shift breakdown — appears when a row in the operator
+ *  table is expanded. Each bar is one calendar day in the date range;
+ *  OT chunks (anything over 8h on a day) render in amber on top of the
+ *  accent base so a single glance reveals the daily OT pattern. */
+function OperatorDailyStrip({ accent, dailyShifts }) {
+    if (!dailyShifts.length) {
+        return (
+            <div className="px-6 py-3 border-t border-border-light bg-bg-secondary text-[11.5px] text-text-tertiary">
+                No shifts in the window.
+            </div>
+        )
+    }
+    const maxHours = dailyShifts.reduce((m, d) => Math.max(m, d.actualHours || 0), 8)
+    return (
+        <div className="px-6 py-3 border-t border-border-light bg-bg-secondary">
+            <div className="flex items-end gap-1.5 h-20">
+                {dailyShifts.map((d) => {
+                    const total = d.actualHours || 0
+                    const totalPct = (total / maxHours) * 100
+                    const otHours = total > 8 ? total - 8 : 0
+                    const otPct = (otHours / maxHours) * 100
+                    const regPct = totalPct - otPct
+                    const tipParts = [
+                        d.shiftDate,
+                        d.isPto ? `PTO ${fmtHours(d.ptoHours || 0)}` : fmtHours(total),
+                        otHours > 0 ? `${fmtHours(otHours)} OT` : null,
+                        d.exceptionText ? `Exception: ${d.exceptionText}` : null
+                    ].filter(Boolean)
+                    return (
+                        <div key={d.dayforceShiftId} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                            <div className="w-full flex-1 flex items-end" title={tipParts.join(' · ')}>
+                                <div className="w-full flex flex-col-reverse" style={{ height: `${totalPct}%` }}>
+                                    {d.isPto ? (
+                                        <div
+                                            className="w-full rounded-t-sm"
+                                            style={{ background: COLOR_PTO, height: '100%' }}
+                                        />
+                                    ) : (
+                                        <>
+                                            <div
+                                                className="w-full"
+                                                style={{
+                                                    background: accent,
+                                                    height: `${(regPct / totalPct) * 100 || 0}%`,
+                                                    borderTopLeftRadius: otHours > 0 ? 0 : 2,
+                                                    borderTopRightRadius: otHours > 0 ? 0 : 2
+                                                }}
+                                            />
+                                            {otHours > 0 && (
+                                                <div
+                                                    className="w-full rounded-t-sm"
+                                                    style={{
+                                                        background: COLOR_WARN,
+                                                        height: `${(otPct / totalPct) * 100 || 0}%`
+                                                    }}
+                                                />
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                            <span className="text-[9.5px] text-text-tertiary font-mono tabular-nums">
+                                {(d.shiftDate || '').slice(5)}
+                            </span>
+                            <span className="text-[10px] text-text-primary font-mono tabular-nums">
+                                {total > 0 ? fmtFloat(total, 1) : '—'}
+                            </span>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
+/** Single operator row — actual / OT / OT% / OT cost / PTO. Clickable:
+ *  expands to reveal an inline 7-day shift strip below. */
+function OperatorHoursRow({ accent, isExpanded, maxHours, onToggle, row }) {
     const otSharePct = row.actualHours > 0 ? (row.otHours / row.actualHours) * 100 : 0
     const pct = maxHours > 0 ? (row.actualHours / maxHours) * 100 : 0
     const otPct = maxHours > 0 ? (row.otHours / maxHours) * 100 : 0
     return (
-        <div className="flex flex-col gap-1 px-3 py-2 border-t border-border-light first:border-t-0 hover:bg-bg-secondary transition-colors">
-            <div className="flex items-center gap-2 text-[12px]">
-                <span className="font-mono tabular-nums w-14 shrink-0 text-text-tertiary">{row.badge || '—'}</span>
+        <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={isExpanded}
+            className={`w-full flex flex-col gap-1 px-3 py-2 border-t border-border-light first:border-t-0 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none ${
+                isExpanded ? 'bg-bg-secondary' : 'hover:bg-bg-secondary'
+            } active:scale-[0.97]`}
+        >
+            <div className="flex items-center gap-2 text-[12.5px]">
+                <i
+                    className={`fas ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[9px] text-text-tertiary w-3 shrink-0`}
+                    aria-hidden="true"
+                />
+                <span className="font-mono tabular-nums w-12 shrink-0 text-text-tertiary">{row.badge || '—'}</span>
                 <div className="flex-1 min-w-0 flex items-center gap-2">
                     <span className="truncate text-text-primary font-semibold">{row.name}</span>
                     {row.position && (
@@ -128,99 +301,186 @@ function OperatorHoursRow({ accent, maxHours, row }) {
                         </span>
                     )}
                 </div>
-                <span className="font-mono tabular-nums w-16 text-right shrink-0 text-text-primary font-semibold">
+                <span className="font-mono tabular-nums w-14 text-right shrink-0 text-text-primary font-semibold">
                     {fmtHours(row.actualHours)}
                 </span>
                 <span
-                    className={`font-mono tabular-nums w-16 text-right shrink-0 font-semibold ${
+                    className={`font-mono tabular-nums w-14 text-right shrink-0 font-semibold ${
                         row.otHours > 0 ? 'text-text-primary' : 'text-text-tertiary'
                     }`}
                 >
                     {row.otHours > 0 ? fmtHours(row.otHours) : '—'}
                 </span>
                 <span
-                    className={`font-mono tabular-nums w-14 text-right shrink-0 ${
+                    className={`font-mono tabular-nums w-12 text-right shrink-0 hidden sm:inline ${
                         otSharePct >= 15 ? 'text-text-primary' : 'text-text-tertiary'
                     }`}
                 >
                     {otSharePct > 0 ? `${fmtFloat(otSharePct, 0)}%` : '—'}
                 </span>
-                <span className="font-mono tabular-nums w-14 text-right shrink-0 text-text-tertiary">
+                <span
+                    className={`font-mono tabular-nums w-20 text-right shrink-0 font-semibold ${
+                        row.otCost > 0 ? 'text-text-primary' : 'text-text-tertiary'
+                    }`}
+                >
+                    {row.otCost > 0 ? fmtMoney(row.otCost) : '—'}
+                </span>
+                <span className="font-mono tabular-nums w-14 text-right shrink-0 text-text-tertiary hidden md:inline">
                     {row.ptoHours > 0 ? fmtHours(row.ptoHours) : '—'}
                 </span>
             </div>
             {/* Stacked bar: regular hours in accent, OT hours in amber, on a
              *  shared canvas so the dispatcher sees both the absolute
              *  workload AND the OT chunk inside it without doing math. */}
-            <div className="h-1.5 rounded-sm overflow-hidden bg-bg-tertiary ml-16 relative">
+            <div className="h-1.5 rounded-sm overflow-hidden bg-bg-tertiary ml-[60px] relative">
                 <div className="h-full absolute left-0 top-0" style={{ background: accent, width: `${pct}%` }} />
                 {row.otHours > 0 && (
                     <div
                         className="h-full absolute top-0"
                         style={{
-                            background: '#b45309',
+                            background: COLOR_WARN,
                             left: `${pct - otPct}%`,
                             width: `${otPct}%`
                         }}
                     />
                 )}
             </div>
-        </div>
+        </button>
     )
 }
 
 /**
- * Hours sub-page for the Operations > Statistics tab. Rewritten to
- * answer the question a dispatch manager actually has at the end of a
- * week: who's going into overtime, who's approaching it, who has
- * unused capacity, and how is the OT exposure trending. Scheduled
- * hours intentionally dropped from the headline view — the dispatcher
- * cares about what got worked, not what was on the schedule.
+ * Hours sub-page for the Operations > Statistics tab. Designed to share
+ * the visual vocabulary of its sibling tabs (Service, Customer Lookup):
+ * a single `StatGroup` of summary `Stat` tiles up top, then a sequence
+ * of titled `Panel`s, each with a short description and either a real
+ * `<table>` or a callout grid.
  *
- * Layout:
- *   1. KPI strip — actual hours, OT hours + share, operators over OT,
- *      avg weekly hours, PTO, exceptions.
- *   2. Spotlight callouts — over OT / approaching OT / under-utilized.
- *      Three columns of chips so the dispatcher can see the names that
- *      need attention without scrolling the operator table.
- *   3. Filters + per-operator table — actual / OT / OT% / PTO with a
- *      stacked bar visualizing the OT chunk inside the workload.
- *   4. Per-plant rollup + weekly trend — both surface OT alongside
- *      actual hours so plant-level and time-level OT spikes are
- *      visible at a glance.
+ * Answers four operational questions in order:
+ *   1. What's the headline OT exposure for the window? — summary stats
+ *   2. Which plants are driving it? — "OT pressure by plant" table.
+ *      Click a row to scope spotlights + operator table to that plant.
+ *   3. Who's at risk right now? — three spotlight columns (over OT,
+ *      approaching OT, under-utilized). Click an operator chip to
+ *      filter the table below to just them.
+ *   4. What does one operator's pattern look like? — per-operator
+ *      table rows expand inline to reveal a 7-day shift mini-chart.
+ *
+ * Scheduled hours intentionally dropped from the headline view — the
+ * dispatcher cares about what got worked, not what was on the schedule.
  */
 export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selectedPlant }) {
     const accent = accentColor || '#1e3a5f'
     const dayforceMetrics = useDayforceOperatorMetrics({ dateRange, plantCodes, selectedPlant })
-    const { diagnostics, excluded, hasSyncedData, isLoading, perOperator, perWeek, totals } = dayforceMetrics
+    const { diagnostics, excluded, hasSyncedData, isLoading, perOperator, perPlant, perShift, perWeek, totals } =
+        dayforceMetrics
     const filters = useDayforceOperatorFilters({ defaultSort: 'hours', rows: perOperator })
 
+    /* Local plant filter that scopes the spotlights and the operator
+     * table to a single plant when the user clicks a row in the plant
+     * pressure panel. Independent from the page-level `selectedPlant`
+     * prop so the dispatcher can drill in without leaving the page. */
+    const [focusedPlantCode, setFocusedPlantCode] = useState(null)
+    const [expandedOperatorId, setExpandedOperatorId] = useState(null)
+
+    /* Roll up OT exposure per rostered plant. The shared hook ships
+     * `perPlant` with totals only — to surface OT specifically we have
+     * to bucket from `perOperator` (where the OT split lives, since OT
+     * is computed per operator-week, not per shift). */
+    const plantPressure = useMemo(() => {
+        const nameByCode = new Map((perPlant || []).map((p) => [String(p.code), p.name]))
+        const buckets = new Map()
+        for (const row of perOperator) {
+            const code = row.plantCode || 'Unassigned'
+            const bucket = buckets.get(code) || {
+                actualHours: 0,
+                code,
+                name: nameByCode.get(String(code)) || (code === 'Unassigned' ? 'Unassigned' : code),
+                operatorCount: 0,
+                operatorsOverOt: 0,
+                otCost: 0,
+                otHours: 0
+            }
+            bucket.actualHours += row.actualHours
+            bucket.otHours += row.otHours
+            bucket.otCost += row.otCost
+            bucket.operatorCount += 1
+            if (row.otHours > 0) bucket.operatorsOverOt += 1
+            buckets.set(code, bucket)
+        }
+        return Array.from(buckets.values()).sort((a, b) => b.otCost - a.otCost || b.actualHours - a.actualHours)
+    }, [perOperator, perPlant])
+
+    const maxPlantOtCost = useMemo(
+        () => plantPressure.reduce((max, p) => Math.max(max, p.otCost || 0), 0),
+        [plantPressure]
+    )
+
+    const scopedPerOperator = useMemo(
+        () =>
+            focusedPlantCode
+                ? perOperator.filter((r) => (r.plantCode || 'Unassigned') === focusedPlantCode)
+                : perOperator,
+        [focusedPlantCode, perOperator]
+    )
+
     const spotlights = useMemo(() => {
-        const overOt = perOperator
+        const overOt = scopedPerOperator
             .filter((row) => row.otHours > 0)
             .sort((a, b) => b.otHours - a.otHours)
             .slice(0, 8)
-        const approachingOt = perOperator
+        const approachingOt = scopedPerOperator
             .filter(
                 (row) =>
                     row.otHours === 0 && row.actualHours >= APPROACHING_OT_THRESHOLD && row.actualHours < OT_THRESHOLD
             )
             .sort((a, b) => b.actualHours - a.actualHours)
             .slice(0, 8)
-        const underutilized = perOperator
+        const underutilized = scopedPerOperator
             .filter((row) => row.actualHours > 0 && row.actualHours < UNDERUTILIZED_THRESHOLD)
             .sort((a, b) => a.actualHours - b.actualHours)
             .slice(0, 8)
         return { approachingOt, overOt, underutilized }
-    }, [perOperator])
+    }, [scopedPerOperator])
 
     const avgWeeklyHours = useMemo(() => computeAvgWeeklyHours(perOperator, perWeek), [perOperator, perWeek])
     const otSharePct = totals.totalActualHours > 0 ? (totals.otHours / totals.totalActualHours) * 100 : 0
     const operatorsInOt = useMemo(() => perOperator.filter((r) => r.otHours > 0).length, [perOperator])
+    const otCostShareOfPayroll = totals.totalCost > 0 ? (totals.otCost / totals.totalCost) * 100 : 0
+
+    /* Apply both the plant focus and the user filter to the table rows. */
+    const tableRows = useMemo(() => {
+        if (!focusedPlantCode) return filters.filtered
+        return filters.filtered.filter((r) => (r.plantCode || 'Unassigned') === focusedPlantCode)
+    }, [filters.filtered, focusedPlantCode])
+
     const maxOperatorHours = useMemo(
-        () => filters.filtered.reduce((max, row) => Math.max(max, row.actualHours || 0), 1),
-        [filters.filtered]
+        () => tableRows.reduce((max, row) => Math.max(max, row.actualHours || 0), 1),
+        [tableRows]
     )
+
+    /* Pre-bucket per-shift rows by employee so the row-expand handler
+     * doesn't re-filter the entire perShift list on every render. */
+    const shiftsByEmployee = useMemo(() => {
+        const map = new Map()
+        for (const s of perShift || []) {
+            const arr = map.get(s.dayforceEmployeeId) || []
+            arr.push(s)
+            map.set(s.dayforceEmployeeId, arr)
+        }
+        for (const arr of map.values()) {
+            arr.sort((a, b) => String(a.shiftDate).localeCompare(String(b.shiftDate)))
+        }
+        return map
+    }, [perShift])
+
+    const focusOperator = (row) => {
+        filters.setSearch(row.badge || row.name)
+    }
+
+    const togglePlantFocus = (code) => {
+        setFocusedPlantCode((current) => (current === code ? null : code))
+    }
 
     if (isLoading && diagnostics.shiftsLoaded === 0) return <LoadingSkeleton />
 
@@ -228,10 +488,7 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
         return (
             <Panel title="Couldn't load Dayforce data" innerClassName="p-3">
                 <div className="flex items-start gap-3 text-[12.5px]">
-                    <i
-                        className="fas fa-circle-exclamation text-[14px] mt-0.5"
-                        style={{ color: 'var(--text-primary)' }}
-                    />
+                    <i className="fas fa-circle-exclamation text-[14px] mt-0.5 text-text-primary" />
                     <div className="flex flex-col gap-1 min-w-0">
                         <span className="font-semibold text-text-primary">Query error</span>
                         <span className="text-text-secondary font-mono break-all">{diagnostics.loadError}</span>
@@ -265,108 +522,157 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
                         </span>
                     )
                 }
-                innerClassName="p-3"
+                innerClassName="p-0 overflow-hidden"
             >
-                <StatGroup columns={6}>
-                    <Stat
-                        label="Actual hours"
-                        value={fmtHours(totals.totalActualHours)}
-                        hint="Worked across the window"
-                    />
-                    <Stat
-                        label="OT hours"
-                        value={fmtHours(totals.otHours)}
-                        hint={
-                            totals.totalActualHours > 0
-                                ? `${fmtFloat(otSharePct, 1)}% of total · ${fmtMoney(totals.otCost)}`
-                                : 'No actual hours yet'
-                        }
-                    />
-                    <Stat
-                        label="Operators in OT"
-                        value={fmtInt(operatorsInOt)}
-                        hint={
-                            totals.operatorCount > 0
-                                ? `${fmtFloat((operatorsInOt / totals.operatorCount) * 100, 0)}% of fleet`
-                                : '—'
-                        }
-                    />
-                    <Stat label="Avg weekly hours" value={fmtHours(avgWeeklyHours)} hint="Per operator-week" />
-                    <Stat
-                        label="PTO hours"
-                        value={fmtHours(totals.ptoHours)}
-                        hint={`${fmtInt(totals.operatorCount)} operators`}
-                    />
-                    <Stat
-                        label="Exceptions"
-                        value={fmtInt(totals.exceptionsCount)}
-                        hint={`${totals.exceptionEmployees} operator(s)`}
-                    />
-                </StatGroup>
+                <div className="flex flex-col gap-3 p-3">
+                    <StatGroup columns={6}>
+                        <Stat
+                            label="Actual hours"
+                            value={fmtHours(totals.totalActualHours)}
+                            hint={
+                                totals.operatorCount > 0
+                                    ? `Across ${fmtInt(totals.operatorCount)} operators`
+                                    : 'Worked across the window'
+                            }
+                        />
+                        <Stat
+                            label="OT hours"
+                            value={fmtHours(totals.otHours)}
+                            hint={
+                                totals.totalActualHours > 0
+                                    ? `${fmtFloat(otSharePct, 1)}% of total · ${fmtMoney(totals.otCost)}`
+                                    : 'No actual hours yet'
+                            }
+                        />
+                        <Stat
+                            label="Operators in OT"
+                            value={fmtInt(operatorsInOt)}
+                            hint={
+                                totals.operatorCount > 0
+                                    ? `${fmtFloat((operatorsInOt / totals.operatorCount) * 100, 0)}% of fleet`
+                                    : '—'
+                            }
+                        />
+                        <Stat label="Avg weekly hours" value={fmtHours(avgWeeklyHours)} hint="Per operator-week" />
+                        <Stat
+                            label="PTO hours"
+                            value={fmtHours(totals.ptoHours)}
+                            hint={`${fmtInt(totals.operatorCount)} operators in window`}
+                        />
+                        <Stat
+                            label="Exceptions"
+                            value={fmtInt(totals.exceptionsCount)}
+                            hint={`${fmtInt(totals.exceptionEmployees)} operator${totals.exceptionEmployees === 1 ? '' : 's'} flagged`}
+                        />
+                    </StatGroup>
+                    <div className="text-[11.5px] text-text-secondary">
+                        OT cost is {fmtFloat(otCostShareOfPayroll, 1)}% of total payroll for this window. The richer
+                        breakdown lives in the panels below.
+                    </div>
+                </div>
             </Panel>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                <SpotlightColumn
-                    accentColor="#b91c1c"
-                    count={spotlights.overOt.length}
-                    emptyMessage="No operators went over 40h this period."
-                    hint={`>${OT_THRESHOLD}h in a week`}
-                    icon="fa-triangle-exclamation"
-                    title="Over OT"
-                >
-                    {spotlights.overOt.map((row) => (
-                        <SpotlightChip
-                            key={row.dayforceEmployeeId}
-                            accent={accent}
-                            primary={fmtHours(row.otHours)}
-                            secondary={`${fmtHours(row.actualHours)} actual · ${fmtMoney(row.otCost)} OT cost`}
-                            row={row}
-                        />
-                    ))}
-                </SpotlightColumn>
+            <Panel
+                title="OT pressure by plant"
+                right={
+                    focusedPlantCode ? (
+                        <button
+                            type="button"
+                            onClick={() => setFocusedPlantCode(null)}
+                            className="text-[11px] text-text-secondary hover:text-text-primary flex items-center gap-1 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        >
+                            <i className="fas fa-xmark text-[10px]" /> Clear plant filter ({focusedPlantCode})
+                        </button>
+                    ) : null
+                }
+            >
+                <div className="text-[11.5px] mb-2 text-text-secondary">
+                    Which plants are eating the OT budget — sorted by OT cost, worst first. Click any row to filter the
+                    spotlights and operator table below to that plant.
+                </div>
+                {plantPressure.length === 0 ? (
+                    <EmptySection icon="fa-circle-info" message="No plant data in the window." />
+                ) : (
+                    <PlantPressureTable
+                        focusedPlantCode={focusedPlantCode}
+                        maxOtCost={maxPlantOtCost}
+                        onTogglePlant={togglePlantFocus}
+                        plants={plantPressure}
+                    />
+                )}
+            </Panel>
 
-                <SpotlightColumn
-                    accentColor="#b45309"
-                    count={spotlights.approachingOt.length}
-                    emptyMessage="No operators near the OT threshold."
-                    hint={`${APPROACHING_OT_THRESHOLD}–${OT_THRESHOLD}h in a week`}
-                    icon="fa-stopwatch"
-                    title="Approaching OT"
-                >
-                    {spotlights.approachingOt.map((row) => (
-                        <SpotlightChip
-                            key={row.dayforceEmployeeId}
-                            accent={accent}
-                            primary={fmtHours(row.actualHours)}
-                            secondary={
-                                row.position ? `${row.position} · room to slow down` : 'Room to slow down before OT'
-                            }
-                            row={row}
-                        />
-                    ))}
-                </SpotlightColumn>
+            <Panel title="At-risk operators">
+                <div className="text-[11.5px] mb-2 text-text-secondary">
+                    Three buckets the dispatcher acts on daily: who already triggered OT, who's one rough day from it,
+                    and who's been under-scheduled. Click any operator chip to filter the table below.
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    <SpotlightColumn
+                        accentColor={COLOR_DANGER}
+                        count={spotlights.overOt.length}
+                        emptyMessage={`No operators went over ${OT_THRESHOLD}h${focusedPlantCode ? ' at this plant' : ''} this period.`}
+                        hint={`>${OT_THRESHOLD}h in a week`}
+                        icon="fa-triangle-exclamation"
+                        title="Over OT"
+                    >
+                        {spotlights.overOt.map((row) => (
+                            <SpotlightChip
+                                key={row.dayforceEmployeeId}
+                                accent={accent}
+                                onClick={() => focusOperator(row)}
+                                primary={fmtHours(row.otHours)}
+                                secondary={`${fmtHours(row.actualHours)} actual · ${fmtMoney(row.otCost)} OT cost`}
+                                row={row}
+                            />
+                        ))}
+                    </SpotlightColumn>
 
-                <SpotlightColumn
-                    accentColor="#1d4ed8"
-                    count={spotlights.underutilized.length}
-                    emptyMessage="No operators below the under-utilized threshold."
-                    hint={`<${UNDERUTILIZED_THRESHOLD}h in a week`}
-                    icon="fa-bed"
-                    title="Under-utilized"
-                >
-                    {spotlights.underutilized.map((row) => (
-                        <SpotlightChip
-                            key={row.dayforceEmployeeId}
-                            accent={accent}
-                            primary={fmtHours(row.actualHours)}
-                            secondary={
-                                row.ptoHours > 0 ? `${fmtHours(row.ptoHours)} PTO in window` : 'Capacity available'
-                            }
-                            row={row}
-                        />
-                    ))}
-                </SpotlightColumn>
-            </div>
+                    <SpotlightColumn
+                        accentColor={COLOR_WARN}
+                        count={spotlights.approachingOt.length}
+                        emptyMessage="No operators near the OT threshold."
+                        hint={`${APPROACHING_OT_THRESHOLD}–${OT_THRESHOLD}h in a week`}
+                        icon="fa-stopwatch"
+                        title="Approaching OT"
+                    >
+                        {spotlights.approachingOt.map((row) => (
+                            <SpotlightChip
+                                key={row.dayforceEmployeeId}
+                                accent={accent}
+                                onClick={() => focusOperator(row)}
+                                primary={fmtHours(row.actualHours)}
+                                secondary={
+                                    row.position ? `${row.position} · room to slow down` : 'Room to slow down before OT'
+                                }
+                                row={row}
+                            />
+                        ))}
+                    </SpotlightColumn>
+
+                    <SpotlightColumn
+                        accentColor={COLOR_CALM}
+                        count={spotlights.underutilized.length}
+                        emptyMessage="No operators below the under-utilized threshold."
+                        hint={`<${UNDERUTILIZED_THRESHOLD}h in a week`}
+                        icon="fa-bed"
+                        title="Under-utilized"
+                    >
+                        {spotlights.underutilized.map((row) => (
+                            <SpotlightChip
+                                key={row.dayforceEmployeeId}
+                                accent={accent}
+                                onClick={() => focusOperator(row)}
+                                primary={fmtHours(row.actualHours)}
+                                secondary={
+                                    row.ptoHours > 0 ? `${fmtHours(row.ptoHours)} PTO in window` : 'Capacity available'
+                                }
+                                row={row}
+                            />
+                        ))}
+                    </SpotlightColumn>
+                </div>
+            </Panel>
 
             <DayforceFilters
                 accent={accent}
@@ -378,7 +684,7 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
                 setSearch={filters.setSearch}
                 setSort={filters.setSort}
                 sortIds={HOURS_SORT_IDS}
-                visibleCount={filters.filtered.length}
+                visibleCount={tableRows.length}
             />
 
             <Panel
@@ -389,34 +695,51 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
                         <RefreshingHint when />
                     ) : (
                         <span className="text-[11px] text-text-tertiary">
-                            {filters.filtered.length} of {perOperator.length} shown
+                            {tableRows.length} of {perOperator.length} shown
+                            {focusedPlantCode ? ` · ${focusedPlantCode} only` : ''}
                         </span>
                     )
                 }
             >
-                {filters.filtered.length === 0 ? (
+                {tableRows.length === 0 ? (
                     <EmptySection
                         icon="fa-filter-circle-xmark"
-                        message="No operators match these filters. Try widening the date range or clearing the search / role filters."
+                        message="No operators match these filters. Try widening the date range or clearing the search / role / plant filters."
                     />
                 ) : (
                     <div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary border-b border-border-light bg-bg-secondary">
-                            <span className="w-14 shrink-0">Badge</span>
+                        <div className="flex items-center gap-2 px-3 py-2 text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary border-b border-border-light bg-bg-tertiary">
+                            <span className="w-3 shrink-0" aria-hidden="true" />
+                            <span className="w-12 shrink-0">Badge</span>
                             <span className="flex-1">Operator</span>
-                            <span className="w-16 text-right shrink-0">Actual</span>
-                            <span className="w-16 text-right shrink-0">OT</span>
-                            <span className="w-14 text-right shrink-0">OT %</span>
-                            <span className="w-14 text-right shrink-0">PTO</span>
+                            <span className="w-14 text-right shrink-0">Actual</span>
+                            <span className="w-14 text-right shrink-0">OT</span>
+                            <span className="w-12 text-right shrink-0 hidden sm:inline">OT %</span>
+                            <span className="w-20 text-right shrink-0">OT cost</span>
+                            <span className="w-14 text-right shrink-0 hidden md:inline">PTO</span>
                         </div>
-                        {filters.filtered.map((row) => (
-                            <OperatorHoursRow
-                                key={row.dayforceEmployeeId}
-                                accent={accent}
-                                maxHours={maxOperatorHours}
-                                row={row}
-                            />
-                        ))}
+                        {tableRows.map((row) => {
+                            const isExpanded = expandedOperatorId === row.dayforceEmployeeId
+                            return (
+                                <React.Fragment key={row.dayforceEmployeeId}>
+                                    <OperatorHoursRow
+                                        accent={accent}
+                                        isExpanded={isExpanded}
+                                        maxHours={maxOperatorHours}
+                                        onToggle={() =>
+                                            setExpandedOperatorId(isExpanded ? null : row.dayforceEmployeeId)
+                                        }
+                                        row={row}
+                                    />
+                                    {isExpanded && (
+                                        <OperatorDailyStrip
+                                            accent={accent}
+                                            dailyShifts={shiftsByEmployee.get(row.dayforceEmployeeId) || []}
+                                        />
+                                    )}
+                                </React.Fragment>
+                            )
+                        })}
                     </div>
                 )}
             </Panel>

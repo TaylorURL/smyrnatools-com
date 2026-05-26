@@ -23,7 +23,7 @@ function CleanlinessRating({ canEditTractor, cleanlinessRating, setCleanlinessRa
                         <button
                             key={star}
                             type="button"
-                            className={`star-button ${star <= cleanlinessRating ? 'active' : ''} ${!canEditTractor ? 'disabled' : ''}`}
+                            className={`star-button ${star <= cleanlinessRating ? 'active' : ''} ${!canEditTractor ? 'disabled' : ''} active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none`}
                             onClick={() =>
                                 canEditTractor && setCleanlinessRating(star === cleanlinessRating ? 0 : star)
                             }

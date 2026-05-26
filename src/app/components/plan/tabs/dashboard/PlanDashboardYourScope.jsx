@@ -40,7 +40,7 @@ export function PlanChecklistRow({ accent, checked, onToggle, subtitle, text, ti
         <button
             type="button"
             onClick={onToggle}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border-none cursor-pointer text-left transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border-none cursor-pointer text-left active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             style={{
                 background: checked ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
                 opacity: checked ? 0.65 : 1

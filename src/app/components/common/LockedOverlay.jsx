@@ -52,7 +52,7 @@ function LockedOverlay({ reason }) {
                 <p className="mb-8 text-base leading-relaxed text-slate-500">{message}</p>
                 <div className="flex flex-col gap-3">
                     <button
-                        className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none px-6 py-3.5 text-[15px] font-semibold text-white"
+                        className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none px-6 py-3.5 text-[15px] font-semibold text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{ backgroundColor: accentColor }}
                         onClick={() => window.location.reload()}
                     >
@@ -60,7 +60,7 @@ function LockedOverlay({ reason }) {
                         Refresh Page
                     </button>
                     <button
-                        className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none bg-slate-100 px-6 py-3.5 text-[15px] font-semibold text-gray-700"
+                        className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none bg-slate-100 px-6 py-3.5 text-[15px] font-semibold text-gray-700 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         onClick={handleSignOut}
                     >
                         <i className="fas fa-sign-out-alt" />

@@ -126,7 +126,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                                 )}
                                 <button
                                     type="button"
-                                    className="flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.92] disabled:active:scale-100"
                                     onClick={() => remove(row.plantCode)}
                                     disabled={disabled}
                                     aria-label={`Remove ${row.plantCode} from co-location`}
@@ -167,7 +167,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                                 type="button"
                                 disabled={disabled}
                                 onClick={() => add(candidate.plantCode)}
-                                className="flex w-full items-center gap-3 border-none bg-transparent px-4 py-2.5 text-left cursor-pointer hover:bg-bg-hover transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                                className="flex w-full items-center gap-3 border-none bg-transparent px-4 py-2.5 text-left cursor-pointer hover:bg-bg-hover transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.97] disabled:active:scale-100"
                                 style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border-light)' }}
                             >
                                 <i className="fas fa-plus text-[11px] text-text-tertiary" aria-hidden="true" />
@@ -213,7 +213,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                     />
                     <button
                         type="button"
-                        className="rounded-xl border border-border-light bg-bg-primary px-5 py-2.5 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-50"
+                        className="rounded-xl border border-border-light bg-bg-primary px-5 py-2.5 text-sm font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97] disabled:active:scale-100"
                         onClick={handleAddCustom}
                         disabled={disabled || !customCodeInput.trim()}
                     >

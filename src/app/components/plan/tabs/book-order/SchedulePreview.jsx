@@ -130,7 +130,7 @@ export default function SchedulePreview({ accentColor, existingOrders, newOrder,
                                 return (
                                     <tr
                                         key="__new"
-                                        className={`transition-all duration-700 ease-out ${animated ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'} border-t border-border-light`}
+                                        className={`transition-all duration-[250ms] ease-out ${animated ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'} border-t border-border-light`}
                                         style={{
                                             background: `${accentColor}1f`,
                                             boxShadow: `inset 3px 0 0 0 ${accentColor}`

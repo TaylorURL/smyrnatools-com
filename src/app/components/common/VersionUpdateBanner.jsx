@@ -22,13 +22,13 @@ function VersionUpdateBanner({ onDismiss }) {
                 </p>
                 <div className="flex items-center justify-end gap-2">
                     <button
-                        className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
                         onClick={onDismiss}
                     >
                         Ignore
                     </button>
                     <button
-                        className="px-3 py-1.5 text-xs font-medium text-white rounded-lg hover:opacity-90 transition-opacity"
+                        className="px-3 py-1.5 text-xs font-medium text-white rounded-lg hover:opacity-90 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
                         style={{ backgroundColor: accentColor }}
                         onClick={() => window.location.reload()}
                     >

@@ -23,7 +23,7 @@ export default function PasswordModal({
         !loading && currentPassword && newPassword && newPassword === confirmPassword && newPassword.length >= 8
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)] animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
             onClick={onClose}
         >
             <div
@@ -42,7 +42,7 @@ export default function PasswordModal({
                     </div>
                     <button
                         onClick={onClose}
-                        className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-bg-tertiary text-text-secondary"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.92]"
                         aria-label="Close"
                     >
                         <i className="fas fa-times text-[14px]" />
@@ -103,7 +103,7 @@ export default function PasswordModal({
                         <button
                             type="submit"
                             disabled={!canSubmit}
-                            className="flex-1 rounded-lg py-2.5 text-[12px] font-semibold uppercase tracking-wider text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 rounded-lg py-2.5 text-[12px] font-semibold uppercase tracking-wider text-white disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
                             style={{ background: accentColor }}
                         >
                             Update Password

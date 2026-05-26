@@ -130,7 +130,7 @@ function StatusFilterRow({ activeKey, onSelect, roster }) {
                         key={key}
                         type="button"
                         onClick={() => onSelect(key)}
-                        className="bg-transparent border-none cursor-pointer p-0 text-[12px]"
+                        className="bg-transparent border-none cursor-pointer p-0 text-[12px] active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{
                             color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
                             fontWeight: active ? 600 : 400,

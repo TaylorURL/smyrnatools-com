@@ -23,7 +23,7 @@ export default function PageHeader({ accentColor, conversationCount = 0, onCompo
                 <button
                     type="button"
                     onClick={onMarkAllRead}
-                    className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 bg-bg-tertiary text-text-secondary"
+                    className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 bg-bg-tertiary text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     <i className="fas fa-check-double" />
                     <span className="hidden sm:inline">Mark all read</span>
@@ -32,7 +32,7 @@ export default function PageHeader({ accentColor, conversationCount = 0, onCompo
             <button
                 type="button"
                 onClick={onCompose}
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 text-white"
+                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{ background: accentColor }}
             >
                 <i className="fas fa-pen" />

@@ -33,7 +33,7 @@ export function FilterStrip({ isLoading, onChangeQuery, onChangeSort, query, sor
                     <button
                         type="button"
                         onClick={() => onChangeQuery('')}
-                        className="border-none bg-transparent cursor-pointer text-text-tertiary"
+                        className="border-none bg-transparent cursor-pointer text-text-tertiary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         aria-label="Clear search"
                     >
                         <i className="fas fa-times text-[10px]" />
@@ -175,7 +175,7 @@ function BackToListBar({ onClose }) {
             <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary"
+                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
             >
                 <i className="fas fa-arrow-left text-[10px]" />
                 Back to list

@@ -6,8 +6,8 @@ import { OPERATOR_EXCLUSION_REASONS } from '../../constants/reportConstants'
 function OperatorExclusionReasonModal({ onConfirm, onCancel }) {
     const [selectedReason, setSelectedReason] = useState('')
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-bg-primary rounded-2xl p-5 sm:p-8 max-w-md w-full shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4 animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none">
+            <div className="bg-bg-primary rounded-2xl p-5 sm:p-8 max-w-md w-full shadow-2xl animate-[popIn_220ms_cubic-bezier(0.23,1,0.32,1)_both] motion-reduce:animate-none">
                 <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 flex items-center justify-center rounded-full bg-amber-100 text-text-primary">
                         <i className="fas fa-users-slash"></i>

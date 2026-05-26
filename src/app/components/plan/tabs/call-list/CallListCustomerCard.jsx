@@ -41,7 +41,7 @@ export function CallListCustomerCardRow({ isActive, onSelect, row }) {
         <button
             type="button"
             onClick={() => onSelect(row.customer_num)}
-            className="text-left rounded-md p-3 flex flex-col gap-2 cursor-pointer border transition-colors"
+            className="text-left rounded-md p-3 flex flex-col gap-2 cursor-pointer border active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             style={{
                 background: isActive ? 'var(--bg-secondary)' : 'var(--bg-primary)',
                 borderColor: isActive ? 'var(--text-secondary)' : 'var(--border-light)'
@@ -228,7 +228,7 @@ export function CallListCustomerDetail({
                 <button
                     type="button"
                     onClick={onClose}
-                    className="text-[11.5px] text-text-secondary cursor-pointer bg-transparent border-none p-1"
+                    className="text-[11.5px] text-text-secondary cursor-pointer bg-transparent border-none p-1 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     title="Back to list"
                 >
                     Close
@@ -291,7 +291,7 @@ export function CallListCustomerDetail({
                                 type="button"
                                 onClick={() => submit(key)}
                                 disabled={isSaving || busy}
-                                className="inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-[12px] font-semibold border-none cursor-pointer disabled:opacity-50 transition-colors"
+                                className="inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-[12px] font-semibold border-none cursor-pointer disabled:opacity-50 active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                                 style={{
                                     background: `${color}22`,
                                     boxShadow: `inset 0 0 0 1px ${color}55`,
@@ -309,7 +309,7 @@ export function CallListCustomerDetail({
                         type="button"
                         onClick={() => submit('note')}
                         disabled={!comment.trim() || submitting === 'note'}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold cursor-pointer disabled:opacity-40 border-none bg-transparent p-0 text-text-secondary hover:underline"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold cursor-pointer disabled:opacity-40 border-none bg-transparent p-0 text-text-secondary hover:underline active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                     >
                         <i className="fas fa-note-sticky text-[9px]" />
                         Save note without outcome

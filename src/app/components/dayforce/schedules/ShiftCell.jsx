@@ -54,12 +54,14 @@ export function ShiftCell({ accent, shift, yardage }) {
     const shiftYph =
         Number(shift.actualHours) > 0 && Number(yardage) > 0 ? Number(yardage) / Number(shift.actualHours) : null
     const isLowYph = shiftYph != null && shiftYph < YPH_TARGET
-    /** Red flag — long shift (>14h), any late punch, OR a low-YPH
-     *  shift. Outweighs the amber Dayforce-exception color so the
-     *  most urgent issues are visible at a glance across the grid. */
-    const hasRedFlag = shiftHasRedFlag(shift) || isLowYph
     const isLong = isShiftLong(shift.actualHours)
     const inLate = isPunchLate(shift.actualInPunchAt || shift.actualInAt, shift.scheduledInAt)
+    /** Red tier — long shift (>14h) only. The lone HOS-style flag,
+     *  outranks every other warning across the grid. */
+    const hasRedFlag = shiftHasRedFlag(shift)
+    /** Orange tier — low YPH or late clock-in. Performance signals
+     *  the dispatcher should notice but not as severe as red. */
+    const hasOrangeFlag = isLowYph || inLate
     // Numeric cells render in the theme text color regardless of flag state —
     // the inline alert icon next to the number carries the warning signal.
     const hoursColor = 'var(--text-primary)'
@@ -88,7 +90,7 @@ export function ShiftCell({ accent, shift, yardage }) {
                 <span className="font-mono tabular-nums font-semibold text-[13px]" style={{ color: hoursColor }}>
                     {fmtHours(shift.actualHours)}
                 </span>
-                {(hasRedFlag || hasException) && (
+                {(hasRedFlag || hasOrangeFlag || hasException) && (
                     <i
                         className="fas fa-triangle-exclamation text-[10px]"
                         style={{ color: iconColor }}

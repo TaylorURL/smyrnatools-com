@@ -8,6 +8,7 @@ import { BrowserRouter } from 'react-router-dom'
 import packageJson from '../package.json'
 import App from './app/App'
 import { AuthProvider } from './app/context/AuthContext'
+import { ConfirmProvider } from './app/context/ConfirmContext'
 import { OperatorClockStatusProvider } from './app/context/OperatorClockStatusContext'
 import { PreferencesProvider } from './app/context/PreferencesContext'
 import { TutorialProvider } from './app/context/TutorialContext'
@@ -97,9 +98,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <PreferencesProvider>
                     <OperatorClockStatusProvider>
                         <TutorialProvider>
-                            <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
-                                <App />
-                            </Sentry.ErrorBoundary>
+                            <ConfirmProvider>
+                                <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
+                                    <App />
+                                </Sentry.ErrorBoundary>
+                            </ConfirmProvider>
                         </TutorialProvider>
                     </OperatorClockStatusProvider>
                 </PreferencesProvider>

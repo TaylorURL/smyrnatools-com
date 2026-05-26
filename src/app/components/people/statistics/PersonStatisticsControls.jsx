@@ -12,7 +12,7 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
         <div className="relative">
             <button
                 onClick={() => setOpen((s) => !s)}
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
+                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{
                     backgroundColor: selectedPlant ? `${accentColor}20` : 'var(--bg-tertiary)',
                     color: selectedPlant ? accentColor : 'var(--text-secondary)'
@@ -29,7 +29,7 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
                             setSelectedPlant('')
                             setOpen(false)
                         }}
-                        className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                        className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{
                             backgroundColor: !selectedPlant ? `${accentColor}15` : 'transparent',
                             color: !selectedPlant ? accentColor : 'var(--text-primary)'
@@ -48,7 +48,7 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
                                     setSelectedPlant(code)
                                     setOpen(false)
                                 }}
-                                className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                                className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 style={{
                                     backgroundColor: selectedPlant === code ? `${accentColor}15` : 'transparent',
                                     color: selectedPlant === code ? accentColor : 'var(--text-primary)'
@@ -96,7 +96,7 @@ export function PersonStatisticsControls({
                 <button
                     type="button"
                     onClick={() => setSelectedPlant('')}
-                    className="text-[11px] font-semibold border-none bg-transparent cursor-pointer text-text-secondary"
+                    className="text-[11px] font-semibold border-none bg-transparent cursor-pointer text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     Clear plant
                 </button>

@@ -48,7 +48,7 @@ export function Section({ children, expanded, onToggle, status, subtitle, title 
             <button
                 type="button"
                 onClick={onToggle}
-                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left cursor-pointer border-none transition-colors hover:bg-bg-tertiary bg-transparent"
+                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left cursor-pointer border-none transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary bg-transparent active:scale-[0.97]"
                 aria-expanded={expanded}
             >
                 <span className="shrink-0">{status}</span>
@@ -177,7 +177,7 @@ export function IconButton({ bg, fg, icon, onClick, title }) {
             onClick={onClick}
             title={title}
             aria-label={title}
-            className="flex h-7 w-7 items-center justify-center rounded-md border-none cursor-pointer transition-colors hover:brightness-95"
+            className="flex h-7 w-7 items-center justify-center rounded-md border-none cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 active:scale-[0.92]"
             style={{ background: bg, color: fg }}
         >
             <i className={`fas ${icon} text-[11px]`} />

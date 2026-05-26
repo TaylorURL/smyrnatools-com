@@ -10,6 +10,7 @@ import EmptyThreadPane from '../../../app/components/notifications/EmptyThreadPa
 import PageHeader from '../../../app/components/notifications/PageHeader'
 import ReplyBar from '../../../app/components/notifications/ReplyBar'
 import { resolveAttachmentView } from '../../../app/constants/notificationsConstants'
+import { useConfirm } from '../../../app/context/ConfirmContext'
 import { useSharedMessages } from '../../../app/context/MessagesContext'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
@@ -28,6 +29,7 @@ import { UserService } from '../../../services/UserService'
  */
 function NotificationsView({ initialConversationId = null }) {
     const accentColor = useAccentColor()
+    const confirm = useConfirm()
     const isMobile = useIsMobile()
     const [composing, setComposing] = useState(false)
     const [activeConversationId, setActiveConversationId] = useState(initialConversationId)
@@ -125,7 +127,12 @@ function NotificationsView({ initialConversationId = null }) {
     const deleteConversation = async (otherId) => {
         const convo = conversations.find((c) => c.otherId === otherId)
         if (!convo) return
-        if (!window.confirm('Delete this conversation? Messages will disappear from your inbox.')) return
+        const ok = await confirm({
+            title: 'Delete this conversation?',
+            message: 'Messages will disappear from your inbox.',
+            confirmLabel: 'Delete'
+        })
+        if (!ok) return
         await Promise.all((convo.messages || []).map((m) => deleteMessage(m.id)))
         if (activeConversationId === otherId) setActiveConversationId(null)
     }

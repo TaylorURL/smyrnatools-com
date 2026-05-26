@@ -43,7 +43,7 @@ export function PlanTabSwitcher({ accentColor, canSeeSettings = false, isMobile 
                     <button
                         key={mode}
                         onClick={() => onChange(mode)}
-                        className="flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5"
+                        className="flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{
                             backgroundColor: isActive ? accentColor : 'transparent',
                             color: isActive ? '#fff' : 'var(--text-secondary)'

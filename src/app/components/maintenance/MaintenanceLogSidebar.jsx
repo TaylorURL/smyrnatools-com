@@ -43,7 +43,7 @@ function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark, a
                 <button
                     type="button"
                     onClick={() => navigate(-1)}
-                    className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer bg-transparent text-text-secondary"
+                    className="flex h-6 w-6 items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary border-none cursor-pointer bg-transparent text-text-secondary active:scale-[0.92]"
                     aria-label="Previous month"
                 >
                     <i className="fas fa-chevron-left text-[10px]" />
@@ -54,7 +54,7 @@ function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark, a
                 <button
                     type="button"
                     onClick={() => navigate(1)}
-                    className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer bg-transparent text-text-secondary"
+                    className="flex h-6 w-6 items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary border-none cursor-pointer bg-transparent text-text-secondary active:scale-[0.92]"
                     aria-label="Next month"
                 >
                     <i className="fas fa-chevron-right text-[10px]" />

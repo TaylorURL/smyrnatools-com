@@ -113,7 +113,7 @@ function SpotlightCard({ accent, customers, emptyHint, icon, label, metric, onSe
                             <button
                                 type="button"
                                 onClick={() => onSelect(c.key)}
-                                className="w-full text-left flex items-center gap-2 bg-transparent border-none p-0 cursor-pointer"
+                                className="w-full text-left flex items-center gap-2 bg-transparent border-none p-0 cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             >
                                 <RankChip rank={index + 1} />
                                 <span

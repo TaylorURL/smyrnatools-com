@@ -122,7 +122,7 @@ export default function JobMapModal({ onClose, order, plantAddress, plantCode, p
                     <button
                         type="button"
                         onClick={onClose}
-                        className="w-7 h-7 rounded flex items-center justify-center bg-transparent border-0 cursor-pointer text-text-tertiary hover:text-text-primary"
+                        className="w-7 h-7 rounded flex items-center justify-center bg-transparent border-0 cursor-pointer text-text-tertiary hover:text-text-primary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         aria-label="Close"
                         title="Close (Esc)"
                     >

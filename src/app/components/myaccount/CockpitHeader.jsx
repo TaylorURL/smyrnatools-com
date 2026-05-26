@@ -34,7 +34,7 @@ export default function CockpitHeader({
                                 ? `${unreadMessageCount} unread message${unreadMessageCount === 1 ? '' : 's'}`
                                 : 'Open messages'
                         }
-                        className="relative flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-colors hover:brightness-95 bg-bg-tertiary text-text-secondary"
+                        className="relative flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 bg-bg-tertiary text-text-secondary active:scale-[0.97]"
                     >
                         <i className="fas fa-comments" />
                         {!isMobile && <span>Messages</span>}
@@ -52,7 +52,7 @@ export default function CockpitHeader({
                     type="button"
                     onClick={onSignOut}
                     title="Sign out"
-                    className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-colors hover:brightness-95 bg-[rgba(220,_38,_38,_0.12)] text-text-primary"
+                    className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 bg-[rgba(220,_38,_38,_0.12)] text-text-primary active:scale-[0.97]"
                 >
                     <i className="fas fa-arrow-right-from-bracket" />
                     {!isMobile && <span>Sign out</span>}
@@ -72,7 +72,7 @@ export default function CockpitHeader({
                             aria-selected={isActive}
                             onClick={() => onChangeTab(id)}
                             data-tutorial-target={id === 'preferences' ? 'preferences-tab' : null}
-                            className="flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 whitespace-nowrap transition-colors"
+                            className="flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
                             style={{
                                 backgroundColor: isActive ? accentColor : 'transparent',
                                 color: isActive ? '#fff' : 'var(--text-secondary)'

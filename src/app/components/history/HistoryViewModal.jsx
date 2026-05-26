@@ -19,7 +19,7 @@ export default function HistoryViewModal({
 }) {
     if (typeof document === 'undefined' || !document.body) return null
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 flex items-center justify-center z-[2000] p-4 bg-[rgba(15,_23,_42,_0.65)]">
+        <div className="fixed inset-0 flex items-center justify-center z-[2000] p-4 bg-[rgba(15,_23,_42,_0.65)] animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none">
             <div className="flex flex-col max-w-[900px] w-full max-h-[85vh] rounded overflow-hidden bg-bg-primary border border-border-light">
                 <div className="flex justify-between items-center px-4 py-3 border-b border-border-light">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -34,7 +34,7 @@ export default function HistoryViewModal({
                         </div>
                     </div>
                     <button
-                        className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
+                        className="w-7 h-7 flex items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none bg-transparent text-text-secondary active:scale-[0.92]"
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                         onClick={onClose}
@@ -57,7 +57,7 @@ export default function HistoryViewModal({
                 </div>
                 <div className="px-4 py-2.5 flex justify-end bg-bg-secondary border-t border-border-light">
                     <button
-                        className="rounded px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider transition-colors bg-bg-primary border border-border-light text-text-primary"
+                        className="rounded px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none bg-bg-primary border border-border-light text-text-primary active:scale-[0.97]"
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-primary)')}
                         onClick={onClose}

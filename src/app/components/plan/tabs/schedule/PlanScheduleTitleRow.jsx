@@ -45,7 +45,7 @@ export default function PlanScheduleTitleRow({
                                 key={m}
                                 type="button"
                                 onClick={() => setViewMode(m)}
-                                className="px-3 py-1.5 rounded-md text-[11.5px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                                className="px-3 py-1.5 rounded-md text-[11.5px] font-semibold border-none cursor-pointer flex items-center gap-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 style={{
                                     background: viewMode === m ? accentColor : 'transparent',
                                     color: viewMode === m ? '#fff' : 'var(--text-secondary)'
@@ -61,7 +61,7 @@ export default function PlanScheduleTitleRow({
                     <button
                         type="button"
                         onClick={onToggleFilters}
-                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{
                             background: filtersOpen || activeFilterCount > 0 ? accentColor : 'var(--bg-secondary)',
                             color: filtersOpen || activeFilterCount > 0 ? '#fff' : 'var(--text-secondary)'
@@ -83,7 +83,7 @@ export default function PlanScheduleTitleRow({
                     <button
                         type="button"
                         onClick={onToggleCompare}
-                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{
                             background: compareMode ? accentColor : 'var(--bg-secondary)',
                             color: compareMode ? '#fff' : 'var(--text-secondary)'
@@ -102,7 +102,7 @@ export default function PlanScheduleTitleRow({
                     <button
                         type="button"
                         onClick={onToggleMaximized}
-                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 bg-bg-secondary border border-border-light text-text-secondary"
+                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         title="Maximize the schedule — hide the KPI strip and side rail so the table fills the screen"
                     >
                         <i className="fas fa-expand text-[10px]" />
@@ -113,7 +113,7 @@ export default function PlanScheduleTitleRow({
                     <button
                         type="button"
                         onClick={onSwitchToPlanner}
-                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 text-white"
+                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{ background: accentColor }}
                     >
                         <i className="fas fa-project-diagram text-[10px]" /> Planner

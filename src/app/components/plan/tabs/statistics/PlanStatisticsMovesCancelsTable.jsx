@@ -66,7 +66,7 @@ function SortHeader({ activeKey, align = 'right', children, onSelect, sortKey })
             <button
                 type="button"
                 onClick={() => onSelect(sortKey)}
-                className="bg-transparent border-none p-0 cursor-pointer inline-flex items-center gap-1.5 font-semibold uppercase tracking-wider"
+                className="bg-transparent border-none p-0 cursor-pointer inline-flex items-center gap-1.5 font-semibold uppercase tracking-wider active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{ color: 'inherit', fontSize: 'inherit' }}
             >
                 {children}

@@ -21,7 +21,7 @@ export default function MixerCleanlinessRatingCard({ canEditMixer, cleanlinessRa
                                 <button
                                     key={star}
                                     type="button"
-                                    className={`star-button ${isActive ? 'active' : ''} ${!canEditMixer ? 'disabled' : ''}`}
+                                    className={`star-button ${isActive ? 'active' : ''} ${!canEditMixer ? 'disabled' : ''} active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none`}
                                     onClick={() =>
                                         canEditMixer && setCleanlinessRating(star === cleanlinessRating ? 0 : star)
                                     }

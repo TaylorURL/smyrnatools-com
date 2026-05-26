@@ -23,7 +23,7 @@ function VersionPopup({ version, onClick }) {
             type="button"
             onClick={interactive ? onClick : undefined}
             disabled={!interactive}
-            className="fixed bottom-3 right-3 z-[1000] flex items-center gap-2 rounded px-2.5 py-1.5 border-none cursor-pointer disabled:cursor-default bg-bg-primary border border-border-light"
+            className="fixed bottom-3 right-3 z-[1000] flex items-center gap-2 rounded px-2.5 py-1.5 border-none cursor-pointer disabled:cursor-default bg-bg-primary border border-border-light active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
             style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06)' }}
             title={interactive ? `View changelog · ${version}` : `Version ${version}`}
         >

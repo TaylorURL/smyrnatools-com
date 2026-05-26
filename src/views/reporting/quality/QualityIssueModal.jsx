@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import ReactDOM from 'react-dom'
 
+import { useConfirm } from '../../../app/context/ConfirmContext'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 import { QualityIssueService } from '../../../services/QualityIssueService'
 
@@ -51,6 +52,7 @@ function FieldLabel({ children, icon, required }) {
 
 export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, plants = [], regionCode = '' }) {
     const accentColor = useAccentColor()
+    const confirm = useConfirm()
     const isEditing = !!issue?.id
     const [draft, setDraft] = useState(emptyDraft())
     const [submitting, setSubmitting] = useState(false)
@@ -116,7 +118,14 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
 
     const remove = async () => {
         if (!isEditing) return
-        if (!window.confirm('Delete this quality issue? This action cannot be undone.')) return
+        if (
+            !(await confirm({
+                title: 'Delete this quality issue?',
+                message: 'This action cannot be undone.',
+                confirmLabel: 'Delete'
+            }))
+        )
+            return
         setDeleting(true)
         setError('')
         try {

@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
+import { useConfirm } from '../../../../../context/ConfirmContext'
 import { ContactEditor } from './ContactEditor'
 
 /** Editable phone-number list. Numbers come from two places merged into
@@ -19,10 +20,15 @@ export function ContactsSection({
 }) {
     const [editingKey, setEditingKey] = useState(null)
     const [showAddForm, setShowAddForm] = useState(false)
+    const confirm = useConfirm()
 
     const handleDelete = async (entry) => {
         if (!onDeleteContact) return
-        const ok = window.confirm(`Remove ${entry.display} from this customer?`)
+        const ok = await confirm({
+            title: `Remove ${entry.display}?`,
+            message: 'This number will be removed from this customer.',
+            confirmLabel: 'Remove'
+        })
         if (!ok) return
         await onDeleteContact(customerNum, entry.phoneDigits, entry.phoneDisplay)
     }
@@ -35,7 +41,7 @@ export function ContactsSection({
                     <button
                         type="button"
                         onClick={() => setShowAddForm(true)}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold cursor-pointer border-none bg-transparent p-0 text-text-secondary hover:underline"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold cursor-pointer border-none bg-transparent p-0 text-text-secondary hover:underline active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     >
                         <i className="fas fa-plus text-[9px]" />
                         Add number
@@ -100,7 +106,7 @@ export function ContactsSection({
                                     <button
                                         type="button"
                                         onClick={() => setEditingKey(entry.phoneDigits)}
-                                        className="inline-flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer bg-transparent text-text-tertiary hover:text-text-primary"
+                                        className="inline-flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer bg-transparent text-text-tertiary hover:text-text-primary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                         title="Edit name / label"
                                         aria-label="Edit contact"
                                     >
@@ -109,7 +115,7 @@ export function ContactsSection({
                                     <button
                                         type="button"
                                         onClick={() => handleDelete(entry)}
-                                        className="inline-flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer bg-transparent text-text-tertiary hover:text-text-primary"
+                                        className="inline-flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer bg-transparent text-text-tertiary hover:text-text-primary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                         title="Remove this number"
                                         aria-label="Remove contact"
                                     >

@@ -121,7 +121,7 @@ function Toolbar({ dirtyCount, loading, onResetAll, onSearch, regionName, search
                             ? 'Discard your edits first to reset everything to defaults'
                             : 'Restore every setting to its built-in default'
                     }
-                    className="rounded-md border border-border-medium bg-bg-secondary px-2.5 py-1.5 text-xs font-semibold text-text-secondary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="rounded-md border border-border-medium bg-bg-secondary px-2.5 py-1.5 text-xs font-semibold text-text-secondary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                 >
                     Reset to defaults
                 </button>
@@ -208,7 +208,7 @@ function SettingRow({ error, field, onChange, value }) {
                     onClick={() => onChange(field.column, field.default)}
                     disabled={!isOverridden}
                     title={`Reset to default (${field.default})`}
-                    className="rounded-md bg-transparent border-none text-text-tertiary cursor-pointer p-1 disabled:opacity-30 disabled:cursor-not-allowed hover:text-text-primary"
+                    className="rounded-md bg-transparent border-none text-text-tertiary cursor-pointer p-1 disabled:opacity-30 disabled:cursor-not-allowed hover:text-text-primary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                 >
                     <i className="fas fa-rotate-left text-[11px]" />
                 </button>
@@ -244,7 +244,7 @@ function ActionBar({
                     type="button"
                     onClick={onDiscard}
                     disabled={!isDirty || saving}
-                    className="rounded-md border border-border-medium bg-bg-secondary px-3 py-1.5 text-xs font-semibold text-text-secondary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="rounded-md border border-border-medium bg-bg-secondary px-3 py-1.5 text-xs font-semibold text-text-secondary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                 >
                     Discard
                 </button>
@@ -252,7 +252,7 @@ function ActionBar({
                     type="button"
                     onClick={onSave}
                     disabled={!canSave}
-                    className="rounded-md border-none px-3 py-1.5 text-xs font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="rounded-md border-none px-3 py-1.5 text-xs font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                     style={{ background: accentColor }}
                 >
                     {saving ? (

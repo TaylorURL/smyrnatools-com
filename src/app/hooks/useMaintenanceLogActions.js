@@ -2,12 +2,14 @@ import { useCallback, useState } from 'react'
 
 import { MaintenanceService } from '../../services/MaintenanceService'
 import APIUtility from '../../utils/APIUtility'
+import { useConfirm } from '../context/ConfirmContext'
 
 /**
  * Modal targets and form-rail action handlers for the maintenance log view.
  * @param {{ onFormDataReload: Function }} params
  */
 export function useMaintenanceLogActions({ onFormDataReload }) {
+    const confirm = useConfirm()
     const [serviceTarget, setServiceTarget] = useState(null)
     const [detailTarget, setDetailTarget] = useState(null)
     const [editTarget, setEditTarget] = useState(null)
@@ -21,13 +23,13 @@ export function useMaintenanceLogActions({ onFormDataReload }) {
     const handleDeleteSubmission = useCallback(
         async (event, submissionId) => {
             event?.stopPropagation()
-            if (!window.confirm('Delete this submission?')) return
+            if (!(await confirm({ title: 'Delete this submission?', confirmLabel: 'Delete' }))) return
             const { res } = await APIUtility.post('/maintenance-service/delete-submission', { submissionId })
             if (!res.ok) return
             if (selectedFormItem?.id === submissionId) setSelectedFormItem(null)
             onFormDataReload?.()
         },
-        [onFormDataReload, selectedFormItem]
+        [confirm, onFormDataReload, selectedFormItem]
     )
 
     const handleSelectFormItem = useCallback(async (item) => {

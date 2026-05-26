@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { DateUtility } from '../../../utils/DateUtility'
 import { HistoryUtility } from '../../../utils/HistoryUtility'
 import { HISTORY_TAB_DEFINITIONS } from '../../constants/historyConstants'
+import { useConfirm } from '../../context/ConfirmContext'
 import useHistoryAiTypewriter from '../../hooks/useHistoryAiTypewriter'
 import useHistoryAnalysisScrollCollapse from '../../hooks/useHistoryAnalysisScrollCollapse'
 import useHistoryData from '../../hooks/useHistoryData'
@@ -65,6 +66,7 @@ const STATUS_STATS = [
  * Orchestrates the useHistoryData hook with tab-specific render components.
  */
 function HistoryViewSection({ item, onClose, type }) {
+    const confirm = useConfirm()
     const [activeTab, setActiveTab] = useState('timeline')
     const historyState = useHistoryData(item, type)
     const {
@@ -113,7 +115,7 @@ function HistoryViewSection({ item, onClose, type }) {
         issue.created_by && userNames[issue.created_by] ? userNames[issue.created_by] : 'Unknown'
 
     const onDeleteIssue = async (issueId) => {
-        if (!window.confirm('Are you sure you want to delete this issue?')) return
+        if (!(await confirm({ title: 'Delete this issue?', confirmLabel: 'Delete' }))) return
         try {
             await handleDeleteIssue(issueId)
         } catch {

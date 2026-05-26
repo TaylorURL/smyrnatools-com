@@ -16,7 +16,7 @@ function ErrorMessage({ message, onDismiss, className = '' }) {
             {onDismiss && (
                 <button
                     onClick={onDismiss}
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-none bg-transparent text-text-primary hover:bg-red-100"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-none bg-transparent text-text-primary hover:bg-red-100 active:scale-[0.92] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                     aria-label="Dismiss error"
                 >
                     <i className="fas fa-times" />

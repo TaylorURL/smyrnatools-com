@@ -79,7 +79,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
 
     return (
         <div
-            className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
+            className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)] animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose()
             }}
@@ -102,7 +102,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                     </div>
                     <button
                         onClick={onClose}
-                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary text-text-secondary"
+                        className="flex h-6 w-6 items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.92]"
                         aria-label="Close"
                     >
                         <i className="fas fa-times text-[11px]" />
@@ -121,7 +121,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                             </p>
                             <button
                                 onClick={onClose}
-                                className="rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5"
+                                className="rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 style={{ background: accentColor }}
                             >
                                 Done
@@ -158,7 +158,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                             </div>
                                             <button
                                                 onClick={() => setSelectedRecipient(null)}
-                                                className="text-[11px] flex h-6 w-6 items-center justify-center rounded hover:bg-bg-tertiary text-text-secondary"
+                                                className="text-[11px] flex h-6 w-6 items-center justify-center rounded hover:bg-bg-tertiary text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                                 aria-label="Clear recipient"
                                             >
                                                 <i className="fas fa-times" />
@@ -182,7 +182,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                                 <div className="absolute left-0 right-0 z-10 mt-1 max-h-52 overflow-y-auto rounded py-1 bg-bg-primary border border-border-light">
                                                     {loadingRecipients ? (
                                                         <div className="px-3 py-2 text-[12px] text-center text-text-secondary">
-                                                            <i className="fas fa-spinner fa-spin mr-1.5" />
+                                                            <i className="fas fa-spinner animate-dv-spin mr-1.5" />
                                                             Loading…
                                                         </div>
                                                     ) : filteredRecipients.length === 0 ? (
@@ -199,7 +199,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                                                     setDropdownOpen(false)
                                                                     setRecipientSearch('')
                                                                 }}
-                                                                className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left transition-colors hover:bg-bg-tertiary text-text-primary"
+                                                                className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-primary active:scale-[0.97]"
                                                             >
                                                                 <UserAvatar
                                                                     userId={r.id}
@@ -266,7 +266,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                             <button
                                 onClick={handleSend}
                                 disabled={!selectedRecipient || !body.trim() || sending}
-                                className="w-full flex items-center justify-center gap-1.5 py-2 rounded text-[10.5px] font-semibold uppercase tracking-wider"
+                                className="w-full flex items-center justify-center gap-1.5 py-2 rounded text-[10.5px] font-semibold uppercase tracking-wider active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 style={{
                                     background:
                                         !selectedRecipient || !body.trim() || sending
@@ -279,7 +279,9 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                     cursor: !selectedRecipient || !body.trim() || sending ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                <i className={`fas ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-[10px]`} />
+                                <i
+                                    className={`fas ${sending ? 'fa-spinner animate-dv-spin' : 'fa-paper-plane'} text-[10px]`}
+                                />
                                 {sending ? 'Sending…' : 'Send Message'}
                             </button>
                         </>

@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 
 import { SCALE_ICON_TONE_CLASS } from '../../../../app/constants/nrmcaConstants'
+import { useConfirm } from '../../../../app/context/ConfirmContext'
 import { NRMCAService } from '../../../../services/NRMCAService'
 import { LogCalibrationModal } from './LogCalibrationModal'
 import { daysFromNow, fmt, getCalibrationStatus, getNextCalibrationDueDate } from './nrmcaHelpers'
@@ -9,6 +10,7 @@ import { IconBtn, StatusBadge } from './NRMCASharedUI'
 import { ScaleFormModal } from './ScaleFormModal'
 
 export function ScaleRow({ scale, allPlants, onReload, accentColor }) {
+    const confirm = useConfirm()
     const [calibModal, setCalibModal] = useState(false)
     const [editModal, setEditModal] = useState(false)
 
@@ -17,8 +19,12 @@ export function ScaleRow({ scale, allPlants, onReload, accentColor }) {
     const days = nextDue ? daysFromNow(nextDue) : null
     const iconToneClass = SCALE_ICON_TONE_CLASS[status] ?? SCALE_ICON_TONE_CLASS.unknown
 
-    function confirmDelete() {
-        if (!window.confirm(`Delete scale "${scale.scale_name}"?`)) return
+    async function confirmDelete() {
+        const ok = await confirm({
+            title: `Delete scale "${scale.scale_name}"?`,
+            confirmLabel: 'Delete'
+        })
+        if (!ok) return
         NRMCAService.deleteScale(scale.id)
             .then(onReload)
             .catch((e) => alert(e?.message))

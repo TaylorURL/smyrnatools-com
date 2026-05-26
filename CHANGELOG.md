@@ -1,5 +1,75 @@
 # Changelog
 
+## [2026.22.3] - 2026-05-25
+
+- App-wide micro-interaction polish. Every clickable surface (buttons,
+  list rows, chips, dropdown triggers, tab pills, side nav items,
+  notification cards, attachment previews, etc.) picked up
+  `transition-[colors,transform] duration-150 ease-out` +
+  `motion-reduce:transition-none` + `active:scale-[0.97]` (or `.99`
+  for larger pressables). ~145 components touched across `components/`,
+  `views/`, and `hooks/`. Honors `prefers-reduced-motion` everywhere
+  so iOS reduce-motion users get instant transitions.
+- `src/app/components/common/Modal.jsx` — modal backdrop now fades in
+  (`animate-[fadeIn_200ms_ease-out_both]`) and the body pops in with a
+  cubic-bezier easing (`animate-[popIn_220ms_cubic-bezier(0.23,1,0.32,1)_both]`).
+  Close button became a press-feedback target. `motion-reduce` short
+  circuits both animations for users who opt out.
+- New `useConfirm()` API. `src/app/context/ConfirmContext.jsx` wraps
+  the existing themed `ConfirmDialog` with an imperative Promise-based
+  API so destructive prompts honor dark/light/gray theme + accent color
+  + PWA presentation (the native `window.confirm()` does none of that).
+  `ConfirmProvider` mounts at `src/index.jsx` between `TutorialProvider`
+  and the Sentry boundary. 14 consumer files migrated off native confirm
+  — including `useMaintenanceLogActions`, `usePlanFlowEditor`,
+  `useReportsQc`, `NotificationsView`, `LostLoadsList`,
+  `HistoryViewSection`, the call-list customer-card sections, and the
+  NRMCA `PlantCard` / `ScaleRow` / quality `QualityIssueModal` /
+  reports `WeeklyReadyMixInstructorReport` / `DocumentsView` callsites.
+- Light theme palette refresh in `src/app/index.css`. Pure white +
+  cool-gray surfaces replaced with a slate-tinted family —
+  `--bg-primary #f8fafc`, `--bg-secondary #f1f5f9`,
+  `--bg-tertiary #e7edf3`, `--bg-hover #dbe2eb`,
+  `--text-primary #1e293b`, `--background-color #eef2f7`,
+  `--card-background #f8fafc`, `--text-color #334155`. Dark and gray
+  themes untouched. Net effect: light mode reads softer, less stark
+  white-on-white, better separation between panels and cards.
+- `src/app/components/dayforce/DayforceHoursPage.jsx` (+667 / -156)
+  overhaul. `SpotlightChip` rebuilt as a `<button>` so dispatchers can
+  click any name in the OT / approaching-OT / underutilized / PTO
+  spotlights to filter the operator table to just that person — chip
+  press-feedback included. Status colors (`COLOR_DANGER #b91c1c`,
+  `COLOR_WARN #b45309`, `COLOR_CALM #1d4ed8`, `COLOR_PTO #0ea5e9`)
+  lifted to module-level constants so spotlights / plant bars / day
+  strip read as one visual system. Inline `style={{color:...}}` on
+  numeric labels replaced with semantic `text-text-primary` /
+  `text-text-tertiary` Tailwind classes. Loading skeleton heights
+  retuned (`[120, 56, 180, 240, 320]`) to match the new content layout.
+- `src/app/components/dayforce/schedules/scheduleFlags.js` — schedule
+  cell severity split into two tiers. Long shift (>14h) is now the
+  ONLY red-tier flag — it's the only hours-of-service signal severe
+  enough to demand the most urgent treatment. Low YPH and late
+  clock-in moved to a new orange tier (`LOW_YPH_CELL_BG
+  rgba(234, 88, 12, 0.10)`). Resolution order in
+  `getShiftCellBackground` is now: PTO → red (long shift) → orange
+  (low YPH or late punch) → amber (non-padded exception) → transparent.
+  Long shift always wins so an HOS overage is never masked by a
+  co-occurring orange or amber condition.
+- `src/app/components/notifications/ChatMessages.jsx` — attachment
+  previews split into a `<button>` (when viewable) vs a `<div>` (when
+  not). Removes the click-handler-on-`<div>` anti-pattern and gives
+  viewable attachments proper keyboard focus + press feedback. Preview
+  style object lifted out so both branches share it.
+- `CLAUDE.md` — SQL delivery policy flipped. Old rule: always do BOTH
+  (chat fenced block AND a `.sql` file in the repo). New rule: chat
+  only, no files — ad-hoc queries, migrations, and audits stay in the
+  conversation unless the user explicitly asks for a file. Keeps the
+  repo from accumulating one-shot SQL artifacts that have no production
+  consumer.
+- README + `public/release.json` version anchors synced to the new
+  CalVer. Build green (Vite 6, ~8s), all source under the 500-line
+  ceiling preserved.
+
 ## [2026.22.2] - 2026-05-25
 
 - Final pass on the oversize-file cleanup. Every actionable source

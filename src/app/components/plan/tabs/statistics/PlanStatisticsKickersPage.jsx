@@ -109,7 +109,7 @@ function CustomerCard({ customer, isActive, onSelect, orders }) {
         <button
             type="button"
             onClick={() => onSelect(customer.key)}
-            className="text-left rounded-md p-3 flex flex-col gap-2 cursor-pointer border transition-colors"
+            className="text-left rounded-md p-3 flex flex-col gap-2 cursor-pointer border active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             style={{
                 background: isActive ? 'var(--bg-secondary)' : 'var(--bg-primary)',
                 borderColor: isActive ? 'var(--text-secondary)' : 'var(--border-light)'
@@ -256,7 +256,7 @@ function CustomerDetail({ colocationMap, customer, onClose, orders, plantNameByC
                 <button
                     type="button"
                     onClick={onClose}
-                    className="text-[11.5px] text-text-secondary cursor-pointer bg-transparent border-none p-1"
+                    className="text-[11.5px] text-text-secondary cursor-pointer bg-transparent border-none p-1 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     title="Clear selection"
                 >
                     Close
@@ -433,7 +433,7 @@ export default function PlanStatisticsKickersPage({
                                 key={f.key}
                                 type="button"
                                 onClick={() => setFilterKey(f.key)}
-                                className="bg-transparent border-none cursor-pointer p-0 text-[12px]"
+                                className="bg-transparent border-none cursor-pointer p-0 text-[12px] active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 style={{
                                     color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
                                     fontWeight: active ? 600 : 400,

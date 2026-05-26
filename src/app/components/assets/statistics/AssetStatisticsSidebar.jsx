@@ -110,7 +110,7 @@ export function AssetStatisticsSidebar({ accentColor, activeSection, onSelect, s
                     <button
                         key={section.id}
                         onClick={() => onSelect(section.id)}
-                        className="flex items-center gap-2.5 rounded-md border-none cursor-pointer text-left px-3 py-2 transition-colors"
+                        className="flex items-center gap-2.5 rounded-md border-none cursor-pointer text-left px-3 py-2 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
                         style={{
                             background: active ? `${accentColor}15` : 'transparent',
                             color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
@@ -138,7 +138,7 @@ export function AssetStatisticsSectionTabs({ accentColor, activeSection, onSelec
                     <button
                         key={section.id}
                         onClick={() => onSelect(section.id)}
-                        className="flex items-center gap-1.5 rounded-md border-none cursor-pointer px-2.5 py-1.5 text-[12px] font-semibold shrink-0"
+                        className="flex items-center gap-1.5 rounded-md border-none cursor-pointer px-2.5 py-1.5 text-[12px] font-semibold shrink-0 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{
                             background: active ? `${accentColor}15` : 'var(--bg-tertiary)',
                             color: active ? 'var(--text-primary)' : 'var(--text-secondary)'

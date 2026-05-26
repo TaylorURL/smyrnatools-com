@@ -25,7 +25,7 @@ function StatusPill({ accent, active, count, label, onClick }) {
         <button
             type="button"
             onClick={onClick}
-            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold cursor-pointer border-none transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold cursor-pointer border-none active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             style={{
                 background: active ? `${accent}26` : 'var(--bg-secondary)',
                 border: `1px solid ${active ? accent : 'var(--border-light)'}`,
@@ -161,7 +161,7 @@ export default function PlanScheduleFilterDrawer({
                     <button
                         type="button"
                         onClick={() => onChangeQuery('')}
-                        className="border-none bg-transparent cursor-pointer text-text-tertiary"
+                        className="border-none bg-transparent cursor-pointer text-text-tertiary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         aria-label="Clear search"
                     >
                         <i className="fas fa-times text-[10px]" />
@@ -175,7 +175,7 @@ export default function PlanScheduleFilterDrawer({
             <button
                 type="button"
                 onClick={() => setPlantModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12.5px] font-semibold cursor-pointer text-left"
+                className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12.5px] font-semibold cursor-pointer text-left active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{
                     ...FIELD_INPUT_STYLE,
                     color: plantFilters.length === 0 ? 'var(--text-secondary)' : 'var(--text-primary)',
@@ -324,7 +324,7 @@ export default function PlanScheduleFilterDrawer({
                 <button
                     type="button"
                     onClick={onClearFilters}
-                    className="rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary"
+                    className="rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     <i className="fas fa-rotate-left mr-1" />
                     Reset
@@ -334,7 +334,7 @@ export default function PlanScheduleFilterDrawer({
                 <button
                     type="button"
                     onClick={onExitMaximized}
-                    className="rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary"
+                    className="rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     title="Exit maximised view"
                 >
                     <i className="fas fa-down-left-and-up-right-to-center mr-1" />

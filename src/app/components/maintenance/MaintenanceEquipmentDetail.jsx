@@ -46,7 +46,10 @@ export function MaintenanceEquipmentDetail({
     }
 
     return (
-        <div className="fixed inset-0 flex justify-end h-screen bg-[rgba(15,_23,_42,_0.65)] z-[110]" onClick={onClose}>
+        <div
+            className="fixed inset-0 flex justify-end h-screen bg-[rgba(15,_23,_42,_0.65)] z-[110] animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
+            onClick={onClose}
+        >
             <div
                 className="relative w-full max-w-lg h-full overflow-y-auto flex flex-col bg-bg-primary border-l border-border-light"
                 onClick={(e) => e.stopPropagation()}
@@ -76,7 +79,7 @@ export function MaintenanceEquipmentDetail({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer shrink-0 text-text-secondary"
+                            className="flex h-6 w-6 items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary border-none cursor-pointer shrink-0 text-text-secondary active:scale-[0.92]"
                             aria-label="Close"
                         >
                             <i className="fas fa-times text-[11px]" />
@@ -90,7 +93,7 @@ export function MaintenanceEquipmentDetail({
                                 e.stopPropagation()
                                 onLogService(equipment)
                             }}
-                            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-2.5 py-1 border-none cursor-pointer"
+                            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-2.5 py-1 border-none cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             style={{ background: accentColor }}
                         >
                             <i className="fas fa-wrench text-[10px]" />
@@ -102,7 +105,7 @@ export function MaintenanceEquipmentDetail({
                                 e.stopPropagation()
                                 onEdit(equipment)
                             }}
-                            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 border-none cursor-pointer transition-colors hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary"
+                            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 border-none cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97]"
                         >
                             <i className="fas fa-pen text-[10px]" />
                             Edit
@@ -114,17 +117,17 @@ export function MaintenanceEquipmentDetail({
                                         type="button"
                                         disabled={deleting}
                                         onClick={handleDelete}
-                                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-2.5 py-1 border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-red-600"
+                                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-2.5 py-1 border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-red-600 active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     >
                                         <i
-                                            className={`fas ${deleting ? 'fa-spinner fa-spin' : 'fa-check'} text-[10px]`}
+                                            className={`fas ${deleting ? 'fa-spinner animate-dv-spin' : 'fa-check'} text-[10px]`}
                                         />
                                         {deleting ? 'Deleting\u2026' : 'Confirm'}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setConfirmDelete(false)}
-                                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary"
+                                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     >
                                         Cancel
                                     </button>
@@ -133,7 +136,7 @@ export function MaintenanceEquipmentDetail({
                                 <button
                                     type="button"
                                     onClick={() => setConfirmDelete(true)}
-                                    className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 cursor-pointer bg-red-100 border border-red-300 text-text-primary"
+                                    className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 cursor-pointer bg-red-100 border border-red-300 text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 >
                                     <i className="fas fa-trash-alt text-[10px]" />
                                     Delete

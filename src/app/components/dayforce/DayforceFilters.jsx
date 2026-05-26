@@ -32,7 +32,7 @@ function FilterPill({ accentColor, activeId, defaultId, icon, label, onSelect, o
         <div className="relative" ref={containerRef}>
             <button
                 onClick={() => setOpen((s) => !s)}
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
+                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{
                     backgroundColor: active ? `${accentColor}20` : 'var(--bg-tertiary)',
                     color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
@@ -53,7 +53,7 @@ function FilterPill({ accentColor, activeId, defaultId, icon, label, onSelect, o
                                 onSelect(opt.id)
                                 setOpen(false)
                             }}
-                            className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                            className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             style={{
                                 backgroundColor: activeId === opt.id ? `${accentColor}15` : 'transparent',
                                 color: 'var(--text-primary)'
@@ -95,7 +95,7 @@ function SearchPill({ accentColor, onChange, value }) {
             {active && (
                 <button
                     aria-label="Clear search"
-                    className="border-none bg-transparent cursor-pointer text-[10px]"
+                    className="border-none bg-transparent cursor-pointer text-[10px] active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     onClick={(e) => {
                         e.preventDefault()
                         onChange('')
@@ -165,7 +165,7 @@ export function DayforceFilters({
 
             {isFiltered && (
                 <button
-                    className="text-[11px] font-semibold border-none bg-transparent cursor-pointer px-2 py-1 text-text-tertiary hover:text-text-primary"
+                    className="text-[11px] font-semibold border-none bg-transparent cursor-pointer px-2 py-1 text-text-tertiary hover:text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     onClick={onReset}
                     title="Clear all filters"
                     type="button"

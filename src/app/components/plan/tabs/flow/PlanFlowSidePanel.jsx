@@ -89,7 +89,7 @@ export function PlanFlowPlantOverview({
             {canEdit && (
                 <button
                     onClick={onAddRoute}
-                    className="border-none rounded-lg cursor-pointer text-sm font-semibold text-white flex items-center justify-center gap-2 py-2"
+                    className="border-none rounded-lg cursor-pointer text-sm font-semibold text-white flex items-center justify-center gap-2 py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     style={{ background: accentColor }}
                 >
                     <i className="fas fa-truck text-[12px]" />
@@ -230,7 +230,7 @@ function MissingOperatorsEditor({ baseCount, hasMissing, missingOperators, onCha
                     <button
                         type="button"
                         onClick={() => onChange(0)}
-                        className="bg-transparent border-none cursor-pointer text-[11px] font-semibold text-text-secondary hover:text-text-primary"
+                        className="bg-transparent border-none cursor-pointer text-[11px] font-semibold text-text-secondary hover:text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         title="Clear — everyone is in"
                     >
                         Reset
@@ -297,7 +297,7 @@ function SaturdayOverrideEditor({ halfFleetDefault, onChange, override, rosterCo
                     <button
                         type="button"
                         onClick={() => onChange(null)}
-                        className="bg-transparent border-none cursor-pointer text-[11px] font-semibold text-text-secondary hover:text-text-primary"
+                        className="bg-transparent border-none cursor-pointer text-[11px] font-semibold text-text-secondary hover:text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         title="Clear — fall back to half-fleet default"
                     >
                         Reset
@@ -342,7 +342,7 @@ function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, placehol
                 onClick={decrement}
                 disabled={atMin}
                 aria-label="Decrease"
-                className="px-3 text-[14px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-text-secondary border-r border-border-light"
+                className="px-3 text-[14px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-text-secondary border-r border-border-light active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
             >
                 −
             </button>
@@ -364,7 +364,7 @@ function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, placehol
                 onClick={increment}
                 disabled={atMax}
                 aria-label="Increase"
-                className="px-3 text-[14px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-text-secondary border-l border-border-light"
+                className="px-3 text-[14px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-text-secondary border-l border-border-light active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
             >
                 +
             </button>
@@ -444,14 +444,14 @@ function RouteRow({ accentColor, assignment, canEdit, clockIn, onDelete, onEdit,
                 <div className="flex items-center gap-0.5 shrink-0">
                     <button
                         onClick={onEdit}
-                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-text-secondary"
+                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         title="Edit"
                     >
                         <i className="fas fa-pen text-[10px]" />
                     </button>
                     <button
                         onClick={onDelete}
-                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-text-primary"
+                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-text-primary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         title="Delete"
                     >
                         <i className="fas fa-trash text-[10px]" />
