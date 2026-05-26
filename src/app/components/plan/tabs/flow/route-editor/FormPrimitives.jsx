@@ -32,7 +32,7 @@ export function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, v
     const decrement = () => onChange(String(Math.max(min, safeNumeric - 1)))
     const increment = () => onChange(String(Math.min(max ?? safeNumeric + 1, safeNumeric + 1)))
     return (
-        <div className="flex items-stretch rounded-lg overflow-hidden border bg-bg-primary border-border-medium">
+        <div className="flex items-stretch rounded-lg overflow-hidden border bg-bg-primary border-border-medium transition-colors duration-150 hover:border-border-dark focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]">
             <button
                 type="button"
                 onClick={decrement}

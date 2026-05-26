@@ -77,7 +77,7 @@ export default function BookOrderForm({
                         onChange={(e) => handleDateChange(e.target.value)}
                         required
                         aria-invalid={dateError ? true : undefined}
-                        className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
+                        className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_30%,transparent)] [color-scheme:light] dark:[color-scheme:dark]"
                         style={FIELD_STYLE}
                     />
                     {dateError && <p className="mt-1.5 text-[11px] text-text-primary">{dateError}</p>}
@@ -101,7 +101,7 @@ export default function BookOrderForm({
                             onChange={(e) => onYardageChange(e.target.value)}
                             placeholder="50"
                             required
-                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
+                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_30%,transparent)]"
                             style={FIELD_STYLE}
                         />
                     </div>
@@ -120,7 +120,7 @@ export default function BookOrderForm({
                             maxLength={5}
                             required
                             aria-invalid={startTimeMalformed || startTimeIsPast || undefined}
-                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none font-mono tabular-nums"
+                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none font-mono tabular-nums transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_30%,transparent)]"
                             style={FIELD_STYLE}
                         />
                         {startTimeMalformed && (
@@ -144,7 +144,7 @@ export default function BookOrderForm({
                         <select
                             value={pourMethod}
                             onChange={(e) => onPourMethodChange(e.target.value)}
-                            className="w-full appearance-none rounded-lg px-3 py-2.5 pr-9 text-[14px] outline-none cursor-pointer"
+                            className="w-full appearance-none rounded-lg px-3 py-2.5 pr-9 text-[14px] outline-none cursor-pointer transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_30%,transparent)]"
                             style={FIELD_STYLE}
                         >
                             <option value="">Select a method (optional)</option>
@@ -183,7 +183,7 @@ export default function BookOrderForm({
                             }}
                             placeholder={String(DEFAULT_TRUCK_SPACING_MIN)}
                             required
-                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
+                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_30%,transparent)]"
                             style={FIELD_STYLE}
                         />
                         <p className="mt-1.5 text-[11px] text-text-tertiary">

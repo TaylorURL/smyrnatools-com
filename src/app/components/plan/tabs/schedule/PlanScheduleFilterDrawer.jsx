@@ -148,20 +148,21 @@ export default function PlanScheduleFilterDrawer({
             style={{ boxShadow: 'var(--shadow-sm)' }}
         >
             {/* Search — flexes to fill spare width on the row. */}
-            <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5 flex-1 min-w-[200px] bg-bg-secondary border border-border-light">
+            <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5 flex-1 min-w-[200px] bg-bg-secondary border border-border-light transition-colors duration-150 hover:border-border-medium focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]">
                 <i className="fas fa-magnifying-glass text-[11px] text-text-tertiary" />
                 <input
-                    type="text"
+                    type="search"
                     value={query}
                     onChange={(e) => onChangeQuery(e.target.value)}
                     placeholder="Search customer, address, PO, product…"
-                    className="bg-transparent outline-none border-none text-[12.5px] w-full text-text-primary"
+                    aria-label="Filter schedule"
+                    className="bg-transparent outline-none border-none text-[12.5px] w-full text-text-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:hidden"
                 />
                 {query && (
                     <button
                         type="button"
                         onClick={() => onChangeQuery('')}
-                        className="border-none bg-transparent cursor-pointer text-text-tertiary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        className="border-none bg-transparent cursor-pointer text-text-tertiary hover:text-text-primary active:scale-[0.92] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                         aria-label="Clear search"
                     >
                         <i className="fas fa-times text-[10px]" />
@@ -193,21 +194,27 @@ export default function PlanScheduleFilterDrawer({
             </button>
 
             {/* Product. */}
-            <select
-                value={productFilter}
-                onChange={(e) => onChangeProduct(e.target.value)}
-                className="rounded-md px-2.5 py-1.5 text-[12.5px] cursor-pointer"
-                style={{ ...FIELD_INPUT_STYLE, maxWidth: 180 }}
-                title="Product"
-                aria-label="Filter by product"
-            >
-                <option value="all">All products · {productOptions.length}</option>
-                {productOptions.map((p) => (
-                    <option key={p} value={p}>
-                        {p}
-                    </option>
-                ))}
-            </select>
+            <div className="relative">
+                <select
+                    value={productFilter}
+                    onChange={(e) => onChangeProduct(e.target.value)}
+                    className="appearance-none rounded-md pl-2.5 pr-7 py-1.5 text-[12.5px] cursor-pointer outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
+                    style={{ ...FIELD_INPUT_STYLE, maxWidth: 180 }}
+                    title="Product"
+                    aria-label="Filter by product"
+                >
+                    <option value="all">All products · {productOptions.length}</option>
+                    {productOptions.map((p) => (
+                        <option key={p} value={p}>
+                            {p}
+                        </option>
+                    ))}
+                </select>
+                <i
+                    aria-hidden="true"
+                    className="fas fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 text-[9px] pointer-events-none text-text-tertiary"
+                />
+            </div>
 
             {/* Min yardage. */}
             <input
@@ -216,28 +223,34 @@ export default function PlanScheduleFilterDrawer({
                 onChange={(e) => onChangeMinYards(e.target.value)}
                 placeholder="Min yds"
                 min={0}
-                className="rounded-md px-2.5 py-1.5 text-[12.5px] font-mono"
+                className="rounded-md px-2.5 py-1.5 text-[12.5px] font-mono outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
                 style={{ ...FIELD_INPUT_STYLE, width: 90 }}
                 title="Minimum yardage"
                 aria-label="Minimum yardage"
             />
 
             {/* Sort by. */}
-            <select
-                value={sortKey}
-                onChange={(e) => onChangeSort(e.target.value)}
-                className="rounded-md px-2.5 py-1.5 text-[12.5px] cursor-pointer"
-                style={{ ...FIELD_INPUT_STYLE, maxWidth: 200 }}
-                title="Sort by"
-                aria-label="Sort by"
-            >
-                {SORT_OPTIONS.map((o) => (
-                    <option key={o.key} value={o.key}>
-                        Sort: {o.label}
-                        {o.desc ? ' ↓' : ''}
-                    </option>
-                ))}
-            </select>
+            <div className="relative">
+                <select
+                    value={sortKey}
+                    onChange={(e) => onChangeSort(e.target.value)}
+                    className="appearance-none rounded-md pl-2.5 pr-7 py-1.5 text-[12.5px] cursor-pointer outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
+                    style={{ ...FIELD_INPUT_STYLE, maxWidth: 200 }}
+                    title="Sort by"
+                    aria-label="Sort by"
+                >
+                    {SORT_OPTIONS.map((o) => (
+                        <option key={o.key} value={o.key}>
+                            Sort: {o.label}
+                            {o.desc ? ' ↓' : ''}
+                        </option>
+                    ))}
+                </select>
+                <i
+                    aria-hidden="true"
+                    className="fas fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 text-[9px] pointer-events-none text-text-tertiary"
+                />
+            </div>
 
             <Divider />
 

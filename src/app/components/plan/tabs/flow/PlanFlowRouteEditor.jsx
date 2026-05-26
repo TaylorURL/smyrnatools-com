@@ -154,22 +154,28 @@ export function PlanFlowRouteEditor({
 
             <LabeledField label="Destination">
                 <div className="flex items-stretch gap-2">
-                    <select
-                        value={draft.toPlant || ''}
-                        onChange={(event) => {
-                            setDraft({ ...draft, toPlant: event.target.value })
-                            setPickingDestination(false)
-                        }}
-                        className="flex-1 px-3 py-2 rounded-lg text-sm border bg-bg-primary border-border-medium text-text-primary"
-                    >
-                        <option value="">Select destination…</option>
-                        {destinationOptions.map((plant) => (
-                            <option key={plant.plant_code} value={plant.plant_code}>
-                                {plant.plant_code}
-                                {plant.plant_name ? ` — ${plant.plant_name}` : ''}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="relative flex-1">
+                        <select
+                            value={draft.toPlant || ''}
+                            onChange={(event) => {
+                                setDraft({ ...draft, toPlant: event.target.value })
+                                setPickingDestination(false)
+                            }}
+                            className="w-full appearance-none px-3 py-2 pr-9 rounded-lg text-sm border bg-bg-primary border-border-medium text-text-primary cursor-pointer outline-none transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_30%,transparent)]"
+                        >
+                            <option value="">Select destination…</option>
+                            {destinationOptions.map((plant) => (
+                                <option key={plant.plant_code} value={plant.plant_code}>
+                                    {plant.plant_code}
+                                    {plant.plant_name ? ` — ${plant.plant_name}` : ''}
+                                </option>
+                            ))}
+                        </select>
+                        <i
+                            aria-hidden="true"
+                            className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none text-text-tertiary"
+                        />
+                    </div>
                     <button
                         onClick={() => setPickingDestination((value) => !value)}
                         className="px-3 rounded-lg text-[12px] font-semibold border cursor-pointer flex items-center gap-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -211,27 +217,33 @@ export function PlanFlowRouteEditor({
                         </>
                     }
                 >
-                    <select
-                        value={draft.forOrderId || ''}
-                        onChange={(event) => handleJobSelect(event.target.value)}
-                        className="w-full px-3 py-2 rounded-lg text-sm border bg-bg-primary border-border-medium text-text-primary"
-                    >
-                        <option value="">General help — no specific job</option>
-                        {destinationJobs.map((job) => {
-                            const id = job.orderId || job.orderNum || `${job.startTime}-${job.customer}`
-                            const parts = [
-                                job.startTime ? String(job.startTime).slice(0, 5) : '—',
-                                job.orderNum ? `#${job.orderNum}` : null,
-                                job.customer || null,
-                                Number.isFinite(parseFloat(job.yardage)) ? `${parseFloat(job.yardage)}yd` : null
-                            ].filter(Boolean)
-                            return (
-                                <option key={id} value={id}>
-                                    {parts.join(' · ')}
-                                </option>
-                            )
-                        })}
-                    </select>
+                    <div className="relative">
+                        <select
+                            value={draft.forOrderId || ''}
+                            onChange={(event) => handleJobSelect(event.target.value)}
+                            className="w-full appearance-none px-3 py-2 pr-9 rounded-lg text-sm border bg-bg-primary border-border-medium text-text-primary cursor-pointer outline-none transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_30%,transparent)]"
+                        >
+                            <option value="">General help — no specific job</option>
+                            {destinationJobs.map((job) => {
+                                const id = job.orderId || job.orderNum || `${job.startTime}-${job.customer}`
+                                const parts = [
+                                    job.startTime ? String(job.startTime).slice(0, 5) : '—',
+                                    job.orderNum ? `#${job.orderNum}` : null,
+                                    job.customer || null,
+                                    Number.isFinite(parseFloat(job.yardage)) ? `${parseFloat(job.yardage)}yd` : null
+                                ].filter(Boolean)
+                                return (
+                                    <option key={id} value={id}>
+                                        {parts.join(' · ')}
+                                    </option>
+                                )
+                            })}
+                        </select>
+                        <i
+                            aria-hidden="true"
+                            className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none text-text-tertiary"
+                        />
+                    </div>
                 </LabeledField>
             )}
 
@@ -244,19 +256,25 @@ export function PlanFlowRouteEditor({
                         </>
                     }
                 >
-                    <select
-                        value={draft.returnPlant || draft.fromPlant}
-                        onChange={(event) => setDraft({ ...draft, returnPlant: event.target.value })}
-                        className="w-full px-3 py-2 rounded-lg text-sm border bg-bg-primary border-border-medium text-text-primary"
-                    >
-                        {returnPlantOptions.map((plant) => (
-                            <option key={plant.plant_code} value={plant.plant_code}>
-                                {plant.plant_code}
-                                {plant.plant_name ? ` — ${plant.plant_name}` : ''}
-                                {plant.plant_code === draft.fromPlant ? ' (home)' : ''}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="relative">
+                        <select
+                            value={draft.returnPlant || draft.fromPlant}
+                            onChange={(event) => setDraft({ ...draft, returnPlant: event.target.value })}
+                            className="w-full appearance-none px-3 py-2 pr-9 rounded-lg text-sm border bg-bg-primary border-border-medium text-text-primary cursor-pointer outline-none transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_30%,transparent)]"
+                        >
+                            {returnPlantOptions.map((plant) => (
+                                <option key={plant.plant_code} value={plant.plant_code}>
+                                    {plant.plant_code}
+                                    {plant.plant_name ? ` — ${plant.plant_name}` : ''}
+                                    {plant.plant_code === draft.fromPlant ? ' (home)' : ''}
+                                </option>
+                            ))}
+                        </select>
+                        <i
+                            aria-hidden="true"
+                            className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none text-text-tertiary"
+                        />
+                    </div>
                 </LabeledField>
             )}
 

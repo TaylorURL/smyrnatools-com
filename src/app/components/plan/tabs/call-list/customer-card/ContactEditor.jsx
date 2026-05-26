@@ -34,21 +34,24 @@ export function ContactEditor({ initial, isSaving, onCancel, onSave }) {
                     onChange={(e) => setPhoneDisplay(e.target.value)}
                     placeholder="(713) 555-0123"
                     disabled={!!initial}
-                    className="rounded px-2 py-1.5 text-[12.5px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary disabled:opacity-60 font-mono tabular-nums"
+                    aria-label="Phone number"
+                    className="rounded px-2 py-1.5 text-[12.5px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary disabled:opacity-60 font-mono tabular-nums transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
                 />
                 <input
                     type="text"
                     value={label}
                     onChange={(e) => setLabel(e.target.value)}
                     placeholder="Label (Office, Cell…)"
-                    className="rounded px-2 py-1.5 text-[12.5px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary"
+                    aria-label="Contact label"
+                    className="rounded px-2 py-1.5 text-[12.5px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
                 />
                 <input
                     type="text"
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     placeholder="Contact name"
-                    className="rounded px-2 py-1.5 text-[12.5px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary"
+                    aria-label="Contact name"
+                    className="rounded px-2 py-1.5 text-[12.5px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
                 />
             </div>
             <div className="flex items-center justify-between gap-2 flex-wrap">

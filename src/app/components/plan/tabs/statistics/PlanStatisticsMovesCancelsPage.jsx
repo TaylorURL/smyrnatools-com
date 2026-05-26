@@ -313,15 +313,25 @@ export default function PlanStatisticsMovesCancelsPage({
                     {/* Toolbar */}
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="relative flex-1 min-w-[200px] max-w-sm">
-                            <i className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary" />
+                            <i className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary pointer-events-none" />
                             <input
-                                type="text"
+                                type="search"
                                 value={filterText}
                                 onChange={(e) => setFilterText(e.target.value)}
                                 placeholder="Search customer…"
-                                className="w-full text-[12.5px] outline-none rounded py-1.5 pl-7 pr-2 bg-bg-secondary border border-border-light text-text-primary"
+                                className="w-full text-[12.5px] outline-none rounded py-1.5 pl-7 pr-7 bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)] [&::-webkit-search-cancel-button]:hidden"
                                 aria-label="Customer filter"
                             />
+                            {filterText && (
+                                <button
+                                    type="button"
+                                    onClick={() => setFilterText('')}
+                                    aria-label="Clear search"
+                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 border-none bg-transparent cursor-pointer text-text-tertiary hover:text-text-primary p-0.5 transition-colors duration-150"
+                                >
+                                    <i className="fas fa-times text-[10px]" />
+                                </button>
+                            )}
                         </div>
                         <div className="text-[11px] text-text-tertiary">
                             Showing {fmtInt(visible.length)} of {fmtInt(customers.length)} customer

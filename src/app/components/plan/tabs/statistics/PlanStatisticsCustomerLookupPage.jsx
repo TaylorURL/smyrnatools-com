@@ -117,26 +117,34 @@ export default function PlanStatisticsCustomerLookupPage({
                     <i className="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[12px] text-text-tertiary pointer-events-none" />
                     <input
                         ref={searchRef}
-                        type="text"
+                        type="search"
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
                         placeholder="Search customers"
                         disabled={isLoading}
-                        className="w-full rounded pl-9 pr-3 py-2 text-[13px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary disabled:opacity-60"
+                        aria-label="Search customers"
+                        className="w-full rounded pl-9 pr-3 py-2 text-[13px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary disabled:opacity-60 transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)] [&::-webkit-search-cancel-button]:hidden"
                     />
                 </div>
-                <select
-                    value={sortKey}
-                    onChange={(e) => setSortKey(e.target.value)}
-                    disabled={isLoading}
-                    className="rounded px-2.5 py-2 text-[12px] outline-none cursor-pointer bg-bg-primary border border-border-light text-text-primary disabled:opacity-60"
-                >
-                    {SORTS.map((opt) => (
-                        <option key={opt.key} value={opt.key}>
-                            {opt.label}
-                        </option>
-                    ))}
-                </select>
+                <div className="relative">
+                    <select
+                        value={sortKey}
+                        onChange={(e) => setSortKey(e.target.value)}
+                        disabled={isLoading}
+                        className="appearance-none rounded pl-2.5 pr-8 py-2 text-[12px] outline-none cursor-pointer bg-bg-primary border border-border-light text-text-primary disabled:opacity-60 transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
+                        aria-label="Sort customers"
+                    >
+                        {SORTS.map((opt) => (
+                            <option key={opt.key} value={opt.key}>
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
+                    <i
+                        aria-hidden="true"
+                        className="fas fa-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] pointer-events-none text-text-tertiary"
+                    />
+                </div>
             </div>
 
             {/* Filter row + count */}
