@@ -53,8 +53,8 @@ export const FORECAST_MAX_OPERATORS = 200
 /** Query keys / event names used by the prompt + Planner integration so the
  *  string literals don't drift. */
 export const SATURDAY_FORECAST_EVENTS = {
-    submitted: 'saturday-forecast:submitted',
-    refreshed: 'saturday-forecast:refreshed'
+    refreshed: 'saturday-forecast:refreshed',
+    submitted: 'saturday-forecast:submitted'
 }
 
 /** Human-readable formatter for the upcoming Saturday — used in the banner
@@ -64,5 +64,5 @@ export function formatSaturdayLabel(saturdayIso) {
     const [year, month, day] = saturdayIso.split('-').map(Number)
     if (!year || !month || !day) return saturdayIso
     const date = new Date(year, month - 1, day)
-    return date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'long', weekday: 'long' })
 }

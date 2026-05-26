@@ -188,7 +188,7 @@ function PlantsView({ title = 'Plants' }) {
     }
     const saturdayDate = useMemo(() => getUpcomingSaturdayIso(), [])
     const plantCodes = useMemo(() => plants.map(getPlantCode).filter(Boolean), [plants])
-    const { forecastsByPlant } = useSaturdayForecasts({ saturdayDate, plantCodes })
+    const { forecastsByPlant } = useSaturdayForecasts({ plantCodes, saturdayDate })
 
     const filteredPlants = useMemo(
         () =>

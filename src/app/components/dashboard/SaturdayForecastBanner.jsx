@@ -44,8 +44,8 @@ export default function SaturdayForecastBanner() {
                     aria-label={`Open Saturday operator forecast form for ${saturdayLabel}`}
                     className="group w-full flex flex-col items-stretch sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-lg border-l-[3px] pl-3 sm:pl-4 pr-3 sm:pr-4 py-2.5 sm:py-3 text-left bg-bg-primary border border-border-light cursor-pointer transition-[background-color,box-shadow,border-color] duration-150 ease-out motion-reduce:transition-none hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_35%,transparent)] active:scale-[0.997] animate-fade-slide-in motion-reduce:animate-none"
                     style={{
-                        borderLeftColor: accentColor,
-                        background: `linear-gradient(to right, ${tint}, transparent 60%)`
+                        background: `linear-gradient(to right, ${tint}, transparent 60%)`,
+                        borderLeftColor: accentColor
                     }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.background = `linear-gradient(to right, ${tintHover}, transparent 60%)`

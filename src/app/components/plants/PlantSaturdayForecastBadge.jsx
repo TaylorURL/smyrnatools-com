@@ -59,10 +59,10 @@ function formatShortSubmittedAt(submittedAt) {
     const date = new Date(submittedAt)
     if (Number.isNaN(date.getTime())) return ''
     return date.toLocaleString(undefined, {
-        month: 'short',
         day: 'numeric',
         hour: 'numeric',
-        minute: '2-digit'
+        minute: '2-digit',
+        month: 'short'
     })
 }
 

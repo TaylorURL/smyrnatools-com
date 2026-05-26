@@ -16,12 +16,12 @@ const RELATIVE_TIME_FORMATTER =
         : null
 
 const RELATIVE_TIME_UNITS = [
-    { unit: 'year', seconds: 60 * 60 * 24 * 365 },
-    { unit: 'month', seconds: 60 * 60 * 24 * 30 },
-    { unit: 'week', seconds: 60 * 60 * 24 * 7 },
-    { unit: 'day', seconds: 60 * 60 * 24 },
-    { unit: 'hour', seconds: 60 * 60 },
-    { unit: 'minute', seconds: 60 }
+    { seconds: 60 * 60 * 24 * 365, unit: 'year' },
+    { seconds: 60 * 60 * 24 * 30, unit: 'month' },
+    { seconds: 60 * 60 * 24 * 7, unit: 'week' },
+    { seconds: 60 * 60 * 24, unit: 'day' },
+    { seconds: 60 * 60, unit: 'hour' },
+    { seconds: 60, unit: 'minute' }
 ]
 
 /** Returns a short "submitted 2h ago" style label, or null when the timestamp
@@ -101,12 +101,12 @@ export default function SaturdayForecastModal({
         const submittedRows = (submittedPlants || [])
             .filter((p) => !pendingCodes.has(p.plantCode))
             .map((p) => ({
+                kind: 'submitted',
                 plantCode: p.plantCode,
                 plantName: p.plantName,
+                priorCount: p.operatorCount,
                 regionCode: null,
                 regionName: null,
-                kind: 'submitted',
-                priorCount: p.operatorCount,
                 submittedAt: p.submittedAt
             }))
         return [...pendingRows, ...submittedRows]
@@ -165,7 +165,7 @@ export default function SaturdayForecastModal({
         setError('')
         const entries = Object.entries(values)
             .filter(([, value]) => value !== '' && value != null)
-            .map(([plantCode, value]) => ({ plantCode, operatorCount: Number(value) }))
+            .map(([plantCode, value]) => ({ operatorCount: Number(value), plantCode }))
             .filter((entry) => Number.isFinite(entry.operatorCount))
         if (entries.length === 0) {
             setError('Enter at least one operator count to submit.')
