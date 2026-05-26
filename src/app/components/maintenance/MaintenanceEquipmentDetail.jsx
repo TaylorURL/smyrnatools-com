@@ -117,10 +117,11 @@ export function MaintenanceEquipmentDetail({
                                         type="button"
                                         disabled={deleting}
                                         onClick={handleDelete}
-                                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-2.5 py-1 border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-red-600 active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                        className="inline-flex items-center gap-1.5 rounded-md bg-status-danger px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-150 ease-out hover:opacity-90 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary motion-reduce:transition-none"
                                     >
                                         <i
                                             className={`fas ${deleting ? 'fa-spinner animate-dv-spin' : 'fa-check'} text-[10px]`}
+                                            aria-hidden="true"
                                         />
                                         {deleting ? 'Deleting\u2026' : 'Confirm'}
                                     </button>
@@ -136,9 +137,9 @@ export function MaintenanceEquipmentDetail({
                                 <button
                                     type="button"
                                     onClick={() => setConfirmDelete(true)}
-                                    className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 cursor-pointer bg-red-100 border border-red-300 text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-status-danger/30 bg-status-danger/10 px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-status-danger transition-all duration-150 ease-out hover:bg-status-danger/20 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary motion-reduce:transition-none"
                                 >
-                                    <i className="fas fa-trash-alt text-[10px]" />
+                                    <i className="fas fa-trash-alt text-[10px]" aria-hidden="true" />
                                     Delete
                                 </button>
                             )}

@@ -1,7 +1,9 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { MaintenanceTabSwitcher } from './MaintenanceTabSwitcher'
+
+const FOCUS_RING =
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary'
 
 /** Refresh button — disables itself while a sync is already in flight so the
  *  user can't queue overlapping fetches. Mirrors PlanActionButtons styling so
@@ -12,10 +14,10 @@ function RefreshButton({ isMobile, isSyncing, onClick }) {
             type="button"
             onClick={() => onClick?.()}
             disabled={isSyncing}
-            className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 disabled:opacity-60 bg-bg-tertiary text-text-secondary active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold text-text-secondary bg-bg-tertiary transition-all duration-150 ease-out hover:bg-bg-hover hover:text-text-primary active:scale-[0.97] disabled:opacity-60 disabled:active:scale-100 motion-reduce:transition-none ${FOCUS_RING}`}
             title="Refresh maintenance data"
         >
-            <i className={`fas fa-rotate ${isSyncing ? 'fa-spin' : ''}`} />
+            <i className={`fas fa-rotate ${isSyncing ? 'fa-spin' : ''}`} aria-hidden="true" />
             {!isMobile && <span>{isSyncing ? 'Syncing…' : 'Refresh'}</span>}
         </button>
     )
@@ -23,16 +25,16 @@ function RefreshButton({ isMobile, isSyncing, onClick }) {
 
 /** Primary CTA — accent-coloured, optional on tabs that support an "Add" /
  *  "Create" action. Collapses to icon on mobile. */
-function PrimaryActionButton({ accentColor, icon, isMobile, label, onClick }) {
+function PrimaryActionButton({ icon, isMobile, label, onClick }) {
     return (
         <button
             type="button"
             onClick={onClick}
-            className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
-            style={{ backgroundColor: accentColor }}
+            className={`inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all duration-150 ease-out hover:bg-accent-hover active:scale-[0.97] motion-reduce:transition-none ${FOCUS_RING}`}
             title={label}
+            aria-label={label}
         >
-            <i className={`fas ${icon}`} />
+            <i className={`fas ${icon}`} aria-hidden="true" />
             {!isMobile && <span>{label}</span>}
         </button>
     )
@@ -44,23 +46,15 @@ function PrimaryActionButton({ accentColor, icon, isMobile, label, onClick }) {
 function RegionScopeChip({ regionLabel }) {
     if (!regionLabel) return null
     return (
-        <span className="inline-flex items-center gap-2 rounded text-[12px] font-medium px-2.5 py-1 max-w-full bg-bg-secondary border border-border-light text-text-primary">
-            <i className="fas fa-location-dot text-[10px] text-text-primary" />
+        <span className="inline-flex max-w-full items-center gap-2 rounded-md border border-border-light bg-bg-secondary px-2.5 py-1 text-[12px] font-medium text-text-primary">
+            <i className="fas fa-location-dot text-[10px] text-accent" aria-hidden="true" />
             <span className="truncate">{regionLabel}</span>
         </span>
     )
 }
 
 /**
- * Slim sticky header shared by every Maintenance tab. Composes a single row:
- *
- *   1. Title.
- *   2. `RegionScopeChip` — current region context.
- *   3. `RefreshButton` + optional primary action (Add/Create).
- *   4. `MaintenanceTabSwitcher` — desktop-only tab toggle.
- *
- * Wraps on narrow viewports so the action buttons never clip off the right
- * edge. Mobile users keep the full row minus tab labels (icon-only switcher).
+ * Slim sticky header shared by every Maintenance tab.
  */
 export function MaintenanceHeader({
     accentColor,
@@ -77,14 +71,15 @@ export function MaintenanceHeader({
 }) {
     return (
         <div className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5 bg-bg-primary border-border-light">
-            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0 text-text-primary">Maintenance</h1>
+            <h1 className="font-heading text-lg font-semibold tracking-tight m-0 shrink-0 text-text-primary">
+                Maintenance
+            </h1>
             <RegionScopeChip regionLabel={regionLabel} />
             <div className="flex-1 min-w-[8px]" />
             <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                 {onRefresh && <RefreshButton isMobile={isMobile} isSyncing={isSyncing} onClick={onRefresh} />}
                 {onPrimaryAction && primaryActionLabel && (
                     <PrimaryActionButton
-                        accentColor={accentColor}
                         icon={primaryActionIcon || 'fa-plus'}
                         isMobile={isMobile}
                         label={primaryActionLabel}

@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { SECTION_LABEL_CLASS } from '../../../../app/constants/maintenanceCreateConstants'
@@ -7,23 +6,23 @@ import { SubtleButton } from './atoms'
 export function DeleteConfirmModal({ onCancel, onConfirm, saving }) {
     return (
         <div
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/65 animate-fade-in-fast"
             onClick={onCancel}
+            role="dialog"
+            aria-modal="true"
         >
             <div
-                className="w-full max-w-sm rounded overflow-hidden bg-bg-primary border border-border-light"
+                className="w-full max-w-sm rounded-modal overflow-hidden bg-bg-primary border border-border-light shadow-modal animate-pop-in"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light">
-                    <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-red-100 text-text-primary">
-                        <i className="fas fa-trash text-[11px]" />
+                <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border-light">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md shrink-0 bg-status-danger/15 text-status-danger">
+                        <i className="fas fa-trash text-[12px]" aria-hidden="true" />
                     </div>
-                    <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
-                        Delete Form
-                    </span>
+                    <span className={`${SECTION_LABEL_CLASS} text-text-secondary`}>Delete Form</span>
                 </div>
                 <div className="px-4 py-3">
-                    <p className="m-0 text-[12px] text-text-secondary">
+                    <p className="m-0 text-[12.5px] text-text-secondary">
                         Are you sure you want to delete this form? This action cannot be undone.
                     </p>
                 </div>
@@ -33,9 +32,12 @@ export function DeleteConfirmModal({ onCancel, onConfirm, saving }) {
                         type="button"
                         onClick={onConfirm}
                         disabled={saving}
-                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed bg-red-600"
+                        className="inline-flex items-center gap-1.5 rounded-md bg-status-danger px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                     >
-                        <i className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-trash'} text-[10px]`} />
+                        <i
+                            className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-trash'} text-[10px]`}
+                            aria-hidden="true"
+                        />
                         {saving ? 'Deleting…' : 'Delete'}
                     </button>
                 </div>
