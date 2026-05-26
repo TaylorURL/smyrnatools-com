@@ -284,8 +284,14 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                     Loading issues…
                                 </div>
                             ) : error ? (
-                                <div className="m-3 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-text-primary">
-                                    <i className="fas fa-exclamation-circle text-[11px]" />
+                                <div
+                                    className="m-3 flex items-center gap-1.5 rounded-md border border-status-danger/30 bg-status-danger/10 px-2.5 py-1.5 text-[11.5px] font-medium text-text-primary animate-fade-slide-in"
+                                    role="alert"
+                                >
+                                    <i
+                                        className="fas fa-exclamation-circle text-[11px] text-status-danger"
+                                        aria-hidden="true"
+                                    />
                                     {error}
                                 </div>
                             ) : visibleIssues.length === 0 ? (
