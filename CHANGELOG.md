@@ -1,5 +1,57 @@
 # Changelog
 
+## [2026.22.5] - 2026-05-26
+
+- Fix silent failure when clicking "Verify Mixer" (and any other
+  asset verification) for users whose session went stale or whose
+  network blipped mid-call. Previously, the modal's
+  `handleSaveAndVerify` called `onSaveAndVerify()` fire-and-forget
+  with no `await` and no `try/catch` — when the underlying
+  `MixerService.verifyMixer` (and friends) threw, the rejection
+  became an orphaned promise, the modal stayed open, the button
+  stayed enabled, and the user saw nothing happen. Now the modal
+  awaits the call inside a `try/catch`, captures the real error,
+  reports it to Sentry via `ErrorReporterUtility.reportError` with
+  `context` / `itemId` / `itemType` metadata, and surfaces an
+  actionable reason in a `Banner` above the action row.
+- New `buildVerifyFailureReason` helper in
+  `src/app/components/common/VerificationRequirementsModal.jsx`
+  maps raw thrown messages to clear copy. Session-related signals
+  (`unauthorized`, `session`, `401`, `User ID is required`,
+  `no current user`) collapse into "Your session expired before we
+  could save this mixer. Refresh the page, sign in again, and
+  re-enter the hours." Permission signals (`forbidden`,
+  `permission`, `access denied`) become "Your account does not
+  have permission to verify this mixer. Ask an administrator to
+  grant access for this plant or region." Network signals
+  (`timed out`, `timeout`, `network`, `fetch`) become "Network
+  problem reached the server but the verification did not save.
+  Check your connection and try again." `not found` becomes "This
+  mixer could not be found on the server — it may have been
+  retired or removed by another user. Close and reopen the list."
+  Anything else falls back to the server-supplied message verbatim
+  so backend errors stay visible instead of being swallowed.
+- Verify button now reflects in-flight state — spinner icon
+  (`fa-spinner fa-spin`), text changes to "Verifying mixer...",
+  `aria-busy={true}`, and the cancel button is disabled. Prevents
+  double-submit and confirms the click was heard. State resets on
+  modal open so stale errors don't follow the user to the next
+  asset.
+- `useAssetVerification.handleSaveAndVerify` no longer destroys
+  diagnostic signal by re-wrapping every error in a generic
+  "Please try again" message. If the caught value is already an
+  `Error`, it propagates verbatim; otherwise it's wrapped while
+  preserving the original string so the modal's reason mapper has
+  real data to work with. File:
+  `src/app/hooks/useAssetVerification.js`.
+- Error banner uses `role="alert"` + `aria-live="polite"` and
+  fades in with `fadeIn 200ms ease-out`, respects
+  `motion-reduce`. Theme-aware via the existing `Banner` atom in
+  `src/app/components/verification/VerificationAtoms.jsx` — works
+  across dark, light, and gray modes. Fix lives in the shared
+  `VerificationRequirementsModal`, so it covers mixers, tractors,
+  equipment, and pickup-truck/trailer flows in one shot.
+
 ## [2026.22.4] - 2026-05-26
 
 - App-wide input-control polish sweep. Ran the

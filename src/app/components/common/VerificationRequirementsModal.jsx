@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom'
 
 import { UserService } from '../../../services/UserService'
 import APIUtility from '../../../utils/APIUtility'
+import ErrorReporterUtility from '../../../utils/ErrorReporterUtility'
 import GrammarUtility from '../../../utils/GrammarUtility'
 import { ValidationUtility } from '../../../utils/ValidationUtility'
 import { useAccentColor } from '../../hooks/useAccentColor'
@@ -14,6 +15,42 @@ import VerificationCommentsSection from '../verification/VerificationCommentsSec
 import VerificationIssuesSection from '../verification/VerificationIssuesSection'
 import VerificationOperatorSection from '../verification/VerificationOperatorSection'
 import ConfirmDialog from './ConfirmDialog'
+
+/**
+ * Translates a raw error message from the verify API call into a clear,
+ * actionable reason the user can act on. Defaults to the original message
+ * when no known signal matches so server-supplied detail still surfaces.
+ */
+function buildVerifyFailureReason(rawMessage, itemTypeDisplay) {
+    const message = String(rawMessage || '').trim()
+    const lower = message.toLowerCase()
+    const target = (itemTypeDisplay || 'asset').toLowerCase()
+    if (
+        lower.includes('unauthorized') ||
+        lower.includes('session') ||
+        lower.includes('401') ||
+        lower.includes('user id is required') ||
+        lower.includes('no current user')
+    ) {
+        return `Your session expired before we could save this ${target}. Refresh the page, sign in again, and re-enter the hours.`
+    }
+    if (lower.includes('forbidden') || lower.includes('permission') || lower.includes('access denied')) {
+        return `Your account does not have permission to verify this ${target}. Ask an administrator to grant access for this plant or region.`
+    }
+    if (
+        lower.includes('timed out') ||
+        lower.includes('timeout') ||
+        lower.includes('network') ||
+        lower.includes('fetch')
+    ) {
+        return `Network problem reached the server but the verification did not save. Check your connection and try again.`
+    }
+    if (lower.includes('not found')) {
+        return `This ${target} could not be found on the server — it may have been retired or removed by another user. Close and reopen the list.`
+    }
+    if (message) return `We could not save this verification: ${message}`
+    return `We could not save this verification. Try again — if it keeps failing, refresh the page or contact support.`
+}
 
 function ProgressTrack({ accentColor, blockers, total }) {
     const completed = total - blockers
@@ -72,6 +109,8 @@ export default function VerificationRequirementsModal({
     const [pendingDeleteIssueId, setPendingDeleteIssueId] = useState(null)
     const [pendingDeleteCommentId, setPendingDeleteCommentId] = useState(null)
     const [expandedSection, setExpandedSection] = useState(null)
+    const [isVerifying, setIsVerifying] = useState(false)
+    const [verifyError, setVerifyError] = useState(null)
 
     const {
         canDelete,
@@ -102,6 +141,8 @@ export default function VerificationRequirementsModal({
     useEffect(() => {
         if (!open) {
             setExpandedSection(null)
+            setVerifyError(null)
+            setIsVerifying(false)
             return
         }
         const allSectionsReady = Object.values(sectionsReady).every((ready) => ready)
@@ -207,10 +248,25 @@ export default function VerificationRequirementsModal({
     }
 
     const handleSaveAndVerify = async () => {
-        if (assignedOperator && operatorPhone && operatorPhone.trim().length > 0) {
-            await handleSaveOperatorPhone()
+        if (isVerifying) return
+        setVerifyError(null)
+        setIsVerifying(true)
+        try {
+            if (assignedOperator && operatorPhone && operatorPhone.trim().length > 0) {
+                await handleSaveOperatorPhone()
+            }
+            await onSaveAndVerify()
+        } catch (error) {
+            const normalized = error instanceof Error ? error : new Error(String(error))
+            ErrorReporterUtility.reportError(normalized, {
+                context: 'VerificationRequirementsModal.handleSaveAndVerify',
+                itemId,
+                itemType
+            })
+            setVerifyError(buildVerifyFailureReason(normalized.message, itemTypeDisplay))
+        } finally {
+            setIsVerifying(false)
         }
-        onSaveAndVerify()
     }
 
     const vinInfo = useMemo(() => ValidationUtility.explainVIN(vin || ''), [vin])
@@ -367,23 +423,44 @@ export default function VerificationRequirementsModal({
                                     be verified. Add an issue describing why this mixer is in the shop.
                                 </Banner>
                             )}
+
+                            {verifyError && (
+                                <div
+                                    role="alert"
+                                    aria-live="polite"
+                                    className="animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
+                                >
+                                    <Banner tone="danger" icon="fa-exclamation-circle">
+                                        {verifyError}
+                                    </Banner>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex gap-2 px-4 py-3 shrink-0 bg-bg-primary border-t border-border-light">
                             <button
                                 onClick={onClose}
-                                className="rounded-md px-4 py-2 text-[12.5px] font-medium cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.97]"
+                                disabled={isVerifying}
+                                className="rounded-md px-4 py-2 text-[12.5px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.97] disabled:active:scale-100"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSaveAndVerify}
-                                disabled={!canVerify}
-                                className="flex-1 flex items-center justify-center gap-2 rounded-md px-4 py-2 text-[12.5px] font-semibold text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-[filter,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-105 active:scale-[0.97] disabled:active:scale-100"
-                                style={{ background: canVerify ? accentColor : 'var(--text-tertiary)' }}
+                                disabled={!canVerify || isVerifying}
+                                aria-busy={isVerifying}
+                                className="flex-1 flex items-center justify-center gap-2 rounded-md px-4 py-2 text-[12.5px] font-semibold text-white cursor-pointer disabled:cursor-not-allowed transition-[filter,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-105 active:scale-[0.97] disabled:active:scale-100"
+                                style={{
+                                    background: canVerify ? accentColor : 'var(--text-tertiary)',
+                                    opacity: !canVerify || isVerifying ? 0.65 : 1
+                                }}
                             >
-                                <i className="fas fa-check text-[11px]" />
-                                {canVerify ? `Verify ${itemTypeDisplay.toLowerCase()}` : 'Complete required items'}
+                                <i className={`fas ${isVerifying ? 'fa-spinner fa-spin' : 'fa-check'} text-[11px]`} />
+                                {isVerifying
+                                    ? `Verifying ${itemTypeDisplay.toLowerCase()}...`
+                                    : canVerify
+                                      ? `Verify ${itemTypeDisplay.toLowerCase()}`
+                                      : 'Complete required items'}
                             </button>
                         </div>
                     </div>

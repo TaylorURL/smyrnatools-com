@@ -78,7 +78,10 @@ export default function useAssetVerification({ config, items, setItems, allItems
             setVerifyItem(null)
         } catch (error) {
             console.error(`Failed to verify ${config.singularLabel}:`, error)
-            throw new Error(`Failed to verify ${config.singularLabel}. Please try again.`)
+            // Preserve the original error so the modal can show the real reason
+            // (session expired, network failure, server-side rejection, etc.).
+            if (error instanceof Error) throw error
+            throw new Error(String(error) || `Failed to verify ${config.singularLabel}. Please try again.`)
         }
     }, [
         verifyItem,
