@@ -23,35 +23,45 @@ export default function PasswordModal({
         !loading && currentPassword && newPassword && newPassword === confirmPassword && newPassword.length >= 8
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)] animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-text-primary/60 p-4 backdrop-blur-sm animate-fade-in-fast motion-reduce:animate-none"
             onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="password-modal-title"
         >
             <div
-                className="w-full max-w-lg rounded-lg overflow-hidden bg-bg-primary border border-border-light"
+                className="w-full max-w-lg overflow-hidden rounded-modal border border-border-light bg-bg-primary shadow-modal animate-pop-in motion-reduce:animate-none"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between px-5 py-4 border-b border-border-light">
+                <div className="flex items-center justify-between border-b border-border-light px-5 py-4">
                     <div className="flex items-center gap-3">
                         <div
-                            className="flex h-10 w-10 items-center justify-center rounded-lg bg-bg-tertiary"
+                            className="flex h-10 w-10 items-center justify-center rounded-md bg-accent/10"
                             style={{ color: accentColor }}
                         >
-                            <i className="fas fa-key text-[16px]" />
+                            <i className="fas fa-key text-[16px]" aria-hidden="true" />
                         </div>
-                        <span className="text-[16px] font-semibold text-text-primary">Change Password</span>
+                        <span id="password-modal-title" className="font-heading text-[16px] font-semibold text-text-primary">
+                            Change Password
+                        </span>
                     </div>
                     <button
+                        type="button"
                         onClick={onClose}
-                        className="flex h-9 w-9 items-center justify-center rounded-lg transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.92]"
+                        className="flex h-9 w-9 items-center justify-center rounded-md text-text-secondary transition-all duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.92] motion-reduce:transition-none"
                         aria-label="Close"
                     >
-                        <i className="fas fa-times text-[14px]" />
+                        <i className="fas fa-times text-[14px]" aria-hidden="true" />
                     </button>
                 </div>
-                <form onSubmit={onSubmit} className="px-5 py-5 flex flex-col gap-4">
+                <form onSubmit={onSubmit} className="flex flex-col gap-4 px-5 py-5">
                     {passwordError && (
-                        <div className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium bg-[rgba(220,_38,_38,_0.12)] border border-[rgba(220,_38,_38,_0.35)] text-text-primary">
-                            <i className="fas fa-exclamation-circle text-[13px]" />
+                        <div
+                            role="alert"
+                            aria-live="assertive"
+                            className="flex items-center gap-2.5 rounded-card border border-status-danger/35 bg-status-danger/10 px-3 py-2.5 text-[13px] font-medium text-text-primary animate-fade-slide-in motion-reduce:animate-none"
+                        >
+                            <i className="fas fa-exclamation-circle text-[13px] text-status-danger" aria-hidden="true" />
                             <span>{passwordError}</span>
                         </div>
                     )}
@@ -98,15 +108,22 @@ export default function PasswordModal({
                             style={FieldStyle}
                         />
                     </div>
-                    <div className="flex gap-3 mt-1">
+                    <div className="mt-1 flex gap-3">
                         <SubtleButton onClick={onClose}>Cancel</SubtleButton>
                         <button
                             type="submit"
                             disabled={!canSubmit}
-                            className="flex-1 rounded-lg py-2.5 text-[12px] font-semibold uppercase tracking-wider text-white disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
+                            className="flex-1 rounded-md py-2.5 text-[12px] font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-150 ease-out hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none"
                             style={{ background: accentColor }}
                         >
-                            Update Password
+                            {loading ? (
+                                <span className="inline-flex items-center justify-center gap-2">
+                                    <i className="fas fa-spinner fa-spin text-[12px]" aria-hidden="true" />
+                                    Updating…
+                                </span>
+                            ) : (
+                                'Update Password'
+                            )}
                         </button>
                     </div>
                 </form>

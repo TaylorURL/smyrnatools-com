@@ -15,16 +15,16 @@ export default function CockpitHeader({
     unreadMessageCount = 0
 }) {
     return (
-        <div className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5 bg-bg-primary border-border-light">
-            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0 text-text-primary">Account</h1>
+        <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border-light bg-bg-primary px-3 py-2.5 sm:px-4">
+            <h1 className="m-0 shrink-0 font-heading text-lg font-bold tracking-tight text-text-primary">Account</h1>
             {regionLabel && (
-                <span className="inline-flex items-center gap-2 rounded text-[12px] font-medium px-2.5 py-1 max-w-full bg-bg-secondary border border-border-light text-text-primary">
-                    <i className="fas fa-location-dot text-[10px] text-text-primary" />
+                <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-border-light bg-bg-secondary px-2.5 py-1 text-[12px] font-medium text-text-primary">
+                    <i className="fas fa-location-dot text-[10px] text-accent" aria-hidden="true" />
                     <span className="truncate">{regionLabel}</span>
                 </span>
             )}
-            <div className="flex-1 min-w-[8px]" />
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="min-w-[8px] flex-1" />
+            <div className="flex shrink-0 items-center gap-1.5">
                 {onOpenMessages && (
                     <button
                         type="button"
@@ -34,14 +34,19 @@ export default function CockpitHeader({
                                 ? `${unreadMessageCount} unread message${unreadMessageCount === 1 ? '' : 's'}`
                                 : 'Open messages'
                         }
-                        className="relative flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 bg-bg-tertiary text-text-secondary active:scale-[0.97]"
+                        aria-label={
+                            unreadMessageCount > 0
+                                ? `Open messages — ${unreadMessageCount} unread`
+                                : 'Open messages'
+                        }
+                        className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-bg-tertiary px-3 py-2 text-xs font-semibold text-text-secondary transition-all duration-150 ease-out hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97] motion-reduce:transition-none"
                     >
-                        <i className="fas fa-comments" />
+                        <i className="fas fa-comments" aria-hidden="true" />
                         {!isMobile && <span>Messages</span>}
                         {unreadMessageCount > 0 && (
                             <span
-                                className="absolute font-mono tabular-nums rounded-full text-[9.5px] font-bold uppercase tracking-wider min-w-[16px] h-[16px] flex items-center justify-center px-1 bg-red-600 text-white"
-                                style={{ border: '1.5px solid var(--bg-primary)', right: -4, top: -4 }}
+                                className="absolute -right-1 -top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-status-danger px-1 font-mono text-[9.5px] font-bold uppercase tracking-wider tabular-nums text-white ring-2 ring-bg-primary"
+                                aria-hidden="true"
                             >
                                 {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
                             </span>
@@ -52,14 +57,14 @@ export default function CockpitHeader({
                     type="button"
                     onClick={onSignOut}
                     title="Sign out"
-                    className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 bg-[rgba(220,_38,_38,_0.12)] text-text-primary active:scale-[0.97]"
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-status-danger/35 bg-status-danger/10 px-3 py-2 text-xs font-semibold text-status-danger transition-all duration-150 ease-out hover:bg-status-danger/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97] motion-reduce:transition-none"
                 >
-                    <i className="fas fa-arrow-right-from-bracket" />
+                    <i className="fas fa-arrow-right-from-bracket" aria-hidden="true" />
                     {!isMobile && <span>Sign out</span>}
                 </button>
             </div>
             <div
-                className="flex items-center rounded-lg p-0.5 overflow-x-auto bg-bg-tertiary border border-border-light"
+                className="flex items-center overflow-x-auto rounded-md border border-border-light bg-bg-tertiary p-0.5"
                 role="tablist"
             >
                 {tabs.map(({ icon, id, label }) => {
@@ -72,13 +77,13 @@ export default function CockpitHeader({
                             aria-selected={isActive}
                             onClick={() => onChangeTab(id)}
                             data-tutorial-target={id === 'preferences' ? 'preferences-tab' : null}
-                            className="flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
+                            className="inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] motion-reduce:transition-none"
                             style={{
                                 backgroundColor: isActive ? accentColor : 'transparent',
                                 color: isActive ? '#fff' : 'var(--text-secondary)'
                             }}
                         >
-                            <i className={`fas ${icon}`} />
+                            <i className={`fas ${icon}`} aria-hidden="true" />
                             {!isMobile && <span>{label}</span>}
                         </button>
                     )

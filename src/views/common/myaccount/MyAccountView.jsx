@@ -234,8 +234,11 @@ function MyAccountView({ onSelectView, userId }) {
         return (
             <Suspense
                 fallback={
-                    <div className="flex h-screen items-center justify-center">
-                        <i className="fas fa-spinner fa-spin text-2xl text-text-primary" />
+                    <div className="flex h-screen items-center justify-center bg-bg-secondary">
+                        <i
+                            className="fas fa-spinner fa-spin text-2xl text-accent motion-reduce:animate-none"
+                            aria-label="Loading changelog"
+                        />
                     </div>
                 }
             >
@@ -275,22 +278,30 @@ function MyAccountView({ onSelectView, userId }) {
                     <main className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
                         {message && (
                             <div
-                                className="flex items-center gap-3 rounded-lg px-4 py-3 text-text-primary"
-                                style={{
-                                    background: messageIsError ? 'rgba(220, 38, 38, 0.12)' : 'rgba(22, 163, 74, 0.12)',
-                                    border: `1px solid ${messageIsError ? 'rgba(220, 38, 38, 0.35)' : 'rgba(22, 163, 74, 0.35)'}`
-                                }}
+                                role={messageIsError ? 'alert' : 'status'}
+                                aria-live={messageIsError ? 'assertive' : 'polite'}
+                                className={`flex items-center gap-3 rounded-card border px-4 py-3 text-text-primary animate-fade-slide-in motion-reduce:animate-none ${
+                                    messageIsError
+                                        ? 'border-status-danger/35 bg-status-danger/10'
+                                        : 'border-status-active/35 bg-status-active/10'
+                                }`}
                             >
                                 <i
-                                    className={`fas ${messageIsError ? 'fa-exclamation-circle' : 'fa-check-circle'} text-[14px]`}
+                                    className={`fas text-[14px] ${
+                                        messageIsError
+                                            ? 'fa-exclamation-circle text-status-danger'
+                                            : 'fa-check-circle text-status-active'
+                                    }`}
+                                    aria-hidden="true"
                                 />
                                 <span className="flex-1 text-[13px] font-medium">{message}</span>
                                 <button
+                                    type="button"
                                     onClick={() => setMessage('')}
-                                    className="opacity-60 hover:opacity-100"
+                                    className="rounded p-1 text-text-secondary opacity-70 transition-opacity duration-150 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                     aria-label="Dismiss"
                                 >
-                                    <i className="fas fa-times text-[12px]" />
+                                    <i className="fas fa-times text-[12px]" aria-hidden="true" />
                                 </button>
                             </div>
                         )}
