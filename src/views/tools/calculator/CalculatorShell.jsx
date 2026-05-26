@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { Panel, Stat, StatGroup } from '../../../app/components/ui/Panel'
@@ -50,7 +49,7 @@ export const CalcField = ({
             <div className="relative flex items-center">
                 {children || (
                     <input
-                        className={`w-full bg-bg-primary border border-border-medium rounded-md text-text-primary text-[13px] font-semibold outline-none transition-colors duration-150 px-2.5 py-2 placeholder:text-text-tertiary [color-scheme:light] dark:[color-scheme:dark] hover:border-border-dark focus:border-accent focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-60 disabled:cursor-not-allowed ${suffix ? 'pr-9' : ''}`}
+                        className={`w-full bg-bg-primary border border-border-medium rounded-md text-text-primary text-[13px] font-semibold outline-none transition-colors duration-150 px-2.5 py-2 placeholder:text-text-tertiary [color-scheme:light] dark:[color-scheme:dark] hover:border-text-tertiary focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 disabled:opacity-60 disabled:cursor-not-allowed ${suffix ? 'pr-9' : ''}`}
                         max={max}
                         min={min}
                         onChange={handleChange}
@@ -71,10 +70,10 @@ export const CalcField = ({
 }
 
 const STATUS_PILL = {
-    danger: { background: 'rgba(220, 38, 38, 0.12)', color: 'var(--text-primary)' },
-    info: { background: 'rgba(37, 99, 235, 0.12)', color: 'var(--text-primary)' },
-    success: { background: 'rgba(22, 163, 74, 0.12)', color: 'var(--text-primary)' },
-    warning: { background: 'rgba(245, 158, 11, 0.14)', color: 'var(--text-primary)' }
+    danger: 'bg-status-danger/10 text-text-primary',
+    info: 'bg-status-shop/10 text-text-primary',
+    success: 'bg-status-active/10 text-text-primary',
+    warning: 'bg-status-warning/10 text-text-primary'
 }
 
 /**
@@ -97,7 +96,7 @@ const CalculatorShell = ({
     title
 }) => {
     const hasResult = Boolean(primary)
-    const statusStyle = status ? STATUS_PILL[status.kind] || STATUS_PILL.info : null
+    const statusClass = status ? STATUS_PILL[status.kind] || STATUS_PILL.info : ''
     return (
         <div className="flex flex-col gap-3.5 w-full">
             <Panel
@@ -107,8 +106,7 @@ const CalculatorShell = ({
                         {icon && <i className={`fas ${icon} text-accent text-[12px]`} />}
                         {status && hasResult && (
                             <span
-                                className="inline-flex items-center rounded px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[.06em]"
-                                style={statusStyle || undefined}
+                                className={`inline-flex items-center rounded px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[.06em] ${statusClass}`}
                             >
                                 {status.label}
                             </span>
@@ -166,12 +164,12 @@ const CalculatorShell = ({
                 right={
                     onReset ? (
                         <button
-                            className="inline-flex items-center gap-1.5 bg-bg-secondary border border-border-light text-text-secondary rounded text-[11px] font-semibold px-2 py-1 hover:bg-bg-tertiary hover:border-border-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                            className="inline-flex items-center gap-1.5 bg-bg-secondary border border-border-light text-text-secondary rounded-md text-[11px] font-semibold px-2 py-1 transition-[colors,transform] duration-150 motion-reduce:transition-none hover:bg-bg-hover hover:border-border-medium hover:text-text-primary active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                             onClick={onReset}
                             type="button"
                             aria-label="Reset calculator inputs"
                         >
-                            <i className="fas fa-rotate-left text-[10px]" />
+                            <i className="fas fa-rotate-left text-[10px]" aria-hidden="true" />
                             <span>Reset</span>
                         </button>
                     ) : null

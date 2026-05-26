@@ -318,15 +318,20 @@ function CategoryBlock({ children, title }) {
 function CatalogRow({ calculator, isActive, onSelect }) {
     return (
         <button
-            className={`flex items-start gap-2.5 px-3 py-1.5 text-left transition-colors ${
-                isActive ? 'bg-bg-secondary' : 'hover:bg-bg-secondary'
-            }`}
-            onClick={() => onSelect(calculator.id)}
-            style={{ borderLeft: `3px solid ${isActive ? 'var(--accent-color, #1e3a5f)' : 'transparent'}` }}
             type="button"
+            onClick={() => onSelect(calculator.id)}
+            aria-current={isActive ? 'page' : undefined}
+            className={`flex items-start gap-2.5 px-3 py-1.5 text-left border-l-[3px] transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset ${
+                isActive
+                    ? 'bg-bg-secondary border-l-accent'
+                    : 'border-l-transparent hover:bg-bg-secondary hover:border-l-border-medium'
+            }`}
         >
             <i
-                className={`fas ${calculator.icon} text-[11px] mt-0.5 ${isActive ? 'text-accent' : 'text-text-tertiary'}`}
+                className={`fas ${calculator.icon} text-[11px] mt-0.5 ${
+                    isActive ? 'text-accent' : 'text-text-tertiary'
+                }`}
+                aria-hidden="true"
             />
             <div className="flex-1 min-w-0">
                 <div className="text-[12px] font-semibold truncate text-text-primary">{calculator.name}</div>

@@ -4,7 +4,6 @@ import React, { useCallback, useMemo, useRef, useState } from 'react'
 import Modal, { ModalBody } from '../../../app/components/common/Modal'
 import TopSection from '../../../app/components/sections/TopSection'
 import { useConfirm } from '../../../app/context/ConfirmContext'
-import { useAccentColor } from '../../../app/hooks/useAccentColor'
 import { useDocumentsData } from '../../../app/hooks/useDocumentsData'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { usePagination } from '../../../app/hooks/usePagination'
@@ -106,7 +105,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center mt-0.5"
                     style={{ backgroundColor: `${color}15` }}
                 >
-                    <i className={`fas ${icon} text-sm`} style={{ color: 'var(--text-primary)' }} />
+                    <i className={`fas ${icon} text-sm text-text-primary`} aria-hidden="true" />
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-text-primary truncate">{doc.name}</div>
@@ -118,7 +117,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                         {previewable && (
                             <button
                                 onClick={() => onPreview(doc)}
-                                className="text-xs font-medium px-2.5 py-1 rounded-md border border-border-light bg-bg-primary text-text-secondary cursor-pointer hover:bg-bg-tertiary hover:border-border-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                                className="text-xs font-medium px-2.5 py-1 rounded-md border border-border-light bg-bg-primary text-text-secondary cursor-pointer hover:bg-bg-tertiary hover:border-border-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                             >
                                 <i className="fas fa-eye mr-1" />
                                 Preview
@@ -129,7 +128,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                             target="_blank"
                             rel="noopener noreferrer"
                             download
-                            className="text-xs font-medium px-2.5 py-1 rounded-md border border-border-light bg-bg-primary text-text-secondary no-underline hover:bg-bg-tertiary hover:border-border-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                            className="text-xs font-medium px-2.5 py-1 rounded-md border border-border-light bg-bg-primary text-text-secondary no-underline hover:bg-bg-tertiary hover:border-border-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                         >
                             <i className="fas fa-download mr-1" />
                             Download
@@ -150,13 +149,13 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
     }
 
     return (
-        <div className="grid grid-cols-[1fr_90px_110px_140px_110px] items-center gap-2 px-3 py-1.5 border-b border-border-light last:border-b-0 hover:bg-bg-tertiary transition-colors">
+        <div className="grid grid-cols-[1fr_90px_110px_140px_110px] items-center gap-2 px-3 py-1.5 border-b border-border-light last:border-b-0 hover:bg-bg-hover transition-colors duration-150">
             <div className="flex items-center gap-2 min-w-0">
                 <span
-                    className="shrink-0 w-5 h-5 rounded flex items-center justify-center"
-                    style={{ background: `${color}14`, color: 'var(--text-primary)' }}
+                    className="shrink-0 w-5 h-5 rounded flex items-center justify-center text-text-primary"
+                    style={{ background: `${color}14` }}
                 >
-                    <i className={`fas ${icon} text-[10px]`} />
+                    <i className={`fas ${icon} text-[10px]`} aria-hidden="true" />
                 </span>
                 <span className="text-[12px] font-semibold truncate text-text-primary" title={doc.name}>
                     {doc.name}
@@ -176,7 +175,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     <button
                         type="button"
                         onClick={() => onPreview(doc)}
-                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                         title="Preview"
                         aria-label={`Preview ${doc.name}`}
                     >
@@ -188,7 +187,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     target="_blank"
                     rel="noopener noreferrer"
                     download
-                    className="flex items-center justify-center w-5 h-5 rounded text-[11px] no-underline text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                    className="flex items-center justify-center w-5 h-5 rounded text-[11px] no-underline text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                     title="Download"
                     aria-label={`Download ${doc.name}`}
                 >
@@ -224,26 +223,23 @@ function DocumentsSkeleton() {
 }
 
 /** Placeholder shown when no documents match the current filters. */
-function EmptyState({ canUpload, onUpload, accentColor }) {
+function EmptyState({ canUpload, onUpload }) {
     return (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div
-                className="w-16 h-16 rounded flex items-center justify-center mb-4"
-                style={{ backgroundColor: `${accentColor}10` }}
-            >
-                <i className="fas fa-folder-open text-2xl" style={{ color: accentColor }} />
+            <div className="w-16 h-16 rounded-card flex items-center justify-center mb-4 bg-accent/10">
+                <i className="fas fa-folder-open text-2xl text-accent" aria-hidden="true" />
             </div>
-            <h3 className="text-lg font-semibold text-text-primary mb-1">No documents yet</h3>
+            <h3 className="font-heading text-lg font-semibold text-text-primary mb-1">No documents yet</h3>
             <p className="text-sm text-text-tertiary mb-5 max-w-xs">
                 {canUpload ? 'Upload your first document to get started.' : 'Documents will appear here once uploaded.'}
             </p>
             {canUpload && (
                 <button
+                    type="button"
                     onClick={onUpload}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-none text-white text-sm font-semibold cursor-pointer transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
-                    style={{ backgroundColor: accentColor }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md border-none bg-accent text-white text-sm font-semibold cursor-pointer transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                 >
-                    <i className="fas fa-cloud-upload-alt" />
+                    <i className="fas fa-cloud-upload-alt" aria-hidden="true" />
                     Upload Document
                 </button>
             )}
@@ -256,7 +252,7 @@ function Pagination({ currentPage, totalPages, pageSize, onPageSizeChange, onPag
     return (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border-light bg-bg-secondary">
             <select
-                className="appearance-none bg-bg-primary border border-border-light rounded-md text-sm text-text-primary py-1.5 pl-3 pr-8 cursor-pointer hover:border-border-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus:border-accent bg-no-repeat [color-scheme:light] dark:[color-scheme:dark]"
+                className="appearance-none bg-bg-primary border border-border-light rounded-md text-sm text-text-primary py-1.5 pl-3 pr-8 cursor-pointer hover:border-border-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus:border-accent bg-no-repeat [color-scheme:light] dark:[color-scheme:dark]"
                 style={{
                     backgroundImage:
                         "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
@@ -275,7 +271,7 @@ function Pagination({ currentPage, totalPages, pageSize, onPageSizeChange, onPag
             </select>
             <div className="flex items-center gap-2">
                 <button
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
                         currentPage === 1
                             ? 'bg-bg-tertiary text-text-tertiary border-border-light cursor-not-allowed opacity-60'
                             : 'bg-bg-primary text-text-primary border-border-light hover:bg-bg-tertiary hover:border-border-medium cursor-pointer'
@@ -291,7 +287,7 @@ function Pagination({ currentPage, totalPages, pageSize, onPageSizeChange, onPag
                     {currentPage} / {totalPages}
                 </span>
                 <button
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
                         currentPage === totalPages
                             ? 'bg-bg-tertiary text-text-tertiary border-border-light cursor-not-allowed opacity-60'
                             : 'bg-bg-primary text-text-primary border-border-light hover:bg-bg-tertiary hover:border-border-medium cursor-pointer'
@@ -314,7 +310,6 @@ function Pagination({ currentPage, totalPages, pageSize, onPageSizeChange, onPag
  * and role-gated upload/delete capabilities via useDocumentsData.
  */
 export default function DocumentsView() {
-    const accentColor = useAccentColor()
     const confirm = useConfirm()
     const isMobile = useIsMobile()
     const { canUpload, deleteDocument, documents, error, loading, profiles, uploadFile, uploading } = useDocumentsData()
@@ -362,7 +357,7 @@ export default function DocumentsView() {
     /** File-type dropdown rendered inside TopSection's custom filter slot. */
     const typeFilterSelect = (
         <select
-            className="appearance-none bg-bg-secondary border border-border-light rounded-xl text-text-primary text-sm cursor-pointer min-w-[140px] py-3 pl-4 pr-10 bg-no-repeat transition-colors hover:bg-bg-tertiary hover:border-border-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus:border-accent [color-scheme:light] dark:[color-scheme:dark]"
+            className="appearance-none bg-bg-secondary border border-border-light rounded-xl text-text-primary text-sm cursor-pointer min-w-[140px] py-3 pl-4 pr-10 bg-no-repeat transition-colors hover:bg-bg-tertiary hover:border-border-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus:border-accent [color-scheme:light] dark:[color-scheme:dark]"
             style={{
                 backgroundImage:
                     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
@@ -406,8 +401,8 @@ export default function DocumentsView() {
             />
             {uploading && (
                 <div className="mx-3 sm:mx-4 md:mx-6 lg:mx-8 mt-4">
-                    <div className="flex items-center gap-3 bg-[color:var(--accent)]/10 border border-[color:var(--accent)]/30 rounded-xl px-5 py-3.5">
-                        <i className="fas fa-circle-notch fa-spin" style={{ color: accentColor }} />
+                    <div className="flex items-center gap-3 bg-accent/10 border border-accent/30 rounded-xl px-5 py-3.5 animate-fade-slide-in">
+                        <i className="fas fa-circle-notch fa-spin text-accent" aria-hidden="true" />
                         <span className="text-sm text-text-primary font-medium">Uploading document...</span>
                     </div>
                 </div>
@@ -424,7 +419,7 @@ export default function DocumentsView() {
                     {loading ? (
                         <DocumentsSkeleton />
                     ) : filtered.length === 0 ? (
-                        <EmptyState canUpload={canUpload} onUpload={handleUploadClick} accentColor={accentColor} />
+                        <EmptyState canUpload={canUpload} onUpload={handleUploadClick} />
                     ) : (
                         <>
                             {!isMobile && (
