@@ -59,16 +59,17 @@ export default function ManagerAssignmentCard({
                             return (
                                 <span
                                     key={code}
-                                    className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-text-primary"
+                                    className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent"
                                 >
                                     ({code}) {p?.plant_name || ''}
                                     {!readOnly && (
                                         <button
                                             type="button"
-                                            className="ml-1 text-text-tertiary hover:text-text-primary"
+                                            className="ml-1 rounded text-accent/70 transition-colors duration-150 hover:bg-accent/20 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.92]"
                                             onClick={() => onRemoveAdditionalPlant(code)}
+                                            aria-label={`Remove plant ${code}`}
                                         >
-                                            <i className="fas fa-times text-[10px]" />
+                                            <i className="fas fa-times text-[10px]" aria-hidden="true" />
                                         </button>
                                     )}
                                 </span>

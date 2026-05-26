@@ -97,9 +97,12 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
                         aria-label="View comments"
                         className={`${ACTION_BUTTON} relative`}
                     >
-                        <i className="fas fa-comments"></i>
+                        <i className="fas fa-comments" aria-hidden="true"></i>
                         {operator.commentsCount > 0 && (
-                            <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[12px] h-3 px-0.5 bg-blue-500 text-white text-[8px] font-bold rounded leading-none">
+                            <span
+                                className="absolute -top-0.5 -right-0.5 flex h-3 min-w-[12px] items-center justify-center rounded bg-accent px-0.5 text-[8px] font-bold leading-none text-white ring-1 ring-bg-primary"
+                                aria-label={`${operator.commentsCount} comment${operator.commentsCount === 1 ? '' : 's'}`}
+                            >
                                 {operator.commentsCount > 9 ? '9+' : operator.commentsCount}
                             </span>
                         )}

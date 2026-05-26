@@ -58,13 +58,13 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
 
     return (
         <div
-            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 px-4 animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
+            className="fixed inset-0 z-[1000] flex items-center justify-center bg-text-primary/60 px-4 backdrop-blur-sm animate-fade-in-fast motion-reduce:animate-none"
             onClick={() => {
                 if (!isSaving) onClose?.()
             }}
         >
             <div
-                className="w-full max-w-lg rounded-2xl bg-bg-primary shadow-2xl"
+                className="w-full max-w-lg overflow-hidden rounded-modal border border-border-light bg-bg-primary shadow-modal animate-pop-in motion-reduce:animate-none"
                 onClick={(event) => event.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
@@ -72,7 +72,7 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
             >
                 <div className="flex items-center justify-between gap-3 border-b border-border-light px-5 py-4">
                     <div className="min-w-0">
-                        <div id="plant-managers-modal-title" className="truncate text-base font-bold text-text-primary">
+                        <div id="plant-managers-modal-title" className="truncate font-heading text-base font-semibold text-text-primary">
                             Managers · {plantName}
                         </div>
                         <div className="truncate text-[12px] text-text-tertiary">{plantCode}</div>
@@ -81,26 +81,31 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                         type="button"
                         onClick={onClose}
                         disabled={isSaving}
-                        className="rounded-lg border border-border-light bg-bg-primary px-2.5 py-1 text-text-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover disabled:opacity-50 active:scale-[0.97] disabled:active:scale-100"
+                        className="flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-all duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.92] disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none"
                         aria-label="Close"
                     >
-                        <i className="fas fa-times text-[12px]" />
+                        <i className="fas fa-times text-[12px]" aria-hidden="true" />
                     </button>
                 </div>
                 <div className="px-5 py-4">
                     <PlantManagersEditor managerIds={managerIds} onChange={setManagerIds} disabled={isSaving} />
                     {error && (
-                        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-text-primary">
+                        <div
+                            role="alert"
+                            aria-live="assertive"
+                            className="mt-3 flex items-center gap-2 rounded-card border border-status-danger/35 bg-status-danger/10 px-3 py-2 text-[12px] text-text-primary"
+                        >
+                            <i className="fas fa-exclamation-circle text-status-danger" aria-hidden="true" />
                             {error}
                         </div>
                     )}
                 </div>
-                <div className="flex justify-end gap-2 border-t border-border-light px-5 py-3">
+                <div className="flex justify-end gap-2 border-t border-border-light bg-bg-secondary px-5 py-3">
                     <button
                         type="button"
                         onClick={onClose}
                         disabled={isSaving}
-                        className="rounded-xl border border-border-light bg-bg-primary px-4 py-2 text-sm font-semibold text-text-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover disabled:opacity-50 active:scale-[0.97] disabled:active:scale-100"
+                        className="rounded-md border border-border-light bg-bg-primary px-4 py-2 text-sm font-semibold text-text-secondary transition-all duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none"
                     >
                         Cancel
                     </button>
@@ -108,8 +113,9 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                         type="button"
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-accent-hover disabled:opacity-50 active:scale-[0.97] disabled:active:scale-100"
+                        className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-accent-hover hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none"
                     >
+                        {isSaving && <i className="fas fa-spinner fa-spin text-[12px]" aria-hidden="true" />}
                         {isSaving ? 'Saving…' : 'Save Managers'}
                     </button>
                 </div>
