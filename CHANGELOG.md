@@ -1,5 +1,97 @@
 # Changelog
 
+## [2026.22.13] - 2026-05-27
+
+- Replace the brutalist saturated-fill badge treatment with a Dot + Text
+  design (mockup #08, Linear-style) across the entire app. Every badge —
+  status pills, plant codes, count overlays, role chips, region
+  indicators, verdict pills, kicker / cancel / move indicators,
+  same-day flags, trainee badges — now renders with a uniform neutral
+  body (`!bg-bg-tertiary`) plus theme-primary dark text
+  (`!text-text-primary`) plus a small colored leading dot that carries
+  the semantic tone. Hue lives only in the dot, so a plant-color chip
+  and a danger status pill look visually identical except for the dot
+  colour. Body and text are theme-tracking tokens that clear WCAG AA
+  contrast in light / dark / grayed automatically — no per-theme tuning.
+- `src/app/components/common/Badge.jsx` rewritten. Brutalist
+  `text-white`, `font-extrabold`, `tracking-[0.08em]`, hard offset
+  shadow, and per-tone darker bg variants are gone. Typography is
+  locked at `!font-bold`, `!uppercase`, `!tracking-[0.06em]` with
+  `!important` so caller classNames cannot drift the design. Caller
+  `bg` / `fg` props now route ONLY to the dot/icon — never to the
+  body — so legacy callers that passed `fg="#ffffff"` (which used to
+  force white body text on a now-light body and made the badge
+  unreadable in light mode) automatically conform. The previous
+  `cleanStyleProp` helper strips background / backgroundColor / color
+  from `rest.style` for the same reason.
+- xs size bumped from `py-0` to `py-0.5` so 9px text with descenders
+  (g, y, p, q, j) and ascenders (b, d, h, l, k) no longer gets cropped
+  top/bottom against the body edges. Visible in OnlineUsersModal role
+  chips, count overlays, and any other xs-sized callsite.
+- DashboardHeader region chip ("HOUSTON CONCRETE · 12 CONCRETE PLANTS")
+  layout fix: the Badge no longer wraps children in a single `<span>`
+  (which previously collapsed multi-element children into one flex
+  item with zero inter-element gap, so the location-dot icon sat
+  glued to the region name). Children now render as direct flex
+  children, picking up the parent's `gap-*`. The `variant="custom"`
+  no-color path also stopped emitting a phantom dot taking 16px of
+  unwanted left padding — leading element only renders when there's
+  actually something semantic to show.
+- `force-white-text` CSS rule in `src/app/index.css` reduced to a
+  no-op. The previous tripled-specificity rule forced white text on
+  every badge and descendant — fine on saturated fills but catastrophic
+  on the Dot + Text neutral body. Leftover `className="force-white-text"`
+  in callers (PlanDashboardActivityFeed, ConversationSidebar) is now
+  inert. The accompanying `--badge-shadow-color` CSS custom property
+  (introduced for the brutalist hard shadow) was removed along with
+  its dark / grayed theme variants — no longer referenced.
+- `scripts/emails/badgeHtml.js` rewritten to mirror the Dot + Text
+  treatment server-side. Email-rendered badges now ship as a
+  `<span>` body + nested dot `<span>` + label `<span>`, all
+  `inline-block` with `vertical-align:middle` so they render
+  consistently in Gmail / Outlook / Apple Mail. Body is hard-coded
+  `#e7edf3` + `#1e293b` text (emails always render against a light
+  backdrop). Dot color flows from `bg` prop or tone palette.
+- `NavigationActionButtons.jsx` ActionBadge: the online-users count
+  bubble was rendering monotone gray because the caller passed
+  `badgeColor="#22c55e"` (green hex) into a wrapper that set
+  `tone="#22c55e"` — not a valid tone, so Badge fell back to neutral.
+  Added a hex→tone map (`#22c55e` → `'success'`, `#ef4444` → `'danger'`,
+  etc.) and an unknown-hex fallback through `variant="custom"` so any
+  future caller passing a hex still gets a coloured bubble instead of
+  the monotone trap.
+- `PlanScheduleSyntheticRows.jsx` had a hand-rolled `<span>` with
+  inline `style={{ background: accent }}` and hardcoded `text-white`
+  that bypassed the Badge component entirely. Migrated to
+  `<Badge variant="custom" bg={accent} icon={icon}>` so it picks up
+  the unified treatment.
+- `PlanScheduleBadges.jsx`: BigPourBadge previously passed an icon
+  JSX node with `className="...text-white"` hardcoded — would render
+  white-on-light after the Dot+Text rewrite. Switched to a string
+  icon prop (`icon={icon}`) so Badge controls the colour. PlantBadge
+  dropped the `force-white-text` class, the `fg="#ffffff"` override,
+  and the nested inner code chip with `bg-white/20` — all artifacts
+  of the saturated-fill era. Plant color now flows to the dot, code
+  + name render on the neutral body.
+- `PlanDashboardActivityFeed.jsx` PlantChip and StatusPill rewritten.
+  PlantChip was a hand-rolled outer `<span>` (saturated plant color
+  bg + py-0) wrapping a `<Badge variant="custom" bg="rgba(255,255,
+  255,0.22)">` — the combination of legacy outer chrome + new Dot+Text
+  inner Badge produced the broken layout shown on the Latest Activity
+  sidebar. Now both PlantChip and StatusPill resolve through a single
+  unified Badge call (plant color → dot, event tone → dot + icon).
+- Customer Service Lookup (Ops → Stats → Service Lookup) verdict
+  pills (Good / Bad / Not Good / Very Bad / Slow) routed through
+  `<Badge tone={verdictTone(m)}>` so they share the Dot + Text
+  treatment with every other pill on the page. Added `verdictTone(m)`
+  helpers in both `customer-lookup/customerLookupShared.js` and
+  `CustomerServiceContext.jsx` so the two CustomerOrdersTable variants
+  render identically.
+- Badge.jsx `renderIconNode` now tolerates the legacy `fa-` prefix in
+  string icon props (e.g. `icon="fa-circle-check"` works the same as
+  `icon="circle-check"`) so the activity feed's `tone.icon` strings
+  don't need callsite stripping.
+
 ## [2026.22.12] - 2026-05-27
 
 - Migrate the per-order verdict pill in Customer Service Lookup

@@ -7,17 +7,45 @@ import UserAvatar from '../UserAvatar'
 const TWO_LEVEL_BUTTON_BASE =
     'relative inline-flex items-center justify-center cursor-pointer rounded-lg bg-white/[0.08] border border-white/10 text-white/80 hover:text-white hover:bg-white/[0.18] active:scale-[0.94] transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40'
 
-/** Small badge bubble overlaid on icon buttons. `color` accepts a Badge tone
- *  name; the historical `#ef4444` default maps to the danger tone so the
- *  legacy red bubble is preserved without inline hex. `accentColor` is no
- *  longer used (Badge owns its own theming) but is kept in the signature for
- *  backward compatibility with existing call sites. */
+/* Map the historical hex colours threaded through legacy nav callers to the
+ * semantic Badge tones so the green online-users bubble, red messages
+ * bubble, etc., all hit the right dot colour. Any value not in this map (or
+ * not a known tone string) falls through to variant="custom" and becomes
+ * the dot colour directly — which still produces a coloured bubble rather
+ * than the monotone neutral fallback. */
+const COLOR_TO_TONE = {
+    '#16a34a': 'success',
+    '#22c55e': 'success',
+    '#2563eb': 'info',
+    '#3b82f6': 'info',
+    '#ca8a04': 'warning',
+    '#dc2626': 'danger',
+    '#ef4444': 'danger',
+    '#f59e0b': 'warning'
+}
+const VALID_TONES = new Set(['accent', 'danger', 'info', 'neutral', 'success', 'warning'])
+
+/** Small badge bubble overlaid on icon buttons. `color` accepts either a
+ *  Badge tone name (e.g. `'success'`) or a hex string — the historical
+ *  `#ef4444` / `#22c55e` defaults are mapped to `'danger'` / `'success'`
+ *  so the legacy red and green bubbles render correctly. Unknown hex
+ *  values fall through to `variant="custom"` so the bubble still picks
+ *  up the supplied hue instead of the monotone neutral fallback.
+ *  `accentColor` is no longer used (Badge owns its own theming) but is
+ *  kept in the signature for backward compatibility. */
 function ActionBadge({ count, accentColor: _accentColor, color, small = false }) {
     if (!count || count <= 0) return null
-    const tone = !color || color === '#ef4444' ? 'danger' : color
+    const mapped = color ? COLOR_TO_TONE[color.toLowerCase?.()] : null
+    const badgeProps = mapped
+        ? { tone: mapped }
+        : VALID_TONES.has(color)
+          ? { tone: color }
+          : color
+            ? { bg: color, variant: 'custom' }
+            : { tone: 'danger' }
     return (
         <Badge
-            tone={tone}
+            {...badgeProps}
             size={small ? 'xs' : 'sm'}
             shape="pill"
             weight="bold"

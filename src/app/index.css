@@ -79,11 +79,6 @@
     --status-danger: #dc2626;
     --status-shop: #2563eb;
     --status-spare: #64748b;
-    /* Hard offset shadow colour for the unified Badge component
-     * (`src/app/components/common/Badge.jsx`). The brutalist treatment
-     * uses a solid offset drop shadow — the colour swaps per theme so
-     * the shadow stays visible against light, dark, and grayed surfaces. */
-    --badge-shadow-color: rgba(0, 0, 0, 0.75);
 }
 
 html.dark {
@@ -122,10 +117,6 @@ html.dark {
     --danger: #ef4444;
     --warning: #f59e0b;
     --success: #22c55e;
-    /* Pure black on dark surfaces — the absorbed shadow is still visible at
-     * the edges of the saturated badge fill, which keeps the brutalist
-     * offset legible without introducing a glow effect. */
-    --badge-shadow-color: rgba(0, 0, 0, 1);
 }
 
 /* ── "Grayed Out" theme ──────────────────────────────────────────────────────
@@ -158,7 +149,6 @@ html.dark.theme-grayed {
     --border-dark: #8b919e;
     --shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.2);
-    --badge-shadow-color: rgba(0, 0, 0, 0.85);
 }
 
 html.theme-transitioning,
@@ -2394,18 +2384,13 @@ html.dark.theme-grayed textarea:-webkit-autofill {
     color: var(--text-primary) !important;
 }
 
-/* Opt-in escape hatch for the handful of badges that need WHITE text in
- * every theme — solid-fill nav counters, Plan dashboard activity feed
- * StatusPills, Operations > Schedule plant badges, etc. The class is
- * TRIPLED (`.force-white-text.force-white-text.force-white-text`) to
- * push its specificity to 0,3,0 — beats any 0,2,0 theme-aware rule
- * upstream (the global monochrome-badge enforcer is 0,2,0, Tailwind's
- * `.text-text-primary` is 0,1,0). The doubled descendant variant
- * catches nested text spans inside the badge (plant name span inside
- * PlantBadge, label span inside StatusPill, etc.). Apply by adding the
- * `force-white-text` class to the OUTER badge element — descendants
- * inherit via the descendant combinator. */
-.force-white-text.force-white-text.force-white-text,
-.force-white-text.force-white-text.force-white-text * {
-    color: #ffffff !important;
+/* `.force-white-text` was an escape hatch for the previous saturated-fill
+ * badge era — it forced white text on solid-color badge fills via tripled
+ * specificity. The current Dot + Text Badge design uses a theme-tracking
+ * neutral body with `var(--text-primary)` text in EVERY theme, so forcing
+ * white text now makes badges unreadable in light mode (white on light
+ * gray = invisible). The rule is intentionally a no-op — leftover
+ * `className="force-white-text"` in callers becomes inert until those
+ * usages are cleaned up. Do NOT re-enable. */
+.force-white-text {
 }

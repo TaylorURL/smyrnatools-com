@@ -117,49 +117,34 @@ const buildEvents = (detailByOrderId, orderMetaByOrderId, plantNameByCode) => {
     return events.slice(0, MAX_FEED_EVENTS)
 }
 
-/** Compact variant of the Schedule tab's `PlantBadge`. Same colored pill +
- *  embedded code bubble vocabulary, dialled down for the 260px sidebar so the
- *  full plant name still has room to render without truncating aggressively.
- *
- *  Background is the saturated per-plant color from `plantBadgeColor`, so
- *  the text needs to stay WHITE in every theme — black-on-saturated would
- *  disappear in light mode. Uses the `force-white-text` opt-out class to
- *  beat the site-wide theme-aware badge rule. */
+/** Per-plant chip for the activity feed. Plant identity flows through the
+ *  unified Badge's leading dot — saturated plant color carries the
+ *  identity, body + text use the theme-tracking Dot+Text treatment so
+ *  contrast holds in every theme. */
 function PlantChip({ code, fallback = '#64748b', name }) {
     if (!code) return null
     const bg = plantBadgeColor(code, fallback)
     return (
-        <span
-            className="force-white-text inline-flex items-center gap-1 rounded-full pl-0.5 pr-1.5 py-0 font-semibold whitespace-nowrap min-w-0"
-            style={{ background: bg }}
+        <Badge
+            variant="custom"
+            size="xs"
+            shape="pill"
+            bg={bg}
             title={name ? `${code} · ${name}` : code}
+            className="min-w-0"
         >
-            <Badge
-                variant="custom"
-                size="xs"
-                shape="pill"
-                uppercase={false}
-                bg="rgba(255,255,255,0.22)"
-                fg="inherit"
-                className="justify-center h-[16px] min-w-[28px]"
-            >
-                {code}
-            </Badge>
-            {name && <span className="text-[10.5px] truncate">{name}</span>}
-        </span>
+            <span className="font-mono tabular-nums">{code}</span>
+            {name && <span className="truncate normal-case font-medium">{name}</span>}
+        </Badge>
     )
 }
 
-/** Status pill — same template as the Schedule row's `OrderStatusBadge` /
- *  `ServiceBadge`: tinted background + saturated foreground, sized to match
- *  the schedule row vocabulary. The per-event `tone.accent` hex is dynamic
- *  so the badge renders via `variant="custom"` with manual bg/fg and the
- *  shared `force-white-text` opt-out class preserves readable contrast in
- *  every theme. */
+/** Per-event status pill. Tone's saturated accent becomes the dot colour
+ *  (Complete = green, Loaded = blue); the icon sits next to the dot in
+ *  the same tone. */
 function StatusPill({ tone, label, icon }) {
     return (
-        <Badge variant="custom" size="sm" shape="pill" bg={tone.accent} fg="#fff" className="force-white-text">
-            <i className={`fas ${icon} text-[8px]`} />
+        <Badge variant="custom" size="sm" shape="pill" bg={tone.accent} icon={icon}>
             {label}
         </Badge>
     )

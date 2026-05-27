@@ -247,8 +247,7 @@ export function BigPourBadge({ order, travelOverrides }) {
             size="md"
             shape="pill"
             bg={bg}
-            fg="#ffffff"
-            icon={<i className={`fas fa-${icon} text-[10px] text-white`} aria-hidden="true" />}
+            icon={icon}
             className="shadow-sm"
             title={tooltipLines.join('\n')}
         >
@@ -358,23 +357,9 @@ export function OrderStatusBadge({ status }) {
 export function PlantBadge({ code, fallback, name }) {
     const bg = plantBadgeColor(code, fallback)
     return (
-        <Badge
-            variant="custom"
-            size="md"
-            shape="pill"
-            weight="semibold"
-            uppercase={false}
-            bg={bg}
-            fg="#ffffff"
-            className="force-white-text gap-1.5 pl-1 pr-2.5 shadow-sm"
-        >
-            <span
-                className="force-white-text inline-flex items-center justify-center rounded-full font-bold bg-white/20 font-heading h-[18px] tabular-nums"
-                style={{ fontSize: 10.5, minWidth: 34 }}
-            >
-                {code}
-            </span>
-            {name && <span className="text-[11.5px]">{name}</span>}
+        <Badge variant="custom" size="md" shape="pill" bg={bg}>
+            <span className="font-mono tabular-nums">{code}</span>
+            {name && <span className="ml-1.5 normal-case font-medium">{name}</span>}
         </Badge>
     )
 }

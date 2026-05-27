@@ -1,30 +1,26 @@
 import React from 'react'
 
 /**
- * Unified Badge — brutalist treatment.
+ * Unified Badge — Dot + Text treatment (mockup #08, Linear-style).
  *
- * Every badge across the app shares one visual identity: saturated tone
- * background, white 800-weight uppercase text with wide tracking, sharp
- * 2px corners, and a hard offset drop shadow. Picked from #12 in
- * `badge-designs.html` because the dashboard is fleet/industrial software
- * and the brutalist look carries the no-nonsense weight that fits.
+ * Every badge across the app shares one visual identity:
+ *   - Neutral theme-tracking body (`bg-bg-tertiary` + `text-text-primary`).
+ *     Both tokens auto-adapt across light / dark / grayed themes, which
+ *     means the badge body and its text always clear WCAG AA contrast
+ *     without any per-theme tuning.
+ *   - A small colored leading dot carries the semantic (success / warning
+ *     / danger / info / neutral / accent — or any data-driven hue passed
+ *     via `variant="custom"`). The dot is the only place hue lives, so a
+ *     plant-code badge, a status pill, and a count chip all look visually
+ *     identical except for the dot colour.
+ *   - 700-weight uppercase text with 0.06em tracking, locked via
+ *     `!important` so no caller `className` can drift the typography.
  *
- * What varies per call site is only the tone (success / warning / danger /
- * info / neutral / accent) and optionally the size (xs–lg). Everything
- * else — shape, weight, casing, shadow offset scale, padding rhythm — is
- * fixed by the component so a status pill in a table cell, a count overlay
- * on an icon button, and a plant code chip in a header all look visually
- * identical. The shadow colour is theme-aware via the
- * `--badge-shadow-color` CSS custom property so the offset stays visible
- * in light, dark, and grayed themes.
- *
- * The `variant`, `weight`, and `uppercase` props are retained for
- * backwards compatibility with the ~290 existing call sites but are now
- * effectively no-ops — the brutalist style is the only style. The single
- * meaningful escape hatch is `variant="custom"`, which keeps the
- * brutalist shape (corners, padding, shadow, weight, casing) but lets
- * the caller pass `bg` / `fg` for data-driven colors (per-plant
- * identifier, per-user accent, role colour from DB).
+ * What varies per call site is only the tone (or custom dot colour) and
+ * optionally the size (xs–lg). The `weight`, `uppercase`, `dot`,
+ * `variant`, and `style` background/color overrides are accepted but
+ * intentionally consumed-and-ignored — they're back-compat with the ~290
+ * existing call sites and would otherwise let visual drift creep back in.
  *
  * Common patterns:
  *   <Badge tone="success">Active</Badge>
@@ -34,139 +30,80 @@ import React from 'react'
  */
 
 /**
- * Per-tone badge background. Deliberately darker than the top-level
- * `--status-*` tokens used elsewhere (icons, charts) because the brutalist
- * treatment puts WHITE text on the fill, and the lighter top-level tones
- * (especially `#16a34a` green @ 3.3:1 and `#ca8a04` amber @ 2.97:1) fail
- * WCAG AA against white. Every value below clears 4.5:1 against white text
- * and remains identical across light / dark / grayed themes (badge bg is
- * theme-invariant — only the surrounding surface changes).
- *
- * Approximate contrast against white text:
- *   accent  (#1e3a5f navy)   — 11.4:1  AAA
- *   info    (#1d4ed8 blue)   —  8.6:1  AAA
- *   neutral (#475569 slate)  —  7.4:1  AAA
- *   danger  (#b91c1c red)    —  6.2:1  AA+
- *   success (#15803d green)  —  5.0:1  AA
- *   warning (#a16207 amber)  —  4.9:1  AA
+ * Per-tone dot colour. Tone bg utilities (`bg-status-*`, `bg-accent`)
+ * carry the project's saturated hue tokens — used for the dot, not the
+ * body. The body is always `bg-bg-tertiary`.
  */
-const TONE_BG = {
-    accent: 'bg-[#1e3a5f]',
-    danger: 'bg-[#b91c1c]',
-    info: 'bg-[#1d4ed8]',
-    neutral: 'bg-[#475569]',
-    success: 'bg-[#15803d]',
-    warning: 'bg-[#a16207]'
+const TONE_DOT_CLS = {
+    accent: 'bg-accent',
+    danger: 'bg-status-danger',
+    info: 'bg-status-shop',
+    neutral: 'bg-status-spare',
+    success: 'bg-status-active',
+    warning: 'bg-status-warning'
 }
 
 /**
- * Parse a CSS colour string into {r, g, b} 0-255. Handles `#rrggbb`,
- * `#rgb`, and `rgb()` / `rgba()` literals. Returns null for inputs we
- * can't statically resolve (CSS custom properties, `hsl()`, named colours)
- * — callers fall back to white text in that case, which is safe for the
- * project's known data-driven palette (plant codes and the navy accent
- * are all dark enough to read white text against).
+ * Per-tone icon colour — applied when a caller passes `icon` (which then
+ * REPLACES the dot as the leading semantic indicator).
  */
-const parseColorToRgb = (input) => {
-    if (typeof input !== 'string') return null
-    const str = input.trim()
-    if (str.startsWith('#')) {
-        if (str.length === 4) {
-            return {
-                b: parseInt(str[3] + str[3], 16),
-                g: parseInt(str[2] + str[2], 16),
-                r: parseInt(str[1] + str[1], 16)
-            }
-        }
-        if (str.length === 7 || str.length === 9) {
-            return {
-                b: parseInt(str.slice(5, 7), 16),
-                g: parseInt(str.slice(3, 5), 16),
-                r: parseInt(str.slice(1, 3), 16)
-            }
-        }
-        return null
-    }
-    const match = str.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i)
-    if (match) {
-        return { b: parseInt(match[3], 10), g: parseInt(match[2], 10), r: parseInt(match[1], 10) }
-    }
-    return null
+const TONE_ICON_CLS = {
+    accent: 'text-accent',
+    danger: 'text-status-danger',
+    info: 'text-status-shop',
+    neutral: 'text-status-spare',
+    success: 'text-status-active',
+    warning: 'text-status-warning'
 }
 
 /**
- * WCAG relative luminance for an {r, g, b} colour. Values 0–1.
- */
-const relativeLuminance = ({ b, g, r }) => {
-    const channel = (c) => {
-        const v = c / 255
-        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
-    }
-    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
-}
-
-/**
- * Pick a readable foreground for an arbitrary background. The 0.45
- * luminance threshold matches the WCAG AA crossover for white vs dark
- * text: backgrounds darker than this read better with `#ffffff`, lighter
- * ones with a near-black `#0b1220`. Unparseable inputs (CSS vars, etc.)
- * default to white — safe for the project's known data-driven palette.
- */
-const pickContrastFg = (bg) => {
-    const parsed = parseColorToRgb(bg)
-    if (!parsed) return '#ffffff'
-    return relativeLuminance(parsed) > 0.45 ? '#0b1220' : '#ffffff'
-}
-
-/**
- * Per-size rhythm. The shadow offset scales with the badge so xs chips
- * carry a 1.5px shadow while lg chips carry 3px — brutalism remains
- * visually proportional at every size.
+ * Per-size rhythm. The dot scales subtly with the badge so xs chips carry
+ * a 4px dot while lg chips carry an 8px dot — proportionally consistent
+ * at every size. Padding is asymmetric (less on the left where the dot
+ * lives) to keep the dot tucked close to the badge edge.
  */
 const SIZE_STYLES = {
     lg: {
-        gap: 'gap-1.5',
+        dotSize: 'h-2 w-2',
+        gap: 'gap-2',
         iconSize: 'text-[11px]',
-        pad: 'px-3.5 py-1',
+        pad: 'pl-2.5 pr-3 py-1',
         removeSize: 'h-4 w-4',
-        shadow: 'shadow-[3px_3px_0_var(--badge-shadow-color)]',
         text: 'text-[12px]'
     },
     md: {
-        gap: 'gap-1',
+        dotSize: 'h-1.5 w-1.5',
+        gap: 'gap-1.5',
         iconSize: 'text-[10px]',
-        pad: 'px-3 py-0.5',
+        pad: 'pl-2 pr-2.5 py-0.5',
         removeSize: 'h-3.5 w-3.5',
-        shadow: 'shadow-[2px_2px_0_var(--badge-shadow-color)]',
         text: 'text-[11px]'
     },
     sm: {
-        gap: 'gap-1',
+        dotSize: 'h-1.5 w-1.5',
+        gap: 'gap-1.5',
         iconSize: 'text-[10px]',
-        pad: 'px-2.5 py-0.5',
+        pad: 'pl-1.5 pr-2 py-0.5',
         removeSize: 'h-3 w-3',
-        shadow: 'shadow-[2px_2px_0_var(--badge-shadow-color)]',
         text: 'text-[10px]'
     },
     xs: {
-        gap: 'gap-0.5',
+        dotSize: 'h-1 w-1',
+        gap: 'gap-1',
         iconSize: 'text-[8px]',
-        pad: 'px-1.5 py-0',
+        // py-0.5 (2px each) gives descenders / ascenders breathing room so
+        // text at 9px with leading-none doesn't get clipped at the body
+        // edges. Going lower (py-0) crops the bottom of g/y/p/q characters.
+        pad: 'pl-1 pr-1.5 py-0.5',
         removeSize: 'h-3 w-3',
-        shadow: 'shadow-[1.5px_1.5px_0_var(--badge-shadow-color)]',
         text: 'text-[9px]'
     }
 }
 
-/**
- * Brutalism is most legible at near-square. The `shape` prop survives so
- * call sites that request a pill (e.g. count overlays) get one, but the
- * default radius is 2px — square enough to feel structural.
- */
 const SHAPE_CLS = {
     pill: 'rounded-full',
-    rounded: 'rounded-sm',
-    'rounded-md': 'rounded',
+    rounded: 'rounded',
+    'rounded-md': 'rounded-md',
     square: 'rounded-none'
 }
 
@@ -176,12 +113,36 @@ const formatCount = (count) => {
     return String(count)
 }
 
-const renderIconNode = (node, sizeCfg) => {
+/**
+ * Render an icon. Accepts either a Font Awesome name (`"check"`,
+ * `"triangle-exclamation"`) or — for back-compat with callers that pass
+ * the legacy `fa-` prefix (`"fa-check"`, `"fa-circle-check"`) — strips
+ * the prefix before applying. Caller can also pass a React node for
+ * full control, which is rendered as-is.
+ */
+const renderIconNode = (node, sizeCfg, colorCls) => {
     if (!node) return null
     if (typeof node === 'string') {
-        return <i className={`fas fa-${node} ${sizeCfg.iconSize}`} aria-hidden="true" />
+        const name = node.replace(/^fa-/, '')
+        return <i className={`fas fa-${name} ${sizeCfg.iconSize} ${colorCls}`} aria-hidden="true" />
     }
     return node
+}
+
+/**
+ * Strip background/color overrides from a caller-supplied inline `style`.
+ * The design mandate is uniform neutral body + theme-primary text, so we
+ * filter out the three properties that could re-introduce inconsistency.
+ * Everything else (positioning, min-width, transitions, etc.) passes
+ * through untouched.
+ */
+const cleanStyleProp = (style) => {
+    if (!style || typeof style !== 'object') return style
+    const { background, backgroundColor, color, ...rest } = style
+    void background
+    void backgroundColor
+    void color
+    return Object.keys(rest).length > 0 ? rest : undefined
 }
 
 export default function Badge({
@@ -190,14 +151,11 @@ export default function Badge({
     variant,
     size = 'sm',
     shape = 'rounded',
-    // weight / uppercase accepted for back-compat with the ~290 existing call
-    // sites — the brutalist treatment fixes weight at 800 and casing at
-    // uppercase, so these are intentionally consumed-then-ignored.
     weight: _weight,
     uppercase: _uppercase,
     icon,
     trailingIcon,
-    dot = false,
+    dot: _dot,
     count,
     removable = false,
     onRemove,
@@ -215,80 +173,89 @@ export default function Badge({
     const sizeCfg = SIZE_STYLES[size] ?? SIZE_STYLES.sm
     const shapeCls = SHAPE_CLS[shape] ?? SHAPE_CLS.rounded
     const isCustom = variant === 'custom' || variant === 'custom-solid'
-    const toneBgCls = isCustom ? '' : (TONE_BG[tone] ?? TONE_BG.neutral)
 
     const interactive = Boolean(onClick) || as === 'button' || Boolean(href)
     const Element = as || (href ? 'a' : interactive ? 'button' : 'span')
 
+    // Strip caller inline bg/color so the brutalist "uniform neutral body"
+    // rule holds across every callsite, regardless of legacy code that
+    // tried to force a coloured body via `style={{ background: ... }}`.
+    const cleanedRest = { ...rest, style: cleanStyleProp(rest.style) }
+    if (cleanedRest.style === undefined) delete cleanedRest.style
+
     /*
-     * Single visual treatment for every badge:
-     *   - inline-flex + defensive centering (justify-center / text-center /
-     *     align-middle / shrink-0 / box-border) so badges render identically
-     *     regardless of parent text-align, justify-content, or width pressure.
-     *   - 800-weight uppercase text with 0.08em tracking.
-     *   - hard offset shadow scaled per size, colour driven by
-     *     --badge-shadow-color (set in src/app/index.css per theme).
-     *   - active:translate + shadow-none feels "pressed in" — the badge
-     *     drops into the space its shadow occupied.
-     *
-     * Text colour is split between two paths:
-     *   - Tone variants: `text-white` is hard-coded. All six tone bgs are
-     *     contrast-checked to clear 4.5:1 against white (see TONE_BG above).
-     *   - Custom variants: NO baked-in text colour, because callers can pass
-     *     the bg through any of three channels (the `bg` prop / a Tailwind
-     *     `className`'s `bg-*` utility / an inline `style.background`). The
-     *     caller is expected to also pass the matching foreground via the
-     *     same channel — `fg` prop, `text-*` className, or `style.color`.
-     *     If a caller supplied only `bg` (hex/rgb) we auto-compute the
-     *     contrast-safe `color` and write it as inline style (see
-     *     `inlineStyle` below). The `text-text-primary` fallback covers
-     *     callers who used a theme-tracking className bg but forgot to add
-     *     an explicit text colour — readable in every theme.
+     * Typography + body styling is locked with `!important` so no caller
+     * className can drift the design language: every badge is uppercase,
+     * 0.06em-tracked, 700-weight, theme-primary text on a theme-tertiary
+     * body. Tailwind emits font-weight utilities alphabetically — without
+     * `!`, a caller's `font-semibold` would beat the base `font-bold` via
+     * CSS source order (same trap we hit with the previous brutalist
+     * variant). `!` locks the design.
      */
     const classes = [
-        'inline-flex items-center justify-center text-center align-middle shrink-0 box-border whitespace-nowrap leading-none uppercase tracking-[0.08em] font-extrabold',
-        !isCustom && 'text-white',
-        // No baked-in text colour for custom — Tailwind utilities are emitted
-        // alphabetically, so any default we add here (e.g. `text-text-primary`)
-        // would land later in the CSS than caller utilities like `text-red-500`
-        // and silently override them. Custom callers must supply the colour
-        // themselves via the `fg` prop, an explicit `text-*` className, an
-        // inline `style.color`, or by passing a parseable `bg` prop (we
-        // auto-compute the contrast-safe colour as inline style — see
-        // `inlineStyle` below).
+        'inline-flex items-center justify-center text-center align-middle shrink-0 box-border whitespace-nowrap leading-none',
+        '!uppercase !tracking-[0.06em] !font-bold !text-text-primary !bg-bg-tertiary',
         sizeCfg.text,
         sizeCfg.pad,
         sizeCfg.gap,
         shapeCls,
-        toneBgCls,
-        sizeCfg.shadow,
         interactive &&
-            'cursor-pointer transition-[transform,box-shadow,filter] duration-100 ease-out hover:brightness-110 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none',
-        active && 'translate-x-[1px] translate-y-[1px] !shadow-none',
+            'cursor-pointer transition-[transform,filter] duration-100 ease-out hover:brightness-95 active:scale-[0.97]',
+        active && 'ring-1 ring-inset ring-accent/40',
         pulse && 'animate-pulse',
         className
     ]
         .filter(Boolean)
         .join(' ')
 
-    // For variant="custom" data-driven backgrounds (plant codes, role colours,
-    // accent overrides), compute the readable foreground from the supplied
-    // `bg`'s luminance unless the caller explicitly passed an `fg`. This
-    // guarantees the text reads against whatever hue the data provides —
-    // light plant colour gets dark text, dark plant colour gets white text.
-    const inlineStyle = isCustom && (bg || fg)
-        ? { background: bg, color: fg || pickContrastFg(bg) }
-        : undefined
+    /*
+     * Leading semantic indicator. Priority:
+     *   1. Caller's `icon` prop (rendered in the tone colour for tone
+     *      variants, or in the caller's custom hue for variant="custom").
+     *   2. A colored dot — but only if there's a semantic colour to carry:
+     *      a tone variant (the dot picks up the tone token) OR a custom
+     *      variant with a `bg`/`fg` to use.
+     *   3. Nothing — callers using variant="custom" without a colour AND
+     *      embedding their own icon in `children` (e.g. DashboardHeader's
+     *      region chip) shouldn't get a phantom dot eating left padding.
+     *
+     * Caller's `bg` / `fg` values are routed to the DOT (or icon) only —
+     * never the body. Body always renders with the theme-tracking
+     * `!bg-bg-tertiary` + `!text-text-primary` classes so contrast holds
+     * in every theme. The previous behaviour of letting `fg="#ffffff"`
+     * force white body text was the cause of unreadable badges on the
+     * OnlineUsersModal role chip and similar callsites.
+     */
+    const dotColorCls = isCustom ? '' : (TONE_DOT_CLS[tone] ?? TONE_DOT_CLS.neutral)
+    const iconColorCls = isCustom ? '' : (TONE_ICON_CLS[tone] ?? TONE_ICON_CLS.neutral)
+    const customColor = isCustom ? bg || fg : null
+    const renderDot = !icon && (!isCustom || customColor)
 
-    // Dot inherits `currentColor` so it stays legible against whatever
-    // text colour the badge resolved to (white for tones + dark custom bgs,
-    // near-black for light custom bgs).
-    const dotEl = dot ? (
+    const leadingEl = icon ? (
+        renderIconNode(icon, sizeCfg, isCustom ? '' : iconColorCls)
+    ) : renderDot ? (
         <span
-            className={`shrink-0 rounded-full bg-current opacity-85 ${size === 'xs' || size === 'sm' ? 'h-1 w-1' : 'h-1.5 w-1.5'}`}
+            className={`shrink-0 rounded-full ${sizeCfg.dotSize} ${dotColorCls}`}
+            /* eslint-disable-next-line react/forbid-dom-props -- data-driven dot colour for variant="custom" */
+            style={customColor ? { background: customColor } : undefined}
             aria-hidden="true"
         />
     ) : null
+
+    // Wrap the leading icon in a span so its color override (for custom
+    // variant) can be applied via inline style.
+    const leadingWrapper =
+        icon && customColor ? (
+            <span
+                className="inline-flex shrink-0"
+                /* eslint-disable-next-line react/forbid-dom-props -- data-driven icon colour for variant="custom" */
+                style={{ color: customColor }}
+            >
+                {leadingEl}
+            </span>
+        ) : (
+            leadingEl
+        )
 
     const content = count != null ? formatCount(count) : children
 
@@ -299,7 +266,7 @@ export default function Badge({
                 e.stopPropagation()
                 onRemove?.()
             }}
-            className={`-mr-1 ml-0.5 inline-flex items-center justify-center hover:bg-current/20 ${sizeCfg.removeSize} ${sizeCfg.iconSize}`}
+            className={`-mr-1 ml-0.5 inline-flex items-center justify-center hover:bg-current/10 ${sizeCfg.removeSize} ${sizeCfg.iconSize}`}
             aria-label="Remove"
         >
             <i className="fas fa-times" aria-hidden="true" />
@@ -309,9 +276,8 @@ export default function Badge({
     const elementProps = {
         className: classes,
         onClick,
-        style: inlineStyle,
         title,
-        ...rest
+        ...cleanedRest
     }
     if (Element === 'button') {
         elementProps.type = elementProps.type ?? 'button'
@@ -320,15 +286,24 @@ export default function Badge({
         elementProps.href = href
     }
 
+    /*
+     * Render content directly (no wrapping `<span>`) so multi-child callers
+     * — DashboardHeader's region chip passes `<i>` + `<span>name` +
+     * `<span>sub` — get their elements as direct flex items, picking up
+     * the parent flex container's `gap-*` between siblings. Wrapping them
+     * in a single span collapsed all three into one flex item with no
+     * inter-element gap, which is why the icon ended up glued to the text.
+     * For single-string children or `count` values, React renders the
+     * text node inline as expected.
+     */
     return (
         <Element {...elementProps}>
-            {dotEl}
-            {renderIconNode(icon, sizeCfg)}
-            {content != null && content !== '' && <span>{content}</span>}
-            {renderIconNode(trailingIcon, sizeCfg)}
+            {leadingWrapper}
+            {content != null && content !== '' && content}
+            {renderIconNode(trailingIcon, sizeCfg, isCustom ? '' : iconColorCls)}
             {removeBtn}
         </Element>
     )
 }
 
-export { formatCount, parseColorToRgb, pickContrastFg, relativeLuminance, SHAPE_CLS, SIZE_STYLES, TONE_BG }
+export { cleanStyleProp, formatCount, SHAPE_CLS, SIZE_STYLES, TONE_DOT_CLS, TONE_ICON_CLS }

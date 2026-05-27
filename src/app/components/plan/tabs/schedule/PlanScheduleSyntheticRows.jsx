@@ -115,13 +115,9 @@ export function PlaceholderRow({ accentColor, animationDelayMs, bodyColSpan, pla
             </td>
             <td className="px-3 py-2" colSpan={remainingCols}>
                 <div className="flex items-center gap-2 text-[12px]">
-                    <span
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 text-white"
-                        style={{ background: accent }}
-                    >
-                        <i className={`fas ${icon} text-[8px]`} />
+                    <Badge variant="custom" size="sm" shape="pill" bg={accent} icon={icon.replace(/^fa-/, '')}>
                         {pillLabel}
-                    </span>
+                    </Badge>
                     <span className="truncate text-text-tertiary italic">{referenceLabel}</span>
                 </div>
             </td>
