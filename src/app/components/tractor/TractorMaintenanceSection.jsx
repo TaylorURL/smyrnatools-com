@@ -3,6 +3,7 @@ import React from 'react'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
 import DateUtility from '../../../utils/DateUtility'
 import { CLEANLINESS_RATING_LABELS } from '../../constants/tractorDetailConstants'
+import StarRating from '../common/StarRating'
 import DetailViewSection from '../sections/DetailViewSection'
 
 // Canonical chevron-bearing select treatment for the tractor maintenance card.
@@ -22,31 +23,17 @@ function CleanlinessRating({ canEditTractor, cleanlinessRating, setCleanlinessRa
     return (
         <div className="form-group">
             <label>Cleanliness Rating</label>
-            <div className="cleanliness-rating-editor">
-                <div className="star-input">
-                    {[1, 2, 3, 4, 5].map((star) => {
-                        const isLit = star <= cleanlinessRating
-                        return (
-                            <button
-                                key={star}
-                                type="button"
-                                className={`star-button ${isLit ? 'active tractor-active' : ''} ${!canEditTractor ? 'disabled' : ''} rounded transition-transform duration-150 ease-out active:scale-[0.97] disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none`}
-                                onClick={() =>
-                                    canEditTractor && setCleanlinessRating(star === cleanlinessRating ? 0 : star)
-                                }
-                                aria-label={`Rate ${star} of 5 stars`}
-                                aria-pressed={isLit}
-                                disabled={!canEditTractor}
-                            >
-                                <i className={`fas fa-star ${isLit ? 'filled !text-text-primary' : ''}`} />
-                            </button>
-                        )
-                    })}
-                </div>
+            <div className="flex flex-col gap-2">
+                <StarRating
+                    value={cleanlinessRating}
+                    onChange={canEditTractor ? setCleanlinessRating : undefined}
+                    size="lg"
+                    tone="warning"
+                />
                 {cleanlinessRating > 0 && (
-                    <div className="rating-value-display">
-                        <span className="rating-label">{CLEANLINESS_RATING_LABELS[cleanlinessRating]}</span>
-                    </div>
+                    <span className="text-[13px] font-semibold text-text-primary">
+                        {CLEANLINESS_RATING_LABELS[cleanlinessRating]}
+                    </span>
                 )}
             </div>
         </div>

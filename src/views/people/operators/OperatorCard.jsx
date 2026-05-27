@@ -3,6 +3,7 @@ import React from 'react'
 import Badge from '../../../app/components/common/Badge'
 import OperatorClockIndicator from '../../../app/components/common/OperatorClockIndicator'
 import PhoneLink from '../../../app/components/common/PhoneLink'
+import StarRating from '../../../app/components/common/StarRating'
 import CardSection from '../../../app/components/sections/CardSection'
 import DateUtility from '../../../utils/DateUtility'
 
@@ -138,15 +139,7 @@ function OperatorCard({
             )}
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Rating</div>
-                <div className="flex gap-0.5" role="img" aria-label={`Rating: ${displayRating} of 5 stars`}>
-                    {[...Array(5)].map((_, i) => (
-                        <i
-                            key={i}
-                            className={`fas fa-star text-[12px] ${i < displayRating ? 'text-accent' : 'text-border-light'}`}
-                            aria-hidden="true"
-                        ></i>
-                    ))}
-                </div>
+                <StarRating value={displayRating} tone="warning" size="sm" />
             </div>
         </CardSection>
     )

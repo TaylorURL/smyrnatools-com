@@ -1,5 +1,6 @@
 import React from 'react'
 
+import StarRating from '../../../../app/components/common/StarRating'
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
 
 const RATING_LABELS = [null, 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent']
@@ -13,32 +14,17 @@ export default function TrailerCleanlinessCard({ cleanlinessRating, onCleanlines
         <DetailViewSection.Card title="Cleanliness Rating" icon="fas fa-broom">
             <div className="form-group">
                 <label>Cleanliness Rating</label>
-                <div className="cleanliness-rating-editor">
-                    <div className="star-input">
-                        {[1, 2, 3, 4, 5].map((star) => {
-                            const isLit = star <= cleanlinessRating
-                            return (
-                                <button
-                                    key={star}
-                                    type="button"
-                                    className={`star-button ${isLit ? 'active' : ''} ${!canEditTrailer ? 'disabled' : ''} rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-transform duration-150 ease-out active:scale-[0.97] disabled:active:scale-100 motion-reduce:transition-none`}
-                                    onClick={() =>
-                                        canEditTrailer &&
-                                        onCleanlinessRatingChange(star === cleanlinessRating ? 0 : star)
-                                    }
-                                    aria-label={`Rate ${star} of 5 stars`}
-                                    aria-pressed={isLit}
-                                    disabled={!canEditTrailer}
-                                >
-                                    <i className={`fas fa-star ${isLit ? 'filled !text-text-primary' : ''}`} />
-                                </button>
-                            )
-                        })}
-                    </div>
+                <div className="flex flex-col gap-2">
+                    <StarRating
+                        value={cleanlinessRating}
+                        onChange={canEditTrailer ? onCleanlinessRatingChange : undefined}
+                        size="lg"
+                        tone="warning"
+                    />
                     {cleanlinessRating > 0 && (
-                        <div className="rating-value-display">
-                            <span className="rating-label">{RATING_LABELS[cleanlinessRating]}</span>
-                        </div>
+                        <span className="text-[13px] font-semibold text-text-primary">
+                            {RATING_LABELS[cleanlinessRating]}
+                        </span>
                     )}
                 </div>
             </div>

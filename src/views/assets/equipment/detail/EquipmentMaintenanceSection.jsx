@@ -1,42 +1,21 @@
 import React from 'react'
 
+import StarRating from '../../../../app/components/common/StarRating'
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
 import AssetStatsUtility from '../../../../utils/AssetStatsUtility'
 import DateUtility from '../../../../utils/DateUtility'
 import { RATING_LABELS } from './equipmentTypeOptions'
 
-/**
- * Star-rating input shared by cleanliness + condition.
- * Lit stars use `!text-text-primary` to override the design system's default
- * yellow accent (mixer-only) and match the equipment view's text-tone palette.
- */
+/** Shared cleanliness + condition picker. Renders the centralized StarRating
+ *  plus an optional textual label readout. */
 function StarRatingInput({ canEditEquipment, label, onChange, value }) {
     return (
         <div className="form-group">
             <label>{label}</label>
-            <div className="cleanliness-rating-editor">
-                <div className="star-input">
-                    {[1, 2, 3, 4, 5].map((star) => {
-                        const isLit = star <= value
-                        return (
-                            <button
-                                key={star}
-                                type="button"
-                                className={`star-button ${isLit ? 'active' : ''} ${!canEditEquipment ? 'disabled' : ''} rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-transform duration-150 ease-out active:scale-[0.97] disabled:active:scale-100 motion-reduce:transition-none`}
-                                onClick={() => canEditEquipment && onChange(star === value ? 0 : star)}
-                                aria-label={`Rate ${star} of 5 stars`}
-                                aria-pressed={isLit}
-                                disabled={!canEditEquipment}
-                            >
-                                <i className={`fas fa-star ${isLit ? 'filled !text-text-primary' : ''}`} />
-                            </button>
-                        )
-                    })}
-                </div>
+            <div className="flex flex-col gap-2">
+                <StarRating value={value} onChange={canEditEquipment ? onChange : undefined} size="lg" tone="warning" />
                 {value > 0 && (
-                    <div className="rating-value-display">
-                        <span className="rating-label">{RATING_LABELS[value]}</span>
-                    </div>
+                    <span className="text-[13px] font-semibold text-text-primary">{RATING_LABELS[value]}</span>
                 )}
             </div>
         </div>

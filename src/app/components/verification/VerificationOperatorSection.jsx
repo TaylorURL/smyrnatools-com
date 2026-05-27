@@ -3,6 +3,7 @@ import React from 'react'
 
 import { FIELD_STYLE, RATING_LABELS } from '../../constants/verificationModalConstants'
 import Skeleton, { SkeletonStack } from '../common/Skeleton'
+import StarRating from '../common/StarRating'
 import { OperatorRow, RequiredHint, Section, StatusMarker } from './VerificationAtoms'
 
 function OperatorRowSkeleton({ valueWidth = 'w-2/3' }) {
@@ -30,24 +31,7 @@ function buildSubtitle({ operatorOk, phoneOk, ratingOk, operatorData }) {
 }
 
 function RatingStars({ onSelect, rating }) {
-    return (
-        <div className="flex gap-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                    key={star}
-                    type="button"
-                    onClick={() => onSelect(star)}
-                    className="border-none bg-transparent p-0 cursor-pointer transition-transform duration-150 ease-out motion-reduce:transition-none hover:scale-110 active:scale-[0.97]"
-                    aria-label={`Rate ${star} of 5`}
-                >
-                    <i
-                        className="fas fa-star text-[16px]"
-                        style={{ color: star <= rating ? '#f59e0b' : 'var(--bg-tertiary)' }}
-                    />
-                </button>
-            ))}
-        </div>
-    )
+    return <StarRating value={rating} onChange={onSelect} size="md" tone="warning" />
 }
 
 function RatingControl({ onSelect, ratingOk, value }) {

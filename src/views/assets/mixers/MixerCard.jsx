@@ -1,6 +1,7 @@
 import React from 'react'
 
 import Badge from '../../../app/components/common/Badge'
+import StarRating from '../../../app/components/common/StarRating'
 import CardSection from '../../../app/components/sections/CardSection'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
@@ -117,36 +118,24 @@ function MixerCard({
             </div>
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Cleanliness</div>
-                <div className="text-sm font-medium">
-                    {mixer.status === 'Retired' ? (
-                        <span className="text-text-secondary">N/A</span>
-                    ) : mixer.cleanlinessRating ? (
-                        <div className="flex items-center gap-2">
-                            <div className="flex gap-0.5">
-                                {[...Array(5)].map((_, i) => (
-                                    <i
-                                        key={i}
-                                        className={`fas fa-star ${i < mixer.cleanlinessRating ? 'text-status-warning' : 'text-border-light'}`}
-                                        aria-hidden="true"
-                                    />
-                                ))}
-                            </div>
-                            {mixer.cleanlinessRating < 3 && (
-                                <Badge
-                                    tone="danger"
-                                    size="md"
-                                    shape="rounded-md"
-                                    title="This truck cannot run loads until the cleanliness is 3 stars or better. Do not ignore this warning."
-                                    className="cursor-help"
-                                >
-                                    Dirty
-                                </Badge>
-                            )}
-                        </div>
-                    ) : (
-                        <span className="text-text-secondary">Not Rated</span>
-                    )}
-                </div>
+                {mixer.status === 'Retired' ? (
+                    <span className="text-sm text-text-secondary">N/A</span>
+                ) : (
+                    <div className="flex items-center gap-2">
+                        <StarRating value={mixer.cleanlinessRating} tone="warning" size="sm" />
+                        {mixer.cleanlinessRating > 0 && mixer.cleanlinessRating < 3 && (
+                            <Badge
+                                tone="danger"
+                                size="md"
+                                shape="rounded-md"
+                                title="This truck cannot run loads until the cleanliness is 3 stars or better. Do not ignore this warning."
+                                className="cursor-help"
+                            >
+                                Dirty
+                            </Badge>
+                        )}
+                    </div>
+                )}
             </div>
         </CardSection>
     )

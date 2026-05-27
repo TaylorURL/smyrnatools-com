@@ -1,7 +1,8 @@
 import React from 'react'
 
-import { fmtFloat, fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { CategoricalBarChart } from '../../../assets/statistics/AssetStatisticsCharts'
+import StarRating from '../../../common/StarRating'
 import { Panel, Stat, StatGroup } from '../../../ui/Panel'
 
 export function PersonRatingPage({ accentColor, stats }) {
@@ -12,16 +13,38 @@ export function PersonRatingPage({ accentColor, stats }) {
             <StatGroup columns={4}>
                 <Stat
                     label="Avg rating"
-                    value={summary.avgRating != null ? `${fmtFloat(summary.avgRating)} ★` : '—'}
+                    value={
+                        summary.avgRating != null ? (
+                            <StarRating
+                                value={summary.avgRating}
+                                size="sm"
+                                tone="warning"
+                                showValue
+                                valueFormat="decimal"
+                            />
+                        ) : (
+                            '—'
+                        )
+                    }
                     hint={`${fmtInt(summary.ratingSamples)} rated`}
                 />
                 <Stat
-                    label="At 5 ★"
+                    label={
+                        <span className="inline-flex items-center gap-1">
+                            At 5
+                            <StarRating value={5} tone="warning" size="xs" />
+                        </span>
+                    }
                     value={fmtInt(ratingDistribution.find((r) => r.label === '5 ★')?.count || 0)}
                     hint="top performers"
                 />
                 <Stat
-                    label="At 1–2 ★"
+                    label={
+                        <span className="inline-flex items-center gap-1">
+                            At 1–2
+                            <StarRating value={2} tone="warning" size="xs" />
+                        </span>
+                    }
                     value={fmtInt(
                         (ratingDistribution.find((r) => r.label === '1 ★')?.count || 0) +
                             (ratingDistribution.find((r) => r.label === '2 ★')?.count || 0)
@@ -79,8 +102,16 @@ export function PersonRatingPage({ accentColor, stats }) {
                                         </td>
                                         <td className="px-2 py-2 text-text-secondary">{row.position}</td>
                                         <td className="px-2 py-2 text-text-secondary">{row.status}</td>
-                                        <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
-                                            {row.rating.toFixed(1)} ★
+                                        <td className="px-3 py-2 text-right">
+                                            <div className="inline-flex items-center justify-end gap-1.5">
+                                                <StarRating
+                                                    value={row.rating}
+                                                    size="sm"
+                                                    tone="warning"
+                                                    showValue
+                                                    valueFormat="decimal"
+                                                />
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

@@ -1,5 +1,6 @@
 import React from 'react'
 
+import StarRating from '../../../app/components/common/StarRating'
 import CardSection from '../../../app/components/sections/CardSection'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
 
@@ -29,7 +30,6 @@ function TrailerCard({
 }) {
     const actualTractorName = tractorName || operatorName
     const actualShowWarning = showTractorWarning || showOperatorWarning
-    const isServiceOverdue = AssetStatsUtility.isServiceOverdue(trailer.lastServiceDate, 90)
 
     const statusColor =
         STATUS_COLORS[trailer.status] ??
@@ -67,21 +67,7 @@ function TrailerCard({
             </div>
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Cleanliness</div>
-                <div className="text-sm font-medium">
-                    {trailer.cleanlinessRating ? (
-                        <div className="flex gap-0.5">
-                            {[...Array(5)].map((_, i) => (
-                                <i
-                                    key={i}
-                                    className={`fas fa-star ${i < trailer.cleanlinessRating ? 'text-text-primary' : 'text-border-light'}`}
-                                    aria-hidden="true"
-                                ></i>
-                            ))}
-                        </div>
-                    ) : (
-                        'Not Rated'
-                    )}
-                </div>
+                <StarRating value={trailer.cleanlinessRating} tone="warning" size="sm" />
             </div>
         </CardSection>
     )

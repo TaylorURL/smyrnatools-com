@@ -1,5 +1,6 @@
 import React from 'react'
 
+import StarRating from '../../../app/components/common/StarRating'
 import CardSection from '../../../app/components/sections/CardSection'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
@@ -19,8 +20,6 @@ const STATUS_COLORS = {
  * layout and interaction chrome to the shared CardSection component.
  */
 function EquipmentCard({ equipment, plantName, onSelect, onShowCommentModal, onShowIssueModal }) {
-    const isServiceOverdue = AssetStatsUtility.isServiceOverdue(equipment.lastServiceDate)
-    // Verification can be a method (attached at runtime) or computed statically via VerifiedUtility.
     const isVerified =
         typeof equipment.isVerified === 'function'
             ? equipment.isVerified(equipment.latestHistoryDate)
@@ -74,39 +73,11 @@ function EquipmentCard({ equipment, plantName, onSelect, onShowCommentModal, onS
             </div>
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Cleanliness</div>
-                <div className="text-sm font-medium">
-                    {equipment.cleanlinessRating ? (
-                        <div className="flex gap-0.5">
-                            {[...Array(5)].map((_, i) => (
-                                <i
-                                    key={i}
-                                    className={`fas fa-star ${i < equipment.cleanlinessRating ? 'text-text-primary' : 'text-border-light'}`}
-                                    aria-hidden="true"
-                                ></i>
-                            ))}
-                        </div>
-                    ) : (
-                        'Not Rated'
-                    )}
-                </div>
+                <StarRating value={equipment.cleanlinessRating} tone="warning" size="sm" />
             </div>
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Condition</div>
-                <div className="text-sm font-medium">
-                    {equipment.conditionRating ? (
-                        <div className="flex gap-0.5">
-                            {[...Array(5)].map((_, i) => (
-                                <i
-                                    key={i}
-                                    className={`fas fa-star ${i < equipment.conditionRating ? 'text-text-primary' : 'text-border-light'}`}
-                                    aria-hidden="true"
-                                ></i>
-                            ))}
-                        </div>
-                    ) : (
-                        'Not Rated'
-                    )}
-                </div>
+                <StarRating value={equipment.conditionRating} tone="warning" size="sm" />
             </div>
         </CardSection>
     )

@@ -1,6 +1,7 @@
 import React from 'react'
 
 import Badge from '../../app/components/common/Badge'
+import StarRating from '../../app/components/common/StarRating'
 
 /**
  * Maps status-pill palette keys to Badge tones. Centralizes the asset-card
@@ -256,14 +257,7 @@ function AssetGridCard({
                             <span className="text-[13px] font-semibold text-text-primary">
                                 {field.type === 'stars' ? (
                                     <span className="inline-flex items-center gap-1">
-                                        <span className="inline-flex gap-px text-[11px]">
-                                            {Array.from({ length: 5 }).map((_, i) => (
-                                                <i
-                                                    key={i}
-                                                    className={`fas fa-star ${i < (value || 0) ? 'text-status-warning' : 'text-border-light'}`}
-                                                />
-                                            ))}
-                                        </span>
+                                        <StarRating value={value || 0} tone="warning" size="sm" />
                                         {warning && (
                                             <Badge
                                                 tone="danger"

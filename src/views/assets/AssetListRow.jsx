@@ -2,6 +2,7 @@ import React from 'react'
 
 import Badge from '../../app/components/common/Badge'
 import OperatorClockIndicator from '../../app/components/common/OperatorClockIndicator'
+import StarRating from '../../app/components/common/StarRating'
 import StatusHistoryBar from '../../app/components/common/StatusHistoryBar'
 
 /**
@@ -233,20 +234,15 @@ export default function AssetListRow({
         }
 
         if (col.type === 'stars') {
-            const rating = Math.round(item[col.ratingField || col.key] || 0)
+            const rating = item[col.ratingField || col.key] || 0
             const showNAForRetired = col.naForRetired && item.status === 'Retired'
             return (
                 <td key={col.key} className={cellClass} style={widthStyle(col.width)}>
                     {showNAForRetired ? (
                         <span className="text-text-tertiary">N/A</span>
                     ) : (
-                        <div className="flex items-center gap-px">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                                <i
-                                    key={i}
-                                    className={`fas fa-star text-[9px] ${i < rating ? 'text-status-warning' : 'text-border-light'}`}
-                                />
-                            ))}
+                        <div className="flex items-center">
+                            <StarRating value={rating} tone="warning" size="xs" />
                             {col.dirtyWarning && rating > 0 && rating < 3 && (
                                 <Badge tone="danger" variant="soft" size="xs" shape="rounded-md" className="ml-1.5">
                                     Dirty

@@ -18,7 +18,7 @@
  * theme-switching at send time.
  *
  * Usage:
- *   const { renderBadgeHtml } = require('./badgeHtml');
+ *   import { renderBadgeHtml } from './badgeHtml.js'
  *   renderBadgeHtml({ label: 'Needs help', tone: 'danger' })
  *   renderBadgeHtml({ label: 'Covered', tone: 'success' })
  *   renderBadgeHtml({ label: 'Direct load', tone: 'info', size: 'sm' })
@@ -135,10 +135,4 @@ function renderBadgeHtml({
     ].join('')
 }
 
-module.exports = {
-    htmlEscape,
-    renderBadgeHtml,
-    SHAPE_RADIUS,
-    SIZE_PALETTE,
-    TONE_DOT
-}
+export { htmlEscape, renderBadgeHtml, SHAPE_RADIUS, SIZE_PALETTE, TONE_DOT }

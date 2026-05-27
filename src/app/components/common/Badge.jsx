@@ -100,11 +100,20 @@ const SIZE_STYLES = {
     }
 }
 
+/**
+ * Shape map is retained for back-compat with the ~290 existing call sites
+ * (which still pass `shape="pill"` / `shape="square"` / etc.), but the
+ * actual rendered radius is locked to `rounded` (4px) via `!rounded` in
+ * the base classes below. The Dot + Text design picked from mockup #08
+ * specifies a 4px radius for every badge, so allowing per-callsite
+ * variation was the source of the "some are pill, some are square, some
+ * are rounded-md" inconsistency the user kept catching.
+ */
 const SHAPE_CLS = {
-    pill: 'rounded-full',
+    pill: 'rounded',
     rounded: 'rounded',
-    'rounded-md': 'rounded-md',
-    square: 'rounded-none'
+    'rounded-md': 'rounded',
+    square: 'rounded'
 }
 
 const formatCount = (count) => {
@@ -194,7 +203,7 @@ export default function Badge({
      */
     const classes = [
         'inline-flex items-center justify-center text-center align-middle shrink-0 box-border whitespace-nowrap leading-none',
-        '!uppercase !tracking-[0.06em] !font-bold !text-text-primary !bg-bg-tertiary',
+        '!uppercase !tracking-[0.06em] !font-bold !text-text-primary !bg-bg-tertiary !rounded',
         sizeCfg.text,
         sizeCfg.pad,
         sizeCfg.gap,

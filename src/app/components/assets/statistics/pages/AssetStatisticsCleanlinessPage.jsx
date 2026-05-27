@@ -1,35 +1,14 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { fmtFloat, fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
+import StarRating from '../../../common/StarRating'
 import { Panel, Stat, StatGroup } from '../../../ui/Panel'
 import { CategoricalBarChart } from '../AssetStatisticsCharts'
 import { AssetWatchlistTable, CleanlinessPlantList } from '../AssetStatisticsTables'
 
-/** Inline star strip — renders five glyphs and shades them based on the
- *  rating. Used inside the dirty watchlist so the value column reads as a
- *  rating rather than just a number. */
+/** Inline star strip — five amber stars matching the rest of the app. */
 function StarStrip({ rating }) {
-    return (
-        <span className="inline-flex items-center gap-0.5">
-            {[1, 2, 3, 4, 5].map((slot) => (
-                <i
-                    key={slot}
-                    className={`fas fa-star text-[11px]`}
-                    style={{
-                        color:
-                            slot <= rating
-                                ? rating < 3
-                                    ? '#dc2626'
-                                    : rating < 4
-                                      ? '#f59e0b'
-                                      : '#16a34a'
-                                : 'var(--border-light)'
-                    }}
-                />
-            ))}
-        </span>
-    )
+    return <StarRating value={rating} tone="warning" size="sm" />
 }
 
 /**

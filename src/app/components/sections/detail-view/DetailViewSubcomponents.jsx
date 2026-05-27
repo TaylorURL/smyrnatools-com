@@ -1,7 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect } from 'react'
 
 import { usePreferences } from '../../../context/PreferencesContext'
+import StarRating from '../../common/StarRating'
 import { DetailViewContext } from './DetailViewContext'
 
 const DEFAULT_ACCENT = '#1e3a5f'
@@ -257,28 +258,15 @@ export function Toggle({ label, checked, onChange, disabled }) {
 }
 
 export function Rating({ value = 0, onChange, max = 5, disabled }) {
-    const [hover, setHover] = useState(0)
     return (
-        <div className="flex items-center gap-1">
-            {[...Array(max)].map((_, i) => (
-                <button
-                    key={i}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => onChange?.(i + 1)}
-                    onMouseEnter={() => !disabled && setHover(i + 1)}
-                    onMouseLeave={() => setHover(0)}
-                    className={`border-none bg-transparent p-0.5 text-[22px] transition-[transform,color] duration-[100ms,150ms] ${disabled ? 'cursor-default' : 'cursor-pointer'}`}
-                    style={{ color: i < (hover || value) ? '#fbbf24' : 'var(--border-light)' }}
-                >
-                    <i className="fas fa-star"></i>
-                </button>
-            ))}
-            {value > 0 && (
-                <span className="ml-2 text-[13px] font-semibold text-slate-500">
-                    {value}/{max}
-                </span>
-            )}
-        </div>
+        <StarRating
+            value={value}
+            onChange={disabled ? undefined : onChange}
+            max={max}
+            size="lg"
+            tone="warning"
+            showValue={value > 0}
+            valueFormat="fraction"
+        />
     )
 }

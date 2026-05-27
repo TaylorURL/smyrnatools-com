@@ -1,5 +1,6 @@
 import React from 'react'
 
+import StarRating from '../../../app/components/common/StarRating'
 import CardSection from '../../../app/components/sections/CardSection'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
@@ -26,7 +27,6 @@ function TractorCard({
     onShowCommentModal,
     onShowIssueModal
 }) {
-    const isServiceOverdue = AssetStatsUtility.isServiceOverdue(tractor.lastServiceDate)
     const isVerified =
         typeof tractor.isVerified === 'function'
             ? tractor.isVerified(tractor.latestHistoryDate)
@@ -76,21 +76,7 @@ function TractorCard({
             </div>
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Cleanliness</div>
-                <div className="text-sm font-medium">
-                    {tractor.cleanlinessRating ? (
-                        <div className="flex gap-0.5">
-                            {[...Array(5)].map((_, i) => (
-                                <i
-                                    key={i}
-                                    className={`fas fa-star ${i < tractor.cleanlinessRating ? 'text-text-primary' : 'text-border-light'}`}
-                                    aria-hidden="true"
-                                ></i>
-                            ))}
-                        </div>
-                    ) : (
-                        'Not Rated'
-                    )}
-                </div>
+                <StarRating value={tractor.cleanlinessRating} tone="warning" size="sm" />
             </div>
         </CardSection>
     )

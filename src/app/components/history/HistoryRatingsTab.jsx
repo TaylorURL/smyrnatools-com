@@ -2,6 +2,7 @@ import React from 'react'
 
 import { DateUtility } from '../../../utils/DateUtility'
 import { RATING_LABELS } from '../../constants/historyConstants'
+import StarRating from '../common/StarRating'
 import UserLabel from '../common/UserLabel'
 import HistoryEmptyState from '../ui/HistoryEmptyState'
 import StatCard from '../ui/StatCard'
@@ -29,11 +30,17 @@ export default function HistoryRatingsTab({ ratingsData }) {
             <StatCardGrid>
                 <StatCard
                     label="Current Rating"
-                    value={currentRating > 0 ? `${currentRating}★` : 'None'}
+                    value={currentRating > 0 ? <StarRating value={currentRating} size="sm" tone="warning" /> : 'None'}
                     sublabel={currentRating > 0 ? RATING_LABELS[currentRating] : undefined}
                 />
-                <StatCard label="Average Rating" value={`${avgRating.toFixed(1)}★`} />
-                <StatCard label="Highest Rating" value={`${highestRating}★`} />
+                <StatCard
+                    label="Average Rating"
+                    value={<StarRating value={avgRating} size="sm" tone="warning" showValue valueFormat="decimal" />}
+                />
+                <StatCard
+                    label="Highest Rating"
+                    value={<StarRating value={highestRating} size="sm" tone="warning" />}
+                />
                 <StatCard label="Total Changes" value={ratingsData.length} />
             </StatCardGrid>
             <TimelineSectionTitle title="Rating Timeline" />
@@ -44,7 +51,12 @@ export default function HistoryRatingsTab({ ratingsData }) {
                     .map((entry, index) => (
                         <TimelineItem key={index} dotClassName="bg-accent" isLast={index >= ratingsData.length - 1}>
                             <TimelineHeader
-                                label={`${entry.rating}★ - ${RATING_LABELS[entry.rating]}`}
+                                label={
+                                    <span className="inline-flex items-center gap-2">
+                                        <StarRating value={entry.rating} size="xs" tone="warning" />
+                                        <span>{RATING_LABELS[entry.rating]}</span>
+                                    </span>
+                                }
                                 isCurrent={index === 0}
                             />
                             <TimelineMeta>

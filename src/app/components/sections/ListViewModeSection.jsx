@@ -5,6 +5,7 @@ import { isDarkLikeTheme } from '../../constants/themeConstants'
 import { usePreferences } from '../../context/PreferencesContext'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import Badge from '../common/Badge'
+import StarRating from '../common/StarRating'
 
 const BASE_ROW_DELAY_MS = 80
 const MIN_ROW_DELAY_MS = 6
@@ -148,22 +149,7 @@ function ListViewModeSection({
         )
     }
 
-    const renderStars = (rating) => {
-        if (!rating) {
-            return <span className="text-[10px] italic text-text-tertiary">—</span>
-        }
-        const stars = []
-        for (let i = 1; i <= 5; i++) {
-            stars.push(
-                <i
-                    key={i}
-                    className="fas fa-star text-[9px]"
-                    style={{ color: i <= rating ? '#f59e0b' : 'var(--bg-tertiary)' }}
-                />
-            )
-        }
-        return <div className="flex items-center gap-px">{stars}</div>
-    }
+    const renderStars = (rating) => <StarRating value={rating} tone="warning" size="xs" notRatedLabel="—" />
 
     return (
         <div className={wrapperClasses} style={{ WebkitOverflowScrolling: 'touch' }}>

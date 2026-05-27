@@ -5,29 +5,23 @@ import { fmtInt, fmtRange, fmtYards } from '../../../../../utils/PlanStatisticsF
 import { formatColocatedCodeLabel } from '../../../../../utils/PlantColocationUtility'
 import { plantBadgeColor } from '../../../../../utils/PlanUtility'
 import Badge from '../../../common/Badge'
+import StarRating from '../../../common/StarRating'
 import { Panel } from '../../../ui/Panel'
 
-/** 1-to-5 star score row. Filled stars use the primary text tone;
- *  unfilled are rendered in the tertiary background tone so the row
- *  reads as a rating gauge instead of a row of disconnected glyphs.
- *  A null score renders as an em-dash so a plant that simply didn't
- *  participate isn't conflated with a balanced one. */
+/** 1-to-5 star score row. Null score renders as an em-dash so a plant that
+ *  simply didn't participate isn't conflated with a balanced one. */
 function StarScore({ score, total = 5 }) {
     if (score == null) {
         return <span className="text-[12px] text-text-tertiary">—</span>
     }
-    const safeScore = Math.max(0, Math.min(total, Math.round(score)))
     return (
-        <div className="flex items-center gap-0.5" aria-label={`Help score ${safeScore} of ${total}`}>
-            {Array.from({ length: total }, (_, idx) => (
-                <i
-                    key={idx}
-                    aria-hidden="true"
-                    className="fas fa-star text-[12px]"
-                    style={{ color: idx < safeScore ? 'var(--text-primary)' : 'var(--bg-tertiary)' }}
-                />
-            ))}
-        </div>
+        <StarRating
+            value={score}
+            max={total}
+            tone="warning"
+            size="sm"
+            ariaLabel={`Help score ${Math.round(score)} of ${total}`}
+        />
     )
 }
 
@@ -100,18 +94,7 @@ const SCORE_BANDS = [
 /** Inline star row used inside the help-score legend popover so the
  *  band labels read in the same visual language as the table column. */
 function PopoverStarRow({ filled, total = 5 }) {
-    return (
-        <span className="inline-flex items-center gap-0.5 shrink-0">
-            {Array.from({ length: total }, (_, idx) => (
-                <i
-                    key={idx}
-                    aria-hidden="true"
-                    className="fas fa-star text-[10px]"
-                    style={{ color: idx < filled ? 'var(--text-primary)' : 'var(--bg-tertiary)' }}
-                />
-            ))}
-        </span>
-    )
+    return <StarRating value={filled} max={total} tone="warning" size="xs" />
 }
 
 /** Help-score info trigger + styled hover/focus popover.

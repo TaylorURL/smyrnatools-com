@@ -1,8 +1,9 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { fmtFloat, fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { StatusPieChart } from '../../../assets/statistics/AssetStatisticsCharts'
+import StarRating from '../../../common/StarRating'
 import { Panel } from '../../../ui/Panel'
 import { HighlightRow, LaunchpadTile } from './personStatsShared'
 
@@ -26,7 +27,22 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                     <HighlightRow
                         icon="fa-star"
                         label="Rating"
-                        value={summary.avgRating != null ? `${fmtFloat(summary.avgRating)} ★ avg` : '—'}
+                        value={
+                            summary.avgRating != null ? (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <StarRating
+                                        value={summary.avgRating}
+                                        size="sm"
+                                        tone="warning"
+                                        showValue
+                                        valueFormat="decimal"
+                                    />
+                                    <span className="text-text-tertiary">avg</span>
+                                </span>
+                            ) : (
+                                '—'
+                            )
+                        }
                         hint={`${fmtInt(summary.ratingSamples)} rated operators`}
                     />
                 )}
@@ -191,7 +207,19 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                             icon="fa-star"
                             label="Ratings"
                             section="rating"
-                            value={summary.avgRating != null ? `${fmtFloat(summary.avgRating)}★` : '—'}
+                            value={
+                                summary.avgRating != null ? (
+                                    <StarRating
+                                        value={summary.avgRating}
+                                        size="sm"
+                                        tone="warning"
+                                        showValue
+                                        valueFormat="decimal"
+                                    />
+                                ) : (
+                                    '—'
+                                )
+                            }
                             hint={`${fmtInt(summary.ratingSamples)} rated`}
                             onSelect={onSelectSection}
                         />

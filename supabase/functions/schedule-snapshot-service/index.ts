@@ -10,20 +10,44 @@ import { requireAuthenticated } from '../_shared/requireSession.ts'
 // ============================================================================
 // Daily schedule snapshot service.
 //
-// `capture` is fired by pg_cron twice a day (22:30 + 23:30 UTC); whichever
-// hits 17:30 Chicago wins, the other is a no-op. Captures tomorrow's
-// schedule into `plan_schedule_snapshots` so the next day the Schedule tab
-// can diff live data against the 5:30 PM baseline (added orders, moved
-// times, changed spacing / address, etc.).
+// Two snapshot types share this service, distinguished by the `snapshot_type`
+// column on `plan_schedule_snapshots`:
 //
-// `get-by-date` is the frontend reader — returns the snapshot for a single
-// schedule date or null when none was taken (e.g., the Sunday skip).
+//   • `end_of_day`     — fired at 22:30 + 23:30 UTC; whichever hits 17:30
+//                        Chicago wins. The 5:30 PM "next-day comparison"
+//                        baseline used by the Schedule tab.
+//   • `email_baseline` — fired at 21:00 / 22:00 UTC weekdays and 16:00 /
+//                        17:00 UTC Saturday; whichever hits 16:00 Chicago
+//                        (Mon–Fri) or 11:00 Chicago (Sat) wins. Captures
+//                        what the 4 PM (or 11 AM Sat) email shipped so the
+//                        5 PM corrections diff has a stable comparison
+//                        point.
+//
+// `get-by-date` is the frontend reader — returns the `end_of_day` snapshot
+// for a single schedule date or null when none was taken (e.g., the Sunday
+// skip). Callers wanting the email baseline pass `snapshotType` explicitly.
 // ============================================================================
 
 const SNAPSHOT_TABLE = 'plan_schedule_snapshots'
 const DISPATCH_TABLE = 'dispatch_data'
 const PLAN_TIME_ZONE = 'America/Chicago'
-const SNAPSHOT_HOUR_CT = 17
+
+type SnapshotType = 'end_of_day' | 'email_baseline'
+const VALID_SNAPSHOT_TYPES: SnapshotType[] = ['end_of_day', 'email_baseline']
+
+const END_OF_DAY_HOUR_CT = 17
+const EMAIL_BASELINE_HOUR_WEEKDAY_CT = 16
+const EMAIL_BASELINE_HOUR_SATURDAY_CT = 11
+
+/** Chicago wall-clock hour at which a given snapshot type is allowed to run
+ *  for `weekday` (Sun = 0). Returns null when this type doesn't fire on that
+ *  day (e.g. email baseline never runs on Sunday). */
+function expectedCaptureHour(type: SnapshotType, weekday: number): number | null {
+    if (type === 'end_of_day') return END_OF_DAY_HOUR_CT
+    if (weekday === 0) return null
+    if (weekday === 6) return EMAIL_BASELINE_HOUR_SATURDAY_CT
+    return EMAIL_BASELINE_HOUR_WEEKDAY_CT
+}
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -169,18 +193,29 @@ async function handleCapture(req: Request, headers: any): Promise<Response> {
         ? body.scheduleDate
         : null
 
+    // `snapshotType` defaults to 'end_of_day' so the legacy 5:30 PM cron
+    // (which doesn't pass the field) keeps working without any change.
+    const rawType = typeof body?.snapshotType === 'string' ? body.snapshotType.trim() : 'end_of_day'
+    const snapshotType: SnapshotType = (VALID_SNAPSHOT_TYPES as string[]).includes(rawType)
+        ? (rawType as SnapshotType)
+        : 'end_of_day'
+
     const now = chicagoNow()
-    // pg_cron schedules at both 22:30 and 23:30 UTC; only one of them lands
-    // on 17:30 Chicago at any given time of year (CDT vs CST). The other
-    // call gets short-circuited here. `scheduleDate` override skips the
-    // gate so an operator can manually backfill / test if needed.
-    if (!forceDate && now.hour !== SNAPSHOT_HOUR_CT) {
+    // Hour gating is per-type: end_of_day fires at 17:00 Chicago every day,
+    // email_baseline fires at 16:00 weekdays / 11:00 Saturday. pg_cron has
+    // a CDT/CST pair for each so only one matches Chicago wall-clock at a
+    // time; the other lands here and short-circuits. `scheduleDate`
+    // override skips the gate so operators can manually backfill / test.
+    const expectedHour = expectedCaptureHour(snapshotType, now.weekday)
+    if (!forceDate && expectedHour == null) {
         return jsonResponse(
-            {
-                skipped: true,
-                reason: 'outside-capture-window',
-                chicagoHour: now.hour
-            },
+            { chicagoHour: now.hour, reason: 'no-capture-this-weekday', skipped: true, snapshotType, weekday: now.weekday },
+            headers
+        )
+    }
+    if (!forceDate && now.hour !== expectedHour) {
+        return jsonResponse(
+            { chicagoHour: now.hour, expectedHour, reason: 'outside-capture-window', skipped: true, snapshotType },
             headers
         )
     }
@@ -189,7 +224,7 @@ async function handleCapture(req: Request, headers: any): Promise<Response> {
     const weekday = chicagoWeekdayForDate(scheduleDate)
     if (weekday === 0) {
         // Sundays are non-production days; skipping per project rules.
-        return jsonResponse({ scheduleDate, skipped: true, reason: 'sunday' }, headers)
+        return jsonResponse({ scheduleDate, skipped: true, reason: 'sunday', snapshotType }, headers)
     }
 
     const admin = getAdminClient()
@@ -211,11 +246,12 @@ async function handleCapture(req: Request, headers: any): Promise<Response> {
         totalYardage += Number(block?.totalYardage) || 0
     }
     if (orderCount === 0) {
-        return jsonResponse({ scheduleDate, skipped: true, reason: 'no-orders' }, headers)
+        return jsonResponse({ scheduleDate, skipped: true, reason: 'no-orders', snapshotType }, headers)
     }
 
-    // Snapshot is per-date: ON CONFLICT DO NOTHING so we never overwrite
-    // the original 5:30 PM capture if a later run hits the same date.
+    // The unique constraint is now (schedule_date, snapshot_type) so each
+    // type gets exactly one row per date. ON CONFLICT (23505) is the
+    // expected dedupe path on the off-DST companion call.
     const { error } = await admin
         .from(SNAPSHOT_TABLE)
         .insert({
@@ -223,21 +259,19 @@ async function handleCapture(req: Request, headers: any): Promise<Response> {
             order_count: orderCount,
             plant_production: plantProduction,
             schedule_date: scheduleDate,
+            snapshot_type: snapshotType,
             total_yardage: totalYardage
         })
         .select('id')
         .maybeSingle()
     if (error) {
-        // The unique constraint on schedule_date will raise 23505 if a
-        // snapshot already exists for this date — that's the expected dedupe
-        // path, not a failure mode.
         if ((error as { code?: string }).code === '23505') {
-            return jsonResponse({ scheduleDate, skipped: true, reason: 'already-captured' }, headers)
+            return jsonResponse({ scheduleDate, skipped: true, reason: 'already-captured', snapshotType }, headers)
         }
         return errorResponse(error.message || 'Insert failed', headers, 500)
     }
 
-    return jsonResponse({ orderCount, scheduleDate, success: true, totalYardage }, headers)
+    return jsonResponse({ orderCount, scheduleDate, snapshotType, success: true, totalYardage }, headers)
 }
 
 async function handleGetByDate(req: Request, headers: any): Promise<Response> {
@@ -258,11 +292,19 @@ async function handleGetByDate(req: Request, headers: any): Promise<Response> {
     if (!ISO_DATE.test(scheduleDate)) {
         return errorResponse('scheduleDate (YYYY-MM-DD) is required', headers, 400)
     }
+    // Default to end_of_day so the existing frontend reader keeps returning
+    // the 5:30 PM snapshot without code changes; callers can opt into the
+    // 4 PM email baseline by passing snapshotType explicitly.
+    const rawType = typeof body?.snapshotType === 'string' ? body.snapshotType.trim() : 'end_of_day'
+    const snapshotType: SnapshotType = (VALID_SNAPSHOT_TYPES as string[]).includes(rawType)
+        ? (rawType as SnapshotType)
+        : 'end_of_day'
     const admin = getAdminClient()
     const { data, error } = await admin
         .from(SNAPSHOT_TABLE)
-        .select('id, schedule_date, captured_at, captured_by, plant_production, order_count, total_yardage')
+        .select('id, schedule_date, snapshot_type, captured_at, captured_by, plant_production, order_count, total_yardage')
         .eq('schedule_date', scheduleDate)
+        .eq('snapshot_type', snapshotType)
         .maybeSingle()
     if (error) return errorResponse(error.message || 'Query failed', headers, 500)
     return jsonResponse({ snapshot: data ?? null }, headers)
@@ -310,10 +352,16 @@ async function handleListRecent(req: Request, headers: any): Promise<Response> {
     const body = await parseBody(req)
     const requested = parseInt(String(body?.limit ?? ''), 10)
     const limit = Number.isFinite(requested) && requested > 0 ? Math.min(requested, 90) : 30
+    // Default scope: end_of_day, matching the existing frontend reader.
+    const rawType = typeof body?.snapshotType === 'string' ? body.snapshotType.trim() : 'end_of_day'
+    const snapshotType: SnapshotType = (VALID_SNAPSHOT_TYPES as string[]).includes(rawType)
+        ? (rawType as SnapshotType)
+        : 'end_of_day'
     const admin = getAdminClient()
     const { data, error } = await admin
         .from(SNAPSHOT_TABLE)
-        .select('schedule_date, captured_at, captured_by, order_count, total_yardage')
+        .select('schedule_date, snapshot_type, captured_at, captured_by, order_count, total_yardage')
+        .eq('snapshot_type', snapshotType)
         .order('schedule_date', { ascending: false })
         .limit(limit)
     if (error) return errorResponse(error.message || 'Query failed', headers, 500)

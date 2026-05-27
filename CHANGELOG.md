@@ -1,5 +1,116 @@
 # Changelog
 
+## [2026.22.14] - 2026-05-27
+
+- Schedule corrections email pipeline. A new 4 PM email_baseline snapshot
+  + 5 PM diff cron compares live dispatch_data against what shipped in
+  the 4:00 PM plan email; any plant whose schedule changed during that
+  hour gets an [UPDATED] email to the same TO + CC chain as the original
+  send. Saturday mirrors the weekday flow shifted earlier: baseline at
+  11 AM, corrections at 12 PM. Sunday is skipped end-to-end. The
+  corrections email re-renders the full updated schedule with a
+  "What changed since 4 PM" callout above the orders table summarizing
+  added / removed / changed orders, with per-field before -> after rows
+  on each changed order. Heads-up banner + intro paragraph swap out for
+  corrections mode so the manager sees the urgency cue immediately.
+- `plan_schedule_snapshots` gains a `snapshot_type` discriminator column
+  (`email_baseline` | `end_of_day`) and the unique constraint moves from
+  `(schedule_date)` to `(schedule_date, snapshot_type)` so the 4 PM and
+  5:30 PM snapshots can coexist per date. Existing rows backfill as
+  `end_of_day` to keep the legacy 5:30 PM Schedule-tab diff baseline
+  untouched. `schedule-snapshot-service/capture` now accepts an optional
+  `snapshotType` body param (defaults to `end_of_day` for backward compat),
+  gates the Chicago hour check per type (16 weekdays / 11 Saturday for
+  `email_baseline`, 17 daily for `end_of_day`), and writes the column on
+  insert. `get-by-date` and `list-recent` filter by type with the same
+  default so the frontend reader keeps returning the 5:30 PM snapshot
+  without code changes.
+- New `/daily-plan-email/cron-send-corrections` endpoint. Loads the
+  baseline snapshot, fetches live dispatch_data, builds the same
+  plant_production shape (`buildPlantProductionFromDispatch` mirrors the
+  snapshot service's groupOrderRowsByPlant exactly), diffs per plant by
+  matching on `orderId` (with `orderNum` fallback) across an explicit
+  18-field label list (`DIFF_FIELD_LABELS`), and ships an email per
+  affected plant. Synthesizes a planRow using LIVE dispatch_data as
+  `plant_production` plus `assignments` / `notes` / `_meta` from the
+  saved `plans` row so help in/out and the clock-in roster reflect the
+  authoritative state. Plants that had every order removed still get a
+  minimal payload so "all orders cancelled" lands.
+- Four new pg_cron pairs to drive the pipeline:
+  `email-baseline-snapshot-{cdt,cst}` at `0 21 * * 1-5` / `0 22 * * 1-5`
+  + `email-baseline-snapshot-sat-{cdt,cst}` at `0 16 * * 6` /
+  `0 17 * * 6` (4 PM weekday / 11 AM Saturday Chicago), and
+  `plan-corrections-{cdt,cst}` at `0 22 * * 1-5` / `0 23 * * 1-5` +
+  `plan-corrections-sat-{cdt,cst}` at `0 17 * * 6` / `0 18 * * 6`
+  (5 PM weekday / 12 PM Saturday Chicago). Both reuse the existing
+  config tables (`plan_schedule_snapshot_config`,
+  `daily_plan_email_config`) so no new bootstrap is required.
+- Fix: `scripts/emails/badgeHtml.js` was exporting via CommonJS
+  `module.exports = {...}` while Deno's strict ESM loader needs
+  `export { ... }`. The `daily-plan-email` edge function imports
+  `renderBadgeHtml` from that file, so since v2026.22.6 the function
+  has been returning `BOOT_ERROR / Function failed to start` on every
+  invocation — the 4 PM email cron has been silently failing as a
+  result. Converted to ES module exports + updated the JSDoc usage
+  example to match. Function now boots and all five endpoints
+  (`preview` / `send` / `cron-send` / `cron-send-corrections` /
+  `bootstrap`) respond.
+- Unified `StarRating` component at
+  `src/app/components/common/StarRating.jsx` — single source of truth
+  for every 1-5 star display across the app. Mirrors the discipline
+  `Badge.jsx` already enforces: caller `className` can supply layout
+  (margin, alignment) but cannot drift colour, size, gap, or filled /
+  empty treatment. Modes: read-only display (renders a `notRatedLabel`
+  text when value is null / 0) and interactive picker (`onChange`
+  enables hover preview + click-to-set, clicking the selected rating
+  clears to 0 matching the legacy reset semantics). Half-star precision
+  via a clipped overlay (filled star clipped to 50% width over an
+  outline star at the same slot). Per-tone filled colour (`accent`,
+  `success`, `warning`, `danger`, `info`, `neutral`) with empty stars
+  locked to `text-border-light` so the bar reads as a tracked /
+  un-tracked pair regardless of tone. Sizes xs-lg.
+- Migrated every star-rating site onto the unified component. Replaced
+  hand-rolled star arrays + `cleanliness-rating-editor` CSS pickers in
+  `MixerCleanlinessRatingCard`, `TrailerCleanlinessCard`,
+  `EquipmentMaintenanceSection`, `TractorMaintenanceSection`,
+  `VerificationOperatorSection`, `PersonRatingPage`,
+  `PersonOverviewPage`, `HistoryRatingsTab`, `HelpBreakdownTable`,
+  `AssetStatisticsCleanlinessPage`, and the inline star renderers in
+  `AssetGridCard`, `AssetListRow`, `MixerCard`, `TractorCard`,
+  `TrailerCard`, `EquipmentCard`, `OperatorCard`,
+  `operatorRatingHelpers`, `DetailViewSubcomponents`, and
+  `HistoryViewSection` / `ListViewModeSection`. Single visual treatment
+  now ships everywhere a star renders.
+- `Badge.jsx` shape map locked. `shape="pill"`, `"rounded-md"`, and
+  `"square"` callers used to render `rounded-full` / `rounded-md` /
+  `rounded-none` respectively, which caused per-page drift (some chips
+  read as pills, some as flat rectangles, some as default 4px). Every
+  shape now resolves to `rounded` (4px) via `!rounded` in the base
+  class list, locking the Dot + Text mockup #08 radius app-wide. Existing
+  ~290 callsites keep their `shape="..."` props untouched for
+  back-compat but render identically.
+- Dayforce bridge userscript bumped to v1.3.0 with cross-domain
+  auto-login. Adds a `@match` for `dfid.dayforcehcm.com` (the Dayforce
+  OIDC IdP) and a focused login-form handler that fills credentials
+  stored via `GM_setValue`, clicks submit, and lets the OIDC chain
+  redirect back to wkdus261 with a fresh authorization code -> fresh
+  session GUID. The existing capture interceptor on the wkdus261 side
+  picks up the new GUID and sync resumes — fully unattended re-login on
+  session expiry. Falls back to the existing silent-reload + banner
+  flow when credentials aren't stored, MFA is enforced, or the bad-
+  credentials retry counter hits MAX_ATTEMPTS (prevents infinite redirect
+  loops). New `window.dayforceSync.setCredentials(user, pass)` /
+  `clearCredentials()` console helpers manage the stored pair.
+- Dayforce bridge: first-install YTD backfill. Detects a missing or
+  stale "completed-year" flag in `GM_setValue` and runs a one-shot
+  per-week sweep from Jan 1 of the current year through today, throttled
+  at 1s/week so Dayforce doesn't 429. Gap-checks each week against
+  Supabase via the dayforce-import edge function so previously-synced
+  weeks aren't re-fetched, and is resumable across page reloads (the
+  cursor persists in `GM_setValue`). New `@grant` permissions added:
+  `GM_setValue` / `GM_getValue` / `GM_deleteValue` to support both
+  credential storage and the backfill cursor.
+
 ## [2026.22.13] - 2026-05-27
 
 - Replace the brutalist saturated-fill badge treatment with a Dot + Text

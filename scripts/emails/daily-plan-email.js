@@ -324,6 +324,94 @@ function renderRoster({ roster }) {
 </table>`
 }
 
+/** "What changed since 4 PM" callout used by the 5 PM corrections email.
+ *  Renders three optional sub-sections (added / removed / changed); each
+ *  one is only included when its list is non-empty. The schedule table
+ *  below this block always reflects the *current* state, so the callout
+ *  is the manager's quick-scan summary before they re-read the full plan. */
+function renderCorrectionsCallout({ corrections }) {
+    if (!corrections) return ''
+    const added = Array.isArray(corrections.added) ? corrections.added : []
+    const removed = Array.isArray(corrections.removed) ? corrections.removed : []
+    const changed = Array.isArray(corrections.changed) ? corrections.changed : []
+    if (added.length === 0 && removed.length === 0 && changed.length === 0) return ''
+
+    const sectionLabel = (label, count) => `
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:${ACCENT_DARK};margin:14px 0 8px;">
+            ${htmlEscape(label)} <span style="color:${INK_SOFT};font-weight:500;letter-spacing:0.02em;">(${count})</span>
+        </div>`
+
+    const orderLine = (order) => {
+        const start = order?.startTime ? htmlEscape(order.startTime) : '—'
+        const orderNum = order?.orderNum
+            ? ` &middot; <span style="font-family:ui-monospace,Menlo,Consolas,monospace;color:${INK_MUTED};">#${htmlEscape(order.orderNum)}</span>`
+            : ''
+        const customer = htmlEscape(order?.customer || 'Unknown customer')
+        const yards = order?.yardage
+            ? ` &middot; <span style="color:${INK_MUTED};">${htmlEscape(order.yardage)} yd<sup>3</sup></span>`
+            : ''
+        return `
+        <li style="margin:0 0 6px;padding:0;list-style:none;font-size:12.5px;color:${INK};line-height:1.5;">
+            <span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;font-weight:600;color:${INK};">${start}</span>${orderNum} &middot; <strong style="color:${INK};font-weight:600;">${customer}</strong>${yards}
+        </li>`
+    }
+
+    const changedCard = (entry) => {
+        const fields = Array.isArray(entry?.fields) ? entry.fields : []
+        if (fields.length === 0) return ''
+        const fieldRows = fields
+            .map(
+                (f) => `
+            <tr>
+                <td style="padding:3px 12px 3px 0;font-size:11.5px;color:${INK_SOFT};white-space:nowrap;">${htmlEscape(f.label || f.field || '')}</td>
+                <td style="padding:3px 8px 3px 0;font-size:11.5px;color:${INK_MUTED};font-family:ui-monospace,Menlo,Consolas,monospace;text-decoration:line-through;text-decoration-color:#cbd5e1;">${htmlEscape(f.before || '—')}</td>
+                <td style="padding:3px 8px 3px 0;font-size:11.5px;color:${INK_FAINT};white-space:nowrap;">&rarr;</td>
+                <td style="padding:3px 0;font-size:11.5px;color:${INK};font-weight:600;font-family:ui-monospace,Menlo,Consolas,monospace;">${htmlEscape(f.after || '—')}</td>
+            </tr>`
+            )
+            .join('')
+        const orderNumLabel = entry?.orderNum
+            ? `<span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:600;color:${INK};">#${htmlEscape(entry.orderNum)}</span> `
+            : ''
+        const startLabel = entry?.startTime
+            ? ` <span style="font-family:ui-monospace,Menlo,Consolas,monospace;color:${INK_SOFT};font-size:11.5px;">@ ${htmlEscape(entry.startTime)}</span>`
+            : ''
+        return `
+        <div style="margin:0 0 10px;padding:10px 12px;background:#ffffff;border:1px solid ${BORDER};border-radius:8px;">
+            <div style="font-size:12.5px;color:${INK};line-height:1.4;">
+                ${orderNumLabel}<span style="color:${INK_MUTED};">${htmlEscape(entry?.customer || 'Unknown customer')}</span>${startLabel}
+            </div>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:6px;border-collapse:collapse;">
+                ${fieldRows}
+            </table>
+        </div>`
+    }
+
+    const addedBlock = added.length
+        ? `${sectionLabel('Added', added.length)}<ul style="margin:0;padding:0;list-style:none;">${added.map(orderLine).join('')}</ul>`
+        : ''
+    const removedBlock = removed.length
+        ? `${sectionLabel('Removed', removed.length)}<ul style="margin:0;padding:0;list-style:none;">${removed.map(orderLine).join('')}</ul>`
+        : ''
+    const changedBlock = changed.length
+        ? `${sectionLabel('Changed', changed.length)}${changed.map(changedCard).join('')}`
+        : ''
+
+    return `
+<div style="margin:0 0 24px;padding:16px 20px;background:#fef2f2;border:1px solid #fecaca;border-left:4px solid ${ACCENT};border-radius:0 12px 12px 0;">
+    <div style="font-size:10.5px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:${ACCENT_DARK};margin-bottom:4px;">
+        Updated since 4 PM
+    </div>
+    <div style="font-size:16px;font-weight:700;color:${INK};line-height:1.2;margin-bottom:4px;">What changed</div>
+    <div style="font-size:12.5px;color:${INK_MUTED};line-height:1.5;">
+        The schedule below reflects the latest dispatch data. The differences from the 4 PM plan are summarized here.
+    </div>
+    ${addedBlock}
+    ${removedBlock}
+    ${changedBlock}
+</div>`
+}
+
 function renderNotes({ notes }) {
     const normalized = normalizeNotes(notes)
     if (!normalized) return ''
@@ -335,14 +423,50 @@ ${renderSectionHeader('Dispatcher notes', 'From the dispatcher')}
 </div>`
 }
 
-function renderTextFallback({ plantLabel, dateLabel, kpi, orders, notes }) {
+function renderCorrectionsText({ corrections }) {
+    if (!corrections) return []
+    const added = Array.isArray(corrections.added) ? corrections.added : []
+    const removed = Array.isArray(corrections.removed) ? corrections.removed : []
+    const changed = Array.isArray(corrections.changed) ? corrections.changed : []
+    if (added.length === 0 && removed.length === 0 && changed.length === 0) return []
+    const lines = ['What changed since 4 PM:']
+    const summary = (o) =>
+        `  ${o.startTime || '—'}  ${o.orderNum ? '#' + o.orderNum : '—'}  ${o.customer || 'Unknown customer'}${o.yardage ? `  ${o.yardage}yd` : ''}`
+    if (added.length) {
+        lines.push(`  Added (${added.length}):`)
+        added.forEach((o) => lines.push(summary(o)))
+    }
+    if (removed.length) {
+        lines.push(`  Removed (${removed.length}):`)
+        removed.forEach((o) => lines.push(summary(o)))
+    }
+    if (changed.length) {
+        lines.push(`  Changed (${changed.length}):`)
+        changed.forEach((c) => {
+            const head = `  ${c.orderNum ? '#' + c.orderNum : '—'}  ${c.customer || 'Unknown customer'}${c.startTime ? ` @ ${c.startTime}` : ''}`
+            lines.push(head)
+            ;(c.fields || []).forEach((f) => {
+                lines.push(`      ${f.label || f.field}: ${f.before || '—'} -> ${f.after || '—'}`)
+            })
+        })
+    }
+    lines.push('')
+    return lines
+}
+
+function renderTextFallback({ plantLabel, dateLabel, kpi, orders, notes, corrections }) {
+    const isCorrections = !!corrections
     const lines = [
-        `Daily Plan — ${plantLabel}`,
+        `${isCorrections ? '[UPDATED] ' : ''}Daily Plan — ${plantLabel}`,
         dateLabel,
-        '',
-        `Orders: ${kpi?.orderCount || 0} · Loads: ${kpi?.loadCount || 0} · Window: ${kpi?.firstStart || '—'}-${kpi?.lastStart || '—'}`,
         ''
     ]
+    const correctionsLines = renderCorrectionsText({ corrections })
+    if (correctionsLines.length) lines.push(...correctionsLines)
+    lines.push(
+        `Orders: ${kpi?.orderCount || 0} · Loads: ${kpi?.loadCount || 0} · Window: ${kpi?.firstStart || '—'}-${kpi?.lastStart || '—'}`,
+        ''
+    )
     if (Array.isArray(orders) && orders.length > 0) {
         lines.push('Orders:')
         orders.forEach((o) => {
@@ -374,6 +498,7 @@ export function buildDailyPlanEmail({
     helpOut = [],
     roster = [],
     notes = '',
+    corrections = null,
     intendedTo = [],
     intendedCc = [],
     testMode = false,
@@ -385,9 +510,15 @@ export function buildDailyPlanEmail({
     const plantLabel = `Plant ${plant.code}${plant.name ? ` ${plant.name}` : ''}`
     const greetingName = (intendedTo[0]?.name || '').split(' ')[0]
     const greetingLine = greetingName ? `Hello ${htmlEscape(greetingName)},` : 'Hello,'
+    const isCorrections =
+        !!corrections &&
+        ((Array.isArray(corrections.added) && corrections.added.length > 0) ||
+            (Array.isArray(corrections.removed) && corrections.removed.length > 0) ||
+            (Array.isArray(corrections.changed) && corrections.changed.length > 0))
 
     const subjectCore = `${plantLabel} — Daily Plan for ${dateShort}`
-    const subject = testMode ? `[TEST] ${subjectCore}` : subjectCore
+    const subjectWithUpdate = isCorrections ? `[UPDATED] ${subjectCore}` : subjectCore
+    const subject = testMode ? `[TEST] ${subjectWithUpdate}` : subjectWithUpdate
 
     const html = `<!doctype html>
 <html lang="en">
@@ -422,8 +553,11 @@ export function buildDailyPlanEmail({
                 <tr>
                     <td valign="middle" style="opacity:0.85;">
                         <strong style="text-transform:uppercase;letter-spacing:0.12em;font-size:10.5px;">Heads up</strong>
-                        &nbsp;&middot;&nbsp; Plans may be updated through 5:00 PM. You are responsible for reading any
-                        updates that come in &mdash; including after you have clocked out for the day.
+                        &nbsp;&middot;&nbsp; ${
+                            isCorrections
+                                ? 'This is an updated version of today&rsquo;s 4:00 PM plan. See <em>What changed</em> below.'
+                                : 'Plans may be updated through 5:00 PM. You are responsible for reading any updates that come in &mdash; including after you have clocked out for the day.'
+                        }
                     </td>
                 </tr>
             </table>
@@ -434,11 +568,15 @@ export function buildDailyPlanEmail({
         <td style="padding:28px 32px 32px;">
             <p style="font-size:16px;margin:0 0 6px;color:${INK};font-weight:600;">${greetingLine}</p>
             <p style="font-size:13.5px;color:${INK_MUTED};margin:0 0 24px;line-height:1.55;">
-                Below is the dispatch plan for <strong style="color:${INK};">${htmlEscape(plantLabel)}</strong> on
-                <strong style="color:${INK};">${htmlEscape(dateLong)}</strong>. The plan was auto-generated from the day&rsquo;s saved schedule &mdash; skim the highlights, scan for risk, and reach back to dispatch if anything looks off.
+                ${
+                    isCorrections
+                        ? `This is an <strong style="color:${ACCENT_DARK};">updated</strong> dispatch plan for <strong style="color:${INK};">${htmlEscape(plantLabel)}</strong> on <strong style="color:${INK};">${htmlEscape(dateLong)}</strong>. The schedule shifted after the 4:00 PM send &mdash; review the highlighted changes below, then skim the updated plan.`
+                        : `Below is the dispatch plan for <strong style="color:${INK};">${htmlEscape(plantLabel)}</strong> on <strong style="color:${INK};">${htmlEscape(dateLong)}</strong>. The plan was auto-generated from the day&rsquo;s saved schedule &mdash; skim the highlights, scan for risk, and reach back to dispatch if anything looks off.`
+                }
             </p>
+            ${isCorrections ? renderCorrectionsCallout({ corrections }) : ''}
             ${renderSummaryGrid({ kpi })}
-            ${renderSectionHeader('Orders for today', 'What you are pouring')}
+            ${renderSectionHeader(isCorrections ? 'Updated schedule' : 'Orders for today', isCorrections ? 'Current state after 5:00 PM' : 'What you are pouring')}
             ${renderOrdersTable({ orders })}
             ${renderSectionHeader('Cross-plant help', 'Who is coming, who is going')}
             ${renderHelpSection({ helpIn, helpOut })}
@@ -461,7 +599,7 @@ export function buildDailyPlanEmail({
 </body>
 </html>`
 
-    const text = renderTextFallback({ dateLabel: dateLong, kpi, notes, orders, plantLabel })
+    const text = renderTextFallback({ corrections, dateLabel: dateLong, kpi, notes, orders, plantLabel })
 
     return { html, subject, text }
 }

@@ -1,5 +1,5 @@
 // @ts-ignore
-import { createClient } from 'npm:@supabase/supabase-js@2.55.0'
+import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
 // @ts-ignore
@@ -70,12 +70,26 @@ const PLAN_TIME_ZONE = 'America/Chicago'
 const CRON_HOUR_WEEKDAY_CT = 16
 const CRON_HOUR_SATURDAY_CT = 11
 
+/* Corrections cron — fires one hour after the 4 PM email (or 11 AM Saturday)
+ * to diff live dispatch_data against the email_baseline snapshot taken
+ * alongside the original send. Per-plant changes ship as an [UPDATED] email
+ * to the same recipient set as the original. */
+const CRON_HOUR_CORRECTIONS_WEEKDAY_CT = 17
+const CRON_HOUR_CORRECTIONS_SATURDAY_CT = 12
+
 /** The Chicago hour at which the cron send is allowed for a given weekday.
  *  Returns null on Sundays — the rest of the pipeline doesn't run Sunday. */
 function expectedCronHourForWeekday(weekday: number): number | null {
     if (weekday === 0) return null
     if (weekday === 6) return CRON_HOUR_SATURDAY_CT
     return CRON_HOUR_WEEKDAY_CT
+}
+
+/** Mirror of `expectedCronHourForWeekday` for the corrections pass. */
+function expectedCorrectionsHourForWeekday(weekday: number): number | null {
+    if (weekday === 0) return null
+    if (weekday === 6) return CRON_HOUR_CORRECTIONS_SATURDAY_CT
+    return CRON_HOUR_CORRECTIONS_WEEKDAY_CT
 }
 
 const DEFAULT_FRONTEND_URL = 'https://smyrnatools.com'
@@ -94,6 +108,33 @@ interface PlantInput {
     helpOut?: unknown[]
     roster?: unknown[]
     notes?: string
+    /* When present, the renderer prefixes the subject with [UPDATED] and
+     * injects a "What changed since 4 PM" callout above the orders table. */
+    corrections?: PlantCorrections
+}
+
+/* Per-plant diff payload built by `handleCronSendCorrections`. The renderer
+ * treats each section as optional — at least one of added / removed /
+ * changed is non-empty when the field is set, but any individual list may
+ * be empty. */
+interface OrderDiffSummary {
+    orderNum: string
+    customer: string
+    startTime: string
+    yardage: string
+}
+
+interface ChangedOrderDiff {
+    orderNum: string
+    customer: string
+    startTime: string
+    fields: Array<{ field: string; label: string; before: string; after: string }>
+}
+
+interface PlantCorrections {
+    added: OrderDiffSummary[]
+    removed: OrderDiffSummary[]
+    changed: ChangedOrderDiff[]
 }
 
 interface ResolvedPlant {
@@ -453,6 +494,7 @@ async function resolveAllPlants(
             helpOut: input?.helpOut || [],
             roster: input?.roster || [],
             notes: input?.notes || '',
+            corrections: input?.corrections || null,
             intendedTo: to,
             intendedCc: cc,
             testMode: TEST_MODE,
@@ -1352,6 +1394,355 @@ async function handleCronSend(req: Request, headers: any): Promise<Response> {
     )
 }
 
+/* ============================================================================
+ * Corrections cron — diffs the 4 PM email_baseline snapshot against live
+ * dispatch_data one hour later and ships an [UPDATED] email to every plant
+ * whose schedule shifted in that window. Recipients match the original 4 PM
+ * send (plant manager TO; DMs / dispatchers / GMs CC) so the entire chain
+ * sees the same correction the manager does. Saturday mirrors the weekday
+ * logic shifted one hour earlier: baseline at 11 AM, corrections at 12 PM.
+ * ============================================================================ */
+
+const DISPATCH_TABLE = 'dispatch_data'
+const SNAPSHOT_TABLE = 'plan_schedule_snapshots'
+
+const DISPATCH_SCHEDULE_COLUMNS =
+    'order_id, order_num, home_plant_code, customer, customer_num, job_number, address, city, contact, phone, ' +
+    'po_number, product_code, product_description, start_time, rate, scheduled_yardage, load_size, truck_count, ' +
+    'truck_class, sched_to_job_time, sched_to_plant_time'
+
+/* Field labels for the corrections callout. Order matters — the email
+ * renderer walks this list to produce a stable column order. Anything
+ * outside the list isn't surfaced in the diff. */
+const DIFF_FIELD_LABELS: Array<{ field: string; label: string }> = [
+    { field: 'startTime', label: 'Start time' },
+    { field: 'yardage', label: 'Yardage' },
+    { field: 'loadSize', label: 'Load size' },
+    { field: 'truckCount', label: 'Truck count' },
+    { field: 'rate', label: 'Spacing' },
+    { field: 'customer', label: 'Customer' },
+    { field: 'customerNum', label: 'Customer #' },
+    { field: 'jobNumber', label: 'Job #' },
+    { field: 'poNumber', label: 'PO #' },
+    { field: 'productCode', label: 'Product code' },
+    { field: 'description', label: 'Description' },
+    { field: 'address', label: 'Address' },
+    { field: 'city', label: 'City' },
+    { field: 'contact', label: 'Contact' },
+    { field: 'phone', label: 'Phone' },
+    { field: 'truckClass', label: 'Truck class' },
+    { field: 'toJobTime', label: 'To-job time' },
+    { field: 'toPlantTime', label: 'To-plant time' }
+]
+
+/** Mirrors `groupOrderRowsByPlant` from the snapshot service so the live
+ *  fetch produces a blob with the exact same shape the baseline snapshot
+ *  stored — letting the diff compare order objects field-for-field without
+ *  any per-source translation. */
+function buildPlantProductionFromDispatch(rows: any[]): Record<string, any> {
+    const byPlant: Record<string, any> = {}
+    for (const row of rows || []) {
+        const code = row?.home_plant_code
+        if (!code) continue
+        if (!byPlant[code]) {
+            byPlant[code] = { firstJobTime: '', lastJobTime: '', orders: [], totalYardage: 0 }
+        }
+        byPlant[code].orders.push({
+            address: row.address || '',
+            city: row.city || '',
+            contact: row.contact || '',
+            customer: row.customer || '',
+            customerNum: row.customer_num || '',
+            description: row.product_description || '',
+            jobNumber: row.job_number || '',
+            loadSize: row.load_size != null ? String(row.load_size) : '',
+            orderId: row.order_id,
+            orderNum: row.order_num || '',
+            phone: row.phone || '',
+            poNumber: row.po_number || '',
+            productCode: row.product_code || '',
+            rate: row.rate || '',
+            startTime: row.start_time || '',
+            toJobTime: row.sched_to_job_time || '',
+            toPlantTime: row.sched_to_plant_time || '',
+            truckClass: row.truck_class || '',
+            truckCount: row.truck_count != null ? String(row.truck_count) : '',
+            yardage: row.scheduled_yardage != null ? String(row.scheduled_yardage) : ''
+        })
+    }
+    for (const code of Object.keys(byPlant)) {
+        const block = byPlant[code]
+        const yardages = block.orders.map((o: any) => parseFloat(o.yardage) || 0)
+        block.totalYardage = yardages.reduce((s: number, n: number) => s + n, 0)
+        const times = block.orders
+            .map((o: any) => o.startTime)
+            .filter((t: string) => /^\d{1,2}:\d{2}$/.test(t))
+            .map((t: string) => t.padStart(5, '0'))
+            .sort()
+        block.firstJobTime = times[0] || ''
+        block.lastJobTime = times[times.length - 1] || ''
+        block.orders.sort((a: any, b: any) => String(a.startTime || '').localeCompare(String(b.startTime || '')))
+    }
+    return byPlant
+}
+
+async function fetchLivePlantProduction(supabase: any, dateStr: string): Promise<Record<string, any>> {
+    const { data, error } = await supabase
+        .from(DISPATCH_TABLE)
+        .select(DISPATCH_SCHEDULE_COLUMNS)
+        .eq('order_date', dateStr)
+        .eq('ticket_num', '')
+    if (error) throw error
+    return buildPlantProductionFromDispatch(data ?? [])
+}
+
+/** Match key for diffing — orderId is the canonical stable identifier from
+ *  the dispatch bridge; orderNum is the fallback for the rare row missing
+ *  an id. Empty string keys are filtered out before matching. */
+function diffMatchKey(order: any): string {
+    return String(order?.orderId ?? '') || String(order?.orderNum ?? '')
+}
+
+function orderSummary(order: any): OrderDiffSummary {
+    return {
+        customer: String(order?.customer || '').trim() || 'Unknown customer',
+        orderNum: String(order?.orderNum || '').trim(),
+        startTime: String(order?.startTime || '').trim(),
+        yardage: String(order?.yardage || '').trim()
+    }
+}
+
+/** Compare two order arrays and return the added / removed / changed sets.
+ *  "Changed" iterates the labeled field list so unlabeled fields (e.g.
+ *  internal flags) never trigger a correction email on their own. */
+function diffPlantOrders(baselineOrders: any[], liveOrders: any[]): PlantCorrections {
+    const baselineByKey = new Map<string, any>()
+    const liveByKey = new Map<string, any>()
+    for (const order of baselineOrders || []) {
+        const key = diffMatchKey(order)
+        if (key) baselineByKey.set(key, order)
+    }
+    for (const order of liveOrders || []) {
+        const key = diffMatchKey(order)
+        if (key) liveByKey.set(key, order)
+    }
+
+    const added: OrderDiffSummary[] = []
+    const removed: OrderDiffSummary[] = []
+    const changed: ChangedOrderDiff[] = []
+
+    for (const [key, liveOrder] of liveByKey) {
+        const baselineOrder = baselineByKey.get(key)
+        if (!baselineOrder) {
+            added.push(orderSummary(liveOrder))
+            continue
+        }
+        const fieldDiffs: ChangedOrderDiff['fields'] = []
+        for (const { field, label } of DIFF_FIELD_LABELS) {
+            const before = String(baselineOrder?.[field] ?? '').trim()
+            const after = String(liveOrder?.[field] ?? '').trim()
+            if (before !== after) fieldDiffs.push({ after, before, field, label })
+        }
+        if (fieldDiffs.length > 0) {
+            const sum = orderSummary(liveOrder)
+            changed.push({
+                customer: sum.customer,
+                fields: fieldDiffs,
+                orderNum: sum.orderNum,
+                startTime: sum.startTime
+            })
+        }
+    }
+    for (const [key, baselineOrder] of baselineByKey) {
+        if (!liveByKey.has(key)) removed.push(orderSummary(baselineOrder))
+    }
+
+    const byStart = (a: { startTime: string }, b: { startTime: string }) =>
+        String(a.startTime || '').localeCompare(String(b.startTime || ''))
+    added.sort(byStart)
+    removed.sort(byStart)
+    changed.sort(byStart)
+
+    return { added, changed, removed }
+}
+
+async function handleCronSendCorrections(req: Request, headers: any): Promise<Response> {
+    if (!isInternalServiceCall(req)) {
+        return errorResponse('Forbidden', headers, 403)
+    }
+    const body = await parseBody(req)
+    const force = body?.force === true
+    const dryRun = body?.dryRun === true
+    const now = chicagoNow()
+    const expectedHour = expectedCorrectionsHourForWeekday(now.weekday)
+    if (!force && expectedHour == null) {
+        return jsonResponse({ reason: 'sunday', skipped: true }, headers)
+    }
+    if (!force && now.hour !== expectedHour) {
+        return jsonResponse(
+            {
+                chicagoHour: now.hour,
+                expectedHour,
+                reason: 'outside-send-window',
+                skipped: true,
+                weekday: now.weekday
+            },
+            headers
+        )
+    }
+
+    const planDate = isFiniteString(body?.planDate) ? body.planDate.trim() : chicagoNextWorkingDate(now)
+    const supabase = createAdminClient()
+
+    /* 1. Baseline — the 4 PM (or 11 AM Sat) snapshot taken in lockstep with
+     *    the original email send. Missing baseline = no corrections to send
+     *    (likely the email never went out for this date). */
+    const { data: baselineRow, error: baselineErr } = await supabase
+        .from(SNAPSHOT_TABLE)
+        .select('plant_production, captured_at')
+        .eq('schedule_date', planDate)
+        .eq('snapshot_type', 'email_baseline')
+        .maybeSingle()
+    if (baselineErr) return errorResponse(baselineErr.message || 'Baseline lookup failed', headers, 500)
+    if (!baselineRow) {
+        return jsonResponse({ planDate, reason: 'no-baseline', skipped: true }, headers)
+    }
+    const baselineProduction = (baselineRow.plant_production || {}) as Record<string, any>
+
+    /* 2. Live — the current dispatch_data state for the same date, built
+     *    into the same shape as the snapshot. */
+    let liveProduction: Record<string, any>
+    try {
+        liveProduction = await fetchLivePlantProduction(supabase, planDate)
+    } catch (err: any) {
+        return errorResponse(err?.message || 'Failed to fetch live dispatch_data', headers, 500)
+    }
+
+    /* 3. Per-plant diff. Plants present in either side get evaluated;
+     *    empty diffs are dropped. */
+    const correctionsByPlant: Record<string, PlantCorrections> = {}
+    const allCodes = new Set<string>()
+    Object.keys(baselineProduction).forEach((c) => {
+        if (c && c !== PLAN_META_KEY_INTERNAL) allCodes.add(c)
+    })
+    Object.keys(liveProduction).forEach((c) => {
+        if (c && c !== PLAN_META_KEY_INTERNAL) allCodes.add(c)
+    })
+    for (const code of allCodes) {
+        const baselineOrders = Array.isArray(baselineProduction[code]?.orders) ? baselineProduction[code].orders : []
+        const liveOrders = Array.isArray(liveProduction[code]?.orders) ? liveProduction[code].orders : []
+        const diff = diffPlantOrders(baselineOrders, liveOrders)
+        if (diff.added.length || diff.removed.length || diff.changed.length) {
+            correctionsByPlant[code] = diff
+        }
+    }
+    if (Object.keys(correctionsByPlant).length === 0) {
+        return jsonResponse({ planDate, reason: 'no-changes', skipped: true }, headers)
+    }
+
+    /* 4. Plan row — assignments + notes drive help in/out + roster, _meta
+     *    carries the Saturday overrides and missing-operator marks. The
+     *    corrections email shows the FULL current schedule (built from
+     *    live dispatch_data, not the dispatcher's saved plant_production)
+     *    so the manager sees the authoritative state. */
+    const { data: planRow } = await supabase
+        .from('plans')
+        .select('plant_production, assignments, notes')
+        .eq('plan_date', planDate)
+        .maybeSingle()
+
+    const synthesizedProduction: Record<string, any> = { ...liveProduction }
+    const planMeta = planRow?.plant_production?.[PLAN_META_KEY_INTERNAL]
+    if (planMeta && typeof planMeta === 'object') {
+        synthesizedProduction[PLAN_META_KEY_INTERNAL] = planMeta
+    }
+    const synthesizedPlanRow = {
+        assignments: Array.isArray(planRow?.assignments) ? planRow.assignments : [],
+        notes: typeof planRow?.notes === 'string' ? planRow.notes : '',
+        plant_production: synthesizedProduction
+    }
+
+    const [plantNameByCode, activeMixerBaseByPlant, travelMinutesByPair] = await Promise.all([
+        fetchPlantNameMap(supabase),
+        fetchActiveMixerBaseByPlant(supabase),
+        fetchTravelMinutesByPair(supabase)
+    ])
+
+    const allPayloads = buildServerPayloads(
+        synthesizedPlanRow,
+        plantNameByCode,
+        planDate,
+        activeMixerBaseByPlant,
+        travelMinutesByPair
+    )
+
+    const payloadsWithCorrections: PlantInput[] = allPayloads
+        .filter((p) => correctionsByPlant[p.code])
+        .map((p) => ({ ...p, corrections: correctionsByPlant[p.code] }))
+
+    /* A plant that had every order removed (live state = 0 orders) gets
+     * filtered out by buildServerPayloads — no orders, no help, nothing to
+     * render except the callout. Synthesize a minimal payload so the
+     * manager still hears "all orders cancelled". */
+    for (const code of Object.keys(correctionsByPlant)) {
+        if (payloadsWithCorrections.find((p) => p.code === code)) continue
+        payloadsWithCorrections.push({
+            code,
+            corrections: correctionsByPlant[code],
+            helpIn: [],
+            helpOut: [],
+            kpi: { customerCount: 0, firstStart: '', lastStart: '', loadCount: 0, orderCount: 0, yardage: 0 },
+            name: plantNameByCode[code] || '',
+            notes: synthesizedPlanRow.notes,
+            orders: [],
+            roster: []
+        })
+    }
+
+    const resolved = await resolveAllPlants(supabase, planDate, payloadsWithCorrections)
+
+    if (dryRun) {
+        return jsonResponse(
+            {
+                dryRun: true,
+                planDate,
+                plants: resolved.map((p) => ({
+                    cc: p.cc,
+                    code: p.code,
+                    corrections: correctionsByPlant[p.code],
+                    name: p.name,
+                    sendCc: p.sendCc,
+                    sendTo: p.sendTo,
+                    subject: p.subject,
+                    to: p.to
+                })),
+                source: 'cron-corrections',
+                testMode: TEST_MODE,
+                total: resolved.length
+            },
+            headers
+        )
+    }
+
+    const results: Array<{ code: string; name: string; success: boolean; error?: string }> = []
+    for (const plant of resolved) {
+        const result = await sendOnePayload(plant)
+        results.push({ code: plant.code, error: result.error, name: plant.name, success: result.success })
+    }
+    const sent = results.filter((r) => r.success).length
+    return jsonResponse(
+        {
+            planDate,
+            results,
+            sent,
+            source: 'cron-corrections',
+            testMode: TEST_MODE,
+            total: results.length
+        },
+        headers
+    )
+}
+
 async function handleBootstrap(req: Request, headers: any): Promise<Response> {
     if (!isInternalServiceCall(req)) {
         return errorResponse('Forbidden', headers, 403)
@@ -1442,6 +1833,8 @@ Deno.serve(async (req) => {
             }
             case 'cron-send':
                 return await handleCronSend(req, headers)
+            case 'cron-send-corrections':
+                return await handleCronSendCorrections(req, headers)
             case 'bootstrap':
                 return await handleBootstrap(req, headers)
             default:

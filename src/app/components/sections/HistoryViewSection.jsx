@@ -8,6 +8,7 @@ import useHistoryAiTypewriter from '../../hooks/useHistoryAiTypewriter'
 import useHistoryAnalysisScrollCollapse from '../../hooks/useHistoryAnalysisScrollCollapse'
 import useHistoryData from '../../hooks/useHistoryData'
 import Skeleton, { SkeletonStack } from '../common/Skeleton'
+import StarRating from '../common/StarRating'
 import HistoryAssignmentsTab from '../history/HistoryAssignmentsTab'
 import HistoryMileageTab from '../history/HistoryMileageTab'
 import HistoryOperatorsTab from '../history/HistoryOperatorsTab'
@@ -23,6 +24,7 @@ import RatingChart from '../ui/RatingChart'
 
 /** Formats a single field value for display in the timeline change cards. */
 function buildFormatValue({ getOperatorName, getUserName, type }) {
+    // eslint-disable-next-line react/display-name -- value formatter that occasionally returns JSX (cleanliness_rating), not a React component
     return (fieldName, value) => {
         const key = fieldName?.includes('_')
             ? fieldName
@@ -34,7 +36,7 @@ function buildFormatValue({ getOperatorName, getUserName, type }) {
         if (key === 'assigned_operator') return getOperatorName(value)
         if (key === 'cleanliness_rating') {
             const n = parseInt(value, 10)
-            return Number.isFinite(n) && n > 0 ? '★'.repeat(n) : String(value)
+            return Number.isFinite(n) && n > 0 ? <StarRating value={n} tone="warning" size="xs" /> : String(value)
         }
         if (key === 'last_service_date' || key === 'last_chip_date') {
             return value ? DateUtility.formatDate(value) : 'Not Assigned'
