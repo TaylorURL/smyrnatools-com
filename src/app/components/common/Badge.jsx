@@ -206,7 +206,30 @@ export default function Badge({
         .filter(Boolean)
         .join(' ')
 
-    const inlineStyle = isCustom || bg || fg ? { background: bg, color: fg } : undefined
+    /**
+     * Custom variant ALWAYS renders as a soft pastel (12% tint of `bg`) with
+     * `--text-primary` text — regardless of what `fg` the caller passes. This
+     * is intentional: it forces every badge in the app (tone-driven OR
+     * data-driven) to share the same saturation / contrast treatment, so a
+     * plant-color badge looks visually identical to a danger-tone badge.
+     * Hue carries identity; intensity is uniform.
+     *
+     * The escape hatch for callers who genuinely need a saturated fill (rare —
+     * notification overlays on dark surfaces, etc.) is `variant="custom-solid"`,
+     * which honors `bg`/`fg` as-is.
+     */
+    const isCustomSolid = variant === 'custom-solid'
+    let inlineStyle
+    if (isCustom && bg) {
+        inlineStyle = {
+            background: `color-mix(in srgb, ${bg} 12%, transparent)`,
+            color: 'var(--text-primary)'
+        }
+    } else if (isCustomSolid && (bg || fg)) {
+        inlineStyle = { background: bg, color: fg }
+    } else if (bg || fg) {
+        inlineStyle = { background: bg, color: fg }
+    }
 
     const dotEl = dot ? (
         <span

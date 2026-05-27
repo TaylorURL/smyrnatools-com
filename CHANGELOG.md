@@ -1,5 +1,46 @@
 # Changelog
 
+## [2026.22.8] - 2026-05-26
+
+- Standardize saturation across every badge in the app, including the
+  data-driven ones. The previous two releases unified the tone-based
+  badges onto the soft pastel-tint variant, but ~24 `<Badge
+  variant="custom" bg={...} fg="#ffffff" />` call sites — plant code
+  badges, role badges, accent-coloured CTAs — were still rendering at
+  full saturation with white text. So on the same page you'd see the
+  "Heavy" status pill (light pastel red, dark text) right next to the
+  plant code badge "402" (saturated red, white text), and the two looked
+  visually nothing alike. The fix is at the component layer, not the
+  consumer layer: `variant="custom"` in `src/app/components/common/Badge.
+  jsx` now ALWAYS resolves to the soft treatment regardless of what `fg`
+  the caller passes. Background is computed as
+  `color-mix(in srgb, ${bg} 12%, transparent)` — same 12% tint the
+  semantic tones use — and foreground is forced to `var(--text-primary)`.
+  The caller's `bg` value is treated as the hue seed, not the final
+  rendered colour, so a plant-color badge and a danger-tone badge are
+  visually indistinguishable in saturation / contrast even though their
+  hues differ.
+- Net effect: every badge across the app — `<Badge tone="..." />`,
+  `<Badge variant="custom" bg="..." />`, status pills, plant code chips,
+  role tags, accent pills, count overlays, removable plant chips — all
+  share the same pastel-tint + dark-text treatment. Hue distinguishes
+  identity (this is a danger badge vs this is plant 402 vs this is a
+  manager role); saturation and contrast are uniform.
+- Added `variant="custom-solid"` as the explicit escape hatch for the
+  rare case that genuinely needs a saturated fill + white text
+  (notification overlays on a dark surface, etc.). It honours
+  `bg`/`fg` as-is. No consumer currently uses it, but it's there for
+  the cases where the soft-everywhere rule would actively hurt
+  legibility.
+- All existing `variant="custom"` consumers (plant code badges in
+  PlanScheduleBadges / PlanStatisticsTables / HelpBreakdownTable /
+  OrderInfoModal, role badges in ManagerCard / OnlineUsersModal /
+  ProfileTab, accent-coloured filter pills, per-event tone badges in
+  PlanDashboardActivityFeed, asset type tiles in RecapAssetGroup,
+  removable plant chips in ManagerAssignmentCard, etc.) automatically
+  pick up the new soft treatment with no code change at the call site —
+  the component owns the visual rule now.
+
 ## [2026.22.7] - 2026-05-26
 
 - Enforce visual consistency across every badge in the app. Two distinct
