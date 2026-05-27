@@ -225,14 +225,37 @@ export default function Badge({
      *   - inline-flex + defensive centering (justify-center / text-center /
      *     align-middle / shrink-0 / box-border) so badges render identically
      *     regardless of parent text-align, justify-content, or width pressure.
-     *   - white 800-weight uppercase text with 0.08em tracking.
+     *   - 800-weight uppercase text with 0.08em tracking.
      *   - hard offset shadow scaled per size, colour driven by
      *     --badge-shadow-color (set in src/app/index.css per theme).
      *   - active:translate + shadow-none feels "pressed in" — the badge
      *     drops into the space its shadow occupied.
+     *
+     * Text colour is split between two paths:
+     *   - Tone variants: `text-white` is hard-coded. All six tone bgs are
+     *     contrast-checked to clear 4.5:1 against white (see TONE_BG above).
+     *   - Custom variants: NO baked-in text colour, because callers can pass
+     *     the bg through any of three channels (the `bg` prop / a Tailwind
+     *     `className`'s `bg-*` utility / an inline `style.background`). The
+     *     caller is expected to also pass the matching foreground via the
+     *     same channel — `fg` prop, `text-*` className, or `style.color`.
+     *     If a caller supplied only `bg` (hex/rgb) we auto-compute the
+     *     contrast-safe `color` and write it as inline style (see
+     *     `inlineStyle` below). The `text-text-primary` fallback covers
+     *     callers who used a theme-tracking className bg but forgot to add
+     *     an explicit text colour — readable in every theme.
      */
     const classes = [
-        'inline-flex items-center justify-center text-center align-middle shrink-0 box-border whitespace-nowrap leading-none uppercase tracking-[0.08em] font-extrabold text-white',
+        'inline-flex items-center justify-center text-center align-middle shrink-0 box-border whitespace-nowrap leading-none uppercase tracking-[0.08em] font-extrabold',
+        !isCustom && 'text-white',
+        // No baked-in text colour for custom — Tailwind utilities are emitted
+        // alphabetically, so any default we add here (e.g. `text-text-primary`)
+        // would land later in the CSS than caller utilities like `text-red-500`
+        // and silently override them. Custom callers must supply the colour
+        // themselves via the `fg` prop, an explicit `text-*` className, an
+        // inline `style.color`, or by passing a parseable `bg` prop (we
+        // auto-compute the contrast-safe colour as inline style — see
+        // `inlineStyle` below).
         sizeCfg.text,
         sizeCfg.pad,
         sizeCfg.gap,

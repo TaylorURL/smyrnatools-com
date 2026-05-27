@@ -1,5 +1,52 @@
 # Changelog
 
+## [2026.22.11] - 2026-05-27
+
+- Fix unreadable white text on data-driven badges that route their colour
+  through a Tailwind `className` instead of the `bg` prop. The Dashboard
+  region indicator was the visible example — `<Badge variant="custom"
+  className="bg-bg-secondary border border-border-light text-text-primary"
+  ...>` rendered white text on the light surface in light theme. Same
+  pattern was sitting unfired in the MaintenanceHeader region chip, the
+  CockpitHeader region chip, the AssetListRow comment/history action
+  buttons, the ChatMessages date group label, the RmiTables plant code
+  chip, the MaintenanceFilterBar CountPill, the ListItemRow plant chip,
+  the NotificationsModal count chips, the PageHeader unread chip, the
+  CallListView refresh button, the DashboardHeader region chip, the
+  atoms.jsx removable chip, and ~10 more callsites that supplied their
+  text colour via className `text-text-primary`.
+- Root cause was CSS source order. The Brutalist Badge had `text-white`
+  baked into the base classes; Tailwind emits text utilities
+  alphabetically, so `text-text-primary` lands earlier in the generated
+  CSS than `text-white`. When both classes were applied to the same
+  element the later rule won — caller's `text-text-primary` lost to the
+  component's default `text-white`. Invisible white text on a light
+  surface in light theme; invisible white text against itself in dark
+  theme where the chip bg ALSO went light.
+- Component-layer fix in `src/app/components/common/Badge.jsx`:
+  `text-white` is now only emitted for the six built-in tones (where we
+  control the bg darkness and have pre-verified WCAG AA contrast with
+  white). For `variant="custom"`, no default text colour class is
+  emitted — callers supply it through one of four channels:
+    1. `bg` prop with a parseable hex/rgb string — Badge auto-computes
+       the WCAG-safe foreground via `pickContrastFg` and writes it as
+       inline `style.color`.
+    2. `fg` prop — Badge writes it as inline `style.color`.
+    3. `text-*` className — applies via CSS class (now wins because
+       nothing competes).
+    4. `style.color` inline — always wins (CSS specificity 1,0,0,0).
+  Inline `style` always beats className, so callers who pass bg + fg
+  both inline keep working unchanged. Callers who pass colour via
+  className — including the ~20 chips listed above — now render with
+  their intended dark text.
+- Audited every `variant="custom"` callsite (37 files, ~55 instances)
+  to confirm each supplies at least one of the four foreground
+  channels. All passed. The Plant code badges, the ManagerCard role
+  chip, the RecapAssetGroup asset icon, and other data-driven badges
+  with parseable hex `bg` props all pick up the auto-contrast path —
+  light user-provided hex resolves to near-black `#0b1220`, dark hex
+  resolves to `#ffffff`. Tone-based callsites are unchanged.
+
 ## [2026.22.10] - 2026-05-27
 
 - Guarantee readable text on every badge in every theme. The brutalist
