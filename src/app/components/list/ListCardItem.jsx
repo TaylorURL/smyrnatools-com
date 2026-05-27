@@ -2,6 +2,7 @@
 import React from 'react'
 
 import { ListService } from '../../../services/ListService'
+import Badge from '../common/Badge'
 
 /**
  * Compact card used inside a Cards-view column. Shows description, priority
@@ -56,24 +57,32 @@ export default function ListCardItem({ accentColor, isSelected, item, onSelectIt
                 </span>
             )}
             <div className="flex items-center flex-wrap gap-1.5">
-                <span
-                    className="inline-flex items-center rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5 border text-text-primary"
-                    style={{ background: pc.bg, borderColor: pc.border }}
+                <Badge
+                    variant="custom"
+                    bg={pc.bg}
+                    fg="var(--text-primary)"
+                    size="xs"
+                    weight="bold"
+                    icon={<i className={`fas ${pc.icon} text-[8px]`} style={{ color: pc.color }} />}
+                    className="border"
+                    style={{ background: pc.bg, borderColor: pc.border, color: 'var(--text-primary)' }}
                 >
-                    <i className={`fas ${pc.icon} text-[8px]`} style={{ color: pc.color }} />
                     {pc.label}
-                </span>
-                <span
-                    className="inline-flex items-center gap-1 text-[10px] font-mono tabular-nums rounded px-1.5 py-0.5"
+                </Badge>
+                <Badge
+                    variant="custom"
+                    size="sm"
+                    weight={isItemOverdue ? 'bold' : 'medium'}
+                    uppercase={false}
+                    icon={<i className="fas fa-calendar text-[9px] opacity-70" />}
+                    className="font-mono tabular-nums"
                     style={{
                         background: isItemOverdue ? 'rgba(220,38,38,0.08)' : 'var(--bg-tertiary)',
-                        color: isItemOverdue ? 'var(--text-primary)' : 'var(--text-secondary)',
-                        fontWeight: isItemOverdue ? 700 : 500
+                        color: isItemOverdue ? 'var(--text-primary)' : 'var(--text-secondary)'
                     }}
                 >
-                    <i className="fas fa-calendar text-[9px] opacity-70" />
                     {deadlineLabel}
-                </span>
+                </Badge>
             </div>
             <div className="flex items-center justify-between gap-2 text-[10.5px] text-text-tertiary">
                 <span

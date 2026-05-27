@@ -2,14 +2,24 @@
 import React from 'react'
 
 import { BADGE_PILL_TINTS } from '../../../constants/topSectionConstants'
+import Badge from '../../common/Badge'
 
-/** Inline badge — parses "X Label · Y Label" into a row of compact pills.
- *  Text colour flips to white in dark / grayed-out modes and to black in
- *  light mode so the count + label always reads against whatever theme
- *  surface the pill sits on. The status tint stays on the background +
- *  border so the colour cue (red = Shop, green = Active, etc.) is still
- *  carried, just not at the cost of legibility on dark chrome. */
-const Badge = ({ children, onClick, onPillClick, accentColor, isDark }) => {
+/**
+ * Top-section badge row — parses a string like "5 Active · 2 Shop" into a
+ * row of compact, color-tinted pills. Each pill uses the unified <Badge />
+ * component with `variant="custom"` so it can carry the per-status tint
+ * looked up from BADGE_PILL_TINTS. Single-segment input renders a single
+ * pill using the supplied accent color.
+ *
+ * Renamed from the legacy `Badge` export to avoid collision with the new
+ * unified common/Badge. Callers must import `TopSectionBadgeRow` instead.
+ *
+ * Dynamic per-status hex colors come from BADGE_PILL_TINTS and pass through
+ * the Badge via inline `style` (background + borderColor + color) — Tailwind
+ * arbitrary classes can't express data-driven hex at build time. This mirrors
+ * the established pattern in PlanScheduleFilterDrawer / PlanDashboardClockInBoard.
+ */
+const TopSectionBadgeRow = ({ children, onClick, onPillClick, accentColor, isDark }) => {
     const text = typeof children === 'string' ? children : ''
     const parts = text.split('·').map((s) => s.trim())
     const parsed = parts
@@ -30,45 +40,50 @@ const Badge = ({ children, onClick, onPillClick, accentColor, isDark }) => {
                     const num = parseInt(count, 10)
                     const isZeroVariant = label === 'Unassigned' && num === 0
                     const color = isZeroVariant ? '#64748b' : tint
-                    const clickHandler = onPillClick ? () => onPillClick(label) : onClick
-                    const Tag = clickHandler ? 'button' : 'span'
-                    const clickProps = clickHandler ? { onClick: clickHandler, type: 'button' } : {}
+                    const handleClick = onPillClick ? () => onPillClick(label) : onClick
                     return (
-                        <Tag
+                        <Badge
                             key={label}
-                            className={`inline-flex items-center gap-1 rounded text-[11px] font-semibold px-1.5 py-0.5${
-                                clickHandler ? ' border-none cursor-pointer hover:brightness-95' : ''
-                            }`}
-                            style={{ background: `${color}14`, border: `1px solid ${color}30`, color: textColor }}
-                            {...clickProps}
+                            variant="custom"
+                            size="md"
+                            shape="rounded"
+                            weight="semibold"
+                            uppercase={false}
+                            onClick={handleClick}
+                            className="gap-1 border"
+                            style={{
+                                background: `${color}14`,
+                                borderColor: `${color}30`,
+                                color: textColor
+                            }}
                         >
                             <span className="font-mono tabular-nums">{count}</span>
                             <span>{label}</span>
-                        </Tag>
+                        </Badge>
                     )
                 })}
             </div>
         )
     }
 
-    const Wrapper = onClick ? 'button' : 'span'
-    const wrapperProps = onClick
-        ? {
-              className: 'border-none bg-transparent p-0 cursor-pointer',
-              onClick,
-              type: 'button'
-          }
-        : {}
     return (
-        <Wrapper {...wrapperProps}>
-            <span
-                className="inline-flex items-center gap-1 rounded text-[11px] font-semibold px-1.5 py-0.5"
-                style={{ background: `${accentColor}14`, border: `1px solid ${accentColor}30`, color: textColor }}
-            >
-                {children}
-            </span>
-        </Wrapper>
+        <Badge
+            variant="custom"
+            size="md"
+            shape="rounded"
+            weight="semibold"
+            uppercase={false}
+            onClick={onClick}
+            className="border"
+            style={{
+                background: `${accentColor}14`,
+                borderColor: `${accentColor}30`,
+                color: textColor
+            }}
+        >
+            {children}
+        </Badge>
     )
 }
 
-export default Badge
+export default TopSectionBadgeRow

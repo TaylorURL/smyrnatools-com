@@ -26,10 +26,7 @@ function PlantPickerField({
     return (
         <>
             <div className="flex flex-col gap-1.5">
-                <label
-                    htmlFor={htmlFor}
-                    className="text-xs font-medium uppercase tracking-wider text-text-tertiary"
-                >
+                <label htmlFor={htmlFor} className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
                     {label}
                 </label>
                 <button

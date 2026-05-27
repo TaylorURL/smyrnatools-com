@@ -17,10 +17,7 @@ function ErrorMessage({ message, onDismiss, className = '' }) {
             aria-live="polite"
             className={`flex items-start gap-3 rounded-md border border-status-danger/30 bg-status-danger/10 px-4 py-3 text-sm leading-normal text-status-danger animate-fade-slide-in motion-reduce:animate-none ${className}`}
         >
-            <i
-                className="fas fa-exclamation-triangle mt-0.5 text-status-danger shrink-0"
-                aria-hidden="true"
-            />
+            <i className="fas fa-exclamation-triangle mt-0.5 text-status-danger shrink-0" aria-hidden="true" />
             <span className="flex-1 text-text-primary">{message}</span>
             {onDismiss && (
                 <button

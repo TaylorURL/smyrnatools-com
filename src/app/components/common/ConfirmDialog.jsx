@@ -8,8 +8,7 @@ import ReactDOM from 'react-dom'
  */
 const VARIANT_CONFIG = {
     danger: {
-        confirmButton:
-            'bg-status-danger text-white hover:bg-status-danger/90 focus-visible:ring-status-danger',
+        confirmButton: 'bg-status-danger text-white hover:bg-status-danger/90 focus-visible:ring-status-danger',
         icon: 'fa-trash-alt',
         iconWrap: 'bg-status-danger/10 text-status-danger'
     },
@@ -19,8 +18,7 @@ const VARIANT_CONFIG = {
         iconWrap: 'bg-accent/10 text-accent'
     },
     warning: {
-        confirmButton:
-            'bg-status-warning text-white hover:bg-status-warning/90 focus-visible:ring-status-warning',
+        confirmButton: 'bg-status-warning text-white hover:bg-status-warning/90 focus-visible:ring-status-warning',
         icon: 'fa-exclamation-triangle',
         iconWrap: 'bg-status-warning/10 text-status-warning'
     }

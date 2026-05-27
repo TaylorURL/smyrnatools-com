@@ -1,5 +1,6 @@
 import React from 'react'
 
+import Badge from '../common/Badge'
 import { MaintenanceTabSwitcher } from './MaintenanceTabSwitcher'
 
 const FOCUS_RING =
@@ -46,10 +47,18 @@ function PrimaryActionButton({ icon, isMobile, label, onClick }) {
 function RegionScopeChip({ regionLabel }) {
     if (!regionLabel) return null
     return (
-        <span className="inline-flex max-w-full items-center gap-2 rounded-md border border-border-light bg-bg-secondary px-2.5 py-1 text-[12px] font-medium text-text-primary">
-            <i className="fas fa-location-dot text-[10px] text-accent" aria-hidden="true" />
+        <Badge
+            tone="neutral"
+            variant="custom"
+            size="lg"
+            shape="rounded-md"
+            weight="medium"
+            uppercase={false}
+            icon="location-dot"
+            className="max-w-full bg-bg-secondary border border-border-light text-text-primary"
+        >
             <span className="truncate">{regionLabel}</span>
-        </span>
+        </Badge>
     )
 }
 

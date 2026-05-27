@@ -2,7 +2,7 @@
 import React from 'react'
 
 import PlantFilterButton from '../../ui/PlantFilterButton'
-import Badge from './Badge'
+import TopSectionBadgeRow from './Badge'
 import { ActionButton, FilterSelect, ListHeader, ResetButton, SearchInput, ViewToggle } from './TopSectionAtoms'
 
 const TopSectionDesktop = ({
@@ -65,14 +65,14 @@ const TopSectionDesktop = ({
                 <div className={`flex items-center gap-3 min-w-0${revealControls ? ' animate-reveal-left' : ''}`}>
                     <h1 className="text-[18px] font-bold tracking-tight m-0 truncate text-text-primary">{title}</h1>
                     {badge && (
-                        <Badge
+                        <TopSectionBadgeRow
                             onClick={onBadgeClick}
                             onPillClick={onPillClick}
                             accentColor={accentColor}
                             isDark={isDarkBadgeTheme}
                         >
                             {badge}
-                        </Badge>
+                        </TopSectionBadgeRow>
                     )}
                 </div>
                 <div

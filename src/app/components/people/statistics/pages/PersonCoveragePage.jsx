@@ -2,6 +2,7 @@
 import React from 'react'
 
 import { fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
+import Badge from '../../../common/Badge'
 import { Panel, Stat, StatGroup } from '../../../ui/Panel'
 import { TIER_META, TierTile } from './personStatsShared'
 
@@ -109,12 +110,9 @@ export function PersonCoveragePage({ accentColor, stats }) {
                                                 )}
                                             </td>
                                             <td className="px-3 py-2">
-                                                <span
-                                                    className="inline-flex items-center rounded px-2 py-0.5 text-[10.5px] font-semibold text-text-primary"
-                                                    style={{ background: '#b91c1c1f' }}
-                                                >
+                                                <Badge tone="danger" size="sm" uppercase={false} weight="semibold">
                                                     No managers
-                                                </span>
+                                                </Badge>
                                             </td>
                                         </tr>
                                     ))}

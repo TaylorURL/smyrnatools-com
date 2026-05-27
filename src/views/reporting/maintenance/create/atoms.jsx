@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import { FIELD_LABEL_CLASS, SECTION_LABEL_CLASS } from '../../../../app/constants/maintenanceCreateConstants'
 
 export function Card({ children }) {
@@ -99,19 +100,27 @@ export function ErrorText({ children }) {
 
 export function Chip({ accentColor, children, onRemove }) {
     return (
-        <span className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold px-2 py-1 bg-bg-secondary border border-border-light text-text-primary">
+        <Badge
+            tone="neutral"
+            variant="custom"
+            size="md"
+            weight="semibold"
+            uppercase={false}
+            className="bg-bg-secondary border border-border-light gap-1.5"
+        >
             {children}
             {onRemove && (
                 <button
                     type="button"
                     onClick={onRemove}
                     className="flex h-4 w-4 items-center justify-center rounded-full border-none cursor-pointer transition-colors hover:brightness-90 text-white"
+                    // eslint-disable-next-line react/forbid-dom-props -- data-driven per-user accent color
                     style={{ background: accentColor }}
                     aria-label="Remove"
                 >
                     <i className="fas fa-times text-[8px]" />
                 </button>
             )}
-        </span>
+        </Badge>
     )
 }

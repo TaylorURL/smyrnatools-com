@@ -1,5 +1,103 @@
 # Changelog
 
+## [2026.22.6] - 2026-05-26
+
+- Unify every badge, status pill, count chip, and tag in the app under
+  one component. New `src/app/components/common/Badge.jsx` is the
+  single source of truth for the ~290 inline badge sites that were
+  previously hand-rolled with `<span className="rounded ... px-1.5
+  py-0.5 text-[10px] font-bold uppercase tracking-wider">` patterns,
+  plus the ~28 per-feature wrapper components (StatusBadge, StatusPill,
+  PlanSyncStatusPill, EventBadge, MismatchBadge, ServiceBadge,
+  SatisfactionBadge, YardageDeltaBadge, BigPourBadge, HoursLimitBadge,
+  LikelyKickerBadge, LikelyChurnBadge, OrderStatusBadge, PlantBadge,
+  CompareDeltaBadge, PlantSaturdayForecastBadge, YphChip,
+  HistoryStatusPill, WarnPill, VariancePill, IssueChip, etc.) that
+  duplicated the same visual primitive across the codebase. Every
+  caller now goes through `<Badge tone="..." size="..." shape="..."
+  variant="..." />` so one edit propagates everywhere.
+- Component API: six semantic tones (success / warning / danger / info
+  / neutral / accent) × four variants (soft / solid / outline / custom)
+  × four sizes (xs–lg) × four shapes (square / rounded / rounded-md /
+  pill), plus icon support (FA suffix or any ReactNode), `count` prop
+  with 99+ clamp, `removable` with built-in X button, `as="button"` +
+  `active` for interactive toggle pills, `pulse` for animated, `dot`
+  for leading colored dot, and `variant="custom"` with `bg`/`fg` for
+  truly data-driven colors (plant identifiers, per-user accent, role
+  hex from DB). Theme-aware across light/dark/gray via the existing
+  `--status-*` / `--text-primary` / `--accent` CSS custom properties.
+- Defensive centering — Badge base classes now include `justify-center
+  text-center align-middle shrink-0 box-border` so it renders
+  identically in every parent context (table cells with
+  `text-align:right`, narrow flex rows that would otherwise crush it,
+  inline-baseline contexts that would drift the vertical anchor).
+  Interactive badges get `active:scale-[0.97]` for press feedback per
+  Emil Kowalski's design-engineering principles. Fixes the "some
+  badges had text aligned right instead of centered" regression the
+  prior unified pattern exposed.
+- Server-side `scripts/emails/badgeHtml.js` mirrors the React Badge's
+  tones and sizes for email templates. `scripts/emails/daily-plan-
+  email.js` migrated six hardcoded inline-style badges (Needs help /
+  Covered, Direct load, Help direction Incoming/Outgoing, destination
+  plant, operator flag, slot number chip) onto `renderBadgeHtml({
+  label, tone, ... })` calls so email visuals stay in lockstep with
+  the in-app component. Removed obsolete `STATUS_RISK_BG` /
+  `STATUS_RISK_FG` / `STATUS_OK_BG` / `STATUS_OK_FG` constants.
+- Pruned obsolete badge constants and helpers as their last callers
+  migrated: `STATUS_PILL_PALETTE`, `STATUS_PILL_CLASSES`,
+  `STATUS_SOLID_HEX`, `STATUS_BADGE_BG`, `STATUS_BADGE_TEXT_LIGHT`,
+  `STATUS_PILL_CLS`, `WARN_PILL_HEX`, `WARN_PILL_CLASS`,
+  `MISMATCH_BADGES`, `PLANT_CHIP_PALETTE`, `STATUS_BADGE_TONE_CLASS`,
+  `SERVICE_BADGE_BASE`, `BADGE_PILL_TEXT`, the `badgeClass` field on
+  `SEVERITY_PALETTE` in `src/app/constants/issueModalConstants.js`,
+  and the local `HEAVY` / `SOFT` / `NEUTRAL` color constants in
+  `PlanStatisticsMovesCancelsDetail.jsx`,
+  `PlanStatisticsMovesCancelsPage.jsx`,
+  `PlanStatisticsMovesCancelsTable.jsx`, and
+  `PlanStatisticsKickersPage.jsx`. Rewrote `src/views/people/operators/
+  list/operatorStatusBadge.js` from 35 lines of className + inline-
+  style helpers to a single 15-line `getOperatorStatusTone(status)`
+  export.
+- Renamed the legacy `src/app/components/sections/top-section/Badge.
+  jsx` component to `TopSectionBadgeRow` to free the `Badge` name for
+  the unified component. Updated both call sites
+  (`TopSectionDesktop.jsx`, `TopSectionMobile.jsx`).
+- Deleted unused `src/app/components/plan/PlantPill.jsx` (superseded
+  by `PlantBadge` in `PlanScheduleBadges.jsx`).
+- Refactored `PlanStatisticsMovesCancelsDetail.jsx`,
+  `PlanStatisticsMovesCancelsPage.jsx`,
+  `PlanStatisticsMovesCancelsTable.jsx`, and
+  `PlanStatisticsKickersPage.jsx` to drive the StatTile icon chips,
+  SpotlightCard chips, BreakdownBar segments, KickerTrail dots,
+  KickerShareBar fills, and inline legend swatches off the project's
+  semantic `bg-status-*` Tailwind tokens instead of hand-rolled hex
+  constants. Subcomponents like `StatTile` and `SpotlightCard` now
+  accept `tone` instead of `accent`. Net effect: dark/light/gray theme
+  swapping these visuals comes for free from the existing CSS custom
+  property system, and there is no per-page color drift any more.
+- Coverage spans every feature area touched by the migration: assets
+  views + components, people views, plan tabs (schedule, dashboard,
+  statistics, flow, call-list, settings), reports (granular, types,
+  tabs, my-reports), maintenance (form atoms, log table, filter bar,
+  tab switcher, equipment detail, forms rail), verification atoms,
+  history (service tab, operators tab), list (item row, filter bar,
+  card item), plants + dayforce (Saturday forecast badge, YphChip,
+  PunchDelta, DayforceEfficiencyPieces), schedule + order tickets,
+  shared UI (NotificationsModal, NavigationActionButtons, top-
+  section, ListViewModeSection, CommentModalSection,
+  IssueModalSection, recap, send-issue modal), notifications
+  (ConversationSidebar, ConversationContextRail, ChatMessages,
+  PageHeader, NotificationsModal), myaccount (Profile, Security,
+  CockpitHeader), admin (Regions, Plants, Roles, RoleCard, Changelog,
+  Calculator), and tools (FlowMapToolbar, PlanDashboardView,
+  CallListView, DashboardHeader, MaintenanceHeader,
+  ReportValidationErrorModal, QualityReportsList).
+- Total scope: ~95 files modified, ~290+ inline badge sites
+  consolidated, ~28 reusable badge components rebuilt on top of the
+  unified primitive, ~14 obsolete constants and helper files removed,
+  6 email template badges migrated. Build passes in ~10s, all 149
+  tests pass, lint clean.
+
 ## [2026.22.5] - 2026-05-26
 
 - Fix silent failure when clicking "Verify Mixer" (and any other

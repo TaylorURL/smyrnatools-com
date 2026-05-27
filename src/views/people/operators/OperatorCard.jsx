@@ -1,5 +1,6 @@
 import React from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import OperatorClockIndicator from '../../../app/components/common/OperatorClockIndicator'
 import PhoneLink from '../../../app/components/common/PhoneLink'
 import CardSection from '../../../app/components/sections/CardSection'
@@ -56,22 +57,26 @@ function OperatorCard({
             statusColor={statusColor}
         >
             {hasScheduledOff && (
-                <span
-                    className="absolute top-2 right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent/10 text-[11px] text-accent"
+                <Badge
+                    tone="accent"
+                    size="sm"
+                    shape="pill"
+                    icon="calendar-alt"
                     title="Has scheduled days off"
                     aria-label="Has scheduled days off"
-                >
-                    <i className="fas fa-calendar-alt" aria-hidden="true"></i>
-                </span>
+                    className="absolute top-2 right-2"
+                />
             )}
             {isDuplicateName && (
-                <span
-                    className="absolute top-2 right-8 inline-flex h-5 w-5 items-center justify-center rounded-full bg-status-warning/15 text-[11px] text-status-warning"
+                <Badge
+                    tone="warning"
+                    size="sm"
+                    shape="pill"
+                    icon="exclamation-triangle"
                     title="Duplicate name"
                     aria-label="Duplicate name"
-                >
-                    <i className="fas fa-exclamation-triangle" aria-hidden="true"></i>
-                </span>
+                    className="absolute top-2 right-8"
+                />
             )}
             {children}
             <div className="flex justify-between items-center py-1">
@@ -104,10 +109,16 @@ function OperatorCard({
                 <div className="text-sm text-text-secondary">Role</div>
                 <div className="text-sm font-medium">
                     {operator.isTrainer ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">
-                            <i className="fas fa-graduation-cap text-[10px]" aria-hidden="true" />
+                        <Badge
+                            tone="accent"
+                            size="md"
+                            shape="pill"
+                            weight="semibold"
+                            uppercase={false}
+                            icon="graduation-cap"
+                        >
                             Trainer
-                        </span>
+                        </Badge>
                     ) : (
                         'Operator'
                     )}
@@ -127,11 +138,7 @@ function OperatorCard({
             )}
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Rating</div>
-                <div
-                    className="flex gap-0.5"
-                    role="img"
-                    aria-label={`Rating: ${displayRating} of 5 stars`}
-                >
+                <div className="flex gap-0.5" role="img" aria-label={`Rating: ${displayRating} of 5 stars`}>
                     {[...Array(5)].map((_, i) => (
                         <i
                             key={i}

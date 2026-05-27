@@ -66,8 +66,3 @@ export const VIEW_MODES = ['table', 'cards']
  * row stays calm and consistent with the other synthetic rows. */
 export const SLOT_ROW_ACCENT = '#0ea5e9'
 export const SLOT_ROW_TINT = 'rgba(14, 165, 233, 0.04)'
-
-/** Tailwind class string shared by every variant of the per-order
- *  `ServiceBadge` (good / bad / ongoing / pending). */
-export const SERVICE_BADGE_BASE =
-    'inline-flex items-center gap-1 rounded-full text-[10.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 whitespace-nowrap'

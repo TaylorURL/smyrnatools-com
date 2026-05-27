@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import { SECTION_LABEL_CLASS } from '../../../../app/constants/maintenanceFormConstants'
 
 export function CardHeader({ accent, icon, label, sub, title, right }) {
@@ -30,16 +31,29 @@ export function CardHeader({ accent, icon, label, sub, title, right }) {
     )
 }
 
+/**
+ * Maps the human-readable status label produced by `statusForSubmission`
+ * back to a Badge tone. Used as a fallback when callers omit `statusTone`.
+ */
+const STATUS_LABEL_TO_TONE = {
+    Approved: 'success',
+    Draft: 'warning',
+    'Pending Review': 'info',
+    Rejected: 'danger'
+}
+
 export function PageHeader({
     accentColor: _accentColor,
     dueDate,
     onBack,
     plantCode,
     status,
-    statusColor,
+    statusColor: _statusColor,
+    statusTone,
     title,
     label
 }) {
+    const resolvedTone = statusTone ?? STATUS_LABEL_TO_TONE[status] ?? 'neutral'
     return (
         <div className="sticky top-0 z-40 flex items-center gap-2.5 px-3 sm:px-4 py-2 bg-bg-primary border-b border-border-light">
             <button
@@ -65,16 +79,9 @@ export function PageHeader({
                 </div>
             </div>
             {status && (
-                <span
-                    className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider"
-                    style={{
-                        background: `${statusColor}1f`,
-                        border: `1px solid ${statusColor}55`,
-                        color: 'var(--text-primary)'
-                    }}
-                >
+                <Badge tone={resolvedTone} size="md" weight="bold">
                     {status}
-                </span>
+                </Badge>
             )}
         </div>
     )

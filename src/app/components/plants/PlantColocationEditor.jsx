@@ -1,6 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useState } from 'react'
 
+import Badge from '../common/Badge'
+
 /* Validation for free-form alias codes typed in by the user. Accepts
  * alphanumerics, dashes, and underscores; trims and normalises to
  * uppercase letters for consistency with dispatch's existing code
@@ -118,9 +120,9 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                                     {row.plantCode}
                                 </span>
                                 {row.isCustom ? (
-                                    <span className="rounded bg-bg-tertiary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+                                    <Badge tone="neutral" size="sm" weight="bold">
                                         Custom
-                                    </span>
+                                    </Badge>
                                 ) : (
                                     row.plantName && <span className="text-text-secondary">{row.plantName}</span>
                                 )}

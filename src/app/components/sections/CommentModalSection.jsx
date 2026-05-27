@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom'
 
 import { UserService } from '../../../services/UserService'
 import { usePreferences } from '../../context/PreferencesContext'
+import Badge from '../common/Badge'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import Skeleton, { SkeletonStack } from '../common/Skeleton'
@@ -203,19 +204,24 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
                             className="w-full rounded outline-none p-2 resize-none text-[12px] bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                         <div className="flex justify-end mt-2">
-                            <button
+                            <Badge
+                                as="button"
                                 type="submit"
                                 disabled={isSubmitDisabled}
-                                className="inline-flex items-center gap-1.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1"
+                                variant="custom"
+                                size="md"
+                                shape="rounded"
+                                weight="semibold"
+                                icon="paper-plane"
+                                onClick={undefined}
+                                className={`gap-1.5 ${isSubmitDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                                 style={{
                                     background: isSubmitDisabled ? 'var(--bg-tertiary)' : accent,
-                                    color: isSubmitDisabled ? 'var(--text-tertiary)' : '#fff',
-                                    cursor: isSubmitDisabled ? 'not-allowed' : 'pointer'
+                                    color: isSubmitDisabled ? 'var(--text-tertiary)' : '#fff'
                                 }}
                             >
-                                <i className="fas fa-paper-plane text-[10px]" />
                                 {isSubmitting ? 'Posting' : 'Post'}
-                            </button>
+                            </Badge>
                         </div>
                     </div>
                 </form>

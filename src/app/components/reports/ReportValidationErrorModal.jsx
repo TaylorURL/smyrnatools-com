@@ -1,4 +1,6 @@
 import React from 'react'
+
+import Badge from '../common/Badge'
 /** Red circular icon badge for validation error modals. */
 const ErrorIconBadge = () => (
     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-full flex items-center justify-center shrink-0">
@@ -16,9 +18,9 @@ const CommentIssuesBadges = ({ issuesString }) => {
     return (
         <div className="flex flex-wrap gap-1.5">
             {issues.map((issue, i) => (
-                <span key={i} className="px-2 py-1 bg-red-200 text-text-primary rounded text-[11px] font-semibold">
+                <Badge key={i} tone="danger" size="md" weight="semibold" uppercase={false}>
                     {issue}
-                </span>
+                </Badge>
             ))}
         </div>
     )

@@ -49,13 +49,7 @@ export default function RatingChart({ data, title, emptyTitle, emptySubtitle }) 
                                         strokeWidth="1"
                                         strokeDasharray="4"
                                     />
-                                    <text
-                                        x="-10"
-                                        y={y + 5}
-                                        textAnchor="end"
-                                        fontSize="12"
-                                        fill="var(--text-secondary)"
-                                    >
+                                    <text x="-10" y={y + 5} textAnchor="end" fontSize="12" fill="var(--text-secondary)">
                                         {`${rating}${STAR}`}
                                     </text>
                                 </g>

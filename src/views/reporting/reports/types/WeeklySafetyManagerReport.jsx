@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
 import {
     IssueCardHeader,
@@ -117,10 +118,16 @@ export function SafetyManagerReviewPlugin({ form }) {
                 title="Issues & Incidents"
                 sub={`${issues.length} issue${issues.length > 1 ? 's' : ''} reported for this period.`}
                 right={
-                    <span className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums bg-[rgba(220,_38,_38,_0.12)] text-text-primary">
-                        <i className="fas fa-clipboard-list text-[9px]" />
+                    <Badge
+                        tone="danger"
+                        size="md"
+                        weight="semibold"
+                        uppercase={false}
+                        icon="clipboard-list"
+                        className="tabular-nums"
+                    >
                         {issues.length} Incident{issues.length > 1 ? 's' : ''}
-                    </span>
+                    </Badge>
                 }
             />
             <div className="flex flex-col gap-2">

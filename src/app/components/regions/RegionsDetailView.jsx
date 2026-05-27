@@ -253,9 +253,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border border-[color:color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--accent)_10%,transparent)] text-[var(--accent)]"
                                             >
                                                 <span className="font-bold">{code}</span>
-                                                {p?.plant_name && (
-                                                    <span className="opacity-80">{p.plant_name}</span>
-                                                )}
+                                                {p?.plant_name && <span className="opacity-80">{p.plant_name}</span>}
                                                 <button
                                                     type="button"
                                                     className="ml-0.5 cursor-pointer bg-transparent border-none text-sm leading-none opacity-70 hover:opacity-100 active:scale-[0.97] transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded"

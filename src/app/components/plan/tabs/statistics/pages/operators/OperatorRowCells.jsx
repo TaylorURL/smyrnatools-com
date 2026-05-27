@@ -2,26 +2,39 @@
 import React from 'react'
 
 import { fmtInt } from '../../../../../../../utils/PlanStatisticsFormatUtility'
+import Badge from '../../../../../common/Badge'
 
-export const MISMATCH_BADGES = {
-    multiTruck: { bg: 'rgba(194, 65, 12, 0.16)', icon: 'fa-shuffle', label: 'Multi-truck' },
-    unassigned: { bg: 'rgba(220, 38, 38, 0.14)', icon: 'fa-user-slash', label: 'Unassigned' },
-    wrongPlant: { bg: 'rgba(217, 119, 6, 0.14)', icon: 'fa-industry', label: 'Wrong plant' },
-    wrongTruck: { bg: 'rgba(234, 179, 8, 0.18)', icon: 'fa-truck', label: 'Wrong truck' }
+const MISMATCH_TO_TONE = {
+    multiTruck: 'danger',
+    unassigned: 'warning',
+    wrongPlant: 'danger',
+    wrongTruck: 'danger'
+}
+const MISMATCH_ICON = {
+    multiTruck: 'shuffle',
+    unassigned: 'user-slash',
+    wrongPlant: 'industry',
+    wrongTruck: 'truck'
+}
+const MISMATCH_LABEL = {
+    multiTruck: 'Multi-truck',
+    unassigned: 'Unassigned',
+    wrongPlant: 'Wrong plant',
+    wrongTruck: 'Wrong truck'
 }
 
 export function MismatchBadge({ tone }) {
-    const cfg = MISMATCH_BADGES[tone]
-    if (!cfg) return null
+    if (!MISMATCH_TO_TONE[tone]) return null
     return (
-        <span
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-text-primary"
-            style={{ background: cfg.bg }}
-            title={cfg.label}
+        <Badge
+            tone={MISMATCH_TO_TONE[tone]}
+            size="sm"
+            icon={MISMATCH_ICON[tone]}
+            title={MISMATCH_LABEL[tone]}
+            uppercase
         >
-            <i className={`fas ${cfg.icon} text-[9px]`} />
-            {cfg.label}
-        </span>
+            {MISMATCH_LABEL[tone]}
+        </Badge>
     )
 }
 
@@ -38,23 +51,23 @@ export function TruckCell({ assignedTruck, trucksDriven }) {
         <div className="flex flex-wrap items-center gap-1">
             {trucksDriven.map((truck) => {
                 const isAssigned = assignedTruck === truck
+                const truckTitle = isAssigned
+                    ? `#${truck} · matches assigned mixer`
+                    : assignedTruck
+                      ? `#${truck} · assigned mixer is #${assignedTruck}`
+                      : `#${truck} · operator has no assigned mixer`
                 return (
-                    <span
+                    <Badge
                         key={truck}
-                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-mono tabular-nums font-semibold text-text-primary"
-                        style={{
-                            background: isAssigned ? 'rgba(22, 163, 74, 0.14)' : 'var(--bg-tertiary)'
-                        }}
-                        title={
-                            isAssigned
-                                ? `#${truck} · matches assigned mixer`
-                                : assignedTruck
-                                  ? `#${truck} · assigned mixer is #${assignedTruck}`
-                                  : `#${truck} · operator has no assigned mixer`
-                        }
+                        tone={isAssigned ? 'success' : 'neutral'}
+                        size="md"
+                        weight="semibold"
+                        uppercase={false}
+                        className="font-mono tabular-nums"
+                        title={truckTitle}
                     >
                         #{truck}
-                    </span>
+                    </Badge>
                 )
             })}
         </div>
@@ -72,13 +85,17 @@ export function TruckCell({ assignedTruck, trucksDriven }) {
 export function AssignedCell({ assignedPlant, assignedTruck }) {
     if (!assignedPlant && !assignedTruck) {
         return (
-            <span
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold italic text-text-tertiary bg-bg-tertiary"
+            <Badge
+                tone="neutral"
+                size="md"
+                weight="semibold"
+                uppercase={false}
+                icon="circle-question"
+                className="italic"
                 title="Operator record has no active mixer assignment and no plant set"
             >
-                <i className="fas fa-circle-question text-[9px]" />
                 No assignment
-            </span>
+            </Badge>
         )
     }
     return (
@@ -113,9 +130,17 @@ export function OperatorSegmentHeader({ count, hint, title }) {
     return (
         <div className="flex items-baseline gap-2.5 px-3 py-2 bg-bg-tertiary border-y border-border-light">
             <span className="text-[10.5px] font-bold uppercase tracking-[.08em] text-text-secondary">{title}</span>
-            <span className="rounded-sm bg-bg-primary px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-text-secondary border border-border-light">
+            <Badge
+                tone="neutral"
+                variant="solid"
+                size="sm"
+                shape="square"
+                weight="bold"
+                uppercase={false}
+                className="tabular-nums"
+            >
                 {fmtInt(count)}
-            </span>
+            </Badge>
             {hint && <span className="text-[11px] text-text-tertiary">{hint}</span>}
         </div>
     )
@@ -132,30 +157,36 @@ export function OperatorActionButtons({ onComments, onHistory, operator }) {
     if (!operator?.employeeId) return null
     return (
         <div className="flex items-center gap-1 mt-1">
-            <button
-                type="button"
+            <Badge
+                as="button"
+                tone="neutral"
+                size="sm"
+                uppercase={false}
+                icon="comment"
+                title="Operator comments"
                 onClick={(e) => {
                     e.stopPropagation()
                     onComments?.(operator)
                 }}
-                title="Operator comments"
-                className="inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
+                className="active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             >
-                <i className="fas fa-comment text-[8px]" />
-                <span>Comments</span>
-            </button>
-            <button
-                type="button"
+                Comments
+            </Badge>
+            <Badge
+                as="button"
+                tone="neutral"
+                size="sm"
+                uppercase={false}
+                icon="history"
+                title="Operator history"
                 onClick={(e) => {
                     e.stopPropagation()
                     onHistory?.(operator)
                 }}
-                title="Operator history"
-                className="inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
+                className="active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             >
-                <i className="fas fa-history text-[8px]" />
-                <span>History</span>
-            </button>
+                History
+            </Badge>
         </div>
     )
 }

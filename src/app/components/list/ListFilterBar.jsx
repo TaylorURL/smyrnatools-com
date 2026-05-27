@@ -219,7 +219,7 @@ export default function ListFilterBar({
                                         onClick={() => onRoleFilterChange(opt)}
                                         className={dropdownItemClass}
                                     >
-                                        <span className="flex items-center justify-center h-5 w-5 rounded-md text-[9px] bg-bg-tertiary text-text-secondary">
+                                        <span className="flex items-center justify-center h-5 w-5 rounded-md bg-bg-tertiary text-text-secondary text-[9px]">
                                             <i className="fas fa-user" />
                                         </span>
                                         {opt}

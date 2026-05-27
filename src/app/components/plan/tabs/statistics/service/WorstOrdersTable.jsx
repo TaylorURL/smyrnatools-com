@@ -1,35 +1,28 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { fmtDate } from '../../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../../utils/PlantColocationUtility'
+import Badge from '../../../../common/Badge'
 import ScorePercent from '../ScorePercent'
-import { fmtMinutes, LATE_COLOR, SLOW_COLOR } from './serviceShared'
+import { fmtMinutes } from './serviceShared'
 
-/** Two-line tag explaining why a single bad order was bad. Background
- *  tint carries the severity (amber = late, orange = slow); text + icon
- *  stay theme-aware so they read in both light and dark themes. */
+/** Two-line tag explaining why a single bad order was bad. Both failure
+ *  modes use the warning tone — late and slow are graded warnings, not
+ *  catastrophic failures (those are surfaced separately as bad-service
+ *  tiers in the parent table). */
 function FailureTags({ isLate, isSlow }) {
     if (!isLate && !isSlow) return null
     return (
         <div className="flex items-center gap-1 flex-wrap">
             {isLate && (
-                <span
-                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-primary"
-                    style={{ background: `${LATE_COLOR}20` }}
-                >
-                    <i className="fas fa-clock text-[9px]" />
+                <Badge tone="warning" size="sm" weight="semibold" icon="clock">
                     Late
-                </span>
+                </Badge>
             )}
             {isSlow && (
-                <span
-                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-primary"
-                    style={{ background: `${SLOW_COLOR}20` }}
-                >
-                    <i className="fas fa-gauge-simple-low text-[9px]" />
+                <Badge tone="warning" size="sm" weight="semibold" icon="gauge-simple-low">
                     Slow
-                </span>
+                </Badge>
             )}
         </div>
     )

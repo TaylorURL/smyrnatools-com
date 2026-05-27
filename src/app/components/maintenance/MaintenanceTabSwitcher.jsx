@@ -1,5 +1,7 @@
 import React from 'react'
 
+import Badge from '../common/Badge'
+
 const FOCUS_RING =
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary'
 
@@ -35,13 +37,18 @@ export function MaintenanceTabSwitcher({ activeTab, isMobile, onChange, tabs }) 
                         {icon && <i className={`fas ${icon}`} aria-hidden="true" />}
                         {!isMobile && <span>{label}</span>}
                         {badge != null && badge > 0 && (
-                            <span
-                                className={`rounded px-1 font-mono text-[9.5px] font-bold uppercase tracking-wider tabular-nums ${
-                                    isActive ? 'bg-white/25 text-white' : 'bg-status-danger text-white'
-                                }`}
+                            <Badge
+                                tone="danger"
+                                variant={isActive ? 'custom' : 'solid'}
+                                bg={isActive ? 'rgba(255,255,255,0.25)' : undefined}
+                                fg={isActive ? '#fff' : undefined}
+                                size="xs"
+                                shape="rounded"
+                                weight="bold"
+                                className="font-mono tabular-nums"
                             >
                                 {badge}
-                            </span>
+                            </Badge>
                         )}
                     </button>
                 )

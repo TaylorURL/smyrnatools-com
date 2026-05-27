@@ -41,32 +41,35 @@ export function useSaturdayForecastPrompt() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
 
-    const fetchPending = useCallback(async ({ signal } = {}) => {
-        if (!userId) {
-            setData(EMPTY_RESULT)
+    const fetchPending = useCallback(
+        async ({ signal } = {}) => {
+            if (!userId) {
+                setData(EMPTY_RESULT)
+                setError(null)
+                setLoading(false)
+                return
+            }
+            setLoading(true)
             setError(null)
-            setLoading(false)
-            return
-        }
-        setLoading(true)
-        setError(null)
-        try {
-            const result = await SaturdayForecastService.fetchPendingForUser()
-            if (signal?.cancelled) return
-            setData({
-                pendingPlants: result.pendingPlants || [],
-                saturdayDate: result.saturdayDate || '',
-                submittedPlants: result.submittedPlants || [],
-                weekIso: result.weekIso || ''
-            })
-        } catch (err) {
-            if (signal?.cancelled) return
-            setError(err?.message || 'Failed to load Saturday forecast')
-            setData(EMPTY_RESULT)
-        } finally {
-            if (!signal?.cancelled) setLoading(false)
-        }
-    }, [userId])
+            try {
+                const result = await SaturdayForecastService.fetchPendingForUser()
+                if (signal?.cancelled) return
+                setData({
+                    pendingPlants: result.pendingPlants || [],
+                    saturdayDate: result.saturdayDate || '',
+                    submittedPlants: result.submittedPlants || [],
+                    weekIso: result.weekIso || ''
+                })
+            } catch (err) {
+                if (signal?.cancelled) return
+                setError(err?.message || 'Failed to load Saturday forecast')
+                setData(EMPTY_RESULT)
+            } finally {
+                if (!signal?.cancelled) setLoading(false)
+            }
+        },
+        [userId]
+    )
 
     useEffect(() => {
         const signal = { cancelled: false }

@@ -1,26 +1,32 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../Badge'
 import UserAvatar from '../UserAvatar'
 
 /** Shared classes for chrome-on-accent action buttons in the two-level header. */
 const TWO_LEVEL_BUTTON_BASE =
     'relative inline-flex items-center justify-center cursor-pointer rounded-lg bg-white/[0.08] border border-white/10 text-white/80 hover:text-white hover:bg-white/[0.18] active:scale-[0.94] transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40'
 
-/** Small badge bubble overlaid on icon buttons. */
-function ActionBadge({ count, accentColor, color = '#ef4444', small = false }) {
+/** Small badge bubble overlaid on icon buttons. `color` accepts a Badge tone
+ *  name; the historical `#ef4444` default maps to the danger tone so the
+ *  legacy red bubble is preserved without inline hex. `accentColor` is no
+ *  longer used (Badge owns its own theming) but is kept in the signature for
+ *  backward compatibility with existing call sites. */
+function ActionBadge({ count, accentColor: _accentColor, color, small = false }) {
     if (!count || count <= 0) return null
+    const tone = !color || color === '#ef4444' ? 'danger' : color
     return (
-        <span
-            className={`force-white-text absolute -right-1 -top-1 inline-flex items-center justify-center rounded-full font-bold text-white tabular-nums ${small ? 'h-4 min-w-[16px] px-1 text-[9px]' : 'h-5 min-w-[20px] px-1 text-[11px]'}`}
-            style={{
-                backgroundColor: color,
-                border: `2px solid ${accentColor}`,
-                boxShadow: `0 2px 8px ${color}66`
-            }}
+        <Badge
+            tone={tone}
+            variant="solid"
+            size={small ? 'xs' : 'sm'}
+            shape="pill"
+            weight="bold"
+            uppercase={false}
+            className="absolute -right-1 -top-1 tabular-nums shadow-sm"
         >
             {count}
-        </span>
+        </Badge>
     )
 }
 
@@ -69,9 +75,7 @@ export function TwoLevelUserAvatar({ accentColor, initials, title, onClick }) {
 
 /** Messages icon button in the top-bar header — wider to fit bell + envelope. */
 export function TopBarMessagesButton({ onClick, combinedCount, accentColor, isTablet }) {
-    const size = isTablet
-        ? 'h-8 w-10 rounded-lg gap-[3px] text-xs'
-        : 'h-[42px] w-[52px] rounded-[12px] gap-1 text-sm'
+    const size = isTablet ? 'h-8 w-10 rounded-lg gap-[3px] text-xs' : 'h-[42px] w-[52px] rounded-[12px] gap-1 text-sm'
     return (
         <button
             type="button"

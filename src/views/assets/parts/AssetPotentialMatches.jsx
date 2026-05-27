@@ -1,5 +1,7 @@
 import React from 'react'
 
+import Badge from '../../../app/components/common/Badge'
+
 /**
  * Banner + dimmed list shown beneath the main results when the search
  * matches items that fall outside the active filter chips. Rendered with a
@@ -19,9 +21,16 @@ export default function AssetPotentialMatches({ children, count, hasFiltered }) 
                         ? '(hidden by active filters)'
                         : 'No exact filter matches — showing results that match your search'}
                 </span>
-                <span className="ml-auto inline-flex items-center rounded-full bg-bg-secondary px-2 py-0.5 text-xs font-bold tabular-nums text-text-secondary">
+                <Badge
+                    tone="neutral"
+                    size="lg"
+                    shape="pill"
+                    weight="bold"
+                    uppercase={false}
+                    className="ml-auto tabular-nums"
+                >
                     {count}
-                </span>
+                </Badge>
             </div>
             <div className={hasFiltered ? 'opacity-60 transition-opacity duration-200 hover:opacity-100' : ''}>
                 {children}

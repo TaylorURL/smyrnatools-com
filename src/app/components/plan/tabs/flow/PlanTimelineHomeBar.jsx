@@ -2,9 +2,10 @@
 import React from 'react'
 
 import { MAX_YPH, TARGET_YPH, timeToMinutes, timeToPercent } from '../../../../../utils/PlanUtility'
+import Badge from '../../../common/Badge'
 import { PlanTimelineLaneBlock } from './PlanTimelineLaneBlock'
 
-const { HOME_COLOR, RECV_COLOR, ROW_HEIGHT } = PlanTimelineLaneBlock
+const { HOME_COLOR, ROW_HEIGHT } = PlanTimelineLaneBlock
 
 const HOME_BAR_TOP = 2
 const HOME_BAR_HEIGHT = ROW_HEIGHT - 4
@@ -82,19 +83,23 @@ export function PlanTimelineHomeBar({ homeCount, prod, recvLanesCount }) {
                         </span>
                     )}
                     {metrics.yards > 0 && (
-                        <span
-                            className="text-[9px] font-bold rounded-full px-1.5 py-px"
-                            style={{ background: `${HOME_COLOR}15`, color: 'var(--text-primary)' }}
+                        <Badge
+                            variant="custom"
+                            size="xs"
+                            shape="pill"
+                            weight="bold"
+                            uppercase={false}
+                            bg={`${HOME_COLOR}15`}
+                            fg="var(--text-primary)"
                         >
                             {prod.totalYardage} yds
-                        </span>
+                        </Badge>
                     )}
                     {metrics.ydsPerHrOp !== null && <YphBadge metrics={metrics} />}
                     {metrics.availableToSend !== null && metrics.availableToSend > 0 && (
-                        <span className="text-[9px] font-bold rounded-full px-1.5 py-px bg-[#16a34a18] text-text-primary">
-                            <i className="fas fa-paper-plane text-[7px] mr-0.5" />
+                        <Badge tone="success" size="xs" shape="pill" weight="bold" uppercase={false} icon="paper-plane">
                             {metrics.availableToSend} avail
-                        </span>
+                        </Badge>
                     )}
                     {metrics.overMax && <BehindScheduleBadge />}
                     {metrics.underTarget && <LeaveOffBadge count={metrics.leaveOffCount} />}
@@ -106,43 +111,69 @@ export function PlanTimelineHomeBar({ homeCount, prod, recvLanesCount }) {
 
 function OperatorCountBadge({ effectiveOps, recvLanesCount }) {
     return (
-        <span className="text-[9px] font-extrabold flex items-center gap-1" style={{ color: 'var(--text-primary)' }}>
-            <i className="fas fa-hard-hat text-[8px]" />
+        <Badge
+            variant="custom"
+            size="xs"
+            shape="pill"
+            weight="bold"
+            uppercase={false}
+            icon="hard-hat"
+            bg={`${HOME_COLOR}25`}
+            fg="var(--text-primary)"
+        >
             {effectiveOps}
             {recvLanesCount > 0 && (
-                <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                <span className="font-semibold ml-0.5" style={{ color: 'var(--text-secondary)' }}>
                     (+{recvLanesCount})
                 </span>
             )}
-        </span>
+        </Badge>
     )
 }
 
 function YphBadge({ metrics }) {
     const { overMax, underTarget, ydsPerHrOp } = metrics
-    const color = overMax ? '#fff' : 'var(--text-primary)'
-    const background = overMax ? '#ef444490' : underTarget ? '#d9770620' : `${HOME_COLOR}15`
+    if (overMax) {
+        return (
+            <Badge tone="danger" variant="solid" size="xs" shape="pill" weight="bold" uppercase={false}>
+                {ydsPerHrOp} yph
+            </Badge>
+        )
+    }
+    if (underTarget) {
+        return (
+            <Badge tone="warning" size="xs" shape="pill" weight="bold" uppercase={false}>
+                {ydsPerHrOp} yph
+            </Badge>
+        )
+    }
     return (
-        <span className="text-[9px] font-bold rounded-full px-1.5 py-px" style={{ background, color }}>
+        <Badge
+            variant="custom"
+            size="xs"
+            shape="pill"
+            weight="bold"
+            uppercase={false}
+            bg={`${HOME_COLOR}15`}
+            fg="var(--text-primary)"
+        >
             {ydsPerHrOp} yph
-        </span>
+        </Badge>
     )
 }
 
 function BehindScheduleBadge() {
     return (
-        <span className="text-[9px] font-extrabold flex items-center gap-0.5 text-text-primary">
-            <i className="fas fa-triangle-exclamation text-[8px]" />
+        <Badge tone="danger" size="xs" shape="pill" weight="bold" uppercase={false} icon="triangle-exclamation">
             Likely behind
-        </span>
+        </Badge>
     )
 }
 
 function LeaveOffBadge({ count }) {
     return (
-        <span className="text-[9px] font-bold rounded-full px-1.5 py-px flex items-center gap-0.5 bg-[#d9770618] text-text-primary">
-            <i className="fas fa-user-minus text-[7px]" />
+        <Badge tone="warning" size="xs" shape="pill" weight="bold" uppercase={false} icon="user-minus">
             Leave {count} off
-        </span>
+        </Badge>
     )
 }

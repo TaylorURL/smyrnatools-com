@@ -62,9 +62,7 @@ export function Panel({ children, id, right, title, className = '', innerClassNa
                     {right}
                 </div>
             )}
-            <div className={`rounded-card bg-bg-primary border border-border-light ${innerClassName}`}>
-                {children}
-            </div>
+            <div className={`rounded-card bg-bg-primary border border-border-light ${innerClassName}`}>{children}</div>
         </section>
     )
 }

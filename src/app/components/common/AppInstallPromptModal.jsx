@@ -144,10 +144,7 @@ function MobileContent({ deviceType, accentColor, onInstalled, onRemindLater, on
             >
                 <i className="fas fa-mobile-alt" aria-hidden="true" />
             </div>
-            <h2
-                className="mb-3 font-heading text-2xl font-bold tracking-tight"
-                style={{ color: accentColor }}
-            >
+            <h2 className="mb-3 font-heading text-2xl font-bold tracking-tight" style={{ color: accentColor }}>
                 Install Smyrna Tools
             </h2>
             <p className="mb-7 text-[15px] leading-relaxed text-text-secondary">
@@ -208,10 +205,7 @@ function DesktopContent({ accentColor, onInstalled, onRemindLater, onDismissFore
             >
                 <i className="fas fa-mobile-screen-button" aria-hidden="true" />
             </div>
-            <h2
-                className="mb-3 font-heading text-2xl font-bold tracking-tight"
-                style={{ color: accentColor }}
-            >
+            <h2 className="mb-3 font-heading text-2xl font-bold tracking-tight" style={{ color: accentColor }}>
                 Install on Your Phone
             </h2>
             <p className="mb-7 text-[15px] leading-relaxed text-text-secondary">

@@ -1,5 +1,7 @@
 import React from 'react'
 
+import Badge from '../common/Badge'
+
 const ACTION_BUTTON_CLASS =
     'inline-flex items-center gap-1.5 rounded-md text-[12px] font-semibold px-2.5 h-[30px] cursor-pointer ' +
     'bg-bg-secondary border border-border-light text-text-primary ' +
@@ -32,13 +34,21 @@ export default function DashboardHeader({
             {isLoading ? (
                 <div className="h-6 w-56 rounded-md animate-pulse bg-bg-tertiary" />
             ) : (
-                <span className="inline-flex items-center gap-2 rounded-md text-[12px] font-medium px-2.5 py-1 max-w-full bg-bg-secondary border border-border-light text-text-primary transition-colors duration-150">
+                <Badge
+                    tone="neutral"
+                    variant="custom"
+                    size="lg"
+                    shape="rounded-md"
+                    weight="medium"
+                    uppercase={false}
+                    className="max-w-full bg-bg-secondary border border-border-light text-text-primary transition-colors duration-150"
+                >
                     <i className="fas fa-location-dot text-[10px] text-text-tertiary" aria-hidden="true" />
                     <span className="truncate">{regionDisplayName || 'Region'}</span>
                     {heroRegionSub && (
                         <span className="hidden sm:inline truncate text-text-tertiary">· {heroRegionSub}</span>
                     )}
-                </span>
+                </Badge>
             )}
             <div className="flex-1 min-w-[8px]" />
             <div className="flex items-center gap-1.5">

@@ -3,8 +3,9 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import MessageService from '../../../../services/MessageService'
 import { UserService } from '../../../../services/UserService'
-import { PILL_BASE, SEVERITY_PALETTE } from '../../../constants/issueModalConstants'
+import { SEVERITY_PALETTE, SEVERITY_TO_TONE } from '../../../constants/issueModalConstants'
 import { usePreferences } from '../../../context/PreferencesContext'
+import Badge from '../../common/Badge'
 import { SkeletonStack } from '../../common/Skeleton'
 import UserAvatar from '../../common/UserAvatar'
 import { getInitials } from './issueModalHelpers'
@@ -149,12 +150,15 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                         <span className="text-[12px] font-semibold font-mono tabular-nums text-text-primary">
                                             {itemNumber || 'N/A'}
                                         </span>
-                                        <span
-                                            className={`${PILL_BASE} ${sevConfig.badgeClass} ml-auto text-text-primary`}
+                                        <Badge
+                                            tone={SEVERITY_TO_TONE[issue.severity] || 'warning'}
+                                            size="md"
+                                            weight="semibold"
+                                            icon={sevConfig.icon.replace(/^fa-/, '')}
+                                            className="ml-auto"
                                         >
-                                            <i className={`fas ${sevConfig.icon} text-[8px]`} />
                                             {issue.severity}
-                                        </span>
+                                        </Badge>
                                     </div>
                                     <p className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap text-text-primary">
                                         {issue.issue}

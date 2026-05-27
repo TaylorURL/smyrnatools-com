@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import { CallListSkeleton } from '../../../app/components/common/PlanSkeletons'
 import TabFadeIn from '../../../app/components/common/TabFadeIn'
 import {
@@ -286,15 +287,21 @@ function Header({ description, dormantCount, label, onRefresh, rosterCount }) {
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                <button
-                    type="button"
+                <Badge
+                    as="button"
+                    tone="neutral"
+                    variant="custom"
+                    size="md"
+                    shape="rounded-md"
+                    weight="semibold"
+                    uppercase={false}
                     onClick={onRefresh}
-                    className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-semibold border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary"
                     title="Reload the roster + activity feed"
+                    icon="rotate"
+                    className="px-2.5 py-1.5 text-[12px] bg-bg-secondary border border-border-light text-text-secondary"
                 >
-                    <i className="fas fa-rotate text-[10px]" />
                     Refresh
-                </button>
+                </Badge>
             </div>
             <span className="hidden" data-section-label={label} />
         </div>

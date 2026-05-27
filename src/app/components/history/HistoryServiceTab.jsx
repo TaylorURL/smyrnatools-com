@@ -4,6 +4,7 @@ import React from 'react'
 import { DateUtility } from '../../../utils/DateUtility'
 import { HistoryUtility } from '../../../utils/HistoryUtility'
 import { RESOLVED_ISSUE_COLOR, SEVERITY_COLORS, SEVERITY_PALETTES } from '../../constants/historyConstants'
+import Badge from '../common/Badge'
 import ErrorMessage from '../common/ErrorMessage'
 import HistoryEmptyState from '../ui/HistoryEmptyState'
 import StatCard from '../ui/StatCard'
@@ -63,16 +64,13 @@ function IssueCardHeader({ isCompleted, sevPalette, severity }) {
                 className={isCompleted ? 'fas fa-check-circle text-[11px]' : 'fas fa-exclamation-circle text-[11px]'}
                 style={{ color: 'var(--text-primary)' }}
             />
-            <span
-                className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                style={{ background: sevPalette.bg, color: sevPalette.color }}
-            >
+            <Badge variant="custom" bg={sevPalette.bg} fg={sevPalette.color} size="xs" weight="bold">
                 {severity}
-            </span>
+            </Badge>
             {isCompleted && (
-                <span className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[rgba(22,_163,_74,_0.15)] text-text-primary">
+                <Badge tone="success" size="xs" weight="bold">
                     Resolved
-                </span>
+                </Badge>
             )}
         </div>
     )
@@ -99,16 +97,19 @@ function IssueCardFooter({ entry, getCreatorName, issue, onCompleteIssue }) {
                 </span>
             )}
             {!entry.isCompleted && (
-                <button
-                    type="button"
+                <Badge
+                    as="button"
+                    tone="success"
+                    size="md"
+                    weight="bold"
+                    icon="check"
                     onClick={() => onCompleteIssue(issue.id)}
                     title="Mark as resolved"
                     aria-label="Mark issue as resolved"
-                    className="inline-flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider rounded px-2 py-0.5 cursor-pointer border-none bg-[rgba(22,_163,_74,_0.12)] text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-[rgba(22,_163,_74,_0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16a34a]/40"
+                    className="border-none active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16a34a]/40"
                 >
-                    <i className="fas fa-check text-[9px]" />
                     Mark Resolved
-                </button>
+                </Badge>
             )}
         </div>
     )

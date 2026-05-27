@@ -3,6 +3,7 @@ import React from 'react'
 
 import { fmtFloat, fmtInt, fmtYards } from '../../../utils/PlanStatisticsFormatUtility'
 import { PLANT_BADGE_COLORS } from '../../constants/planConstants'
+import Badge from '../common/Badge'
 
 /** YPH thresholds — mirrored from the main Efficiency page so this
  *  module stays self-contained. Kept in sync manually; both files
@@ -24,13 +25,15 @@ export function plantStatusFor(yph) {
     return 'below-target'
 }
 
-/** Status pill tones — solid colour + white text, matching the rest of
- *  the site's badge vocabulary (see WarnPill, operatorStatusBadge). */
+/** Status pill tones — maps each YPH bucket onto a shared Badge tone +
+ *  the FA icon suffix (without `fa-` prefix; Badge prepends it). Tones
+ *  follow the project's status vocabulary: danger for below target,
+ *  success for on/exceptional, neutral for missing yardage. */
 const PLANT_STATUS_TONES = {
-    'below-target': { bg: '#dc2626', icon: 'fa-triangle-exclamation', label: 'Below target' },
-    exceptional: { bg: '#047857', icon: 'fa-trophy', label: 'Exceptional' },
-    'no-data': { bg: '#64748b', icon: 'fa-circle-minus', label: 'No yardage' },
-    'on-target': { bg: '#15803d', icon: 'fa-circle-check', label: 'On target' }
+    'below-target': { icon: 'triangle-exclamation', label: 'Below target', tone: 'danger' },
+    exceptional: { icon: 'trophy', label: 'Exceptional', tone: 'success' },
+    'no-data': { icon: 'circle-minus', label: 'No yardage', tone: 'neutral' },
+    'on-target': { icon: 'circle-check', label: 'On target', tone: 'success' }
 }
 
 const FALLBACK_PLANT_COLOR = '#475569'
@@ -75,15 +78,20 @@ export function SpotlightChip({ accent, primary, secondary, row }) {
  *  Empty fallback keeps the three columns balanced even when one
  *  bucket is empty. */
 export function SpotlightColumn({ accentColor, children, count, emptyMessage, hint, icon, title }) {
+    const iconSuffix = typeof icon === 'string' ? icon.replace(/^fa-/, '') : icon
     return (
         <div className="flex flex-col gap-2 rounded border border-border-light bg-bg-primary p-3 min-h-0">
             <div className="flex items-center gap-2">
-                <span
-                    className="inline-flex items-center justify-center w-7 h-7 rounded-full shrink-0"
-                    style={{ background: `${accentColor}1a`, color: accentColor }}
-                >
-                    <i className={`fas ${icon} text-[12px]`} />
-                </span>
+                <Badge
+                    variant="custom"
+                    bg={`${accentColor}1a`}
+                    fg={accentColor}
+                    size="lg"
+                    shape="pill"
+                    uppercase={false}
+                    icon={iconSuffix}
+                    className="h-7 w-7 justify-center shrink-0"
+                />
                 <div className="flex-1 min-w-0">
                     <div className="text-[12.5px] font-semibold text-text-primary truncate">{title}</div>
                     {hint && <div className="text-[10.5px] text-text-tertiary truncate">{hint}</div>}
@@ -206,13 +214,17 @@ export function PlantScorecard({ fleetYph, row }) {
                         {fmtInt(row.operatorCount)} operator{row.operatorCount === 1 ? '' : 's'}
                     </div>
                 </div>
-                <span
-                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap text-white shrink-0"
-                    style={{ background: statusConfig.bg }}
+                <Badge
+                    tone={statusConfig.tone}
+                    variant="solid"
+                    size="sm"
+                    shape="pill"
+                    uppercase={false}
+                    icon={statusConfig.icon}
+                    className="shrink-0"
                 >
-                    <i className={`fas ${statusConfig.icon} text-[9px]`} />
                     {statusConfig.label}
-                </span>
+                </Badge>
             </div>
 
             <div className="flex items-end gap-3">

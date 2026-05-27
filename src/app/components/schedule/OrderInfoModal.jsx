@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { formatOrderAddress } from '../../../utils/AddressUtility'
 import { isBigPourOrder, isCancelledOrder, plantBadgeColor, SAME_DAY_ORDER_START } from '../../../utils/PlanUtility'
+import Badge from '../common/Badge'
 import OrderCoverageView, { buildOrderFlags } from './OrderCoverageView'
 
 const clean = (value) => (value == null ? '' : String(value).trim())
@@ -133,12 +134,12 @@ function OrderInfoModal({
 
     const flags = useMemo(() => {
         const out = []
-        if (isCancelledOrder(order)) out.push({ accent: '#dc2626', label: 'Cancelled' })
-        if (isSameDayOrder(order)) out.push({ accent: '#d97706', label: 'Same-day' })
-        if (isBigPourOrder(order)) out.push({ accent: '#4f46e5', label: 'Big pour' })
-        if (coverage?.overbooked) out.push({ accent: '#dc2626', label: 'Overbooked' })
+        if (isCancelledOrder(order)) out.push({ label: 'Cancelled', tone: 'danger' })
+        if (isSameDayOrder(order)) out.push({ label: 'Same-day', tone: 'warning' })
+        if (isBigPourOrder(order)) out.push({ label: 'Big pour', tone: 'warning' })
+        if (coverage?.overbooked) out.push({ label: 'Overbooked', tone: 'danger' })
         if (closerPlant && closerPlant.savings >= 5) {
-            out.push({ accent: '#1d4ed8', label: `Closer plant: ${closerPlant.code}` })
+            out.push({ label: `Closer plant: ${closerPlant.code}`, tone: 'info' })
         }
         return out
     }, [order, coverage, closerPlant])
@@ -174,13 +175,18 @@ function OrderInfoModal({
             }
         >
             <div className="flex items-center gap-3 px-5 py-3 border-b border-border-light bg-bg-primary">
-                <div
-                    className="shrink-0 rounded px-2 py-1 text-[12px] font-bold tabular-nums text-white"
-                    style={{ background: plantColor, minWidth: 42, textAlign: 'center' }}
+                <Badge
+                    variant="custom"
+                    size="lg"
+                    weight="bold"
+                    uppercase={false}
+                    bg={plantColor}
+                    fg="#ffffff"
                     title={plantName ? `Plant ${homePlantCode} — ${plantName}` : `Plant ${homePlantCode}`}
+                    className="shrink-0 justify-center min-w-[42px] tabular-nums"
                 >
                     {homePlantCode || '—'}
-                </div>
+                </Badge>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 min-w-0">
                         <span className="text-[15px] font-semibold text-text-primary truncate font-heading">
@@ -234,13 +240,9 @@ function OrderInfoModal({
             {flags.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5 px-5 py-2 border-b border-border-light bg-bg-secondary">
                     {flags.map((f) => (
-                        <span
-                            key={f.label}
-                            className="text-[10.5px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                            style={{ background: `${f.accent}14`, color: f.accent }}
-                        >
+                        <Badge key={f.label} tone={f.tone} size="md" weight="semibold">
                             {f.label}
-                        </span>
+                        </Badge>
                     ))}
                 </div>
             )}

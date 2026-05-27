@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 
 import changelogText from '../../../../CHANGELOG.md?raw'
+import Badge from '../../../app/components/common/Badge'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 
 const GITHUB_URL = 'https://github.com/bradley-t-t'
@@ -177,9 +178,15 @@ function ChangelogView({ onBack }) {
                                                     v{entry.version}
                                                 </span>
                                                 {isLatest && (
-                                                    <span className="bg-emerald-50 text-text-primary border border-emerald-200 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full">
+                                                    <Badge
+                                                        tone="success"
+                                                        variant="outline"
+                                                        size="xs"
+                                                        shape="pill"
+                                                        weight="bold"
+                                                    >
                                                         Latest
-                                                    </span>
+                                                    </Badge>
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-1.5 mt-0.5">

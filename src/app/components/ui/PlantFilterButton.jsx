@@ -8,7 +8,14 @@ import React from 'react'
  * `PlantDropdownModal` for selection. Goes accent-tinted when a plant is
  * actively selected so the filter state is visible at a glance.
  */
-function PlantFilterButton({ accentColor, active = false, displayText, isOpen = false, onClick, title = 'Filter by plant' }) {
+function PlantFilterButton({
+    accentColor,
+    active = false,
+    displayText,
+    isOpen = false,
+    onClick,
+    title = 'Filter by plant'
+}) {
     const tinted = active && accentColor
     return (
         <button

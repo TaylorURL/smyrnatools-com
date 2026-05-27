@@ -1,6 +1,7 @@
 import React from 'react'
 
-import { formatVarianceFromValues, getVarianceClass } from '../../../constants/generalManagerReportConstants'
+import { formatVarianceFromValues } from '../../../constants/generalManagerReportConstants'
+import Badge from '../../common/Badge'
 
 /** Variance pill — arrow icon + signed percentage. Renders an em-dash
  *  pill when either side is missing or non-numeric. */
@@ -8,19 +9,19 @@ export function VarianceCell({ currentValue, lastValue }) {
     const variance = formatVarianceFromValues(lastValue, currentValue)
     if (!variance) {
         return (
-            <div className="inline-flex items-center gap-1 rounded px-2 py-1 text-[0.8125rem] font-semibold text-slate-500 bg-slate-100">
+            <Badge tone="neutral" size="lg" shape="rounded" weight="semibold" uppercase={false}>
                 —
-            </div>
+            </Badge>
         )
     }
-    const varClass = getVarianceClass(variance)
     const n = parseFloat(variance)
+    const tone = n > 0 ? 'success' : n < 0 ? 'danger' : 'neutral'
     const symbol = n > 0 ? '▲' : n < 0 ? '▼' : ''
     return (
-        <div className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[0.8125rem] font-semibold ${varClass}`}>
+        <Badge tone={tone} size="lg" shape="rounded" weight="semibold" uppercase={false} className="tabular-nums">
             {symbol && <span className="text-[0.6875rem]">{symbol}</span>}
             <span>{variance}</span>
-        </div>
+        </Badge>
     )
 }
 

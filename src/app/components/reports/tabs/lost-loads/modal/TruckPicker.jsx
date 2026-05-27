@@ -60,7 +60,11 @@ function TruckPicker({
                             No mixers found
                         </div>
                     ) : (
-                        <div role="listbox" aria-label="Trucks" className="max-h-48 overflow-y-auto border-border-light">
+                        <div
+                            role="listbox"
+                            aria-label="Trucks"
+                            className="max-h-48 overflow-y-auto border-border-light"
+                        >
                             {regionalMixers.map((m) => {
                                 const opName = operatorMap[m.assignedOperator] || null
                                 const isSelected = truckNumber === m.truckNumber

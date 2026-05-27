@@ -1,9 +1,19 @@
-/* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useState } from 'react'
 
 import { fmtInt } from '../../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../../utils/PlantColocationUtility'
-import { fmtMinutes, goodPctColor } from './serviceShared'
+import Badge from '../../../../common/Badge'
+import { fmtMinutes } from './serviceShared'
+
+/* Semantic tone for the Good % pill. Mirrors the bands in
+ * `goodPctColor` so the swap from inline hex backgrounds to the
+ * shared Badge palette doesn't shift the visual hierarchy: green for
+ * healthy, amber for marginal, red for failing. */
+const goodPctTone = (pct) => {
+    if (pct >= 0.75) return 'success'
+    if (pct >= 0.6) return 'warning'
+    return 'danger'
+}
 
 function ColumnHeader({ active, direction, label, numeric, onClick, title }) {
     const arrow = !active ? '' : direction === 'asc' ? ' ↑' : ' ↓'
@@ -15,7 +25,7 @@ function ColumnHeader({ active, direction, label, numeric, onClick, title }) {
                 numeric ? 'text-right' : 'text-left'
             }`}
         >
-            <span style={{ color: active ? 'var(--text-primary)' : undefined }}>
+            <span className={active ? 'text-text-primary' : undefined}>
                 {label}
                 {arrow}
             </span>
@@ -168,12 +178,16 @@ export default function PlantScorecardTable({ colocationMap, plantNameByCode, ro
                                     {row.goodPct == null || !Number.isFinite(row.goodPct) ? (
                                         <span className="text-text-tertiary">—</span>
                                     ) : (
-                                        <span
-                                            className="inline-flex items-center justify-center rounded-md px-2 py-0.5 text-[11px] font-bold tabular-nums text-white whitespace-nowrap"
-                                            style={{ background: goodPctColor(row.goodPct) }}
+                                        <Badge
+                                            tone={goodPctTone(row.goodPct)}
+                                            variant="solid"
+                                            size="md"
+                                            shape="rounded-md"
+                                            uppercase={false}
+                                            className="tabular-nums justify-center"
                                         >
                                             {Math.round(row.goodPct * 100)}%
-                                        </span>
+                                        </Badge>
                                     )}
                                 </td>
                                 <td className="px-3 py-2 text-right text-[12.5px] tabular-nums text-text-secondary">

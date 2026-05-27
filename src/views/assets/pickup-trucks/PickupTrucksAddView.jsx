@@ -82,11 +82,7 @@ function PickupTrucksAddView({ onClose, onAdded }) {
                         <PlantPickerField {...picker} label="Plant*" />
                         <div className="flex flex-col gap-1">
                             <label>Status</label>
-                            <select
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value)}
-                                className={SELECT_CLS}
-                            >
+                            <select value={status} onChange={(e) => setStatus(e.target.value)} className={SELECT_CLS}>
                                 <option value="Active">Active</option>
                                 <option value="Stationary">Stationary</option>
                                 <option value="Spare">Spare</option>

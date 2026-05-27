@@ -1,5 +1,6 @@
 import React from 'react'
 
+import Badge from '../../../common/Badge'
 import { QualityReportsListSkeleton } from '../../ReportsViewSkeletons'
 
 const meaningfulStr = (val) =>
@@ -48,13 +49,13 @@ function QualityReportRow({ accent, getUserName, onDelete, onOpen, report }) {
                 </div>
             </div>
             {report.reviewed ? (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0 bg-green-100 text-text-primary">
+                <Badge tone="success" size="xs" weight="semibold" className="shrink-0">
                     Reviewed
-                </span>
+                </Badge>
             ) : (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0 bg-amber-100 text-text-primary">
+                <Badge tone="warning" size="xs" weight="semibold" className="shrink-0">
                     Pending
-                </span>
+                </Badge>
             )}
             <button
                 className="ml-2 px-2 py-1 rounded text-white text-[10.5px] font-semibold shrink-0 hidden sm:inline-flex uppercase tracking-wider"

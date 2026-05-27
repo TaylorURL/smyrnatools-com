@@ -41,7 +41,10 @@ export default function PasswordModal({
                         >
                             <i className="fas fa-key text-[16px]" aria-hidden="true" />
                         </div>
-                        <span id="password-modal-title" className="font-heading text-[16px] font-semibold text-text-primary">
+                        <span
+                            id="password-modal-title"
+                            className="font-heading text-[16px] font-semibold text-text-primary"
+                        >
                             Change Password
                         </span>
                     </div>
@@ -61,7 +64,10 @@ export default function PasswordModal({
                             aria-live="assertive"
                             className="flex items-center gap-2.5 rounded-card border border-status-danger/35 bg-status-danger/10 px-3 py-2.5 text-[13px] font-medium text-text-primary animate-fade-slide-in motion-reduce:animate-none"
                         >
-                            <i className="fas fa-exclamation-circle text-[13px] text-status-danger" aria-hidden="true" />
+                            <i
+                                className="fas fa-exclamation-circle text-[13px] text-status-danger"
+                                aria-hidden="true"
+                            />
                             <span>{passwordError}</span>
                         </div>
                     )}

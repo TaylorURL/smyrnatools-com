@@ -1,20 +1,26 @@
 import React from 'react'
 
 import { formatLogDate, getProgressInfo, STATUS_CONFIG } from '../../../utils/MaintenanceLogUtility'
+import Badge from '../common/Badge'
 
 const TABLE_HEADERS = ['Equipment', 'Plant', 'Last Service', 'Service Progress', 'Status', '']
 const COL_WIDTHS = ['', '80px', '120px', '25%', '110px', '50px']
 
+/** Maps a maintenance-log service-status string to the unified Badge tone. */
+const STATUS_TO_TONE = {
+    due_soon: 'warning',
+    never_serviced: 'neutral',
+    ok: 'success',
+    overdue: 'danger'
+}
+
+// eslint-disable-next-line unused-imports/no-unused-vars -- `isDark` retained for signature compatibility; Badge handles theming.
 function StatusBadge({ status, isDark }) {
     const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.ok
     return (
-        <span
-            className="inline-flex items-center gap-1 rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 text-text-primary"
-            style={{ background: isDark ? cfg.darkBg : cfg.bg }}
-        >
-            <i className={`fas ${cfg.icon} text-[9px]`} />
+        <Badge tone={STATUS_TO_TONE[status] || 'neutral'} size="xs" weight="bold" icon={cfg.icon.replace(/^fa-/, '')}>
             {cfg.badge}
-        </span>
+        </Badge>
     )
 }
 

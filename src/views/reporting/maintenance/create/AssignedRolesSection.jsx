@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import { SECTION_LABEL_CLASS } from '../../../../app/constants/maintenanceCreateConstants'
 import { Card, CardHeader, Chip, ErrorText } from './atoms'
 
@@ -34,9 +35,9 @@ export function AssignedRolesSection({
                             <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                                 Roles
                             </span>
-                            <span className="font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-bg-tertiary text-text-secondary">
+                            <Badge tone="neutral" size="xs" weight="bold" className="font-mono tabular-nums">
                                 {assignedRoles.length} selected
-                            </span>
+                            </Badge>
                         </div>
                         <i
                             className={`fas fa-chevron-${showRoleSelector ? 'up' : 'down'} text-[10px] text-text-tertiary`}

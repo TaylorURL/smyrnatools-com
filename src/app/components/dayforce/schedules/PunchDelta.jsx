@@ -1,5 +1,6 @@
 import React from 'react'
 
+import Badge from '../../common/Badge'
 import { minuteOf } from './scheduleFlags'
 import { parseLocal } from './scheduleFormatters'
 
@@ -8,13 +9,9 @@ import { parseLocal } from './scheduleFormatters'
  *  short-change the shift). Padding the shift (early-in / late-out) is
  *  intentionally suppressed because the dispatcher doesn't act on those.
  *
- *  The colour signal lives in the badge background — late clock-in
- *  paints with the project's `status-badge-danger` (red), early
- *  clock-out with `status-badge-warning` (amber). The text itself
- *  stays theme-primary (black in light, white in dark) so the digits
- *  read cleanly against any theme; the previous inline red / blue
- *  text washed out in dark mode and clashed with the rest of the
- *  status vocabulary in the app. */
+ *  Late clock-in renders with the danger tone (red); early clock-out
+ *  renders with the warning tone (amber). The unified Badge handles
+ *  theme-aware contrast across dark / light / gray. */
 export function PunchDelta({ actualIso, scheduledIso, kind }) {
     const a = parseLocal(actualIso)
     const s = parseLocal(scheduledIso)
@@ -28,15 +25,18 @@ export function PunchDelta({ actualIso, scheduledIso, kind }) {
     const isEarlyOut = kind === 'out' && diffMin < 0
     // Padded-shift cases — drop the pill entirely.
     if (!isLateIn && !isEarlyOut) return null
-    const badgeClass = isLateIn ? 'status-badge-danger' : 'status-badge-warning'
     const sign = diffMin > 0 ? '+' : ''
     const label = Math.abs(diffMin) >= 60 ? `${sign}${(diffMin / 60).toFixed(1)}h` : `${sign}${diffMin}m`
     return (
-        <span
-            className={`${badgeClass} inline-flex items-center rounded px-1 py-0 text-[9px] font-semibold tabular-nums text-text-primary cursor-help`}
+        <Badge
+            tone={isLateIn ? 'danger' : 'warning'}
+            size="xs"
+            weight="semibold"
+            uppercase={false}
             title={`Actual vs scheduled ${kind === 'in' ? 'clock in' : 'clock out'}: ${sign}${diffMin} min`}
+            className="tabular-nums cursor-help"
         >
             {label}
-        </span>
+        </Badge>
     )
 }

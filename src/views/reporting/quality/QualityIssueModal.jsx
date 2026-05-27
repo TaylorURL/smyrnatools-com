@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import ReactDOM from 'react-dom'
 
+import Badge from '../../../app/components/common/Badge'
 import {
     CARD_STYLE,
     FIELD_INPUT_CLASS,
@@ -266,16 +267,19 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                     </div>
 
                     {error && (
-                        <div
-                            className="flex items-center gap-1.5 rounded-md border border-status-danger/30 bg-status-danger/10 px-2.5 py-1.5 text-[11.5px] font-medium text-text-primary animate-fade-slide-in"
+                        <Badge
+                            tone="danger"
+                            variant="outline"
+                            size="lg"
+                            shape="rounded-md"
+                            weight="semibold"
+                            icon="triangle-exclamation"
+                            uppercase={false}
+                            className="animate-fade-slide-in"
                             role="alert"
                         >
-                            <i
-                                className="fas fa-exclamation-circle text-[11px] text-status-danger"
-                                aria-hidden="true"
-                            />
                             {error}
-                        </div>
+                        </Badge>
                     )}
                 </div>
 

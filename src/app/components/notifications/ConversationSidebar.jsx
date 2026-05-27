@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 
 import DateUtility from '../../../utils/DateUtility'
 import { ATTACHMENT_ICONS, FILTER_PILLS, SECTION_LABEL_CLASS } from '../../constants/notificationsConstants'
+import Badge from '../common/Badge'
 import UserAvatar from '../common/UserAvatar'
 
 function SidebarSection({ accentColor, badge, children, icon, label }) {
@@ -38,7 +39,12 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
     )
     const attachmentLabel =
         lastAttachment?.attachmentMeta?.itemNumber || (lastAttachment?.attachmentType === 'issue' ? 'Issue' : null)
-    const attachmentIcon = lastAttachment ? ATTACHMENT_ICONS[lastAttachment.attachmentType] || 'fas fa-paperclip' : null
+    const attachmentIconClass = lastAttachment
+        ? ATTACHMENT_ICONS[lastAttachment.attachmentType] || 'fas fa-paperclip'
+        : null
+    /** Strip the leading FA prefix so Badge's `icon` prop receives the suffix
+     *  only (e.g. `paperclip`, `mixer`). */
+    const attachmentIconName = attachmentIconClass ? attachmentIconClass.replace(/^fa[a-z]?\s+fa-/, '') : null
 
     return (
         <button
@@ -52,12 +58,17 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
         >
             <UserAvatar name={displayName} userId={conversation.otherId} size={36} rounded="md">
                 {hasUnread && (
-                    <span
-                        className="force-white-text absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-bold font-mono tabular-nums bg-red-600"
-                        style={{ border: '1.5px solid var(--bg-primary)' }}
+                    <Badge
+                        tone="accent"
+                        variant="solid"
+                        size="xs"
+                        shape="pill"
+                        weight="bold"
+                        uppercase={false}
+                        className="absolute -top-1 -right-1 tabular-nums"
                     >
-                        {conversation.unread}
-                    </span>
+                        {conversation.unread > 9 ? '9+' : conversation.unread}
+                    </Badge>
                 )}
             </UserAvatar>
             <div className="min-w-0 flex-1">
@@ -96,13 +107,16 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
                 </p>
                 {attachmentLabel && (
                     <div className="mt-1 flex items-center gap-1.5">
-                        <span
-                            className="inline-flex items-center gap-1 rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 text-text-primary"
-                            style={{ background: `${accentColor}1a` }}
+                        <Badge
+                            tone="neutral"
+                            size="xs"
+                            weight="semibold"
+                            uppercase={false}
+                            icon={attachmentIconName}
+                            className="font-mono tabular-nums"
                         >
-                            <i className={`${attachmentIcon} text-[8.5px]`} />
-                            <span className="font-mono tabular-nums">{attachmentLabel}</span>
-                        </span>
+                            {attachmentLabel}
+                        </Badge>
                     </div>
                 )}
             </div>

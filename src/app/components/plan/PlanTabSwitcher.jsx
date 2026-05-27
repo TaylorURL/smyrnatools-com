@@ -51,7 +51,9 @@ export function PlanTabSwitcher({ accentColor, canSeeSettings = false, isMobile 
                         aria-selected={isActive}
                         onClick={() => onChange(mode)}
                         className={`inline-flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-tertiary ${
-                            isActive ? 'text-white shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+                            isActive
+                                ? 'text-white shadow-sm'
+                                : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
                         }`}
                         style={isActive ? { backgroundColor: accentColor } : undefined}
                     >

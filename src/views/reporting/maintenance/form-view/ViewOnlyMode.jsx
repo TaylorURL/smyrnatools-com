@@ -27,6 +27,7 @@ export function ViewOnlyMode({ accentColor, formObj, item, onBack, submission })
                 plantCode={submission?.plant_code || item?.plant_code}
                 status={status.label}
                 statusColor={status.color}
+                statusTone={status.tone}
                 title={formObj?.title}
             />
             <div className="w-full px-3 sm:px-4 py-3 flex flex-col gap-2.5">

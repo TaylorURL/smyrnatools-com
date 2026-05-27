@@ -1,7 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { SERVICE_BADGE_BASE } from '../../../../../utils/PlanScheduleUtility'
 import {
     BIG_POUR_MIN_TRUCKS,
     getEffectiveMinTrucks,
@@ -12,6 +11,7 @@ import {
     plantBadgeColor,
     trucksToHitBigPourGoal
 } from '../../../../../utils/PlanUtility'
+import Badge from '../../../common/Badge'
 
 /** Format a minute-of-day count back into "HH:MM", wrapping past midnight. */
 const minuteOfDayToHhmm = (mins) => {
@@ -22,6 +22,14 @@ const minuteOfDayToHhmm = (mins) => {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
+/** Maps the four `ServiceBadge` outcomes to the unified Badge tone palette. */
+const SERVICE_STATUS_TO_TONE = {
+    bad: 'danger',
+    good: 'success',
+    ongoing: 'info',
+    pending: 'warning'
+}
+
 /** Inline service-quality badge for a single order row. Rendered alongside
  *  the existing `OrderStatusBadge` so dispatchers see "how this pour went"
  *  without opening the ticket modal. */
@@ -29,13 +37,15 @@ export function ServiceBadge({ service }) {
     if (!service?.status) return null
     if (service.status === 'good') {
         return (
-            <span
-                className={`${SERVICE_BADGE_BASE} bg-status-active/10 text-text-primary`}
+            <Badge
+                tone={SERVICE_STATUS_TO_TONE.good}
+                size="md"
+                shape="pill"
+                icon="circle-check"
                 title="On-time start, on-pace pour"
             >
-                <i className="fas fa-circle-check text-[9px] text-status-active" aria-hidden="true" />
                 Good Experience
-            </span>
+            </Badge>
         )
     }
     if (service.status === 'bad') {
@@ -49,13 +59,15 @@ export function ServiceBadge({ service }) {
         const label =
             service.isLate && service.isSlow ? 'Late, Bad Experience' : service.isLate ? 'Late' : 'Bad Experience'
         return (
-            <span
-                className={`${SERVICE_BADGE_BASE} bg-status-danger/10 text-text-primary`}
+            <Badge
+                tone={SERVICE_STATUS_TO_TONE.bad}
+                size="md"
+                shape="pill"
+                icon="circle-exclamation"
                 title={issues.join(' · ') || 'Service flagged'}
             >
-                <i className="fas fa-circle-exclamation text-[9px] text-status-danger" aria-hidden="true" />
                 {label}
-            </span>
+            </Badge>
         )
     }
     if (service.status === 'ongoing') {
@@ -64,20 +76,20 @@ export function ServiceBadge({ service }) {
                 ? `${service.ticketsLoaded}/${service.expectedTrucks}`
                 : `${service.ticketsLoaded ?? 0} loaded`
         const isLate = service.isLate
-        const toneClass = isLate ? 'bg-status-warning/10' : 'bg-status-shop/10'
-        const iconClass = isLate ? 'text-status-warning' : 'text-status-shop'
         return (
-            <span
-                className={`${SERVICE_BADGE_BASE} ${toneClass} text-text-primary`}
+            <Badge
+                tone={isLate ? 'warning' : SERVICE_STATUS_TO_TONE.ongoing}
+                size="md"
+                shape="pill"
+                icon="truck-fast"
                 title={
                     isLate
                         ? `Pour in progress · started ${service.startLateness} min late · ${counts} loaded`
                         : `Pour in progress · ${counts} loaded`
                 }
             >
-                <i className={`fas fa-truck-fast text-[9px] ${iconClass}`} aria-hidden="true" />
                 Ongoing · {counts}
-            </span>
+            </Badge>
         )
     }
     if (service.status === 'pending') {
@@ -92,26 +104,40 @@ export function ServiceBadge({ service }) {
             const remainderMin = minutesLate % 60
             const lateText = hoursLate > 0 ? `${hoursLate}h ${remainderMin}m` : `${remainderMin}m`
             return (
-                <span
-                    className={`${SERVICE_BADGE_BASE} bg-status-danger/10 text-text-primary`}
+                <Badge
+                    tone="danger"
+                    size="md"
+                    shape="pill"
+                    icon="circle-exclamation"
                     title={`Scheduled start was ${lateText} ago — no trucks loaded yet.`}
                 >
-                    <i className="fas fa-circle-exclamation text-[9px] text-status-danger" aria-hidden="true" />
                     Late · {lateText}
-                </span>
+                </Badge>
             )
         }
         return (
-            <span
-                className={`${SERVICE_BADGE_BASE} bg-status-warning/10 text-text-primary`}
+            <Badge
+                tone={SERVICE_STATUS_TO_TONE.pending}
+                size="md"
+                shape="pill"
+                icon="hourglass-half"
                 title="Past scheduled start with no tickets loaded yet"
             >
-                <i className="fas fa-hourglass-half text-[9px] text-status-warning" aria-hidden="true" />
                 Awaiting Truck
-            </span>
+            </Badge>
         )
     }
     return null
+}
+
+/** Tier → Badge config for the Customer Satisfaction pill. `great` uses the
+ *  solid variant to stand out as the celebratory state; everything else uses
+ *  soft tints so the chip never overwhelms the surrounding row. */
+const SATISFACTION_TIER_CONFIG = {
+    good: { label: 'Good', tone: 'success', variant: 'soft' },
+    great: { label: 'Excellent', tone: 'success', variant: 'solid' },
+    ok: { label: 'Watch', tone: 'warning', variant: 'soft' },
+    poor: { label: 'Action needed', tone: 'danger', variant: 'soft' }
 }
 
 /** Color-coded "Customer Satisfaction" pill — green ≥ 90%, amber ≥ 75%,
@@ -120,21 +146,19 @@ export function SatisfactionBadge({ score }) {
     if (!Number.isFinite(score)) return null
     const pct = Math.round(score * 100)
     const tier = pct >= 90 ? 'great' : pct >= 75 ? 'good' : pct >= 60 ? 'ok' : 'poor'
-    const tones = {
-        good: { bg: 'bg-status-active/10', dot: 'text-status-active', label: 'Good' },
-        great: { bg: 'bg-status-active/15', dot: 'text-status-active', label: 'Excellent' },
-        ok: { bg: 'bg-status-warning/10', dot: 'text-status-warning', label: 'Watch' },
-        poor: { bg: 'bg-status-danger/10', dot: 'text-status-danger', label: 'Action needed' }
-    }
-    const { bg, dot, label } = tones[tier]
+    const { label, tone, variant } = SATISFACTION_TIER_CONFIG[tier]
     return (
-        <span
-            className={`inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-0.5 ${bg} text-text-primary`}
+        <Badge
+            tone={tone}
+            variant={variant}
+            size="md"
+            shape="pill"
+            uppercase={false}
+            icon="face-smile"
             title={`${label} · weighted blend of pour pace, on-time start, and yardage completion across the day's tickets`}
         >
-            <i className={`fas fa-face-smile text-[9px] ${dot}`} aria-hidden="true" />
             {label}
-        </span>
+        </Badge>
     )
 }
 
@@ -144,23 +168,34 @@ export function YardageDeltaBadge({ comparisonLabel, comparisonYardage, pct }) {
     if (!Number.isFinite(pct)) return null
     const isFlat = pct === 0
     const isUp = pct > 0
-    const tone = isFlat
-        ? { bg: 'bg-bg-tertiary', dot: 'text-text-tertiary', icon: 'fa-minus' }
-        : isUp
-          ? { bg: 'bg-status-active/10', dot: 'text-status-active', icon: 'fa-arrow-up' }
-          : { bg: 'bg-status-danger/10', dot: 'text-status-danger', icon: 'fa-arrow-down' }
+    const tone = isFlat ? 'neutral' : isUp ? 'success' : 'danger'
+    const icon = isFlat ? 'minus' : isUp ? 'arrow-up' : 'arrow-down'
     const sign = isUp ? '+' : ''
     const label = comparisonLabel || 'previous business day'
     return (
-        <span
-            className={`inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-0.5 tabular-nums ${tone.bg} text-text-primary`}
+        <Badge
+            tone={tone}
+            size="md"
+            shape="rounded"
+            uppercase={false}
+            icon={icon}
+            className="tabular-nums"
             title={`Day-over-day change · ${label} ${comparisonYardage.toLocaleString()} yd`}
         >
-            <i className={`fas ${tone.icon} text-[9px] ${tone.dot}`} aria-hidden="true" />
             {sign}
             {pct.toFixed(1)}%
-        </span>
+        </Badge>
     )
+}
+
+/** Per-state palette + icon for the Big Pour / understaffed warning chip.
+ *  Colors stay literal because this badge intentionally overlays the
+ *  themed status palette with attention-grabbing reds, indigos, and
+ *  ambers regardless of theme. */
+const BIG_POUR_STATE_STYLES = {
+    bigPour: { bg: '#4f46e5', icon: 'fire' },
+    softWarn: { bg: '#d97706', icon: 'users' },
+    understaffed: { bg: '#dc2626', icon: 'triangle-exclamation' }
 }
 
 /** Big-pour / understaffed warning chip. Renders only when the order is a
@@ -199,22 +234,26 @@ export function BigPourBadge({ order, travelOverrides }) {
     }
     if (pourHours) tooltipLines.push(`Est. pour time: ~${pourHours}h`)
     if (understaffed) tooltipLines.push(`Short by ${shortfall} truck${shortfall === 1 ? '' : 's'}`)
+    const stateKey = understaffed ? 'understaffed' : isBigPour ? 'bigPour' : 'softWarn'
+    const { bg, icon } = BIG_POUR_STATE_STYLES[stateKey]
+    const label = understaffed
+        ? `${isBigPour ? 'Big pour · ' : ''}+${shortfall} trucks`
+        : isBigPour
+          ? `Big Pour · ${rate} yd/hr`
+          : `Needs ${needed} trucks`
     return (
-        <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap text-white shadow-sm"
-            style={{ background: understaffed ? '#dc2626' : isBigPour ? '#4f46e5' : '#d97706' }}
+        <Badge
+            variant="custom"
+            size="md"
+            shape="pill"
+            bg={bg}
+            fg="#ffffff"
+            icon={<i className={`fas fa-${icon} text-[10px] text-white`} aria-hidden="true" />}
+            className="shadow-sm"
             title={tooltipLines.join('\n')}
         >
-            <i
-                className={`fas ${understaffed ? 'fa-triangle-exclamation' : isBigPour ? 'fa-fire' : 'fa-users'} text-[9px]`}
-                aria-hidden="true"
-            />
-            {understaffed
-                ? `${isBigPour ? 'Big pour · ' : ''}+${shortfall} trucks`
-                : isBigPour
-                  ? `Big Pour · ${rate} yd/hr`
-                  : `Needs ${needed} trucks`}
-        </span>
+            {label}
+        </Badge>
     )
 }
 
@@ -234,13 +273,9 @@ export function HoursLimitBadge({ limit }) {
         `Load ${segments.load}m + slump ${segments.slump}m + travel ${segments.travelOut}m + pour ${segments.pour}m + return ${segments.travelBack}m`
     ]
     return (
-        <span
-            className="status-badge-danger inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
-            title={tooltipLines.join('\n')}
-        >
-            <i className="fas fa-clock text-[9px]" aria-hidden="true" />
+        <Badge tone="danger" size="sm" shape="pill" icon="clock" title={tooltipLines.join('\n')}>
             Limit · {elapsedHours.toFixed(1)}h
-        </span>
+        </Badge>
     )
 }
 
@@ -259,50 +294,58 @@ export function HoursLimitBadge({ limit }) {
 export function LikelyKickerBadge({ rate }) {
     const pct = Math.round((rate || 0) * 100)
     return (
-        <span
-            className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0 bg-status-danger/10 text-status-danger"
+        <Badge
+            tone="danger"
+            size="xs"
+            shape="pill"
+            icon="bolt"
+            className="h-5 w-5 justify-center shrink-0"
             title={`Likely to Kick — kicker rate ${pct}% over the last 60 working days. This customer regularly calls in extra yardage mid-pour.`}
             aria-label="Likely to call in a kicker"
-        >
-            <i className="fas fa-bolt text-[10px]" aria-hidden="true" />
-        </span>
+        />
     )
 }
 
 export function LikelyChurnBadge({ rate }) {
     const pct = Math.round((rate || 0) * 100)
     return (
-        <span
-            className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0 bg-status-warning/15 text-status-warning"
+        <Badge
+            tone="warning"
+            size="xs"
+            shape="pill"
+            icon="shuffle"
+            className="h-5 w-5 justify-center shrink-0"
             title={`Likely to Cancel/Move — combined cancel + move rate ${pct}% over the last 60 working days. This order may shift after the 5:30 PM commit.`}
             aria-label="Likely to cancel or move"
-        >
-            <i className="fas fa-shuffle text-[10px]" aria-hidden="true" />
-        </span>
+        />
     )
 }
 
-/** Maps the start-time sentinel `kind` to one of the project's themed badge
- *  utility classes so the pill flips correctly between light and dark mode. */
-const STATUS_BADGE_TONE_CLASS = {
-    cancelled: 'status-badge-danger',
-    sameDay: 'status-badge-warning',
-    test: 'status-badge-info'
+/** Maps the start-time sentinel `kind` to the unified Badge tone palette. */
+const ORDER_STATUS_TO_TONE = {
+    cancelled: 'danger',
+    sameDay: 'warning',
+    test: 'info'
 }
 
 /** Themed pill for cancelled / same-day / test orders, driven by the
  *  start-time sentinel descriptor returned by `getOrderStatus`. */
 export function OrderStatusBadge({ status }) {
     if (!status) return null
-    const toneClass = STATUS_BADGE_TONE_CLASS[status.kind] || 'status-badge-neutral'
+    const tone = ORDER_STATUS_TO_TONE[status.kind] || 'neutral'
+    // Status icons arrive as full Font Awesome classes (e.g. `fa-ban`);
+    // strip the `fa-` prefix so Badge can re-apply the themed size + color.
+    const iconName = typeof status.icon === 'string' ? status.icon.replace(/^fa-/, '') : status.icon
     return (
-        <span
-            className={`${toneClass} inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap`}
+        <Badge
+            tone={tone}
+            size="sm"
+            shape="pill"
+            icon={iconName}
             title={`Start time sentinel — order is ${status.label.toLowerCase()}`}
         >
-            <i className={`fas ${status.icon} text-[8px]`} aria-hidden="true" />
             {status.label}
-        </span>
+        </Badge>
     )
 }
 
@@ -315,9 +358,15 @@ export function OrderStatusBadge({ status }) {
 export function PlantBadge({ code, fallback, name }) {
     const bg = plantBadgeColor(code, fallback)
     return (
-        <span
-            className="force-white-text inline-flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-0.5 font-semibold whitespace-nowrap shadow-sm"
-            style={{ background: bg }}
+        <Badge
+            variant="custom"
+            size="md"
+            shape="pill"
+            weight="semibold"
+            uppercase={false}
+            bg={bg}
+            fg="#ffffff"
+            className="force-white-text gap-1.5 pl-1 pr-2.5 shadow-sm"
         >
             <span
                 className="force-white-text inline-flex items-center justify-center rounded-full font-bold bg-white/20 font-heading h-[18px] tabular-nums"
@@ -326,16 +375,25 @@ export function PlantBadge({ code, fallback, name }) {
                 {code}
             </span>
             {name && <span className="text-[11.5px]">{name}</span>}
-        </span>
+        </Badge>
     )
 }
 
-/** Compact "label + value" chip used inside the OrderCard footer. */
+/** Compact "label + value" chip used inside the OrderCard footer. Uses the
+ *  unified Badge as a neutral, theme-aware surface while keeping the dual
+ *  inner spans so the label / value typography stays distinct. */
 export function KeyValue({ label, value }) {
     return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-bg-secondary border border-border-light">
+        <Badge
+            variant="custom"
+            size="md"
+            shape="rounded-md"
+            weight="semibold"
+            uppercase={false}
+            className="bg-bg-secondary border border-border-light"
+        >
             <span className="text-[9.5px] uppercase tracking-wider text-text-tertiary">{label}</span>
-            <span className="font-mono font-semibold text-text-primary tabular-nums">{value}</span>
-        </span>
+            <span className="ml-1 font-mono font-semibold text-text-primary tabular-nums">{value}</span>
+        </Badge>
     )
 }

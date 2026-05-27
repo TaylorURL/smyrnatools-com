@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 
 import DateUtility from '../../../utils/DateUtility'
 import { ATTACHMENT_ICONS, resolveAttachmentView, SECTION_LABEL_CLASS } from '../../constants/notificationsConstants'
+import Badge from '../common/Badge'
 import UserAvatar from '../common/UserAvatar'
 
 /** Section wrapper inside the context rail — title + count + content. */
@@ -14,9 +15,15 @@ function ContextSection({ children, count, icon, label }) {
                     {label}
                 </span>
                 {count != null && (
-                    <span className="ml-auto font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold bg-bg-tertiary text-text-tertiary">
+                    <Badge
+                        tone="neutral"
+                        size="xs"
+                        weight="semibold"
+                        uppercase={false}
+                        className="ml-auto font-mono tabular-nums"
+                    >
                         {count}
-                    </span>
+                    </Badge>
                 )}
             </div>
             {children}

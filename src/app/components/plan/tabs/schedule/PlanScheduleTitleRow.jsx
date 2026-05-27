@@ -2,6 +2,7 @@
 import React from 'react'
 
 import { VIEW_MODES } from '../../../../../utils/PlanScheduleUtility'
+import Badge from '../../../common/Badge'
 
 /**
  * Title strip above the schedule — title, summary text, and the row of
@@ -70,12 +71,16 @@ export default function PlanScheduleTitleRow({
                         <i className={`fas fa-filter text-[10px]`} />
                         Filters
                         {activeFilterCount > 0 && (
-                            <span
-                                className="inline-flex items-center justify-center rounded-full text-[10px] font-bold bg-[rgba(255,255,255,0.3)] text-white h-[18px]"
-                                style={{ minWidth: 18, padding: '0 5px' }}
+                            <Badge
+                                bg="rgba(255,255,255,0.3)"
+                                className="min-w-[18px] justify-center"
+                                fg="inherit"
+                                shape="pill"
+                                size="xs"
+                                variant="custom"
                             >
                                 {activeFilterCount}
-                            </span>
+                            </Badge>
                         )}
                     </button>
                 )}

@@ -303,9 +303,7 @@ export default function DashboardPodcastPanel() {
             </div>
 
             {!loading && !error && episodes.length > 1 && (
-                <div className="text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary px-1">
-                    Episodes
-                </div>
+                <div className="text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary px-1">Episodes</div>
             )}
 
             <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 pr-0.5">

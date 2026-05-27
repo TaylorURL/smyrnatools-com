@@ -1,5 +1,6 @@
 import React from 'react'
 
+import Badge from '../../../common/Badge'
 import DeadlineFuse from '../../DeadlineFuse'
 
 /** A single stat cell — mirrors OperationsView's RegionTotalCell layout (icon box +
@@ -99,10 +100,17 @@ export default function MyReportsSummaryBar({
             )}
 
             {allDone && !isPast && (
-                <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-[#16a34a14] text-text-primary">
-                    <i className="fas fa-check-circle text-[12px]" />
+                <Badge
+                    tone="success"
+                    size="lg"
+                    shape="rounded-md"
+                    weight="semibold"
+                    icon="circle-check"
+                    uppercase={false}
+                    className="shrink-0"
+                >
                     All caught up
-                </div>
+                </Badge>
             )}
 
             {/* Deadline indicator — pulled in from the old standalone

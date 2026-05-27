@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import TopSection from '../../../app/components/sections/TopSection'
 import PlantFilterButton from '../../../app/components/ui/PlantFilterButton'
 import { isDarkLikeTheme } from '../../../app/constants/themeConstants'
@@ -47,37 +48,38 @@ const RefreshButton = ({ isRefreshing, onClick }) => (
 // Trigger button extracted to `app/components/ui/PlantFilterButton` so the
 // same chip is used wherever a plant picker is exposed.
 
+const PILL_FOCUS_RING =
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary'
+
 /** Compact pill toggle — sliding-segment look matching Plan tab's view-mode toggle. */
-const PillToggle = ({ options, value, onChange, ariaLabel }) => {
-    const { preferences } = usePreferences()
-    const accentColor = preferences.accentColor || '#1e3a5f'
-    return (
-        <div
-            role="group"
-            aria-label={ariaLabel}
-            className="inline-flex items-center rounded p-0.5 gap-0.5 bg-bg-tertiary border border-border-light"
-        >
-            {options.map((opt) => {
-                const active = value === opt.value
-                return (
-                    <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => onChange(opt.value)}
-                        aria-pressed={active}
-                        className="rounded text-[11.5px] font-semibold cursor-pointer border-none px-2 py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
-                        style={{
-                            background: active ? accentColor : 'transparent',
-                            color: active ? '#fff' : 'var(--text-secondary)'
-                        }}
-                    >
-                        {opt.label}
-                    </button>
-                )
-            })}
-        </div>
-    )
-}
+const PillToggle = ({ options, value, onChange, ariaLabel }) => (
+    <div
+        role="group"
+        aria-label={ariaLabel}
+        className="inline-flex items-center rounded p-0.5 gap-0.5 bg-bg-tertiary border border-border-light"
+    >
+        {options.map((opt) => {
+            const isActive = value === opt.value
+            return (
+                <Badge
+                    key={opt.value}
+                    as="button"
+                    tone="accent"
+                    variant={isActive ? 'solid' : 'soft'}
+                    size="md"
+                    shape="rounded"
+                    weight="semibold"
+                    uppercase={false}
+                    onClick={() => onChange(opt.value)}
+                    aria-pressed={isActive}
+                    className={isActive ? PILL_FOCUS_RING : `bg-transparent text-text-secondary ${PILL_FOCUS_RING}`}
+                >
+                    {opt.label}
+                </Badge>
+            )
+        })}
+    </div>
+)
 
 /** Compact date-range picker matching FlatSelect chrome. The wrapper carries
  *  the focus ring via `focus-within` so the two date inputs feel like one
@@ -190,15 +192,18 @@ export function ReportsActionBar({
         <div className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2 bg-bg-primary border-border-light">
             {onRefresh && <RefreshButton isRefreshing={isRefreshing} onClick={onRefresh} />}
             {scopeLabel && (
-                <span
-                    className="inline-flex items-center gap-1.5 rounded text-[11px] font-semibold px-2 py-1 text-text-primary"
-                    style={{
-                        background: `${accentColor}${isDark ? '30' : '15'}`
-                    }}
+                <Badge
+                    tone="accent"
+                    variant="custom"
+                    size="md"
+                    weight="semibold"
+                    uppercase={false}
+                    icon="bullseye"
+                    bg={`${accentColor}${isDark ? '30' : '15'}`}
+                    className="text-text-primary"
                 >
-                    <i className="fas fa-bullseye text-[9px]" />
                     {scopeLabel}
-                </span>
+                </Badge>
             )}
             {leftChildren}
             <div className="flex items-center gap-1.5 ml-auto flex-wrap">
@@ -239,12 +244,20 @@ export function ReportsActionBar({
                                     {icon && <i className={`fas ${icon} text-[11px]`} />}
                                     <span>{label}</span>
                                     {badge != null && badge !== 0 && (
-                                        <span
-                                            className="font-mono tabular-nums rounded px-1 text-[9.5px] font-bold uppercase tracking-wider text-white"
-                                            style={{ background: isActive ? 'rgba(255,255,255,0.25)' : '#dc2626' }}
+                                        <Badge
+                                            tone={isActive ? 'neutral' : 'danger'}
+                                            variant={isActive ? 'custom' : 'solid'}
+                                            size="xs"
+                                            shape="rounded"
+                                            weight="bold"
+                                            className={
+                                                isActive
+                                                    ? 'bg-white/25 text-white font-mono tabular-nums'
+                                                    : 'font-mono tabular-nums'
+                                            }
                                         >
                                             {badge}
-                                        </span>
+                                        </Badge>
                                     )}
                                 </button>
                             )
@@ -455,9 +468,17 @@ export function MobileFilterShell({ activeCount = 0, children, defaultOpen = fal
                     <i className="fas fa-sliders text-[10px]" />
                     {label}
                     {activeCount > 0 && (
-                        <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold bg-[var(--text-primary)] text-[var(--bg-primary)]">
+                        <Badge
+                            tone="neutral"
+                            variant="custom"
+                            size="xs"
+                            shape="pill"
+                            weight="bold"
+                            uppercase={false}
+                            className="justify-center min-w-[18px] h-[18px] bg-[var(--text-primary)] text-[var(--bg-primary)]"
+                        >
                             {activeCount}
-                        </span>
+                        </Badge>
                     )}
                     <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px] text-text-tertiary`} />
                 </button>

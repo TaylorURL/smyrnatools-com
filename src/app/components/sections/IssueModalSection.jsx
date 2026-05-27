@@ -3,8 +3,9 @@ import React, { useCallback, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import { UserService } from '../../../services/UserService'
-import { PILL_BASE, SEVERITY_PALETTE } from '../../constants/issueModalConstants'
+import { SEVERITY_PALETTE, SEVERITY_TO_TONE } from '../../constants/issueModalConstants'
 import { usePreferences } from '../../context/PreferencesContext'
+import Badge from '../common/Badge'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import { SkeletonStack } from '../common/Skeleton'
@@ -244,20 +245,21 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                     {['Low', 'Medium', 'High'].map((sev) => {
                                         const config = SEVERITY_PALETTE[sev]
                                         const isActive = severity === sev
+                                        const iconKey = config.icon.replace(/^fa-/, '')
                                         return (
-                                            <button
+                                            <Badge
                                                 key={sev}
-                                                type="button"
+                                                as="button"
+                                                tone={SEVERITY_TO_TONE[sev]}
+                                                variant={isActive ? 'soft' : 'outline'}
+                                                size="md"
+                                                weight="semibold"
+                                                active={isActive}
+                                                icon={iconKey}
                                                 onClick={() => setSeverity(sev)}
-                                                className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider ${
-                                                    isActive
-                                                        ? `${config.badgeClass} text-text-primary`
-                                                        : 'bg-bg-tertiary text-text-secondary'
-                                                }`}
                                             >
-                                                <i className={`fas ${config.icon} text-[9px]`} />
                                                 {sev}
-                                            </button>
+                                            </Badge>
                                         )
                                     })}
                                 </div>
@@ -317,10 +319,14 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                             <span className="text-[12px] font-semibold text-text-primary">
                                                 {creatorName}
                                             </span>
-                                            <span className={`${PILL_BASE} ${sevConfig.badgeClass} text-text-primary`}>
-                                                <i className={`fas ${sevConfig.icon} text-[8px]`} />
+                                            <Badge
+                                                tone={SEVERITY_TO_TONE[issue.severity] || 'warning'}
+                                                size="md"
+                                                weight="semibold"
+                                                icon={sevConfig.icon.replace(/^fa-/, '')}
+                                            >
                                                 {issue.severity}
-                                            </span>
+                                            </Badge>
                                             <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
                                                 {formatDate(issue.time_created)}
                                             </span>

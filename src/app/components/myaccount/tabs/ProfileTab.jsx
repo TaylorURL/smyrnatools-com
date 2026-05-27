@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { FIELD_LABEL_CLASS, FieldStyle } from '../../../constants/myAccountConstants'
+import Badge from '../../common/Badge'
 import UserAvatar from '../../common/UserAvatar'
 import { Card, CardHeader, DetailRow, PrimaryButton } from '../MyAccountAtoms'
 
@@ -43,12 +44,17 @@ export default function ProfileTab({
                             </div>
                             <div className="text-[12px] truncate mt-0.5 text-text-tertiary">{email || 'No email'}</div>
                             {userRole && (
-                                <span
-                                    className="mt-2 inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
-                                    style={{ background: `${accentColor}14`, color: accentColor }}
+                                <Badge
+                                    variant="custom"
+                                    size="md"
+                                    shape="rounded-md"
+                                    weight="semibold"
+                                    bg={`${accentColor}14`}
+                                    fg={accentColor}
+                                    className="mt-2"
                                 >
                                     {userRole}
-                                </span>
+                                </Badge>
                             )}
                         </div>
                     </div>

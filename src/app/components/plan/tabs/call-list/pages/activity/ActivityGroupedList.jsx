@@ -3,6 +3,7 @@ import React from 'react'
 
 import { CALL_OUTCOME_COLORS, CALL_OUTCOME_LABELS } from '../../../../../../../utils/CallListUtility'
 import DateUtility from '../../../../../../../utils/DateUtility'
+import Badge from '../../../../../common/Badge'
 import UserAvatar from '../../../../../common/UserAvatar'
 import { formatRelativeShort, GROUP_LABELS, ICON_BY_OUTCOME, initialsOf } from './activityShared'
 
@@ -80,20 +81,25 @@ function ActivityRow({ entry, onSelectCustomer }) {
                     </div>
                 )}
                 {entry.created_by_name && (
-                    <span
-                        className="inline-flex items-center gap-1 mt-1.5 rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                    <Badge
+                        tone="neutral"
+                        size="md"
+                        weight="semibold"
+                        uppercase={false}
+                        className="mt-1.5"
                         title={`Logged by ${entry.created_by_name}`}
+                        icon={
+                            <UserAvatar
+                                userId={entry.created_by}
+                                initials={initialsOf(entry.created_by_name)}
+                                size={14}
+                                rounded="full"
+                                className="text-[8px]"
+                            />
+                        }
                     >
-                        <UserAvatar
-                            userId={entry.created_by}
-                            initials={initialsOf(entry.created_by_name)}
-                            size={14}
-                            rounded="full"
-                            className="text-[8px]"
-                        />
                         {entry.created_by_name}
-                    </span>
+                    </Badge>
                 )}
             </div>
             <span

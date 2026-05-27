@@ -2,6 +2,7 @@ import React from 'react'
 
 import { clean, SLOT_ROW_ACCENT, SLOT_ROW_TINT } from '../../../../../utils/PlanScheduleUtility'
 import { formatMinutesClock } from '../../../../../utils/PlanUtility'
+import Badge from '../../../common/Badge'
 import PourSizeBadge from '../../../common/PourSizeBadge'
 import { PlantBadge } from './PlanScheduleBadges'
 import PlanScheduleSyntheticRow from './PlanScheduleSyntheticRow'
@@ -184,13 +185,17 @@ export function TradeoffRow({ accentColor, animationDelayMs, bodyColSpan, plantN
                         Book:
                     </span>
                     {row.slots.map((slot) => (
-                        <span
+                        <Badge
                             key={slot.key}
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-semibold text-[10.5px] bg-[rgba(14,_165,_233,_0.12)] text-text-primary"
+                            shape="rounded"
+                            size="md"
                             title={`${slot.minTrucks}+ trucks idle for ~${Math.round((slot.durationMin / 60) * 10) / 10}h starting ${formatMinutesClock(slot.time)}`}
+                            tone="info"
+                            uppercase={false}
+                            weight="semibold"
                         >
                             {slot.label}
-                        </span>
+                        </Badge>
                     ))}
                     <span className="text-text-tertiary">or</span>
                     <span className="inline-flex items-center gap-1 font-semibold text-slate-500">

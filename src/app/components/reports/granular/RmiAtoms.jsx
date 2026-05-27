@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom'
 
 import { CATEGORY_ICONS, POSITIONS } from '../../../constants/rmiReportConstants'
 import { CARD_STYLE, SECTION_LABEL_CLASS, TH_BASE } from '../../../constants/weeklyReportConstants'
+import Badge from '../../common/Badge'
 
 /** Title + label + optional sub for each section. Right slot is used for
  *  action chips when the section header needs trailing buttons. */
@@ -29,19 +30,26 @@ export function CardHeader({ icon, label, right, sub, title }) {
 }
 
 /** Small text+icon pill used for Pull / Add / Clear actions in section
- *  headers. */
+ *  headers. `icon` is a Font Awesome suffix (e.g. "fa-plus") and is wrapped
+ *  here so Badge renders it verbatim rather than treating it as a `fas fa-`
+ *  suffix. */
 export function ActionChip({ children, disabled, icon, onClick, title }) {
+    const iconNode = icon ? <i className={`fas ${icon} text-[10px]`} aria-hidden="true" /> : null
     return (
-        <button
-            type="button"
+        <Badge
+            as="button"
+            variant="custom"
+            size="md"
+            weight="semibold"
+            uppercase={false}
+            icon={iconNode}
             onClick={onClick}
-            disabled={disabled}
             title={title}
-            className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed bg-bg-secondary border border-border-light text-text-primary"
+            disabled={disabled}
+            className="bg-bg-secondary border border-border-light text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
         >
-            {icon && <i className={`fas ${icon} text-[10px]`} />}
             {children}
-        </button>
+        </Badge>
     )
 }
 
@@ -65,12 +73,15 @@ export function CategoryCard({ actions, children, count, label, position }) {
                 <div className="flex items-center gap-2">
                     <i className={`fas ${icon} text-[11px] text-text-secondary`} />
                     <span className="text-[12px] font-semibold text-text-primary">{label}</span>
-                    <span
-                        className="inline-flex items-center justify-center rounded text-[10.5px] font-bold tabular-nums bg-bg-secondary border border-border-light text-text-secondary h-[18px]"
-                        style={{ minWidth: 22, padding: '0 5px' }}
+                    <Badge
+                        variant="custom"
+                        size="md"
+                        weight="bold"
+                        uppercase={false}
+                        className="bg-bg-secondary border border-border-light text-text-secondary min-w-[22px] h-[18px] justify-center tabular-nums"
                     >
                         {count}
-                    </span>
+                    </Badge>
                 </div>
                 {actions && <div className="flex gap-1 flex-wrap">{actions}</div>}
             </div>

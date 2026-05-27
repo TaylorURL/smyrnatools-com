@@ -2,6 +2,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { fmtInt, fmtYards } from '../../../../../../../utils/PlanStatisticsFormatUtility'
+import Badge from '../../../../../common/Badge'
 
 /** Build a plain-text report of every unmatched driver name in the
  *  window. Tab-separated so it pastes into Sheets / Excel cleanly and
@@ -83,13 +84,10 @@ export function UnmatchedDriversRow({
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <i className="fas fa-triangle-exclamation text-[13px] text-text-primary" aria-hidden="true" />
                         <span className="font-semibold text-text-primary">Unmatched operators</span>
-                        <span
-                            className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold italic text-text-primary"
-                            style={{ background: 'rgba(202, 138, 4, 0.16)' }}
-                        >
+                        <Badge tone="warning" size="md" weight="semibold" uppercase={false} className="italic">
                             {fmtInt(unmatchedNames.length)} unique · {fmtInt(row.loads)} load
                             {row.loads === 1 ? '' : 's'} · {fmtYards(row.yardage)} yd³
-                        </span>
+                        </Badge>
                     </div>
                     <div className="text-[11px] mt-1 text-text-secondary leading-snug max-w-2xl">
                         {operatorRosterReady && operatorRosterCount === 0 ? (

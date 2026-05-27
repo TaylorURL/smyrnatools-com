@@ -219,10 +219,7 @@ export function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubm
                             className="mt-2 flex items-center gap-1.5 rounded-md border border-status-active/30 bg-status-active/10 px-2.5 py-1.5 text-[11.5px] font-medium text-text-primary animate-fade-slide-in"
                             role="status"
                         >
-                            <i
-                                className="fas fa-check-circle text-[11px] text-status-active"
-                                aria-hidden="true"
-                            />
+                            <i className="fas fa-check-circle text-[11px] text-status-active" aria-hidden="true" />
                             Submitted for review.
                         </div>
                     )}

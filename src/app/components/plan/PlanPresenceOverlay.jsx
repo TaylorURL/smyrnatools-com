@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 
 import { useUserAccents } from '../../hooks/useUserAccent'
+import Badge from '../common/Badge'
 import UserAvatar from '../common/UserAvatar'
 
 /**
@@ -78,15 +79,20 @@ export function PlanPresenceOverlay({ users }) {
                 </div>
             ))}
             {hidden > 0 && (
-                <button
-                    type="button"
+                <Badge
+                    as="button"
+                    tone="neutral"
+                    size="md"
+                    shape="pill"
+                    weight="semibold"
+                    uppercase={false}
                     onClick={() => setExpanded(true)}
                     title={`Show ${hidden} more`}
                     aria-label={`Show ${hidden} more dispatchers`}
-                    className="flex h-7 min-w-[28px] items-center justify-center rounded-full bg-bg-tertiary px-1.5 text-[11px] font-semibold text-text-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                    className="justify-center h-7 min-w-[28px] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                 >
                     +{hidden}
-                </button>
+                </Badge>
             )}
         </div>
     )

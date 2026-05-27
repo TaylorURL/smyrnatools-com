@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react'
 
 import { formatMessageTime, getDateLabel, resolveAttachmentView } from '../../constants/notificationsConstants'
+import Badge from '../common/Badge'
 import UserAvatar from '../common/UserAvatar'
 import AttachmentPreview from './AttachmentPreview'
 
@@ -40,9 +41,15 @@ export default function ChatMessages({ accentColor, conversation, onAttachmentCl
             {dateGroups.map((group) => (
                 <React.Fragment key={group.label}>
                     <div className="flex justify-center my-3 first:mt-0">
-                        <span className="px-2 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider font-mono tabular-nums bg-bg-primary border border-border-light text-text-secondary">
+                        <Badge
+                            tone="neutral"
+                            variant="custom"
+                            size="xs"
+                            weight="semibold"
+                            className="bg-bg-primary border border-border-light font-mono tabular-nums"
+                        >
                             {group.label}
-                        </span>
+                        </Badge>
                     </div>
 
                     {group.messages.map((msg, idx) => {

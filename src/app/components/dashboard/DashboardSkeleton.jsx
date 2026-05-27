@@ -83,7 +83,11 @@ function ListChrome({ rows = 3, delay = 0 }) {
 export default function DashboardSkeleton({ isMobile }) {
     const kpiColumns = isMobile ? 3 : 6
     return (
-        <div className="flex flex-col gap-3 sm:gap-5 animate-fade-in-fast" aria-busy="true" aria-label="Loading dashboard">
+        <div
+            className="flex flex-col gap-3 sm:gap-5 animate-fade-in-fast"
+            aria-busy="true"
+            aria-label="Loading dashboard"
+        >
             <PanelChrome delay={0} titleWidth={70}>
                 <ListChrome delay={40} rows={3} />
             </PanelChrome>

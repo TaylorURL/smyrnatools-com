@@ -2,6 +2,7 @@
 import React, { useMemo } from 'react'
 
 import { PLAN_META_KEY, plantBadgeColor } from '../../../../../utils/PlanUtility'
+import Badge from '../../../common/Badge'
 
 const MAX_FEED_EVENTS = 30
 
@@ -133,29 +134,34 @@ function PlantChip({ code, fallback = '#64748b', name }) {
             style={{ background: bg }}
             title={name ? `${code} · ${name}` : code}
         >
-            <span
-                className="inline-flex items-center justify-center rounded-full font-bold bg-[rgba(255,255,255,0.22)] h-[16px] px-1"
-                style={{ fontSize: 9.5, minWidth: 28 }}
+            <Badge
+                variant="custom"
+                size="xs"
+                shape="pill"
+                uppercase={false}
+                bg="rgba(255,255,255,0.22)"
+                fg="inherit"
+                className="justify-center h-[16px] min-w-[28px]"
             >
                 {code}
-            </span>
+            </Badge>
             {name && <span className="text-[10.5px] truncate">{name}</span>}
         </span>
     )
 }
 
 /** Status pill — same template as the Schedule row's `OrderStatusBadge` /
- *  `ServiceBadge`: `px-2 py-0.5 rounded-full text-[10px] font-bold uppercase
- *  tracking-wider` with a tinted background + saturated foreground. */
+ *  `ServiceBadge`: tinted background + saturated foreground, sized to match
+ *  the schedule row vocabulary. The per-event `tone.accent` hex is dynamic
+ *  so the badge renders via `variant="custom"` with manual bg/fg and the
+ *  shared `force-white-text` opt-out class preserves readable contrast in
+ *  every theme. */
 function StatusPill({ tone, label, icon }) {
     return (
-        <span
-            className="force-white-text inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
-            style={{ background: tone.accent }}
-        >
+        <Badge variant="custom" size="sm" shape="pill" bg={tone.accent} fg="#fff" className="force-white-text">
             <i className={`fas ${icon} text-[8px]`} />
             {label}
-        </span>
+        </Badge>
     )
 }
 

@@ -14,34 +14,37 @@ import {
     YAxis
 } from 'recharts'
 
-import {
-    deltaColor,
-    deltaPct,
-    fmtDate,
-    fmtInt,
-    fmtPct,
-    parseIsoLocal
-} from '../../../../../utils/PlanStatisticsFormatUtility'
+import { deltaPct, fmtDate, fmtInt, fmtPct, parseIsoLocal } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { PLAN_STATS_CHART_TOOLTIP_STYLE } from '../../../../../utils/PlanStatisticsUtility'
+import Badge from '../../../common/Badge'
 
 /** Inline KPI hint — leads with intrinsic context (e.g. "yd³/load"); appends
- *  a subtle Δ% pill only when a comparison value is provided. */
+ *  a subtle Δ% pill only when a comparison value is provided. Tone tracks
+ *  the sign of the delta so positive/negative deltas are visually distinct
+ *  at a glance. */
+const deltaTone = (pct) => {
+    if (pct > 0) return 'success'
+    if (pct < 0) return 'danger'
+    return 'neutral'
+}
+
 export function DeltaHint({ base, current, previous }) {
     const pct = deltaPct(current, previous)
     if (!Number.isFinite(previous) || pct == null) return base ?? null
+    const arrowIcon = pct >= 0 ? 'arrow-up' : 'arrow-down'
     return (
         <span className="inline-flex items-center gap-1.5">
             <span className="text-text-tertiary">{base}</span>
-            <span
-                className="inline-flex items-center gap-0.5 rounded px-1.5 py-px text-[10px] font-semibold tabular-nums"
-                style={{
-                    background: `${deltaColor(pct) || 'var(--text-tertiary)'}1f`,
-                    color: deltaColor(pct) || 'var(--text-tertiary)'
-                }}
+            <Badge
+                tone={deltaTone(pct)}
+                size="sm"
+                weight="semibold"
+                uppercase={false}
+                icon={arrowIcon}
+                className="tabular-nums"
             >
-                <i className={`fas fa-${pct >= 0 ? 'arrow-up' : 'arrow-down'} text-[8px]`} />
                 {fmtPct(pct).replace('+', '').replace('-', '')}
-            </span>
+            </Badge>
         </span>
     )
 }

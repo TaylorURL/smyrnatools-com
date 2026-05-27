@@ -115,9 +115,7 @@ function UserLabel({
             ) : null}
             <span className="flex min-w-0 flex-col">
                 <span className="truncate font-medium text-text-primary">{userName}</span>
-                {secondary && (
-                    <span className="truncate text-xs font-normal text-text-secondary">{secondary}</span>
-                )}
+                {secondary && <span className="truncate text-xs font-normal text-text-secondary">{secondary}</span>}
             </span>
         </span>
     )

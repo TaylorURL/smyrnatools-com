@@ -1,4 +1,7 @@
 import React from 'react'
+
+import Badge from '../common/Badge'
+
 /** Amber banner shown when a manager is editing another user's report. */
 const ManagerEditBanner = ({ editingUserName }) => (
     <div className="flex items-center gap-2 px-4 py-3 bg-amber-100 text-text-primary font-medium text-sm">
@@ -7,18 +10,13 @@ const ManagerEditBanner = ({ editingUserName }) => (
     </div>
 )
 const StatusBadge = ({ isCompleted, readOnly }) => {
-    const completed = isCompleted
-    const bgClass = completed ? 'bg-emerald-100' : 'bg-amber-100'
-    const textClass = 'text-text-primary'
-    const icon = completed ? 'fa-check-circle' : 'fa-edit'
-    const label = readOnly ? 'View Only' : completed ? 'Submitted' : 'Editing'
+    const tone = readOnly ? 'neutral' : isCompleted ? 'success' : 'warning'
+    const icon = readOnly ? 'eye' : isCompleted ? 'check-circle' : 'edit'
+    const label = readOnly ? 'View Only' : isCompleted ? 'Submitted' : 'Editing'
     return (
-        <div
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold ${bgClass} ${textClass}`}
-        >
-            <i className={`fas ${icon}`} />
+        <Badge tone={tone} size="md" shape="rounded-md" weight="semibold" uppercase={false} icon={icon}>
             {label}
-        </div>
+        </Badge>
     )
 }
 const ExportButton = ({ exporting, loadingPlants, onClick }) => {

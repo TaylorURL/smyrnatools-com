@@ -14,9 +14,7 @@ export default function AssetEmptyState({ config, filters, onAdd }) {
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-bg-hover ring-1 ring-border-light">
                 <i className={`fas ${config.emptyState.icon} text-3xl text-text-tertiary`} />
             </div>
-            <h3 className="mb-2 font-heading text-xl font-semibold text-text-primary">
-                {config.emptyState.title}
-            </h3>
+            <h3 className="mb-2 font-heading text-xl font-semibold text-text-primary">{config.emptyState.title}</h3>
             <p className="mb-6 max-w-md text-sm text-text-secondary">
                 {hasActiveScope
                     ? 'No items match your search criteria.'

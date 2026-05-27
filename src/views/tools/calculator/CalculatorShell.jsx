@@ -1,5 +1,6 @@
 import React from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import { Panel, Stat, StatGroup } from '../../../app/components/ui/Panel'
 
 /**
@@ -69,11 +70,11 @@ export const CalcField = ({
     )
 }
 
-const STATUS_PILL = {
-    danger: 'bg-status-danger/10 text-text-primary',
-    info: 'bg-status-shop/10 text-text-primary',
-    success: 'bg-status-active/10 text-text-primary',
-    warning: 'bg-status-warning/10 text-text-primary'
+const STATUS_TO_TONE = {
+    danger: 'danger',
+    info: 'info',
+    success: 'success',
+    warning: 'warning'
 }
 
 /**
@@ -96,7 +97,7 @@ const CalculatorShell = ({
     title
 }) => {
     const hasResult = Boolean(primary)
-    const statusClass = status ? STATUS_PILL[status.kind] || STATUS_PILL.info : ''
+    const statusTone = status ? STATUS_TO_TONE[status.kind] || STATUS_TO_TONE.info : 'info'
     return (
         <div className="flex flex-col gap-3.5 w-full">
             <Panel
@@ -105,11 +106,9 @@ const CalculatorShell = ({
                     <div className="flex items-center gap-2">
                         {icon && <i className={`fas ${icon} text-accent text-[12px]`} />}
                         {status && hasResult && (
-                            <span
-                                className={`inline-flex items-center rounded px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[.06em] ${statusClass}`}
-                            >
+                            <Badge tone={statusTone} size="md" weight="bold">
                                 {status.label}
-                            </span>
+                            </Badge>
                         )}
                     </div>
                 }

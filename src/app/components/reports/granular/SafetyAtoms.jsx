@@ -3,6 +3,7 @@ import React from 'react'
 
 import { DEFAULT_TAG_STYLE, TAG_COLORS } from '../../../constants/safetyManagerReportConstants'
 import { SECTION_LABEL_CLASS } from '../../../constants/weeklyReportConstants'
+import Badge from '../../common/Badge'
 
 /** Compact card header — icon chip + label/title. Supports a tint on
  *  the icon chip via `iconBg` + `iconColor` so it can flip from red
@@ -36,16 +37,16 @@ export function SafetyCardHeader({ icon, iconBg, iconColor, label, right, sub, t
     )
 }
 
-/** Small chip rendered in the issue card header — single tag style. */
+/** Small chip rendered in the issue card header — single tag style.
+ *  `icon` accepts a full Font Awesome class string (e.g. "fas fa-industry") to stay
+ *  backward-compatible with existing callers — wrapped here so Badge renders it
+ *  verbatim instead of treating it as a class suffix. */
 export function IssueChip({ children, color = 'var(--text-secondary)', icon, tint = 'var(--bg-tertiary)' }) {
+    const iconNode = icon ? <i className={`${icon} text-[9px]`} aria-hidden="true" /> : null
     return (
-        <span
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
-            style={{ background: tint, color }}
-        >
-            {icon && <i className={`${icon} text-[9px]`} />}
+        <Badge variant="custom" bg={tint} fg={color} size="md" weight="semibold" uppercase={false} icon={iconNode}>
             {children}
-        </span>
+        </Badge>
     )
 }
 
@@ -64,29 +65,27 @@ export function FieldLabel({ children, icon, required }) {
  *  inline remove ✕ when not read-only. */
 export function TagsDisplay({ onRemoveTag, readOnly, tags }) {
     if (!tags?.length) return null
+    const canRemove = !readOnly && Boolean(onRemoveTag)
     return (
         <div className="flex flex-wrap gap-1">
             {tags.map((t) => {
                 const tagStyle = TAG_COLORS[t] || DEFAULT_TAG_STYLE
+                const iconNode = <i className={`${tagStyle.icon} text-[9px]`} aria-hidden="true" />
                 return (
-                    <span
+                    <Badge
                         key={t}
-                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold"
-                        style={{ background: tagStyle.bg, color: tagStyle.color }}
+                        variant="custom"
+                        bg={tagStyle.bg}
+                        fg={tagStyle.color}
+                        size="md"
+                        weight="semibold"
+                        uppercase={false}
+                        icon={iconNode}
+                        removable={canRemove}
+                        onRemove={() => onRemoveTag?.(t)}
                     >
-                        <i className={`${tagStyle.icon} text-[9px]`} />
                         {t}
-                        {!readOnly && onRemoveTag && (
-                            <button
-                                type="button"
-                                className="ml-0.5 border-none bg-transparent p-0 cursor-pointer opacity-70 hover:opacity-100"
-                                onClick={() => onRemoveTag(t)}
-                                style={{ color: tagStyle.color }}
-                            >
-                                <i className="fas fa-times text-[9px]" />
-                            </button>
-                        )}
-                    </span>
+                    </Badge>
                 )
             })}
         </div>
@@ -120,9 +119,17 @@ export function IssueCardHeader({ idx, issue, onRemove, readOnly }) {
     return (
         <div className="flex items-center justify-between gap-2 px-2.5 py-2 flex-wrap bg-bg-tertiary border-b border-border-light">
             <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center justify-center rounded text-[10.5px] font-bold tabular-nums text-white bg-[var(--accent,_#1e3a5f)] h-[22px] w-[22px]">
+                <Badge
+                    tone="accent"
+                    variant="solid"
+                    size="md"
+                    shape="pill"
+                    weight="bold"
+                    uppercase={false}
+                    className="h-[22px] w-[22px] justify-center tabular-nums"
+                >
                     {idx + 1}
-                </div>
+                </Badge>
                 {issue.plant && (
                     <IssueChip icon="fas fa-industry" tint="rgba(59, 130, 246, 0.12)">
                         {issue.plant === 'All' ? 'All Plants' : `Plant ${issue.plant}`}

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import PlantManagersQuickEditModal from '../../../app/components/plants/PlantManagersQuickEditModal'
 import PlantSaturdayForecastBadge from '../../../app/components/plants/PlantSaturdayForecastBadge'
 import PlantsEmptyState from '../../../app/components/plants/PlantsEmptyState'
@@ -34,14 +35,14 @@ const getPlantAliasCodes = (plant) => {
 const hasColocation = (plant) =>
     Boolean(plant?.location_group_id ?? plant?.locationGroupId) || getPlantAliasCodes(plant).length > 0
 
-/** Tailwind class + icon per plant type — used in both grid cards and list pills.
- *  Theme-safe alpha-tinted chips so dark / light / gray all render cleanly. */
+/** Badge tone + icon per plant type — feeds the shared <Badge /> primitive
+ *  so chips stay theme-consistent across dark / light / gray. */
 const PLANT_TYPE_META = {
-    'Aggregate Location': { badge: 'bg-status-warning/15 text-status-warning', icon: 'fa-mountain' },
-    'Concrete Plant': { badge: 'bg-accent/10 text-accent', icon: 'fa-industry' },
-    'Office Location': { badge: 'bg-status-active/15 text-status-active', icon: 'fa-building' }
+    'Aggregate Location': { icon: 'mountain', tone: 'warning' },
+    'Concrete Plant': { icon: 'industry', tone: 'accent' },
+    'Office Location': { icon: 'building', tone: 'success' }
 }
-const DEFAULT_TYPE_META = { badge: 'bg-bg-tertiary text-text-secondary', icon: 'fa-map-marker-alt' }
+const DEFAULT_TYPE_META = { icon: 'map-marker-alt', tone: 'neutral' }
 
 /** Slim filter select — matches the FilterSelect atom inside TopSection so admin
  *  views read with the same rhythm as Mixers / Operators / AssetView. The
@@ -79,7 +80,7 @@ function PlantGridCard({ plant, region, plantType, managerCount, saturdayForecas
             )}
             <div className="flex items-center gap-3 border-b border-border-light px-5 py-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent/10 text-base text-accent transition-colors duration-200 group-hover:bg-accent group-hover:text-white">
-                    <i className={`fas ${meta.icon}`} aria-hidden="true" />
+                    <i className={`fas fa-${meta.icon}`} aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
@@ -100,19 +101,22 @@ function PlantGridCard({ plant, region, plantType, managerCount, saturdayForecas
                     </div>
                     <div className="truncate text-[11px] font-medium text-text-secondary">{name || '—'}</div>
                 </div>
-                <span
-                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${meta.badge}`}
+                <Badge
+                    tone={meta.tone}
+                    size="md"
+                    shape="pill"
+                    weight="semibold"
+                    icon={meta.icon}
+                    uppercase={false}
+                    className="shrink-0"
                 >
-                    <i className={`fas ${meta.icon} text-[10px]`} aria-hidden="true" />
                     {plantType}
-                </span>
+                </Badge>
             </div>
 
             <div className="grid grid-cols-2">
                 <div className="flex flex-col gap-0.5 border-r border-border-light px-5 py-3">
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                        Region
-                    </span>
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">Region</span>
                     <span className="truncate text-[13px] font-semibold text-text-primary">
                         {region?.regionName || 'N/A'}
                     </span>
@@ -133,12 +137,9 @@ function PlantGridCard({ plant, region, plantType, managerCount, saturdayForecas
                         Shares site with
                     </span>
                     {aliasCodes.map((alias) => (
-                        <span
-                            key={alias}
-                            className="inline-flex items-center rounded-full bg-accent/10 px-2 py-0.5 text-[10.5px] font-semibold text-accent"
-                        >
+                        <Badge key={alias} tone="accent" size="md" shape="pill" weight="semibold" uppercase={false}>
                             {alias}
-                        </span>
+                        </Badge>
                     ))}
                 </div>
             )}
@@ -435,12 +436,16 @@ function PlantsView({ title = 'Plants' }) {
                                                 {region?.regionName || 'N/A'}
                                             </td>
                                             <td className="px-5 py-4">
-                                                <span
-                                                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${meta.badge}`}
+                                                <Badge
+                                                    tone={meta.tone}
+                                                    size="md"
+                                                    shape="pill"
+                                                    weight="semibold"
+                                                    icon={meta.icon}
+                                                    uppercase={false}
                                                 >
-                                                    <i className={`fas ${meta.icon} text-[10px]`} aria-hidden="true" />
                                                     {plantType}
-                                                </span>
+                                                </Badge>
                                             </td>
                                             <td className="px-5 py-4">
                                                 <div className="flex flex-wrap items-center gap-2">

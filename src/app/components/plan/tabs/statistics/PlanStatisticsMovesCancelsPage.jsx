@@ -1,17 +1,24 @@
-/* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useState } from 'react'
 
 import { fmtInt, fmtScorePct } from '../../../../../utils/PlanStatisticsFormatUtility'
 import PlanStatisticsMovesCancelsDetail from './PlanStatisticsMovesCancelsDetail'
 import PlanStatisticsMovesCancelsTable, { RankChip } from './PlanStatisticsMovesCancelsTable'
 
-/* Severity palette — `HEAVY` for cancels (truck never rolled), `SOFT` for
- * moves (truck rolled but the plan slid), `NEUTRAL` for incidental field
- * edits. Mirrors PlanStatisticsKickersPage so the two customer-behaviour
- * leaderboards read with the same vocabulary. */
-const HEAVY = '#dc2626'
-const SOFT = '#f59e0b'
-const NEUTRAL = '#64748b'
+/* Severity tone → Tailwind tint classes for the icon chip (10% opacity) and
+ * the spotlight fill bar (full opacity). `danger` for cancels (truck never
+ * rolled), `warning` for moves (truck rolled but the plan slid), `neutral`
+ * for incidental field edits. Mirrors PlanStatisticsKickersPage so the two
+ * customer-behaviour leaderboards read with the same vocabulary. */
+const TONE_ICON_CHIP = {
+    danger: 'bg-status-danger/10',
+    neutral: 'bg-status-spare/10',
+    warning: 'bg-status-warning/10'
+}
+const TONE_BAR_FILL = {
+    danger: 'bg-status-danger',
+    neutral: 'bg-status-spare',
+    warning: 'bg-status-warning'
+}
 
 /* Top-N spotlights at the top of the page — small enough to fit alongside
  * the table and large enough to answer "who's the worst this week?" in a
@@ -20,12 +27,10 @@ const SPOTLIGHT_SIZE = 5
 
 const SORT_COLUMNS = [
     {
-        accent: HEAVY,
         compare: (a, b) => b.cancelCount - a.cancelCount || b.churnEvents - a.churnEvents,
         key: 'cancels'
     },
     {
-        accent: SOFT,
         compare: (a, b) => b.moveCount - a.moveCount || b.churnEvents - a.churnEvents,
         key: 'moves'
     },
@@ -50,15 +55,15 @@ const SORT_COLUMNS = [
 const SORT_BY_KEY = Object.fromEntries(SORT_COLUMNS.map((s) => [s.key, s]))
 
 /** KPI tile — uppercase tracked-out label, oversized value, small sub. The
- *  accent only tints the icon chip (pill with background + matching fg);
- *  the headline number stays in theme text. */
-function StatTile({ accent, icon, label, sub, value }) {
+ *  tone only tints the icon chip (pill with semantic background + theme
+ *  primary fg); the headline number stays in theme text. */
+function StatTile({ icon, label, sub, tone = 'neutral', value }) {
+    const chipBg = TONE_ICON_CHIP[tone] || TONE_ICON_CHIP.neutral
     return (
         <div className="flex items-start gap-3">
             {icon && (
                 <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-text-primary"
-                    style={{ background: `${accent || NEUTRAL}1a` }}
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-text-primary ${chipBg}`}
                 >
                     <i className={`fas ${icon} text-[14px]`} />
                 </div>
@@ -75,15 +80,14 @@ function StatTile({ accent, icon, label, sub, value }) {
 /** Spotlight card — top N for a single metric (cancels or moves).
  *  Compact list answering "who's the worst here?" without forcing the user
  *  to scan the full table. */
-function SpotlightCard({ accent, customers, emptyHint, icon, label, metric, onSelect }) {
+function SpotlightCard({ customers, emptyHint, icon, label, metric, onSelect, tone = 'neutral' }) {
+    const chipBg = TONE_ICON_CHIP[tone] || TONE_ICON_CHIP.neutral
+    const barFill = TONE_BAR_FILL[tone] || TONE_BAR_FILL.neutral
     if (!customers.length) {
         return (
             <div className="rounded-md p-4 bg-bg-primary border border-border-light">
                 <div className="flex items-center gap-2 mb-2">
-                    <span
-                        className="w-7 h-7 rounded-md flex items-center justify-center text-text-primary"
-                        style={{ background: `${accent}1a` }}
-                    >
+                    <span className={`w-7 h-7 rounded-md flex items-center justify-center text-text-primary ${chipBg}`}>
                         <i className={`fas ${icon} text-[12px]`} />
                     </span>
                     <div className="text-[12.5px] font-semibold text-text-primary">{label}</div>
@@ -96,10 +100,7 @@ function SpotlightCard({ accent, customers, emptyHint, icon, label, metric, onSe
     return (
         <div className="rounded-md p-4 bg-bg-primary border border-border-light flex flex-col gap-2.5">
             <div className="flex items-center gap-2">
-                <span
-                    className="w-7 h-7 rounded-md flex items-center justify-center text-text-primary"
-                    style={{ background: `${accent}1a` }}
-                >
+                <span className={`w-7 h-7 rounded-md flex items-center justify-center text-text-primary ${chipBg}`}>
                     <i className={`fas ${icon} text-[12px]`} />
                 </span>
                 <div className="text-[12.5px] font-semibold text-text-primary">{label}</div>
@@ -127,7 +128,8 @@ function SpotlightCard({ accent, customers, emptyHint, icon, label, metric, onSe
                                 </span>
                             </button>
                             <div className="rounded-sm h-1 overflow-hidden bg-bg-tertiary ml-9">
-                                <div style={{ background: accent, height: '100%', width: `${fillPct}%` }} />
+                                {/* eslint-disable-next-line react/forbid-dom-props -- dynamic width % from metric is necessarily inline */}
+                                <div className={`h-full ${barFill}`} style={{ width: `${fillPct}%` }} />
                             </div>
                         </li>
                     )
@@ -251,17 +253,17 @@ export default function PlanStatisticsMovesCancelsPage({
             {/* KPI strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 rounded-md p-4 bg-bg-primary border border-border-light">
                 <StatTile
-                    accent={HEAVY}
                     icon="fa-circle-minus"
                     label="Cancels"
                     sub={`${fmtScorePct(kpi.cancelRate)} of orders`}
+                    tone="danger"
                     value={fmtInt(kpi.cancelCount)}
                 />
                 <StatTile
-                    accent={SOFT}
                     icon="fa-shuffle"
                     label="Moves"
                     sub="time / plant shifts"
+                    tone="warning"
                     value={fmtInt(kpi.moveCount)}
                 />
                 <StatTile
@@ -291,22 +293,22 @@ export default function PlanStatisticsMovesCancelsPage({
                     {/* Top movers + top cancellers spotlights */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <SpotlightCard
-                            accent={HEAVY}
                             customers={topCancellers}
                             emptyHint="No cancellations recorded in this window."
                             icon="fa-circle-minus"
                             label="Cancels the most"
                             metric={(c) => c.cancelCount}
                             onSelect={(key) => setSelectedKey((current) => (current === key ? null : key))}
+                            tone="danger"
                         />
                         <SpotlightCard
-                            accent={SOFT}
                             customers={topMovers}
                             emptyHint="No moves recorded in this window."
                             icon="fa-shuffle"
                             label="Moves the most"
                             metric={(c) => c.moveCount}
                             onSelect={(key) => setSelectedKey((current) => (current === key ? null : key))}
+                            tone="warning"
                         />
                     </div>
 
@@ -350,15 +352,15 @@ export default function PlanStatisticsMovesCancelsPage({
                     {/* Inline legend — explains the breakdown bar tint */}
                     <div className="flex items-center gap-4 text-[11px] text-text-tertiary -mt-1">
                         <span className="inline-flex items-center gap-1.5">
-                            <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: HEAVY }} />
+                            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-status-danger" />
                             Cancel
                         </span>
                         <span className="inline-flex items-center gap-1.5">
-                            <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: SOFT }} />
+                            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-status-warning" />
                             Move
                         </span>
                         <span className="inline-flex items-center gap-1.5">
-                            <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: NEUTRAL }} />
+                            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-status-spare" />
                             Edit
                         </span>
                         <span className="hidden sm:inline">

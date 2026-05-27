@@ -65,6 +65,7 @@ export function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, su
                 plantCode={submission?.plant_code || item?.plant_code}
                 status={status.label}
                 statusColor={status.color}
+                statusTone={status.tone}
                 title={formObj?.title}
             />
 

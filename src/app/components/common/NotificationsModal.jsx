@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom'
 import { UserService } from '../../../services/UserService'
 import DateUtility from '../../../utils/DateUtility'
 import { useAccentColor } from '../../hooks/useAccentColor'
+import Badge from './Badge'
 import UserAvatar from './UserAvatar'
 
 const SECTION_LABEL =
@@ -26,12 +27,18 @@ function ConversationRow({ accentColor, conversation, displayName, onSelectConve
         >
             <UserAvatar name={displayName} userId={conversation.otherId} size="md" rounded="md">
                 {hasUnread && (
-                    <span
-                        className="absolute -right-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded border border-bg-primary px-0.5 font-mono text-[9px] font-bold tabular-nums text-white"
-                        style={{ background: accentColor }}
+                    <Badge
+                        variant="custom"
+                        size="xs"
+                        shape="rounded"
+                        weight="bold"
+                        uppercase={false}
+                        bg={accentColor}
+                        fg="#fff"
+                        className="absolute -right-1 -top-1 min-w-[14px] justify-center border border-bg-primary font-mono tabular-nums"
                     >
                         {conversation.unread}
-                    </span>
+                    </Badge>
                 )}
             </UserAvatar>
             <div className="min-w-0 flex-1">
@@ -46,7 +53,9 @@ function ConversationRow({ accentColor, conversation, displayName, onSelectConve
                     </span>
                 </div>
                 {latest?.subject && (
-                    <p className={`m-0 truncate text-[10.5px] ${hasUnread ? 'text-text-primary' : 'text-text-secondary'}`}>
+                    <p
+                        className={`m-0 truncate text-[10.5px] ${hasUnread ? 'text-text-primary' : 'text-text-secondary'}`}
+                    >
                         {latest.subject}
                     </p>
                 )}
@@ -154,12 +163,17 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                             Messages
                         </span>
                         {unreadCount > 0 && (
-                            <span
-                                className="rounded px-1.5 py-0.5 font-mono text-[9.5px] font-bold uppercase tracking-wider text-white tabular-nums"
-                                style={{ background: accentColor }}
+                            <Badge
+                                variant="custom"
+                                size="xs"
+                                shape="rounded"
+                                weight="bold"
+                                bg={accentColor}
+                                fg="#fff"
+                                className="font-mono tabular-nums"
                             >
                                 {unreadCount}
-                            </span>
+                            </Badge>
                         )}
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -222,12 +236,18 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                                 <>
                                     <div className={SECTION_LABEL}>
                                         <span>Unread</span>
-                                        <span
-                                            className="rounded px-1 font-mono text-[9px] font-bold text-white tabular-nums"
-                                            style={{ background: accentColor }}
+                                        <Badge
+                                            variant="custom"
+                                            size="xs"
+                                            shape="rounded"
+                                            weight="bold"
+                                            uppercase={false}
+                                            bg={accentColor}
+                                            fg="#fff"
+                                            className="font-mono tabular-nums"
                                         >
                                             {unreadCount}
-                                        </span>
+                                        </Badge>
                                     </div>
                                     <div>
                                         {unreadConversations.map((conv) => (

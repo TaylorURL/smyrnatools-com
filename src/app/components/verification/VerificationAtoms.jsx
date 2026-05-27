@@ -4,40 +4,40 @@ import React from 'react'
 import {
     FIELD_LABEL_CLASS,
     FIELD_STYLE,
-    PILL_BASE,
     SECTION_SUBTITLE_CLASS,
     SECTION_TITLE_CLASS
 } from '../../constants/verificationModalConstants'
+import Badge from '../common/Badge'
 
-const STATUS_TONES = {
-    attention: { color: 'var(--text-primary)', icon: 'fa-circle' },
-    done: { color: 'var(--text-primary)', icon: 'fa-check' },
-    info: { color: 'var(--text-tertiary)', icon: 'fa-circle' },
-    warn: { color: 'var(--text-primary)', icon: 'fa-circle' }
+const STATUS_TO_TONE = {
+    attention: 'danger',
+    done: 'success',
+    info: 'info',
+    warn: 'warning'
+}
+
+const STATUS_ICON = {
+    attention: 'circle',
+    done: 'check',
+    info: 'circle',
+    warn: 'circle'
 }
 
 /** Small leading indicator next to a section title. Replaces verbose colored pills. */
 export function StatusMarker({ tone = 'info', count }) {
-    if (typeof count === 'number') {
-        return (
-            <span
-                className="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10.5px] font-semibold leading-none bg-bg-tertiary text-text-secondary"
-                aria-label={`${count} item${count === 1 ? '' : 's'}`}
-            >
-                {count}
-            </span>
-        )
-    }
-    const { color, icon } = STATUS_TONES[tone] ?? STATUS_TONES.info
-    const size = tone === 'done' ? 'text-[11px]' : 'text-[7px]'
+    const resolvedTone = STATUS_TO_TONE[tone] ?? 'info'
     return (
-        <span
-            className="inline-flex h-5 w-5 items-center justify-center rounded-full"
-            style={{ background: tone === 'done' ? 'rgba(22, 163, 74, 0.12)' : 'transparent', color }}
-            aria-hidden="true"
+        <Badge
+            tone={resolvedTone}
+            size="sm"
+            shape="pill"
+            weight="bold"
+            icon={count == null ? STATUS_ICON[tone] : undefined}
+            className="h-5 min-w-5 justify-center"
+            aria-label={typeof count === 'number' ? `${count} item${count === 1 ? '' : 's'}` : undefined}
         >
-            <i className={`fas ${icon} ${size}`} />
-        </span>
+            {count != null ? count : null}
+        </Badge>
     )
 }
 
@@ -70,9 +70,9 @@ export function Section({ children, expanded, onToggle, status, subtitle, title 
 /** Status pill — kept for severity badges (High/Medium/Low) in issue cards. */
 export function Pill({ bg, children, fg }) {
     return (
-        <span className={PILL_BASE} style={{ background: bg, color: fg }}>
+        <Badge variant="custom" bg={bg} fg={fg} size="md" weight="semibold" uppercase={false}>
             {children}
-        </span>
+        </Badge>
     )
 }
 

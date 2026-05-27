@@ -16,10 +16,7 @@ import React from 'react'
  */
 export default function TabFadeIn({ animationKey, children, className }) {
     return (
-        <div
-            key={animationKey}
-            className={`animate-fade-in-fast motion-reduce:animate-none ${className || ''}`}
-        >
+        <div key={animationKey} className={`animate-fade-in-fast motion-reduce:animate-none ${className || ''}`}>
             {children}
         </div>
     )

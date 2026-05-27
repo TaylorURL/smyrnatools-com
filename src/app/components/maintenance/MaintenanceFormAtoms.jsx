@@ -3,6 +3,7 @@ import React from 'react'
 
 import { isDarkLikeTheme } from '../../constants/themeConstants'
 import { usePreferences } from '../../context/PreferencesContext'
+import Badge from '../common/Badge'
 
 /* Plan-tab inspired atoms shared by every Maintenance form surface — kept in
  * one place so the badge / chip / icon language stays in lockstep across the
@@ -13,24 +14,15 @@ import { usePreferences } from '../../context/PreferencesContext'
  * over-bright on dark surfaces). The components subscribe to preferences
  * directly so call sites don't have to prop-drill `isDark`. */
 
-/** Canonical status palette — light + dark variants. The light bg uses solid
- *  pastels for the in-app feel; dark bg uses translucent tints so the colour
- *  stays subtle on the deep grey shell. Foreground text is darkened in light
- *  mode (4.5:1 contrast) and brightened in dark mode for the same reason. */
-export const STATUS_PALETTE = {
+/** Canonical status palette — light + dark variants. Retained for the
+ *  non-badge consumers (`ItemIcon`) that still need direct tint access. */
+const STATUS_PALETTE = {
     approved: { bg: '#dcfce7', darkBg: 'rgba(34,197,94,0.18)', darkFg: '#4ade80', fg: '#166534' },
     completed: { bg: '#dcfce7', darkBg: 'rgba(34,197,94,0.18)', darkFg: '#4ade80', fg: '#166534' },
     overdue: { bg: '#fee2e2', darkBg: 'rgba(239,68,68,0.18)', darkFg: '#f87171', fg: '#b91c1c' },
     pending: { bg: '#fef3c7', darkBg: 'rgba(251,191,36,0.18)', darkFg: '#fbbf24', fg: '#92400e' },
     rejected: { bg: '#fee2e2', darkBg: 'rgba(239,68,68,0.18)', darkFg: '#f87171', fg: '#b91c1c' },
     submitted: { bg: '#dbeafe', darkBg: 'rgba(59,130,246,0.20)', darkFg: '#60a5fa', fg: '#1e40af' }
-}
-
-const PLANT_CHIP_PALETTE = {
-    bg: '#dbeafe',
-    darkBg: 'rgba(59,130,246,0.20)',
-    darkFg: '#60a5fa',
-    fg: '#1e40af'
 }
 
 const FALLBACK_TINT = {
@@ -49,6 +41,16 @@ const ICON_BY_STATUS = {
     submitted: 'fa-clock'
 }
 
+/** Maps a maintenance status string to the unified Badge tone palette. */
+const STATUS_TO_TONE = {
+    approved: 'success',
+    completed: 'success',
+    overdue: 'danger',
+    pending: 'warning',
+    rejected: 'danger',
+    submitted: 'info'
+}
+
 /** Resolve a tint pair against the user's current theme. */
 function useTint(palette) {
     const { preferences } = usePreferences()
@@ -59,33 +61,23 @@ function useTint(palette) {
     }
 }
 
-/** Compact status badge — uppercase, tracked-wider, palette-tinted.
- *  Text uses the theme foreground so light / dark / grayed all read
- *  with the same contrast; only the tint background carries the
- *  status colour. */
+/** Compact status badge — delegates to the unified Badge with a maintenance
+ *  status → tone mapping. */
 export function StatusBadge({ status }) {
-    const tint = useTint(STATUS_PALETTE[status] || FALLBACK_TINT)
     return (
-        <span
-            className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 text-text-primary"
-            style={{ background: tint.background }}
-        >
+        <Badge tone={STATUS_TO_TONE[status] || 'neutral'} size="xs" weight="bold">
             {status}
-        </span>
+        </Badge>
     )
 }
 
 /** Plant code chip — consistent blue tint across every list / table. */
 export function PlantChip({ code }) {
-    const tint = useTint(PLANT_CHIP_PALETTE)
     if (!code) return <span className="text-text-tertiary">—</span>
     return (
-        <span
-            className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 font-mono tabular-nums text-text-primary"
-            style={{ background: tint.background }}
-        >
+        <Badge tone="info" size="xs" weight="bold" className="font-mono tabular-nums">
             {code}
-        </span>
+        </Badge>
     )
 }
 

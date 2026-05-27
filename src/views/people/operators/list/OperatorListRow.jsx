@@ -1,11 +1,11 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import OperatorClockIndicator from '../../../../app/components/common/OperatorClockIndicator'
 import PhoneLink from '../../../../app/components/common/PhoneLink'
 import StatusHistoryBar from '../../../../app/components/common/StatusHistoryBar'
 import { renderStarsOrNA } from './operatorRatingHelpers'
-import { statusBadgeClass, statusBadgeInlineStyle } from './operatorStatusBadge'
+import { getOperatorStatusTone } from './operatorStatusBadge'
 
 const CELL_BASE = 'text-text-primary text-[12px] font-medium py-1.5 px-2.5 text-left align-middle'
 const CELL_SECONDARY = 'text-text-secondary text-[11.5px] py-1.5 px-2.5 text-left align-middle'
@@ -66,15 +66,17 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
             </td>
             <td className={`${CELL_SECONDARY} w-[14%] group-hover:bg-bg-tertiary`}>
                 <div>
-                    <span
-                        className={`force-white-text ${statusBadgeClass(operator.status)}`}
-                        style={statusBadgeInlineStyle(operator.status)}
+                    <Badge
+                        tone={getOperatorStatusTone(operator.status)}
+                        variant="solid"
+                        size="sm"
+                        className="self-start"
                     >
                         {operator.status || '—'}
                         {operator.status &&
                             operator.status !== 'Terminated' &&
                             ` · ${computeDaysSinceStatusChange(operator)}d`}
-                    </span>
+                    </Badge>
                     <StatusHistoryBar
                         itemId={operator.employeeId}
                         itemType="operator"
@@ -99,12 +101,17 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
                     >
                         <i className="fas fa-comments" aria-hidden="true"></i>
                         {operator.commentsCount > 0 && (
-                            <span
-                                className="absolute -top-0.5 -right-0.5 flex h-3 min-w-[12px] items-center justify-center rounded bg-accent px-0.5 text-[8px] font-bold leading-none text-white ring-1 ring-bg-primary"
+                            <Badge
+                                tone="accent"
+                                variant="solid"
+                                size="xs"
+                                shape="pill"
+                                uppercase={false}
+                                className="absolute -top-0.5 -right-0.5 ring-1 ring-bg-primary"
                                 aria-label={`${operator.commentsCount} comment${operator.commentsCount === 1 ? '' : 's'}`}
                             >
                                 {operator.commentsCount > 9 ? '9+' : operator.commentsCount}
-                            </span>
+                            </Badge>
                         )}
                     </button>
                     <button

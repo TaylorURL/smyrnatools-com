@@ -228,10 +228,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 </thead>
                 <tbody>
                     {report.fields.map((field) => (
-                        <tr
-                            key={field.name}
-                            className="transition-colors duration-150 hover:bg-bg-hover"
-                        >
+                        <tr key={field.name} className="transition-colors duration-150 hover:bg-bg-hover">
                             <td className="px-4 py-3 text-sm text-text-primary border-b border-border-light">
                                 {field.label}
                             </td>

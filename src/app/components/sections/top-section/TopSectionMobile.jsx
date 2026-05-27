@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import Badge from './Badge'
+import TopSectionBadgeRow from './Badge'
 import { ActionButton, FilterSelect, MobileFilterItem, MobileViewToggle, SearchInput } from './TopSectionAtoms'
 
 const TopSectionMobile = ({
@@ -61,14 +61,14 @@ const TopSectionMobile = ({
                 <div className={`flex items-center gap-2 min-w-0${revealControls ? ' animate-reveal-left' : ''}`}>
                     <h1 className="text-[16px] font-bold m-0 truncate text-text-primary">{title}</h1>
                     {badge && (
-                        <Badge
+                        <TopSectionBadgeRow
                             onClick={onBadgeClick}
                             onPillClick={onPillClick}
                             accentColor={accentColor}
                             isDark={isDarkBadgeTheme}
                         >
                             {badge}
-                        </Badge>
+                        </TopSectionBadgeRow>
                     )}
                 </div>
                 <div className={`flex items-center gap-2${revealControls ? ' animate-reveal-right' : ''}`}>

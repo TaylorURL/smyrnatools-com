@@ -7,6 +7,7 @@ import {
     validatePlanSettings
 } from '../../../../constants/planSettingsSchema'
 import { usePlanOperationalSettings } from '../../../../hooks/usePlanOperationalSettings'
+import Badge from '../../../common/Badge'
 
 /**
  * Operational-settings form for the Plan → Settings tab. Renders one
@@ -183,9 +184,9 @@ function SettingRow({ error, field, onChange, value }) {
                 >
                     {field.label}
                     {isOverridden && (
-                        <span className="rounded-sm bg-bg-tertiary px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-text-secondary">
+                        <Badge tone="neutral" size="xs" shape="square" weight="bold">
                             Custom
-                        </span>
+                        </Badge>
                     )}
                 </label>
                 <p className="text-[11.5px] text-text-tertiary leading-snug mt-0.5">{field.helper}</p>
@@ -285,17 +286,11 @@ function ActionBar({
 
 function StatusMessage({ dirtyCount, error, hasValidationErrors, isDirty, showSavedFlash }) {
     if (error) {
-        return (
-            <div className="text-[12px] font-semibold text-text-primary">
-                {error}
-            </div>
-        )
+        return <div className="text-[12px] font-semibold text-text-primary">{error}</div>
     }
     if (hasValidationErrors) {
         return (
-            <div className="text-[12px] font-semibold text-text-primary">
-                Fix the highlighted fields before saving.
-            </div>
+            <div className="text-[12px] font-semibold text-text-primary">Fix the highlighted fields before saving.</div>
         )
     }
     if (isDirty) {

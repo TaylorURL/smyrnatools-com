@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { formatSessionTime } from '../../../constants/myAccountConstants'
+import Badge from '../../common/Badge'
 import { Card, CardHeader, PrimaryButton, SubtleButton } from '../MyAccountAtoms'
 
 /** Security tab body — password change trigger card + active sessions list
@@ -37,9 +38,9 @@ export default function SecurityTab({ accentColor, onOpenPasswordModal, onRevoke
                             <div className="text-[14px] font-semibold text-text-primary">Active Sessions</div>
                             <div className="text-[12px] mt-0.5 text-text-tertiary">Manage your login sessions</div>
                         </div>
-                        <span className="font-mono tabular-nums rounded-md px-2 py-1 text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary text-text-secondary">
+                        <Badge tone="neutral" size="md" shape="rounded-md" className="font-mono tabular-nums">
                             {sessions.length}
-                        </span>
+                        </Badge>
                     </div>
                     <div>
                         {sessions.length > 0 ? (
@@ -73,9 +74,14 @@ export default function SecurityTab({ accentColor, onOpenPasswordModal, onRevoke
                                                     {session.browser}
                                                 </span>
                                                 {session.isCurrent && (
-                                                    <span className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[rgba(22,_163,_74,_0.15)] text-text-primary">
+                                                    <Badge
+                                                        tone="success"
+                                                        size="md"
+                                                        shape="rounded-md"
+                                                        weight="semibold"
+                                                    >
                                                         Current
-                                                    </span>
+                                                    </Badge>
                                                 )}
                                             </div>
                                             <div className="text-[12px] mt-0.5 font-mono tabular-nums text-text-tertiary">

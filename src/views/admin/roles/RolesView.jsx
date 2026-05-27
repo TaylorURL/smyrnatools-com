@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import TopSection from '../../../app/components/sections/TopSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useRolePermissionHandlers } from '../../../app/hooks/useRolePermissionHandlers'
@@ -134,13 +135,17 @@ function RolesView() {
                                 <i className="fas fa-layer-group text-[12px]" aria-hidden="true" />
                                 Bulk Add
                             </button>
-                            <div
-                                className="inline-flex items-center gap-1.5 rounded-full bg-status-active/15 px-2.5 py-1 text-xs font-semibold text-status-active"
+                            <Badge
+                                tone="success"
+                                size="lg"
+                                shape="pill"
+                                weight="semibold"
+                                icon="shield-halved"
+                                uppercase={false}
                                 title="You have IT administrator access"
                             >
-                                <i className="fas fa-shield-alt text-[10px]" aria-hidden="true" />
                                 IT Access
-                            </div>
+                            </Badge>
                         </div>
                     ) : null
                 }

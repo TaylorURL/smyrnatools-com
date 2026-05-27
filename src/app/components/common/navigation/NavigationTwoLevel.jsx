@@ -54,10 +54,7 @@ export default function NavigationTwoLevel({
                 style={headerStyle}
             >
                 <div className="flex items-center justify-between px-8 py-3">
-                    <div
-                        className="flex items-center gap-6 overflow-x-auto"
-                        style={{ scrollbarWidth: 'none' }}
-                    >
+                    <div className="flex items-center gap-6 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                         <img
                             src={SrmLogo}
                             alt="Smyrna Ready Mix"

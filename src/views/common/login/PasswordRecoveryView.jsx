@@ -44,9 +44,7 @@ function PasswordRecoveryView({ onBackToLogin }) {
                 <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-modal overflow-hidden border border-white/20">
                     <div className="bg-[#1e3a5f] p-6 text-center">
                         <img src={SrmLogo} alt="SRM" className="h-16 mx-auto mb-3" />
-                        <h1 className="font-heading text-xl font-bold tracking-tight text-white">
-                            Password Recovery
-                        </h1>
+                        <h1 className="font-heading text-xl font-bold tracking-tight text-white">Password Recovery</h1>
                         <p className="text-slate-300 text-sm">Enter your email to receive a new password</p>
                     </div>
                     <div className="p-6">

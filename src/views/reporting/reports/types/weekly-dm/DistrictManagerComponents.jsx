@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../../../../../app/components/common/Badge'
 import FormatUtility from '../../../../../utils/FormatUtility'
 import { ReportUtility } from '../../../../../utils/ReportUtility'
 
@@ -120,10 +121,16 @@ export function MaintenanceItemsTable({ items, plants }) {
                                         {item.deadline ? ReportUtility.formatDate(item.deadline) : '—'}
                                     </td>
                                     <td className="px-3 py-2 align-top whitespace-nowrap">
-                                        <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold tabular-nums bg-[rgba(22,_163,_74,_0.12)] text-text-primary">
-                                            <i className="fas fa-check text-[9px]" />
+                                        <Badge
+                                            tone="success"
+                                            size="md"
+                                            weight="semibold"
+                                            uppercase={false}
+                                            icon="circle-check"
+                                            className="tabular-nums"
+                                        >
                                             {item.completed_at ? ReportUtility.formatDate(item.completed_at) : '—'}
-                                        </span>
+                                        </Badge>
                                     </td>
                                 </tr>
                             )

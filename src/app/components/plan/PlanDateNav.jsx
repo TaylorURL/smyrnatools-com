@@ -4,27 +4,32 @@ import { createPortal } from 'react-dom'
 
 import { getTodayDate, getTomorrowDate, offsetDateSkipSunday, skipSundayDate } from '../../../utils/PlanUtility'
 import useFixedDropdownPosition from '../../hooks/useFixedDropdownPosition'
+import Badge from '../common/Badge'
 
 /** Display variant for the realtime tab — date is locked to today and
  *  rendered as a read-only pill. Switching to realtime always anchors the
- *  page to "right now," so a date selector would be misleading. */
-function RealtimeDatePill({ accentColor, isDark, planDate }) {
+ *  page to "right now," so a date selector would be misleading. Renders
+ *  through the unified Badge using the semantic `accent` tone (which maps
+ *  to the per-user accent CSS variable in light/dark/gray themes). */
+function RealtimeDatePill({ planDate }) {
     return (
-        <div
-            className="inline-flex items-center gap-1.5 rounded-lg text-sm font-semibold px-2.5 py-1"
-            style={{ backgroundColor: `${accentColor}${isDark ? '30' : '15'}`, color: accentColor }}
+        <Badge
+            tone="accent"
+            size="lg"
+            shape="rounded-md"
+            weight="semibold"
+            uppercase={false}
+            icon="circle-dot"
             title="Realtime is locked to today"
+            className="rounded-lg"
         >
-            <i className="fas fa-circle-dot text-[10px]" />
-            <span>
-                Today ·{' '}
-                {new Date(planDate + 'T00:00:00').toLocaleDateString('en-US', {
-                    day: 'numeric',
-                    month: 'short',
-                    weekday: 'short'
-                })}
-            </span>
-        </div>
+            Today ·{' '}
+            {new Date(planDate + 'T00:00:00').toLocaleDateString('en-US', {
+                day: 'numeric',
+                month: 'short',
+                weekday: 'short'
+            })}
+        </Badge>
     )
 }
 
@@ -329,7 +334,7 @@ function TomorrowButton({ accentColor, disabled = false, disabledReason, isDark,
  */
 export function PlanDateNav({ accentColor, disabled = false, disabledReason, isDark, isRealtime, onChange, planDate }) {
     if (isRealtime) {
-        return <RealtimeDatePill accentColor={accentColor} isDark={isDark} planDate={planDate} />
+        return <RealtimeDatePill planDate={planDate} />
     }
     return (
         <>

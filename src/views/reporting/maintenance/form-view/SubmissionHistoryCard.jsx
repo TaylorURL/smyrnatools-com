@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import { CARD_STYLE, HISTORY_COLLAPSED_LIMIT } from '../../../../app/constants/maintenanceFormConstants'
 import MaintenanceService from '../../../../services/MaintenanceService'
 import { formatMaintenanceDateShort } from '../../../../utils/MaintenanceUtility'
@@ -10,12 +11,9 @@ import { formatHistoryDateTime, statusForSubmission } from './helpers'
 function HistoryStatusPill({ submission }) {
     const status = statusForSubmission(submission)
     return (
-        <span
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
-            style={{ background: `${status.color}1f`, color: 'var(--text-primary)' }}
-        >
+        <Badge tone={status.tone} size="sm" shape="pill" weight="bold" className="shrink-0">
             {status.label}
-        </span>
+        </Badge>
     )
 }
 
@@ -36,12 +34,9 @@ function HistoryRow({ accentColor, isCurrent, submission }) {
                         {formatHistoryDateTime(submission?.submitted_at)}
                     </div>
                     {isCurrent && (
-                        <span
-                            className="inline-flex items-center rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider shrink-0 text-text-primary"
-                            style={{ background: `${accentColor}20` }}
-                        >
+                        <Badge tone="accent" size="xs" weight="bold" className="shrink-0">
                             Viewing
-                        </span>
+                        </Badge>
                     )}
                 </div>
                 <div className="text-[11px] text-text-tertiary tabular-nums truncate mt-0.5">

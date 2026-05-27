@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom'
 
 import { UserPresenceService } from '../../../services/UserPresenceService'
 import { useUserAccents } from '../../hooks/useUserAccent'
+import Badge from './Badge'
 import UserAvatar from './UserAvatar'
 
 const MILLISECONDS_PER_MINUTE = 60000
@@ -89,9 +90,9 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                             Online Users
                         </span>
                         {!isLoading && (
-                            <span className="rounded bg-bg-tertiary px-1.5 py-0.5 font-mono text-[9.5px] font-bold uppercase tracking-wider tabular-nums text-text-secondary">
+                            <Badge tone="neutral" size="xs" weight="bold" className="font-mono tabular-nums">
                                 {onlineUsers.length}
-                            </span>
+                            </Badge>
                         )}
                     </div>
                     <button
@@ -148,12 +149,16 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                                                 </span>
                                                 <div className="mt-0.5 flex items-center gap-1.5">
                                                     {user.roles?.length > 0 && (
-                                                        <span
-                                                            className="force-white-text rounded px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider"
-                                                            style={{ background: roleColor }}
+                                                        <Badge
+                                                            variant="custom"
+                                                            bg={roleColor}
+                                                            fg="#ffffff"
+                                                            size="xs"
+                                                            weight="semibold"
+                                                            className="force-white-text"
                                                         >
                                                             {user.roles[0]}
-                                                        </span>
+                                                        </Badge>
                                                     )}
                                                     {user.regionCode && (
                                                         <span className="text-[10.5px] text-text-secondary">

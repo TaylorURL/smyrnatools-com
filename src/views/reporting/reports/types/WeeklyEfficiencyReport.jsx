@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useState } from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import { exportEfficiencyReport } from '../../../../app/components/modules/export/reports/EfficiencyExport'
 import { EFFICIENCY_THRESHOLDS } from '../../../../app/constants/reportConstants'
 import { ReportService } from '../../../../services/ReportService'
@@ -24,16 +25,20 @@ const TD_BASE = 'px-3 py-2 text-[12px] align-middle text-text-primary'
  *  (#d97706). White text on a solid fill — same visual vocabulary as the
  *  `operatorStatusBadge` solid variant on the people list. When `tone` is
  *  null the value renders as plain text so good rows stay quiet. */
-const WARN_PILL_HEX = { danger: '#dc2626', warn: '#d97706' }
-const WARN_PILL_CLASS =
-    'inline-flex items-center justify-end rounded-full px-2 py-0.5 text-[10.5px] font-bold tabular-nums whitespace-nowrap text-white'
-
 const WarnPill = ({ children, tone }) => {
     if (!tone) return <>{children}</>
     return (
-        <span className={WARN_PILL_CLASS} style={{ background: WARN_PILL_HEX[tone] }}>
+        <Badge
+            tone={tone === 'danger' ? 'danger' : 'warning'}
+            variant="solid"
+            size="md"
+            shape="pill"
+            weight="bold"
+            uppercase={false}
+            className="tabular-nums"
+        >
             {children}
-        </span>
+        </Badge>
     )
 }
 

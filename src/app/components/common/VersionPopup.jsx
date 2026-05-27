@@ -31,7 +31,9 @@ function VersionPopup({ version, onClick }) {
                 <span className="text-[9.5px] font-semibold uppercase tracking-wider text-text-tertiary">Version</span>
                 <span className="text-[12px] font-bold tabular-nums text-text-primary">{version}</span>
             </span>
-            {interactive && <i className="fas fa-clock-rotate-left text-[10px] text-text-tertiary" aria-hidden="true" />}
+            {interactive && (
+                <i className="fas fa-clock-rotate-left text-[10px] text-text-tertiary" aria-hidden="true" />
+            )}
         </button>
     )
 }

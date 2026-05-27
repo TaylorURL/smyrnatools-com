@@ -46,10 +46,7 @@ function SkeletonAssetRow({ columnCount, isEven, compact }) {
     return (
         <tr className={isEven ? 'bg-bg-primary' : 'bg-bg-secondary'}>
             {Array.from({ length: columnCount }, (_, index) => (
-                <td
-                    key={index}
-                    className={`border-b border-border-light ${compact ? 'px-2 py-2.5' : 'py-5 px-4'}`}
-                >
+                <td key={index} className={`border-b border-border-light ${compact ? 'px-2 py-2.5' : 'py-5 px-4'}`}>
                     <div
                         className={`${compact ? 'h-3' : 'h-3.5'} rounded-md bg-bg-tertiary animate-pulse-slow motion-reduce:animate-none`}
                         style={{ minWidth: '40px', width: `${45 + ((index * 17) % 40)}%` }}
@@ -134,12 +131,7 @@ export function TaskListSkeleton({ groupCount = 3 }) {
     const isMobile = useIsMobile()
     const rowCounts = [4, 3, 2]
     return (
-        <div
-            role="status"
-            aria-live="polite"
-            aria-busy="true"
-            className="flex flex-col gap-4 sm:gap-5 w-full"
-        >
+        <div role="status" aria-live="polite" aria-busy="true" className="flex flex-col gap-4 sm:gap-5 w-full">
             <span className="sr-only">Loading tasks…</span>
             {Array.from({ length: groupCount }, (_, index) => (
                 <SkeletonTaskGroup key={index} rowCount={rowCounts[index % rowCounts.length]} compact={isMobile} />
@@ -196,10 +188,7 @@ export default function AssetListSkeleton({ viewMode, count, columnCount = 8 }) 
                 style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? '260px' : '300px'}, 1fr))` }}
             >
                 {Array.from({ length: cardCount }, (_, index) => (
-                    <div
-                        key={index}
-                        style={{ animationDelay: `${index * STAGGER_MS}ms`, animationFillMode: 'both' }}
-                    >
+                    <div key={index} style={{ animationDelay: `${index * STAGGER_MS}ms`, animationFillMode: 'both' }}>
                         <SkeletonAssetCard compact={isMobile} />
                     </div>
                 ))}

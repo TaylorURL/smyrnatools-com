@@ -22,7 +22,8 @@ import {
     sumDayYardage,
     sumLiveTrucks,
     sumLiveYards,
-    summarizeActiveFilters} from '../../utils/PlanScheduleDataUtility'
+    summarizeActiveFilters
+} from '../../utils/PlanScheduleDataUtility'
 import {
     applyLoadingPlantReassignment,
     buildHelpRows,

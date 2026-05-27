@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 
 import { useConfirm } from '../../../../../context/ConfirmContext'
+import Badge from '../../../../common/Badge'
 import { ContactEditor } from './ContactEditor'
 
 /** Editable phone-number list. Numbers come from two places merged into
@@ -93,13 +94,15 @@ export function ContactsSection({
                                         </span>
                                     )}
                                     {entry.isPrimary && (
-                                        <span
-                                            className="text-[9px] uppercase tracking-wider font-bold rounded-sm px-1 py-0.5"
-                                            style={{ background: '#16a34a22', color: 'var(--text-primary)' }}
+                                        <Badge
+                                            tone="success"
+                                            size="xs"
+                                            shape="square"
+                                            weight="bold"
                                             title="Primary number"
                                         >
                                             Primary
-                                        </span>
+                                        </Badge>
                                     )}
                                 </a>
                                 <div className="flex items-center gap-1 shrink-0">

@@ -2,6 +2,7 @@ import React from 'react'
 
 import { DateUtility } from '../../../utils/DateUtility'
 import { HistoryUtility } from '../../../utils/HistoryUtility'
+import Badge from '../common/Badge'
 import HistoryEmptyState from '../ui/HistoryEmptyState'
 import StatCard from '../ui/StatCard'
 import StatCardGrid from '../ui/StatCardGrid'
@@ -12,6 +13,18 @@ import TimelineItem, {
     TimelineMeta,
     TimelineSectionTitle
 } from '../ui/TimelineItem'
+
+const STATUS_TO_TONE = {
+    Active: 'success',
+    Down: 'danger',
+    'In Service': 'info',
+    Retired: 'neutral',
+    Shop: 'info',
+    Spare: 'neutral',
+    Unknown: 'neutral'
+}
+
+const resolveStatusTone = (status) => STATUS_TO_TONE[status] ?? 'neutral'
 
 /** Walks operator entries grouping consecutive same-operator runs. */
 function findRunEnd(operatorData, startIndex, operatorName) {
@@ -102,13 +115,12 @@ function StatusDuringEmptyWindow({ statusPeriods }) {
     if (!statusPeriods?.length) return null
     return (
         <div className="mt-2 pt-2 border-t border-border-light">
-            <div className="text-[10px] text-slate-500 font-semibold mb-1">Status during period:</div>
+            <div className="text-[10px] text-text-tertiary font-semibold mb-1">Status during period:</div>
             <div className="flex flex-wrap gap-1">
                 {statusPeriods.map((sp, spIdx) => (
-                    <div key={spIdx} className="text-[11px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
-                        <span className="font-medium">{sp.status}</span>
-                        <span className="text-slate-400 ml-1">({HistoryUtility.pluralizeDays(sp.days)})</span>
-                    </div>
+                    <Badge key={spIdx} tone={resolveStatusTone(sp.status)} size="xs" weight="bold">
+                        {sp.status} ({HistoryUtility.pluralizeDays(sp.days)})
+                    </Badge>
                 ))}
             </div>
         </div>
@@ -162,9 +174,9 @@ export default function HistoryOperatorsTab({ item, operatorData, statusData }) 
                                 isCurrent={entry.isCurrent}
                                 badge={
                                     entry.isEmpty && !entry.isCurrent ? (
-                                        <span className="text-[10px] font-bold text-text-primary bg-amber-100 px-1.5 py-0.5 rounded uppercase">
+                                        <Badge tone="warning" size="xs" weight="bold">
                                             No Operator
-                                        </span>
+                                        </Badge>
                                     ) : null
                                 }
                             />

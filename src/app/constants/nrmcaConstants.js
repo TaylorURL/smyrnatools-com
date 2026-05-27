@@ -1,34 +1,34 @@
-/* eslint-disable react/forbid-dom-props */
-
 export const RENEWAL_WARN_DAYS = 90
 export const CALIBRATION_WARN_DAYS = 30
 
 export const SCALE_TYPES = ['batch', 'aggregate', 'truck', 'water', 'admixture', 'cement', 'other']
 
 /**
- * Status descriptors share the same `status-badge-*` utility classes the rest
- * of the app uses (defined in app/index.css with `html.dark` overrides), so
- * pills flip cleanly between light and dark mode without per-status hex math.
+ * Status descriptors map calibration / certification statuses to the unified
+ * Badge tone palette and a human label. Tone mirrors the legacy
+ * `status-badge-*` utility classes the rest of the app uses.
  */
 export const STATUS_BADGE = {
-    due_soon: { cls: 'status-badge-warning', label: 'Due Soon' },
-    expired: { cls: 'status-badge-danger', label: 'Expired' },
-    expiring: { cls: 'status-badge-warning', label: 'Expiring' },
-    ok: { cls: 'status-badge-success', label: 'OK' },
-    overdue: { cls: 'status-badge-danger', label: 'Overdue' },
-    unknown: { cls: 'status-badge-neutral', label: 'Not Set' },
-    valid: { cls: 'status-badge-success', label: 'Valid' }
+    due_soon: { label: 'Due Soon', tone: 'warning' },
+    expired: { label: 'Expired', tone: 'danger' },
+    expiring: { label: 'Expiring', tone: 'warning' },
+    ok: { label: 'OK', tone: 'success' },
+    overdue: { label: 'Overdue', tone: 'danger' },
+    unknown: { label: 'Not Set', tone: 'neutral' },
+    valid: { label: 'Valid', tone: 'success' }
 }
 
+/**
+ * Scale-row icon tone classes — retained for inline icon coloring on the
+ * scale row's leading icon container (not a Badge wrapper). Continues to
+ * leverage the global `status-badge-*` background classes.
+ */
 export const SCALE_ICON_TONE_CLASS = {
     due_soon: 'status-badge-warning',
     ok: 'status-badge-success',
     overdue: 'status-badge-danger',
     unknown: 'status-badge-neutral'
 }
-
-export const STATUS_PILL_CLS =
-    'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0'
 
 // Shared form-control styling — flat 1px-bordered pill matching the Plan
 // tab's settings panels so the page reads as one design system. `color-scheme`

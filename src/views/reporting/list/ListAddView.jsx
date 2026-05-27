@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
 import AddViewSection from '../../../app/components/sections/AddViewSection'
 import {
@@ -276,16 +277,18 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                         autoFocus
                                     />
                                     {aiError && (
-                                        <div
-                                            className="mt-1 flex items-center gap-2 rounded-md border border-status-danger/30 bg-status-danger/10 px-3 py-2 text-xs text-text-primary animate-fade-slide-in"
+                                        <Badge
+                                            tone="danger"
+                                            variant="outline"
+                                            size="lg"
+                                            shape="rounded-md"
+                                            icon="triangle-exclamation"
+                                            uppercase={false}
+                                            className="mt-1 animate-fade-slide-in"
                                             role="alert"
                                         >
-                                            <i
-                                                className="fas fa-exclamation-triangle text-[10px] text-status-danger"
-                                                aria-hidden="true"
-                                            />
-                                            <span>{aiError}</span>
-                                        </div>
+                                            {aiError}
+                                        </Badge>
                                     )}
                                     {showSuggestions && aiSuggestions.length > 0 && (
                                         <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-card border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in">
@@ -344,26 +347,22 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                                 {selectedPlantCodes.map((code) => {
                                                     const plant = plants.find((p) => p.plant_code === code)
                                                     return (
-                                                        <div
+                                                        <Badge
                                                             key={code}
-                                                            className="inline-flex items-center gap-2 rounded-md border border-accent/20 bg-accent/10 px-3 py-1.5 text-sm text-text-primary"
+                                                            tone="accent"
+                                                            variant="outline"
+                                                            size="lg"
+                                                            shape="rounded-md"
+                                                            uppercase={false}
+                                                            removable
+                                                            onRemove={() =>
+                                                                setSelectedPlantCodes((prev) =>
+                                                                    prev.filter((c) => c !== code)
+                                                                )
+                                                            }
                                                         >
-                                                            <span>
-                                                                ({plant?.plant_code}) {plant?.plant_name}
-                                                            </span>
-                                                            <button
-                                                                type="button"
-                                                                className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/20 text-text-primary transition-colors duration-150 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                                                                onClick={() =>
-                                                                    setSelectedPlantCodes((prev) =>
-                                                                        prev.filter((c) => c !== code)
-                                                                    )
-                                                                }
-                                                                aria-label="Remove plant"
-                                                            >
-                                                                <i className="fas fa-times text-xs" aria-hidden="true" />
-                                                            </button>
-                                                        </div>
+                                                            ({plant?.plant_code}) {plant?.plant_name}
+                                                        </Badge>
                                                     )
                                                 })}
                                             </div>

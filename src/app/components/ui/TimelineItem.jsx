@@ -1,6 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../common/Badge'
+
 /** Timeline entry — colored dot rail + card body. Theme-aware ring + line. */
 export default function TimelineItem({ dotColor, dotClassName, isLast, children }) {
     return (
@@ -27,9 +29,9 @@ export function TimelineHeader({ label, isCurrent, badge }) {
         <div className="flex items-center gap-1.5 mb-1">
             <span className="text-[12.5px] font-semibold leading-tight text-text-primary">{label}</span>
             {isCurrent && (
-                <span className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-status-active text-white">
+                <Badge tone="success" variant="solid" size="md" shape="rounded-md">
                     Current
-                </span>
+                </Badge>
             )}
             {badge}
         </div>
@@ -53,7 +55,5 @@ export function TimelineDuration({ text }) {
 
 /** Section heading inside a timeline tab. */
 export function TimelineSectionTitle({ title }) {
-    return (
-        <h3 className="m-0 mb-1 text-[9.5px] font-bold uppercase tracking-wider text-text-secondary">{title}</h3>
-    )
+    return <h3 className="m-0 mb-1 text-[9.5px] font-bold uppercase tracking-wider text-text-secondary">{title}</h3>
 }

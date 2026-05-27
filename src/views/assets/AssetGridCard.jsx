@@ -1,33 +1,49 @@
 import React from 'react'
 
-const VERIFIED_PILL_CLASS = 'bg-status-active/10 text-status-active'
-const UNVERIFIED_PILL_CLASS = 'bg-status-warning/10 text-status-warning'
+import Badge from '../../app/components/common/Badge'
 
-/** 9+ clamp for badge counts (avoids "10" pushing pill out of round). */
-const formatBadgeCount = (count) => (count > 9 ? '9+' : count)
+/**
+ * Maps status-pill palette keys to Badge tones. Centralizes the asset-card
+ * status palette so the unified Badge component renders the right semantic
+ * tone for each status string.
+ */
+const STATUS_BADGE_CLASS_TO_TONE = {
+    'bg-bg-tertiary text-text-secondary': 'neutral',
+    'bg-status-active text-white': 'success',
+    'bg-status-danger text-white': 'danger',
+    'bg-status-shop text-white': 'info',
+    'bg-status-spare text-white': 'neutral',
+    'bg-status-warning text-white': 'warning'
+}
 
 const getInitials = (name) => {
     if (!name) return '—'
     const parts = String(name).split(' ').filter(Boolean)
-    return parts.length >= 2
-        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-        : (name[0] || '?').toUpperCase()
+    return parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : (name[0] || '?').toUpperCase()
 }
+
+/** 9+ clamp for badge counts (avoids "10" pushing pill out of round). */
+const formatBadgeCount = (count) => (count > 9 ? '9+' : count)
 
 /**
  * Compact circular count badge anchored to action icons (top-right corner).
- * Used for unread comments and open-issues counts.
+ * Used for unread comments and open-issues counts. Uses Badge primitive with
+ * a tight 9+ clamp instead of Badge's default 99+ formatter to keep the dot
+ * visually round.
  */
 function CountBadge({ count, tone = 'accent' }) {
     if (!count) return null
-    const palette =
-        tone === 'danger' ? 'bg-status-danger text-white' : 'bg-accent text-white'
     return (
-        <span
-            className={`absolute -top-1 -right-1 inline-flex min-w-[14px] h-3.5 items-center justify-center rounded-full px-0.5 text-[9px] font-bold leading-none ${palette}`}
+        <Badge
+            tone={tone === 'danger' ? 'danger' : 'accent'}
+            variant="solid"
+            size="xs"
+            shape="pill"
+            uppercase={false}
+            className="absolute -top-1 -right-1 min-w-[14px] justify-center"
         >
             {formatBadgeCount(count)}
-        </span>
+        </Badge>
     )
 }
 
@@ -51,13 +67,16 @@ function CardFooterAction({ count, countTone, icon, label, onActivate, divider }
             <i className={`fas ${icon}`} />
             <span>{label}</span>
             {count > 0 && (
-                <span
-                    className={`inline-flex min-w-[16px] h-4 items-center justify-center rounded-full px-1 text-[9px] font-bold ${
-                        countTone === 'danger' ? 'bg-status-danger text-white' : 'bg-accent text-white'
-                    }`}
+                <Badge
+                    tone={countTone === 'danger' ? 'danger' : 'accent'}
+                    variant="solid"
+                    size="xs"
+                    shape="pill"
+                    uppercase={false}
+                    className="min-w-[16px] justify-center"
                 >
                     {formatBadgeCount(count)}
-                </span>
+                </Badge>
             )}
         </button>
     )
@@ -157,21 +176,28 @@ function AssetGridCard({
                     </div>
                 </div>
                 {config.hasVerification && isVerified !== undefined && (
-                    <span
-                        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                            isVerified ? VERIFIED_PILL_CLASS : UNVERIFIED_PILL_CLASS
-                        }`}
+                    <Badge
+                        tone={isVerified ? 'success' : 'warning'}
+                        variant="soft"
+                        size="sm"
+                        shape="pill"
+                        uppercase={false}
+                        icon={isVerified ? 'check-circle' : 'exclamation-circle'}
+                        className="shrink-0 px-2.5 py-1"
                     >
-                        <i className={`fas ${isVerified ? 'fa-check-circle' : 'fa-exclamation-circle'}`} />
                         {isVerified ? 'Verified' : 'Unverified'}
-                    </span>
+                    </Badge>
                 )}
-                <span
-                    className={`inline-flex shrink-0 items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${statusBadgeClass}`}
+                <Badge
+                    tone={STATUS_BADGE_CLASS_TO_TONE[statusBadgeClass] || 'neutral'}
+                    variant="solid"
+                    size="md"
+                    shape="rounded-md"
+                    uppercase={false}
+                    className="shrink-0 px-2.5 py-1"
                 >
-                    {displayStatus || '---'}
-                    {statusDays ? ` (${statusDays}d)` : ''}
-                </span>
+                    {`${displayStatus || '---'}${statusDays ? ` (${statusDays}d)` : ''}`}
+                </Badge>
             </div>
 
             {(config.hasOperatorAssignment || config.hasTractorAssignment) && (
@@ -242,9 +268,16 @@ function AssetGridCard({
                                             ))}
                                         </span>
                                         {warning && (
-                                            <span className="ml-1 inline-flex items-center rounded-md bg-status-danger/10 text-status-danger px-1.5 py-0.5 text-[9px] font-bold">
+                                            <Badge
+                                                tone="danger"
+                                                variant="soft"
+                                                size="xs"
+                                                shape="rounded-md"
+                                                uppercase={false}
+                                                className="ml-1"
+                                            >
                                                 {warning}
-                                            </span>
+                                            </Badge>
                                         )}
                                     </span>
                                 ) : field.type === 'monospace' ? (
@@ -255,9 +288,9 @@ function AssetGridCard({
                                     <span className="inline-flex items-center gap-1.5">
                                         {value}
                                         {isOverdue && (
-                                            <span className="inline-flex items-center rounded-md bg-status-danger/10 text-status-danger px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider">
+                                            <Badge tone="danger" variant="soft" size="xs" shape="rounded-md">
                                                 Overdue
-                                            </span>
+                                            </Badge>
                                         )}
                                     </span>
                                 )}

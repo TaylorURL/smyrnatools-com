@@ -52,7 +52,7 @@ export function collectAvailablePlantCodes(currentRows, selectedPlant) {
 export function buildScheduleMetaByDate(currentRows, previousRows) {
     const out = new Map()
     const ingest = (rows) => {
-        (rows || []).forEach((row) => {
+        ;(rows || []).forEach((row) => {
             const date = row?.plan_date
             if (!date) return
             const production =

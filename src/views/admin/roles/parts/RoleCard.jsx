@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import { getNamespace, NAMESPACE_ICONS } from './permissionMeta'
 import PermissionRow from './PermissionRow'
 
@@ -104,28 +105,37 @@ const RoleCard = ({
                             {role.name}
                         </span>
                         {isElevated && (
-                            <span
-                                className="inline-flex items-center gap-1 rounded-full bg-status-warning/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-status-warning"
+                            <Badge
+                                tone="warning"
+                                size="xs"
+                                shape="pill"
+                                weight="bold"
+                                icon="bolt"
                                 title="Weight exceeds elevated threshold"
                             >
-                                <i className="fas fa-bolt text-[8px]" aria-hidden="true" />
                                 Elevated
-                            </span>
+                            </Badge>
                         )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-bg-tertiary px-1.5 py-0.5 text-[10px] font-semibold text-text-secondary">
-                            <i className="fas fa-balance-scale text-[9px]" aria-hidden="true" />
+                        <Badge
+                            tone="neutral"
+                            size="sm"
+                            shape="rounded-md"
+                            weight="semibold"
+                            icon="scale-balanced"
+                            uppercase={false}
+                        >
                             <span className="font-mono tabular-nums">{role.weight || 0}</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
+                        </Badge>
+                        <Badge tone="accent" size="sm" shape="rounded-md" weight="semibold" uppercase={false}>
                             <span className="font-mono tabular-nums">{permissions.length}</span>
-                            <span>perms</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded-md bg-status-active/15 px-1.5 py-0.5 text-[10px] font-semibold text-status-active">
+                            <span className="ml-1">perms</span>
+                        </Badge>
+                        <Badge tone="success" size="sm" shape="rounded-md" weight="semibold" uppercase={false}>
                             <span className="font-mono tabular-nums">{namespaces.length}</span>
-                            <span>namespaces</span>
-                        </span>
+                            <span className="ml-1">namespaces</span>
+                        </Badge>
                     </div>
                 </div>
                 <i

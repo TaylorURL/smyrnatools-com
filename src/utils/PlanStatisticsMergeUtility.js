@@ -98,7 +98,7 @@ export function mergePlanAndDispatchRows(plansRows, dispatchRows) {
         // would mean the dispatcher booked something never imported).
         const dispatchOrderIds = new Set()
         Object.values(dispatchProduction).forEach((block) => {
-            (block?.orders || []).forEach((o) => {
+            ;(block?.orders || []).forEach((o) => {
                 if (o?.orderId) dispatchOrderIds.add(o.orderId)
             })
         })

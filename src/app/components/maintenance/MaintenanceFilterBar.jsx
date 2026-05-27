@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
+import Badge from '../common/Badge'
 import PlantDropdownModal from '../common/PlantDropdownModal'
 import PlantFilterButton from '../ui/PlantFilterButton'
 
@@ -83,19 +84,22 @@ function ResetButton({ onClick }) {
 function CountPill({ accentColor, active, count, label, onClick }) {
     const tint = STATUS_PILL_TINTS[label] || accentColor
     return (
-        <button
-            type="button"
+        <Badge
+            as="button"
+            tone="neutral"
+            variant="custom"
+            bg={active ? `${tint}26` : `${tint}14`}
+            fg={tint}
+            active={active}
+            size="md"
+            weight="semibold"
+            uppercase={false}
             onClick={onClick}
             aria-pressed={active}
-            className="inline-flex items-center gap-1 rounded text-[11px] font-semibold border cursor-pointer px-1.5 py-0.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none text-text-primary active:scale-[0.97]"
-            style={{
-                background: active ? `${tint}26` : `${tint}14`,
-                borderColor: active ? tint : `${tint}30`
-            }}
         >
             <span className="font-mono tabular-nums">{count.toLocaleString()}</span>
             <span>{label}</span>
-        </button>
+        </Badge>
     )
 }
 

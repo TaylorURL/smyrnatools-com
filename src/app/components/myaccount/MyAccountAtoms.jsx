@@ -3,9 +3,7 @@ import React from 'react'
 /** Card shell with consistent border / radius / background tokens. */
 export function Card({ children, className = '' }) {
     return (
-        <div className={`rounded-card border border-border-light bg-bg-primary shadow-sm ${className}`}>
-            {children}
-        </div>
+        <div className={`rounded-card border border-border-light bg-bg-primary shadow-sm ${className}`}>{children}</div>
     )
 }
 

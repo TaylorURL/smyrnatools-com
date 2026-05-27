@@ -1,6 +1,6 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import CardSection from '../../../app/components/sections/CardSection'
 
 /** Grid-mode card for a single manager displaying email, plant, and role badge. */
@@ -25,13 +25,16 @@ function ManagerCard({ manager, plantName, onSelect }) {
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Role</div>
                 <div className="text-sm font-medium">
-                    <span
-                        className="inline-block px-2 py-0.5 rounded text-xs font-semibold text-white"
-                        style={{ backgroundColor: roleColor }}
+                    <Badge
+                        variant="custom"
+                        bg={roleColor}
+                        fg="#ffffff"
+                        size="md"
+                        weight="semibold"
                         title={`Role: ${manager.roleName}, Weight: ${manager.roleWeight || 0}`}
                     >
                         {manager.roleName || 'Unknown'}
-                    </span>
+                    </Badge>
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">

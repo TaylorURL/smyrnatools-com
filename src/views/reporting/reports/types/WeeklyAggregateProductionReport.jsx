@@ -1,5 +1,6 @@
 import React from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import { usePreviousWeekReport } from '../../../../app/hooks/useReportData'
 import { useReportVariance } from '../../../../app/hooks/useReportVariance'
 import { reportTypeMap } from '../../../../app/types/ReportTypes'
@@ -42,31 +43,30 @@ function CardHeader({ icon, label, sub, title, right }) {
 function VariancePill({ varianceStr }) {
     if (!varianceStr) {
         return (
-            <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums bg-bg-tertiary text-text-tertiary">
+            <Badge tone="neutral" size="md" weight="semibold" uppercase={false} className="tabular-nums">
                 —
-            </span>
+            </Badge>
         )
     }
-    const n = parseFloat(varianceStr)
-    if (!Number.isFinite(n) || n === 0) {
+    const pct = parseFloat(varianceStr)
+    if (!Number.isFinite(pct) || pct === 0) {
         return (
-            <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums bg-bg-tertiary text-text-tertiary">
-                <i className="fas fa-minus text-[9px]" />
+            <Badge tone="neutral" size="md" weight="semibold" uppercase={false} icon="minus" className="tabular-nums">
                 {varianceStr}
-            </span>
+            </Badge>
         )
     }
-    const isUp = n > 0
-    const color = isUp ? '#15803d' : '#b91c1c'
-    const bg = isUp ? 'rgba(22, 163, 74, 0.12)' : 'rgba(220, 38, 38, 0.12)'
     return (
-        <span
-            className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums"
-            style={{ background: bg, color }}
+        <Badge
+            tone={pct >= 0 ? 'success' : 'danger'}
+            size="md"
+            weight="semibold"
+            uppercase={false}
+            icon={pct > 0 ? 'arrow-up' : 'arrow-down'}
+            className="tabular-nums"
         >
-            <i className={`fas fa-arrow-${isUp ? 'up' : 'down'} text-[9px]`} />
             {varianceStr}
-        </span>
+        </Badge>
     )
 }
 

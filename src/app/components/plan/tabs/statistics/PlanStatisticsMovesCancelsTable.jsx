@@ -2,14 +2,19 @@
 import React from 'react'
 
 import { fmtDate, fmtInt, fmtScorePct } from '../../../../../utils/PlanStatisticsFormatUtility'
+import Badge from '../../../common/Badge'
 
-const HEAVY = '#dc2626'
-const SOFT = '#f59e0b'
-const NEUTRAL = '#64748b'
+const RANK_COLORS = {
+    1: { bg: 'rgba(217, 119, 6, 0.18)', fg: 'var(--text-primary)' },
+    2: { bg: 'rgba(148, 163, 184, 0.22)', fg: 'var(--text-primary)' },
+    3: { bg: 'rgba(180, 83, 9, 0.16)', fg: 'var(--text-primary)' }
+}
 
 /** Proportional stacked bar — cancels / moves / edits as one row.
  *  Lets the eye pick up "this customer is mostly cancels" vs "mostly
- *  moves" without re-reading the count columns. */
+ *  moves" without re-reading the count columns. Segment widths are the
+ *  only inline style (necessarily dynamic); the fill colours use the
+ *  shared semantic status tokens. */
 function BreakdownBar({ cancelCount, editCount, moveCount }) {
     const total = cancelCount + moveCount + editCount
     if (total <= 0) {
@@ -17,30 +22,43 @@ function BreakdownBar({ cancelCount, editCount, moveCount }) {
     }
     return (
         <div className="rounded-sm h-1.5 overflow-hidden flex bg-bg-tertiary">
-            <div style={{ background: HEAVY, width: `${(cancelCount / total) * 100}%` }} />
-            <div style={{ background: SOFT, width: `${(moveCount / total) * 100}%` }} />
-            <div style={{ background: NEUTRAL, width: `${(editCount / total) * 100}%` }} />
+            <div className="bg-status-danger" style={{ width: `${(cancelCount / total) * 100}%` }} />
+            <div className="bg-status-warning" style={{ width: `${(moveCount / total) * 100}%` }} />
+            <div className="bg-status-spare" style={{ width: `${(editCount / total) * 100}%` }} />
         </div>
     )
 }
 
 /** Rank chip — gold/silver/bronze for top 3, neutral chip otherwise. */
 export function RankChip({ rank }) {
-    const palette =
-        rank === 1
-            ? { background: 'rgba(217, 119, 6, 0.18)', color: 'var(--text-primary)' }
-            : rank === 2
-              ? { background: 'rgba(148, 163, 184, 0.22)', color: 'var(--text-primary)' }
-              : rank === 3
-                ? { background: 'rgba(180, 83, 9, 0.16)', color: 'var(--text-primary)' }
-                : { background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }
+    const palette = RANK_COLORS[rank]
+    if (palette) {
+        return (
+            <Badge
+                variant="custom"
+                bg={palette.bg}
+                fg={palette.fg}
+                size="md"
+                shape="rounded-md"
+                weight="semibold"
+                uppercase={false}
+                className="justify-center tabular-nums w-7 h-6"
+            >
+                {rank}
+            </Badge>
+        )
+    }
     return (
-        <span
-            className="inline-flex items-center justify-center font-semibold tabular-nums text-[11px] rounded-md w-7 h-6"
-            style={palette}
+        <Badge
+            tone="neutral"
+            size="md"
+            shape="rounded-md"
+            weight="semibold"
+            uppercase={false}
+            className="justify-center tabular-nums w-7 h-6"
         >
             {rank}
-        </span>
+        </Badge>
     )
 }
 

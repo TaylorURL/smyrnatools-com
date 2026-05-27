@@ -30,5 +30,5 @@ public/changelog.txt
 .claude/worktrees/
 .claude/skills/
 .agents/
-.infinity/
+.bot/
 skills-lock.json

@@ -1,5 +1,6 @@
 import React from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
 
 /**
@@ -57,22 +58,18 @@ export default function ManagerAssignmentCard({
                         {additionalPlants.map((code) => {
                             const p = plants.find((pl) => pl.plant_code === code)
                             return (
-                                <span
+                                <Badge
                                     key={code}
-                                    className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent"
+                                    tone="accent"
+                                    size="md"
+                                    shape="pill"
+                                    weight="medium"
+                                    uppercase={false}
+                                    removable={!readOnly}
+                                    onRemove={() => onRemoveAdditionalPlant(code)}
                                 >
                                     ({code}) {p?.plant_name || ''}
-                                    {!readOnly && (
-                                        <button
-                                            type="button"
-                                            className="ml-1 rounded text-accent/70 transition-colors duration-150 hover:bg-accent/20 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.92]"
-                                            onClick={() => onRemoveAdditionalPlant(code)}
-                                            aria-label={`Remove plant ${code}`}
-                                        >
-                                            <i className="fas fa-times text-[10px]" aria-hidden="true" />
-                                        </button>
-                                    )}
-                                </span>
+                                </Badge>
                             )
                         })}
                     </div>

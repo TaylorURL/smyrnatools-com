@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import TabFadeIn from '../../../app/components/common/TabFadeIn'
 import PersonViewTabBar from '../../../app/components/people/PersonViewTabBar'
 import PersonStatisticsView from '../../../app/components/people/statistics/PersonStatisticsView'
@@ -365,8 +366,6 @@ function ManagersView({ title = 'Managers', onSelectManager }) {
                                             'text-text-secondary text-[11.5px] py-1.5 px-2.5 text-left align-middle'
                                         const cellHighlightCls =
                                             'text-text-primary text-[12.5px] font-bold py-1.5 px-2.5 text-left align-middle'
-                                        const roleBadgeCls =
-                                            'inline-flex items-center bg-[#e0e7ff] text-text-primary rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5'
                                         return (
                                             <tr
                                                 key={manager.id}
@@ -387,7 +386,14 @@ function ManagersView({ title = 'Managers', onSelectManager }) {
                                                 </td>
                                                 <td className={`${cellSecondaryCls} w-[17%] group-hover:bg-bg-hover`}>
                                                     {manager.roleName ? (
-                                                        <span className={roleBadgeCls}>{manager.roleName}</span>
+                                                        <Badge
+                                                            variant="custom"
+                                                            bg="#e0e7ff"
+                                                            fg="var(--text-primary)"
+                                                            size="sm"
+                                                        >
+                                                            {manager.roleName}
+                                                        </Badge>
                                                     ) : (
                                                         '\u2014'
                                                     )}

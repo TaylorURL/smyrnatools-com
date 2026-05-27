@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import Skeleton, { SkeletonStack } from '../../../app/components/common/Skeleton'
 import RegionsAddView from '../../../app/components/regions/RegionsAddView'
 import RegionsDetailView from '../../../app/components/regions/RegionsDetailView'
@@ -12,15 +13,15 @@ const getRegionCode = (region) => region?.region_code || region?.regionCode || '
 const getRegionName = (region) => region?.region_name || region?.regionName || ''
 const getRegionType = (region) => region?.type || region?.region_type || ''
 
-/** Color + icon per region type — used in pills and grid card headers.
- *  Backgrounds use `bg-status-*`-with-alpha so the chips read in all three
- *  themes without hardcoded palette swaps. */
+/** Icon + Badge tone per region type — used in pills and grid card headers.
+ *  Tones map to the shared <Badge /> palette so chips render correctly across
+ *  dark / light / gray themes without hand-rolled background classes. */
 const REGION_TYPE_META = {
-    Aggregate: { badge: 'bg-status-warning/15 text-status-warning', icon: 'fa-mountain' },
-    Concrete: { badge: 'bg-accent/10 text-accent', icon: 'fa-industry' },
-    Office: { badge: 'bg-status-active/15 text-status-active', icon: 'fa-building' }
+    Aggregate: { icon: 'mountain', tone: 'warning' },
+    Concrete: { icon: 'industry', tone: 'accent' },
+    Office: { icon: 'building', tone: 'success' }
 }
-const DEFAULT_TYPE_META = { badge: 'bg-bg-tertiary text-text-secondary', icon: 'fa-map-marker-alt' }
+const DEFAULT_TYPE_META = { icon: 'map-marker-alt', tone: 'neutral' }
 
 /** Slim filter select — matches the FilterSelect atom inside TopSection so admin
  *  views read with the same rhythm as Mixers / Operators / AssetView. The
@@ -50,7 +51,7 @@ function RegionGridCard({ region, onSelect }) {
         >
             <div className="flex items-center gap-3 border-b border-border-light px-5 py-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent/10 text-base text-accent transition-colors duration-200 group-hover:bg-accent group-hover:text-white">
-                    <i className={`fas ${meta.icon}`} aria-hidden="true" />
+                    <i className={`fas fa-${meta.icon}`} aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="truncate font-heading text-lg font-bold tracking-tight text-text-primary">
@@ -60,21 +61,14 @@ function RegionGridCard({ region, onSelect }) {
                         Region
                     </div>
                 </div>
-                <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${meta.badge}`}
-                >
-                    <i className={`fas ${meta.icon} text-[10px]`} aria-hidden="true" />
+                <Badge tone={meta.tone} size="md" shape="pill" weight="semibold" icon={meta.icon} uppercase={false}>
                     {type || 'N/A'}
-                </span>
+                </Badge>
             </div>
 
             <div className="px-5 py-3">
-                <span className="block text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                    Name
-                </span>
-                <span className="mt-0.5 block truncate text-[13px] font-semibold text-text-primary">
-                    {name || '—'}
-                </span>
+                <span className="block text-[10px] font-medium uppercase tracking-wider text-text-tertiary">Name</span>
+                <span className="mt-0.5 block truncate text-[13px] font-semibold text-text-primary">{name || '—'}</span>
             </div>
         </button>
     )
@@ -248,12 +242,16 @@ function RegionsView({ title = 'Regions' }) {
                                                 {getRegionName(region)}
                                             </td>
                                             <td className="px-5 py-4">
-                                                <span
-                                                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${meta.badge}`}
+                                                <Badge
+                                                    tone={meta.tone}
+                                                    size="md"
+                                                    shape="pill"
+                                                    weight="semibold"
+                                                    icon={meta.icon}
+                                                    uppercase={false}
                                                 >
-                                                    <i className={`fas ${meta.icon} text-[10px]`} aria-hidden="true" />
                                                     {type || 'N/A'}
-                                                </span>
+                                                </Badge>
                                             </td>
                                         </tr>
                                     )

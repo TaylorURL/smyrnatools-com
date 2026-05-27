@@ -1,11 +1,16 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { STATUS_BADGE, STATUS_PILL_CLS } from '../../../../app/constants/nrmcaConstants'
+import Badge from '../../../../app/components/common/Badge'
+import { STATUS_BADGE } from '../../../../app/constants/nrmcaConstants'
 
 export function StatusBadge({ status }) {
     const cfg = STATUS_BADGE[status] ?? STATUS_BADGE.unknown
-    return <span className={`${cfg.cls} ${STATUS_PILL_CLS}`}>{cfg.label}</span>
+    return (
+        <Badge tone={cfg.tone} size="sm" className="shrink-0">
+            {cfg.label}
+        </Badge>
+    )
 }
 
 export function Field({ label, children }) {

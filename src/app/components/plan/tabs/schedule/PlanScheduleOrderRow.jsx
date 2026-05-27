@@ -12,6 +12,7 @@ import {
 } from '../../../../../utils/PlanScheduleUtility'
 import { getCalculatedTruckCount } from '../../../../../utils/PlanUtility'
 import { resolveCustomerRiskBadges } from '../../../../hooks/useCustomerRiskIndex'
+import Badge from '../../../common/Badge'
 import {
     HoursLimitBadge,
     LikelyChurnBadge,
@@ -50,13 +51,15 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
     }
     if (isLikelyBadAddress(rawAddress)) {
         return (
-            <span
-                className="status-badge-danger inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider whitespace-nowrap"
+            <Badge
+                tone="danger"
+                size="sm"
+                shape="pill"
+                icon="triangle-exclamation"
                 title={`Address looks invalid — original value: "${rawAddress}"${rawCity ? ` · City: ${rawCity}` : ''}`}
             >
-                <i className="fas fa-triangle-exclamation text-[9px]" />
                 Bad Address
-            </span>
+            </Badge>
         )
     }
     // Fallback: when dispatch didn't enter a city, borrow the plant's city so
@@ -83,23 +86,29 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
                     {displayText}
                 </button>
                 {usingFallback && (
-                    <span
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 bg-[rgba(217,_119,_6,_0.15)] text-text-primary"
+                    <Badge
+                        tone="warning"
+                        size="xs"
+                        shape="pill"
+                        icon="circle-exclamation"
+                        className="shrink-0"
                         title={`City wasn't entered by dispatch — we filled in "${fallbackCity}" from plant ${order.plantCode}. The actual delivery city could be different.`}
                     >
-                        <i className="fas fa-circle-exclamation text-[9px]" />
                         City?
-                    </span>
+                    </Badge>
                 )}
             </div>
             {closerPlant && (
-                <span
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap self-start bg-[rgba(37,_99,_235,_0.12)] text-text-primary"
+                <Badge
+                    tone="info"
+                    size="xs"
+                    shape="pill"
+                    icon="route"
+                    className="self-start"
                     title={`Live drive time: ${closerPlant.minutes} min from plant ${closerPlant.plantCode}${closerPlant.plantName ? ` (${closerPlant.plantName})` : ''} vs ${closerPlant.assignedMinutes} min from assigned plant ${order.plantCode}. Saves ~${closerPlant.savings} min one-way.`}
                 >
-                    <i className="fas fa-route text-[9px]" />
                     Closer to {closerPlant.plantCode} · −{closerPlant.savings}m
-                </span>
+                </Badge>
             )}
         </div>
     )
@@ -141,13 +150,13 @@ function TrucksCell({
     //   < 0   → danger (red)    — below demand, overbooked
     //   0–2   → warning (amber) — tight margin (0 = break-even, 1–2 close to edge)
     //   ≥ 3   → success (green) — comfortable headroom
-    const poolBadgeClass = Number.isFinite(poolAfterEffective)
+    const poolBadgeTone = Number.isFinite(poolAfterEffective)
         ? poolAfterEffective < 0
-            ? 'status-badge-danger'
+            ? 'danger'
             : poolAfterEffective <= 2
-              ? 'status-badge-warning'
-              : 'status-badge-success'
-        : ''
+              ? 'warning'
+              : 'success'
+        : 'neutral'
     const poolBadgeTitle = Number.isFinite(poolAfterEffective)
         ? poolAfterEffective < 0
             ? `${-poolAfterEffective} truck${poolAfterEffective === -1 ? '' : 's'} short — pour runs below scheduled rate`
@@ -162,22 +171,28 @@ function TrucksCell({
                     {differsFromDispatch && <i className="fas fa-circle-info text-[10px]" />}
                     {computed != null ? computed : '—'}
                     {Number.isFinite(poolAfterEffective) && (
-                        <span
-                            className={`${poolBadgeClass} inline-flex items-center px-1.5 py-0.5 rounded-full text-[10.5px] font-bold tabular-nums`}
+                        <Badge
+                            tone={poolBadgeTone}
+                            size="sm"
+                            shape="pill"
+                            uppercase={false}
+                            className="tabular-nums"
                             title={poolBadgeTitle}
                         >
                             /{poolAfterEffective}
-                        </span>
+                        </Badge>
                     )}
                 </span>
                 {overbooked && !compareMode && (
-                    <span
-                        className="status-badge-warning inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
+                    <Badge
+                        tone="warning"
+                        size="xs"
+                        shape="pill"
+                        icon="handshake-angle"
                         title="Fewer trucks than needed to hold the scheduled pour rate — send help from another plant to pour on pace."
                     >
-                        <i className="fas fa-handshake-angle text-[8px]" />
                         Needs Help
-                    </span>
+                    </Badge>
                 )}
             </div>
         </td>

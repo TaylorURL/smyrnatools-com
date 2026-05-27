@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 
 import { SORT_OPTIONS } from '../../../../../utils/PlanScheduleUtility'
 import { plantBadgeColor } from '../../../../../utils/PlanUtility'
+import Badge from '../../../common/Badge'
 import PlantDropdownModal from '../../../common/PlantDropdownModal'
 
 const FIELD_INPUT_STYLE = {
@@ -19,16 +20,24 @@ const FIELD_INPUT_STYLE = {
 
 /** Pill button used for the Status row. Active state uses the user's accent
  *  at 18% background; idle uses bg-secondary. Click-through props match a
- *  plain `<button type="button">`. */
+ *  plain `<button type="button">`. Renders through the unified `Badge` so
+ *  layout primitives stay consistent with every other pill in the app; the
+ *  per-user `accent` hex is dynamic so styling goes through `variant="custom"`
+ *  with a manual `style` (which the Badge passes through via spread). */
 function StatusPill({ accent, active, count, label, onClick }) {
     return (
-        <button
-            type="button"
+        <Badge
+            as="button"
+            variant="custom"
+            shape="rounded-md"
+            size="md"
+            weight="semibold"
+            uppercase={false}
             onClick={onClick}
-            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold cursor-pointer border-none active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
+            className="gap-1.5 border active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             style={{
                 background: active ? `${accent}26` : 'var(--bg-secondary)',
-                border: `1px solid ${active ? accent : 'var(--border-light)'}`,
+                borderColor: active ? accent : 'var(--border-light)',
                 color: active ? accent : 'var(--text-secondary)'
             }}
         >
@@ -42,7 +51,7 @@ function StatusPill({ accent, active, count, label, onClick }) {
             >
                 {count}
             </span>
-        </button>
+        </Badge>
     )
 }
 
@@ -308,15 +317,19 @@ export default function PlanScheduleFilterDrawer({
             {singlePlant && (
                 <>
                     <Divider />
-                    <span
-                        className="inline-flex items-center gap-2 rounded-md px-2 py-1 font-bold tabular-nums text-white text-[11.5px]"
-                        style={{ background: plantBadge, border: `1px solid ${plantBadge}` }}
+                    <Badge
+                        variant="custom"
+                        shape="rounded-md"
+                        size="md"
+                        uppercase={false}
+                        className="gap-2 tabular-nums text-[11.5px]"
+                        style={{ background: plantBadge, border: `1px solid ${plantBadge}`, color: '#fff' }}
                         title={activePlantName ? `${singlePlant} · ${activePlantName}` : singlePlant}
                     >
                         <i className="fas fa-industry text-[10px]" />
                         {singlePlant}
                         {activePlantName && <span className="font-normal opacity-90">· {activePlantName}</span>}
-                    </span>
+                    </Badge>
                     <ToggleSwitch
                         accent={accentColor}
                         checked={showExtraRows}

@@ -4,10 +4,24 @@ import React from 'react'
 import { isDarkLikeTheme } from '../../constants/themeConstants'
 import { usePreferences } from '../../context/PreferencesContext'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import Badge from '../common/Badge'
 
 const BASE_ROW_DELAY_MS = 80
 const MIN_ROW_DELAY_MS = 6
 const DECAY_FACTOR = 0.88
+
+/**
+ * Status name → unified Badge tone. Mirrors AssetListRow so list view and
+ * detail panels read identically across all three themes.
+ */
+const STATUS_TO_TONE = {
+    Active: 'success',
+    'Down In Yard': 'danger',
+    'In Shop': 'info',
+    Spare: 'neutral',
+    'Third Party Work': 'warning',
+    'Waiting For Shop': 'warning'
+}
 
 /**
  * Computes cumulative animation delay for a row index using exponential decay.
@@ -19,32 +33,6 @@ function getRowDelay(index) {
         total += Math.max(MIN_ROW_DELAY_MS, BASE_ROW_DELAY_MS * Math.pow(DECAY_FACTOR, i))
     }
     return Math.round(total)
-}
-
-/**
- * Status badge — colors sourced from mixerConfig.statusBadgeClasses so the
- * list view reads identically to Fleet Overview / Schedule tab. We keep
- * the colour tint on the background and split text into per-theme
- * variants:
- *   - light theme: dark tint that matches the bg colour cue
- *   - dark / grayed themes: white text so the badge reads against the
- *     darker chrome the rest of those themes use
- */
-const STATUS_BADGE_BG = {
-    Active: 'bg-[#dcfce7]',
-    'Down In Yard': 'bg-[#fee2e2]',
-    'In Shop': 'bg-[#dbeafe]',
-    Spare: 'bg-[#f3e8ff]',
-    'Third Party Work': 'bg-[#fef9c3]',
-    'Waiting For Shop': 'bg-[#ffedd5]'
-}
-const STATUS_BADGE_TEXT_LIGHT = {
-    Active: 'text-text-primary',
-    'Down In Yard': 'text-text-primary',
-    'In Shop': 'text-text-primary',
-    Spare: 'text-text-primary',
-    'Third Party Work': 'text-text-primary',
-    'Waiting For Shop': 'text-text-primary'
 }
 
 /** Minimal row icon button — 20px tap target, no chrome, hover brightness. */
@@ -91,12 +79,6 @@ function ListViewModeSection({
     const cellSecondary = `text-left align-middle whitespace-nowrap py-1.5 ${
         isMobile ? 'text-[11px] px-2' : 'text-[12px] px-2.5'
     }`
-
-    const statusBadge = (status) => {
-        const bg = STATUS_BADGE_BG[status] || 'bg-bg-tertiary'
-        const text = isDarkBadgeTheme ? 'text-white' : STATUS_BADGE_TEXT_LIGHT[status] || 'text-text-secondary'
-        return `inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${bg} ${text}`
-    }
 
     const verifyBtnClass = (isVerified) => {
         const bg = isVerified ? 'bg-[#dcfce7]' : 'bg-[#fef3c7] hover:brightness-95'
@@ -207,7 +189,13 @@ function ListViewModeSection({
                                         {item.truckNumber || item.trailerNumber || '—'}
                                     </td>
                                     <td className={cellSecondary} style={{ color: 'var(--text-secondary)' }}>
-                                        <span className={statusBadge(item.status)}>{item.status}</span>
+                                        <Badge
+                                            tone={STATUS_TO_TONE[item.status] || 'neutral'}
+                                            size="sm"
+                                            weight="semibold"
+                                        >
+                                            {item.status}
+                                        </Badge>
                                     </td>
                                     <td className={cellSecondary} style={{ color: 'var(--text-secondary)' }}>
                                         {operator?.name || <span className="italic text-text-tertiary">—</span>}
@@ -215,18 +203,24 @@ function ListViewModeSection({
                                     <td className={cellSecondary}>{renderStars(item.cleanlinessRating)}</td>
                                     <td className={cellSecondary} style={{ color: 'var(--text-secondary)' }}>
                                         {item.vinNumber || item.vin ? (
-                                            <span className="rounded font-mono text-[10.5px] py-0.5 px-1 tabular-nums bg-bg-tertiary text-text-secondary">
+                                            <Badge
+                                                tone="neutral"
+                                                size="sm"
+                                                weight="semibold"
+                                                uppercase={false}
+                                                className="font-mono tabular-nums"
+                                            >
                                                 {item.vinNumber || item.vin}
-                                            </span>
+                                            </Badge>
                                         ) : (
                                             <span className="text-text-tertiary">—</span>
                                         )}
                                     </td>
                                     <td className={cellSecondary}>
                                         {item.status === 'Retired' ? (
-                                            <span className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-bg-tertiary text-text-tertiary">
+                                            <Badge tone="neutral" size="sm" weight="bold">
                                                 N/A
-                                            </span>
+                                            </Badge>
                                         ) : (
                                             <button
                                                 type="button"

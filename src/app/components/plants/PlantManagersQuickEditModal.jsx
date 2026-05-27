@@ -72,7 +72,10 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
             >
                 <div className="flex items-center justify-between gap-3 border-b border-border-light px-5 py-4">
                     <div className="min-w-0">
-                        <div id="plant-managers-modal-title" className="truncate font-heading text-base font-semibold text-text-primary">
+                        <div
+                            id="plant-managers-modal-title"
+                            className="truncate font-heading text-base font-semibold text-text-primary"
+                        >
                             Managers · {plantName}
                         </div>
                         <div className="truncate text-[12px] text-text-tertiary">{plantCode}</div>

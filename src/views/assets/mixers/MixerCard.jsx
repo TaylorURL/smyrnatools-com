@@ -1,5 +1,6 @@
 import React from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import CardSection from '../../../app/components/sections/CardSection'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
@@ -131,12 +132,15 @@ function MixerCard({
                                 ))}
                             </div>
                             {mixer.cleanlinessRating < 3 && (
-                                <span
+                                <Badge
+                                    tone="danger"
+                                    size="md"
+                                    shape="rounded-md"
                                     title="This truck cannot run loads until the cleanliness is 3 stars or better. Do not ignore this warning."
-                                    className="inline-flex items-center rounded-md bg-status-danger/10 text-status-danger text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 cursor-help"
+                                    className="cursor-help"
                                 >
                                     Dirty
-                                </span>
+                                </Badge>
                             )}
                         </div>
                     ) : (

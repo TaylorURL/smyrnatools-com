@@ -10,6 +10,7 @@ import {
     fmtYards
 } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { MAX_YPH, plantBadgeColor, TARGET_YPH, timeToMinutes } from '../../../../../utils/PlanUtility'
+import Badge from '../../../common/Badge'
 
 /** Period-comparison table row — current value, previous value, Δ%. */
 export function ComparisonRow({ current, label, previous }) {
@@ -236,13 +237,16 @@ export function PlantScorecardTable({
                                 <tr className="border-t border-border-light" key={plant.code}>
                                     <td className="px-3 py-2">
                                         <div className="flex items-center gap-2">
-                                            <span
-                                                className="inline-block w-2 h-2 rounded-full shrink-0"
-                                                style={{ background: plantBadgeColor(plant.code, accent) }}
-                                            />
-                                            <span className="font-mono tabular-nums font-semibold text-text-primary">
+                                            <Badge
+                                                variant="custom"
+                                                bg={plantBadgeColor(plant.code, accent)}
+                                                fg="#ffffff"
+                                                size="md"
+                                                weight="semibold"
+                                                className="font-mono tabular-nums"
+                                            >
                                                 {plant.code}
-                                            </span>
+                                            </Badge>
                                             {plantNameByCode?.[plant.code] && (
                                                 <span className="truncate text-text-secondary">
                                                     {plantNameByCode[plant.code]}
@@ -280,15 +284,16 @@ export function PlantScorecardTable({
                                     </td>
                                     <td className="px-3 py-2 text-right">
                                         {status && (
-                                            <span
-                                                className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold"
-                                                style={{
-                                                    background: `${status.color}1f`,
-                                                    color: 'var(--text-primary)'
-                                                }}
+                                            <Badge
+                                                variant="custom"
+                                                bg={`${status.color}1f`}
+                                                fg="var(--text-primary)"
+                                                size="sm"
+                                                weight="semibold"
+                                                uppercase={false}
                                             >
                                                 {status.label}
-                                            </span>
+                                            </Badge>
                                         )}
                                     </td>
                                 </tr>

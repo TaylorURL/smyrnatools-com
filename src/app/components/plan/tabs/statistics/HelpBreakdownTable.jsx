@@ -4,6 +4,7 @@ import React, { useMemo } from 'react'
 import { fmtInt, fmtRange, fmtYards } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel } from '../../../../../utils/PlantColocationUtility'
 import { plantBadgeColor } from '../../../../../utils/PlanUtility'
+import Badge from '../../../common/Badge'
 import { Panel } from '../../../ui/Panel'
 
 /** 1-to-5 star score row. Filled stars use the primary text tone;
@@ -271,13 +272,16 @@ export default function HelpBreakdownTable({ accentColor, colocationMap, helpByG
                                 <tr className="border-t border-border-light" key={row.code}>
                                     <td className="px-3 py-2 align-top">
                                         <div className="flex items-center gap-2 min-w-0">
-                                            <span
-                                                className="inline-block w-2 h-2 rounded-full shrink-0"
-                                                style={{ background: plantBadgeColor(row.code, accentColor) }}
-                                            />
-                                            <span className="font-mono tabular-nums font-semibold text-text-primary">
+                                            <Badge
+                                                variant="custom"
+                                                bg={plantBadgeColor(row.code, accentColor)}
+                                                fg="#ffffff"
+                                                size="md"
+                                                weight="semibold"
+                                                className="font-mono tabular-nums"
+                                            >
                                                 {codeLabel}
-                                            </span>
+                                            </Badge>
                                             {name && <span className="truncate text-text-secondary">{name}</span>}
                                         </div>
                                     </td>

@@ -15,6 +15,7 @@ import {
     TD_BASE,
     TH_BASE
 } from '../../../constants/weeklyReportConstants'
+import Badge from '../../common/Badge'
 import { DataTable, TableRowActionButton } from './RmiAtoms'
 
 /** Trainer roster — name + plant + status + remove. */
@@ -40,9 +41,9 @@ export function TrainerTable({ onRemove, plants, position, readOnly, trainers })
                         {getPlantNameFromList(trainer.plant, plants)}
                     </td>
                     <td className={TD_BASE}>
-                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold bg-[rgba(22,_163,_74,_0.12)] text-text-primary">
+                        <Badge tone="success" size="md" weight="semibold" uppercase={false}>
                             {trainer.status}
-                        </span>
+                        </Badge>
                     </td>
                     {!readOnly && (
                         <td className={`${TD_BASE} text-right`}>
@@ -196,9 +197,16 @@ export function HiringGoalsTable({ hiringGoals, onChange, plants, readOnly }) {
                                     </div>
                                 </td>
                                 <td className={TD_BASE}>
-                                    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums bg-bg-tertiary text-text-secondary border border-border-light">
+                                    <Badge
+                                        tone="neutral"
+                                        variant="custom"
+                                        size="md"
+                                        weight="semibold"
+                                        uppercase={false}
+                                        className="bg-bg-secondary border border-border-light font-mono tabular-nums text-text-secondary"
+                                    >
                                         {plantCode}
-                                    </span>
+                                    </Badge>
                                 </td>
                                 <td className={TD_BASE}>
                                     {readOnly ? (

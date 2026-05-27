@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../../common/Badge'
 import { formatDate, formatFieldName, formatValue, getChangeIcon } from './recapHelpers'
 
 /**
@@ -12,8 +13,8 @@ function RecapAssetGroup({ group, changes, isExpanded, onToggle, operatorNames, 
     const isMixer = group.type === 'mixer'
     const isTerminated = group.type === 'operator' && group.status === 'Terminated'
     const tile = isMixer
-        ? { bg: '#dbeafe', fg: '#1e40af', icon: 'fa-truck' }
-        : { bg: '#fef3c7', fg: '#92400e', icon: 'fa-hard-hat' }
+        ? { bg: '#dbeafe', fg: '#1e40af', icon: 'truck' }
+        : { bg: '#fef3c7', fg: '#92400e', icon: 'hard-hat' }
 
     return (
         <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
@@ -22,25 +23,29 @@ function RecapAssetGroup({ group, changes, isExpanded, onToggle, operatorNames, 
                 onClick={onToggle}
                 className="flex w-full items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary border-none text-left bg-transparent"
             >
-                <div
-                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                    style={{ background: tile.bg, color: tile.fg }}
-                >
-                    <i className={`fa-solid ${tile.icon} text-[10px]`} />
-                </div>
+                <Badge
+                    variant="custom"
+                    size="lg"
+                    shape="rounded-md"
+                    weight="bold"
+                    bg={tile.bg}
+                    fg={tile.fg}
+                    icon={tile.icon}
+                    className="h-6 w-6 justify-center p-0"
+                />
                 {isTerminated ? (
                     <span className="flex items-center gap-1.5 flex-1 min-w-0">
                         <span className="line-through text-[12px] truncate text-text-secondary">{group.name}</span>
-                        <span className="px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider rounded shrink-0 bg-red-100 text-text-primary">
+                        <Badge tone="danger" size="sm" weight="bold" className="shrink-0">
                             Terminated
-                        </span>
+                        </Badge>
                     </span>
                 ) : (
                     <span className="flex-1 text-[12px] font-semibold truncate text-text-primary">{group.name}</span>
                 )}
-                <span className="font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-bg-tertiary text-text-secondary">
+                <Badge tone="neutral" size="xs" weight="bold" className="font-mono">
                     {changes.length}
-                </span>
+                </Badge>
                 <i
                     className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''} text-text-tertiary`}
                 />

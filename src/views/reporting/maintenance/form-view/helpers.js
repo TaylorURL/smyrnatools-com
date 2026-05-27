@@ -1,10 +1,10 @@
 export function statusForSubmission(submission) {
     const status = (submission?.status || '').toLowerCase()
-    if (status === 'approved') return { color: '#16a34a', label: 'Approved' }
-    if (status === 'rejected') return { color: '#dc2626', label: 'Rejected' }
-    if (status === 'submitted') return { color: '#0ea5e9', label: 'Pending Review' }
-    if (status === 'draft') return { color: '#d97706', label: 'Draft' }
-    return { color: 'var(--text-tertiary)', label: status || 'Unknown' }
+    if (status === 'approved') return { color: '#16a34a', label: 'Approved', tone: 'success' }
+    if (status === 'rejected') return { color: '#dc2626', label: 'Rejected', tone: 'danger' }
+    if (status === 'submitted') return { color: '#0ea5e9', label: 'Pending Review', tone: 'info' }
+    if (status === 'draft') return { color: '#d97706', label: 'Draft', tone: 'warning' }
+    return { color: 'var(--text-tertiary)', label: status || 'Unknown', tone: 'neutral' }
 }
 
 export function formatHistoryDateTime(value) {

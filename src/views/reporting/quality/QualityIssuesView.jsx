@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import {
     CARD_STYLE,
     FIELD_SELECT_CLASS,
@@ -12,13 +13,25 @@ import { QualityIssueService } from '../../../services/QualityIssueService'
 import StatsSidebar from './parts/StatsSidebar'
 import QualityIssueModal from './QualityIssueModal'
 
-const STATUS_DEFS = {
-    active: { color: '#dc2626', icon: 'fa-fire', label: 'Active' },
-    closed: { color: '#16a34a', icon: 'fa-circle-check', label: 'Closed' },
-    follow_up: { color: '#0ea5e9', icon: 'fa-arrow-rotate-right', label: 'Follow Up' },
-    holding: { color: '#d97706', icon: 'fa-pause', label: 'Holding' }
-}
 const STATUS_ORDER = ['active', 'follow_up', 'holding', 'closed']
+const STATUS_TO_TONE = {
+    active: 'danger',
+    closed: 'success',
+    follow_up: 'info',
+    holding: 'warning'
+}
+const STATUS_ICON = {
+    active: 'fire',
+    closed: 'circle-check',
+    follow_up: 'arrow-rotate-right',
+    holding: 'pause'
+}
+const STATUS_LABEL = {
+    active: 'Active',
+    closed: 'Closed',
+    follow_up: 'Follow Up',
+    holding: 'Holding'
+}
 
 const SEVERITY_DEFS = {
     critical: { color: '#b91c1c', label: 'Critical' },
@@ -72,59 +85,45 @@ function CardHeader({ icon, label, sub, title, right }) {
 }
 
 function StatusPill({ status, size = 'sm' }) {
-    const def = STATUS_DEFS[status] || { color: 'var(--text-secondary)', icon: 'fa-circle', label: status || '—' }
-    const fontSize = size === 'lg' ? '11.5px' : '10.5px'
+    const tone = STATUS_TO_TONE[status] || 'neutral'
+    const icon = STATUS_ICON[status] || 'circle'
+    const label = STATUS_LABEL[status] || status || '—'
     return (
-        <span
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-bold uppercase tracking-wider"
-            style={{
-                background: `${def.color}1f`,
-                border: `1px solid ${def.color}55`,
-                color: 'var(--text-primary)',
-                fontSize
-            }}
-        >
-            <i className={`fas ${def.icon} text-[9px]`} />
-            {def.label}
-        </span>
+        <Badge tone={tone} size={size === 'sm' ? 'sm' : 'md'} icon={icon} shape="pill">
+            {label}
+        </Badge>
     )
 }
 
 function StatusFilterChips({ activeStatus, counts, onChange }) {
-    const ACTIVE_BG = (color) => `${color}26`
     return (
         <div className="flex flex-wrap gap-1">
-            <button
-                type="button"
+            <Badge
+                as="button"
+                tone="neutral"
+                size="md"
+                shape="pill"
+                active={activeStatus === 'all'}
                 onClick={() => onChange('all')}
-                className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wider cursor-pointer border-none border border-border-light"
-                style={{
-                    background: activeStatus === 'all' ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
-                    color: activeStatus === 'all' ? 'var(--text-primary)' : 'var(--text-secondary)'
-                }}
             >
-                All
-                <span className="ml-1 tabular-nums text-text-tertiary">{counts.total}</span>
-            </button>
+                All <span className="ml-1 opacity-70 tabular-nums">{counts.total}</span>
+            </Badge>
             {STATUS_ORDER.map((status) => {
-                const def = STATUS_DEFS[status]
-                const active = activeStatus === status
+                const isActive = activeStatus === status
                 return (
-                    <button
+                    <Badge
                         key={status}
-                        type="button"
+                        as="button"
+                        tone={STATUS_TO_TONE[status]}
+                        size="md"
+                        shape="pill"
+                        icon={STATUS_ICON[status]}
+                        active={isActive}
                         onClick={() => onChange(status)}
-                        className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wider cursor-pointer border-none"
-                        style={{
-                            background: active ? ACTIVE_BG(def.color) : 'var(--bg-secondary)',
-                            border: `1px solid ${active ? `${def.color}55` : 'var(--border-light)'}`,
-                            color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
-                        }}
                     >
-                        <i className={`fas ${def.icon} text-[9px]`} />
-                        {def.label}
-                        <span className="ml-1 tabular-nums text-text-tertiary">{counts[status] || 0}</span>
-                    </button>
+                        {STATUS_LABEL[status]}{' '}
+                        <span className="ml-1 opacity-70 tabular-nums">{counts[status] || 0}</span>
+                    </Badge>
                 )
             })}
         </div>
@@ -357,12 +356,15 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                                         </td>
                                                         <td className="px-3 py-2 align-top whitespace-nowrap">
                                                             {issue.plant_code ? (
-                                                                <span
-                                                                    className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums bg-bg-tertiary border border-border-light text-text-secondary"
+                                                                <Badge
+                                                                    tone="neutral"
+                                                                    size="md"
+                                                                    uppercase={false}
+                                                                    className="font-mono"
                                                                     title={getPlantName(issue.plant_code, plants)}
                                                                 >
                                                                     {issue.plant_code}
-                                                                </span>
+                                                                </Badge>
                                                             ) : (
                                                                 <span className="text-text-tertiary">—</span>
                                                             )}

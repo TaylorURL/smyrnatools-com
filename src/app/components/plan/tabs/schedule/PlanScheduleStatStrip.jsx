@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../../../common/Badge'
 import { SatisfactionBadge, YardageDeltaBadge } from './PlanScheduleBadges'
 import PlanScheduleStat from './PlanScheduleStat'
 
@@ -35,10 +36,10 @@ const deltaTone = (live, base) => {
     return live > base ? 'up' : 'down'
 }
 
-const TONE_STYLES = {
-    down: { background: 'rgba(220, 38, 38, 0.12)', color: 'var(--text-primary)' },
-    neutral: { background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' },
-    up: { background: 'rgba(22, 163, 74, 0.12)', color: 'var(--text-primary)' }
+const DELTA_TONE_TO_BADGE = {
+    down: { icon: 'arrow-down', tone: 'danger' },
+    neutral: { icon: 'equals', tone: 'neutral' },
+    up: { icon: 'arrow-up', tone: 'success' }
 }
 
 /** Inline before/after pill shown next to a stat's value when the
@@ -52,14 +53,19 @@ function CompareDeltaBadge({ baseLabel, base, live, unit }) {
     const tone = deltaTone(live, base)
     const display = pct ?? count
     const title = `Original ${baseLabel}: ${formatBaseValue(base) ?? '—'}${unit ? ` ${unit}` : ''}`
+    const { icon, tone: badgeTone } = DELTA_TONE_TO_BADGE[tone]
     return (
-        <span
-            className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums"
-            style={TONE_STYLES[tone]}
+        <Badge
+            className="tabular-nums"
+            icon={icon}
+            shape="pill"
+            size="sm"
             title={title}
+            tone={badgeTone}
+            uppercase={false}
         >
             {display}
-        </span>
+        </Badge>
     )
 }
 
@@ -186,13 +192,16 @@ export default function PlanScheduleStatStrip({
                     badge={
                         <span className="inline-flex items-center gap-1.5">
                             {customerSatisfaction.isLive && (
-                                <span
-                                    className="inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[rgba(220,_38,_38,_0.12)] text-text-primary"
+                                <Badge
+                                    dot
+                                    pulse
+                                    shape="pill"
+                                    size="xs"
                                     title="Live — score updates as orders complete throughout the day"
+                                    tone="danger"
                                 >
-                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-600" />
                                     LIVE
-                                </span>
+                                </Badge>
                             )}
                             <SatisfactionBadge score={customerSatisfaction.score} />
                         </span>
@@ -221,13 +230,15 @@ export default function PlanScheduleStatStrip({
                 <PlanScheduleStat
                     badge={
                         <span className="inline-flex items-center gap-1.5">
-                            <span
-                                className="inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[rgba(14,_165,_233,_0.14)] text-text-primary"
+                            <Badge
+                                icon="wand-magic-sparkles"
+                                shape="pill"
+                                size="xs"
                                 title="Forecast — based on which orders the pool simulation flags as NEEDS HELP"
+                                tone="info"
                             >
-                                <i className="fas fa-wand-magic-sparkles text-[8px]" />
                                 PREDICTED
-                            </span>
+                            </Badge>
                             <SatisfactionBadge score={predictedSatisfaction.score} />
                         </span>
                     }

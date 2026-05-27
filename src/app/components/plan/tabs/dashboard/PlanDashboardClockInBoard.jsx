@@ -11,6 +11,7 @@ import {
     PLAN_META_KEY,
     PRE_TRIP_MINUTES
 } from '../../../../../utils/PlanUtility'
+import Badge from '../../../common/Badge'
 
 /** Flatten `plantProduction` into a single orders list filtered to the
  *  scope plants — the shape `computeClockInRows` expects. */
@@ -158,11 +159,16 @@ function KeyStat({ label, value }) {
 function OutboundDestinationTag({ outbound }) {
     if (!outbound) return null
     return (
-        <span className="text-[9.5px] font-mono font-bold uppercase tracking-wider rounded px-1.5 py-0.5 inline-flex items-center gap-1 bg-bg-tertiary text-text-secondary border border-border-light">
-            <i className="fas fa-arrow-right-from-bracket text-[7px] opacity-70" />
+        <Badge
+            size="sm"
+            shape="rounded"
+            variant="custom"
+            className="font-mono bg-bg-tertiary text-text-secondary border border-border-light"
+            icon={<i className="fas fa-arrow-right-from-bracket text-[7px] opacity-70" />}
+        >
             {outbound.toPlant}
             {outbound.isLoadedFromPlant ? ' · LD' : ''}
-        </span>
+        </Badge>
     )
 }
 
@@ -196,13 +202,16 @@ function ClockInPlantCard({ accentColor, breakdown }) {
                     </div>
                 </div>
                 {leaveOffCount > 0 && (
-                    <span
-                        className="status-badge-warning text-[9.5px] font-bold uppercase tracking-wider rounded-full px-1.5 py-0.5 shrink-0 inline-flex items-center gap-1"
+                    <Badge
+                        tone="warning"
+                        size="sm"
+                        shape="pill"
+                        className="shrink-0"
                         title={`${leaveOffCount} of ${base} operators not needed today`}
+                        icon={<i className="fas fa-user-minus text-[8px]" />}
                     >
-                        <i className="fas fa-user-minus text-[8px]" />
                         Leave off {leaveOffCount}
-                    </span>
+                    </Badge>
                 )}
             </div>
             <div className="grid grid-cols-3 gap-2 px-3 py-2 border-b border-border-light">

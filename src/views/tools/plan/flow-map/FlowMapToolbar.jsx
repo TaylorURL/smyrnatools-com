@@ -1,5 +1,6 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
+
+import Badge from '../../../../app/components/common/Badge'
 
 /** Toolbar above the Leaflet surface — stat chips on the left, transient
  *  state pills on the right (picking banner, selected-plant chip, routing
@@ -17,62 +18,102 @@ export function FlowMapToolbar({
     setPickingDestination,
     setSelectedCode
 }) {
+    const loadingLabel = pendingPlantGeocodes > 0 ? `Locating ${pendingPlantGeocodes}…` : `Routing ${pendingRoutes}…`
+
     return (
         <div className="shrink-0 flex items-center flex-wrap gap-2 px-3 sm:px-4 py-2 bg-bg-primary border-b border-border-light">
             <div className="inline-flex rounded-lg border border-border-light bg-bg-secondary overflow-hidden shadow-sm">
-                <span className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 transition-colors hover:bg-bg-tertiary">
-                    <i className="fas fa-building text-[10px] text-text-tertiary" />
+                <Badge
+                    tone="neutral"
+                    variant="custom"
+                    size="lg"
+                    shape="square"
+                    weight="medium"
+                    uppercase={false}
+                    icon={<i className="fas fa-building text-[10px] text-text-tertiary" aria-hidden="true" />}
+                    className="px-3 py-1.5 text-[12px] transition-colors hover:bg-bg-tertiary rounded-none"
+                >
                     <span className="font-mono tabular-nums font-bold text-text-primary">{plantCount}</span>
-                    <span className="text-text-secondary text-[11.5px]">plants</span>
-                </span>
+                    <span className="text-text-secondary text-[11.5px] ml-1">plants</span>
+                </Badge>
                 <span className="w-px self-stretch bg-border-light" aria-hidden="true" />
-                <span className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 transition-colors hover:bg-bg-tertiary">
-                    <i className="fas fa-route text-[10px] text-text-tertiary" />
+                <Badge
+                    tone="neutral"
+                    variant="custom"
+                    size="lg"
+                    shape="square"
+                    weight="medium"
+                    uppercase={false}
+                    icon={<i className="fas fa-route text-[10px] text-text-tertiary" aria-hidden="true" />}
+                    className="px-3 py-1.5 text-[12px] transition-colors hover:bg-bg-tertiary rounded-none"
+                >
                     <span className="font-mono tabular-nums font-bold text-text-primary">{activeRouteCount}</span>
-                    <span className="text-text-secondary text-[11.5px]">help routes</span>
-                </span>
+                    <span className="text-text-secondary text-[11.5px] ml-1">help routes</span>
+                </Badge>
             </div>
             {pickingDestination && (
-                <span className="pf-tool-pill pf-tool-pill-picking inline-flex items-center gap-1.5 rounded-full text-[11px] font-semibold px-2.5 py-1 bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.4)] text-text-primary">
-                    <i className="fas fa-crosshairs text-[10px]" />
+                <Badge
+                    tone="warning"
+                    size="md"
+                    shape="pill"
+                    weight="semibold"
+                    pulse
+                    uppercase={false}
+                    icon={<i className="fas fa-crosshairs text-[10px]" aria-hidden="true" />}
+                    className="pf-tool-pill pf-tool-pill-picking"
+                    trailingIcon={
+                        <button
+                            type="button"
+                            onClick={() => setPickingDestination(false)}
+                            className="ml-1 border-none bg-transparent cursor-pointer p-0 text-text-primary font-bold transition-transform hover:scale-110"
+                            aria-label="Cancel picking"
+                        >
+                            ×
+                        </button>
+                    }
+                >
                     Click a plant to set the destination
-                    <button
-                        type="button"
-                        onClick={() => setPickingDestination(false)}
-                        className="ml-1 border-none bg-transparent cursor-pointer p-0 text-text-primary font-bold transition-transform hover:scale-110"
-                        aria-label="Cancel picking"
-                    >
-                        ×
-                    </button>
-                </span>
+                </Badge>
             )}
             {selectedCode && !pickingDestination && (
-                <span
-                    className="pf-tool-pill inline-flex items-center gap-1.5 rounded-full text-[12px] font-semibold px-2.5 py-1 transition-all"
-                    style={{
-                        background: `${accentColor}1a`,
-                        border: `1px solid ${accentColor}55`,
-                        color: accentColor
-                    }}
+                <Badge
+                    variant="custom"
+                    bg={`${accentColor}1a`}
+                    fg={accentColor}
+                    size="lg"
+                    shape="pill"
+                    weight="semibold"
+                    uppercase={false}
+                    icon={<i className="fas fa-map-pin text-[10px]" aria-hidden="true" />}
+                    className="pf-tool-pill transition-all border border-current/30"
+                    trailingIcon={
+                        <button
+                            type="button"
+                            onClick={() => setSelectedCode(null)}
+                            className="ml-1 border-none bg-transparent cursor-pointer p-0 font-bold transition-transform hover:scale-110"
+                            // eslint-disable-next-line react/forbid-dom-props -- accent color is data-driven and must match parent border/foreground
+                            style={{ color: accentColor }}
+                            aria-label="Clear selection"
+                        >
+                            ×
+                        </button>
+                    }
                 >
-                    <i className="fas fa-map-pin text-[10px]" />
                     Plant {selectedCode}
-                    <button
-                        type="button"
-                        onClick={() => setSelectedCode(null)}
-                        className="ml-1 border-none bg-transparent cursor-pointer p-0 font-bold transition-transform hover:scale-110"
-                        style={{ color: accentColor }}
-                        aria-label="Clear selection"
-                    >
-                        ×
-                    </button>
-                </span>
+                </Badge>
             )}
             {(pendingPlantGeocodes > 0 || pendingRoutes > 0) && (
-                <span className="pf-tool-pill inline-flex items-center gap-1.5 rounded-full text-[11px] font-semibold px-2.5 py-1 bg-[rgba(37,99,235,0.12)] border border-[rgba(37,99,235,0.35)] text-text-primary">
-                    <i className="fas fa-circle-notch fa-spin text-[10px]" />
-                    {pendingPlantGeocodes > 0 ? `Locating ${pendingPlantGeocodes}` : `Routing ${pendingRoutes}`}…
-                </span>
+                <Badge
+                    tone="info"
+                    size="md"
+                    shape="pill"
+                    weight="semibold"
+                    uppercase={false}
+                    icon={<i className="fas fa-circle-notch fa-spin text-[10px]" aria-hidden="true" />}
+                    className="pf-tool-pill"
+                >
+                    {loadingLabel}
+                </Badge>
             )}
             <div className="flex-1 min-w-[8px]" />
         </div>

@@ -1,30 +1,30 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import { fmtInt, fmtPct } from '../../../../utils/PlanStatisticsFormatUtility'
 
-const STATUS_PILL_COLORS = {
-    Active: '#16a34a',
-    'Down In Yard': '#dc2626',
-    'In Shop': '#3b82f6',
-    'Ready For Pickup': '#16a34a',
-    Retired: '#94a3b8',
-    Spare: '#a855f7',
-    'Third Party Work': '#f59e0b',
-    'Waiting For Shop': '#ea580c'
+/** Maps asset status labels to Badge tones — preserves the legacy
+ *  semantic palette while letting Badge own typography and shape. */
+const STATUS_TO_TONE = {
+    Active: 'success',
+    'Down In Yard': 'danger',
+    'In Shop': 'info',
+    'Ready For Pickup': 'success',
+    Retired: 'neutral',
+    Spare: 'neutral',
+    'Third Party Work': 'warning',
+    'Waiting For Shop': 'warning'
 }
 
 /** Small inline pill for asset status — palette-tinted background carries
  *  the status semantic; text is theme-aware so it reads in light/dark. */
 export function StatusPill({ status }) {
-    const color = STATUS_PILL_COLORS[status] || '#64748b'
+    const tone = STATUS_TO_TONE[status] || 'neutral'
     return (
-        <span
-            className="inline-flex items-center rounded px-2 py-0.5 text-[10.5px] font-semibold tabular-nums text-text-primary"
-            style={{ background: `${color}1f` }}
-        >
+        <Badge tone={tone} size="md" weight="semibold" uppercase={false} className="tabular-nums">
             {status}
-        </span>
+        </Badge>
     )
 }
 

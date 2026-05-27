@@ -3,6 +3,7 @@ import React, { useMemo } from 'react'
 
 import { fmtDate, fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../utils/PlantColocationUtility'
+import Badge from '../../../common/Badge'
 import ScorePercent from './ScorePercent'
 import ServiceTierBreakdown from './ServiceTierBreakdown'
 
@@ -167,17 +168,15 @@ export function CustomerOrdersTable({ colocationMap, emptyMessage, orders, plant
                                     <div className="flex items-center gap-1.5">
                                         <span>{verdictLabel(m)}</span>
                                         {m.isSameDay && (
-                                            <span
+                                            <Badge
+                                                tone="warning"
+                                                size="xs"
+                                                shape="square"
+                                                icon="bolt"
                                                 title="Same-day order — booked the day it ran (15:00 sentinel)"
-                                                className="rounded-sm px-1 py-0.5 text-[9.5px] font-bold uppercase tracking-wider"
-                                                style={{
-                                                    background: `${SERVICE_COLOR_SAME_DAY}1a`,
-                                                    color: 'var(--text-primary)'
-                                                }}
                                             >
-                                                <i className="fas fa-bolt mr-0.5 text-[8px]" />
                                                 Same-day
-                                            </span>
+                                            </Badge>
                                         )}
                                     </div>
                                 </td>

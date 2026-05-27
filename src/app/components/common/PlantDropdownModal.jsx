@@ -109,9 +109,7 @@ function PlantDropdownModal({
 
     const handlePlantClick = (code) => {
         if (allowMultiple) {
-            setLocalSelectedCodes((prev) =>
-                prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
-            )
+            setLocalSelectedCodes((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]))
             onSelect(code)
         } else {
             onSelect(code)
@@ -200,12 +198,26 @@ function PlantDropdownModal({
                 </div>
                 <div className="flex-1 overflow-y-auto bg-bg-secondary p-2" role="listbox">
                     {showAllPlants && !allowMultiple && (
-                        <PickerRow icon="fa-globe" accentColor={accentColor} onClick={() => { onSelect('All'); onClose() }}>
+                        <PickerRow
+                            icon="fa-globe"
+                            accentColor={accentColor}
+                            onClick={() => {
+                                onSelect('All')
+                                onClose()
+                            }}
+                        >
                             All Plants
                         </PickerRow>
                     )}
                     {showMyPlants && !allowMultiple && (
-                        <PickerRow icon="fa-user-circle" accentColor={accentColor} onClick={() => { onSelect('MY_PLANTS'); onClose() }}>
+                        <PickerRow
+                            icon="fa-user-circle"
+                            accentColor={accentColor}
+                            onClick={() => {
+                                onSelect('MY_PLANTS')
+                                onClose()
+                            }}
+                        >
                             My Plants
                         </PickerRow>
                     )}
@@ -421,10 +433,7 @@ function PlantDropdownModal({
                                           ({code}) {plantNameOf(plant)}
                                       </span>
                                       {isSelected && (
-                                          <i
-                                              className="fas fa-check ml-auto text-accent"
-                                              aria-hidden="true"
-                                          />
+                                          <i className="fas fa-check ml-auto text-accent" aria-hidden="true" />
                                       )}
                                   </button>
                               )
@@ -504,11 +513,7 @@ function NestedRow({ icon, accentColor, onClick, children, count }) {
 }
 
 function SectionLabel({ children }) {
-    return (
-        <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
-            {children}
-        </div>
-    )
+    return <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{children}</div>
 }
 
 function NestedLabel({ children, className = '' }) {

@@ -99,10 +99,7 @@ export function DayforceLaborCostPage({ accentColor, dateRange, plantCodes, sele
         return (
             <Panel title="Couldn't load Dayforce data" innerClassName="p-3">
                 <div className="flex items-start gap-3 text-[12.5px]">
-                    <i
-                        className="fas fa-circle-exclamation text-[14px] mt-0.5 text-status-danger"
-                        aria-hidden="true"
-                    />
+                    <i className="fas fa-circle-exclamation text-[14px] mt-0.5 text-status-danger" aria-hidden="true" />
                     <div className="flex flex-col gap-1 min-w-0">
                         <span className="font-semibold text-text-primary">Query error</span>
                         <span className="text-text-secondary font-mono break-all">{diagnostics.loadError}</span>

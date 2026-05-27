@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import { ReportUtility } from '../../../../utils/ReportUtility'
 import { FORM_FIELD_BASE_CLASS, FORM_FIELD_STYLE, FORM_SECTION_LABEL_CLASS } from './formStyles'
 import PlantProductionFieldCell from './PlantProductionFieldCell'
@@ -69,10 +70,10 @@ const resolveAutoValue = (def, dayforcePunch, ticketAgg) => {
  *                     submission is meaningful
  *  - overridden:      complete, but at least one field was manually
  *                     overridden (informational only) */
-const STATUS_TONES = {
-    complete: 'bg-emerald-600 text-white border-emerald-700',
-    'needs-attention': 'bg-rose-600 text-white border-rose-700',
-    overridden: 'bg-amber-600 text-white border-amber-700'
+const STATUS_TO_TONE = {
+    complete: 'success',
+    'needs-attention': 'warning',
+    overridden: 'info'
 }
 
 const STATUS_LABELS = {
@@ -82,9 +83,9 @@ const STATUS_LABELS = {
 }
 
 const STATUS_ICONS = {
-    complete: 'fa-circle-check',
-    'needs-attention': 'fa-triangle-exclamation',
-    overridden: 'fa-pen-to-square'
+    complete: 'circle-check',
+    'needs-attention': 'triangle-exclamation',
+    overridden: 'pen-to-square'
 }
 
 const computeRowStatus = (row, dayforcePunch, ticketAgg) => {
@@ -148,12 +149,17 @@ const PlantProductionOperatorCard = ({
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
-                    <span
-                        className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold border ${STATUS_TONES[status]}`}
+                    <Badge
+                        tone={STATUS_TO_TONE[status]}
+                        variant="outline"
+                        size="sm"
+                        shape="pill"
+                        weight="semibold"
+                        uppercase={false}
+                        icon={STATUS_ICONS[status]}
                     >
-                        <i className={`fas ${STATUS_ICONS[status]} text-[8.5px]`} />
                         {STATUS_LABELS[status]}
-                    </span>
+                    </Badge>
                     {!readOnly && (
                         <button
                             type="button"

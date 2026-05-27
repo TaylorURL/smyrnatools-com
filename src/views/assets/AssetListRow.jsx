@@ -1,48 +1,40 @@
 import React from 'react'
 
+import Badge from '../../app/components/common/Badge'
 import OperatorClockIndicator from '../../app/components/common/OperatorClockIndicator'
 import StatusHistoryBar from '../../app/components/common/StatusHistoryBar'
 
 /**
- * Status name → solid pill palette (background + white text).
- * Falls back to a neutral slate if the status isn't in the map.
+ * Status name → Badge tone. Drives the solid-fill status pill across every
+ * asset type so the palette is one mapping, not five duplicated CSS strings.
  */
-const STATUS_PILL_PALETTE = {
-    Active: 'bg-status-active text-white',
-    'Down In Yard': 'bg-status-danger text-white',
-    'In Shop': 'bg-status-shop text-white',
-    'No Hire': 'bg-status-danger text-white',
-    'Pending Start': 'bg-status-shop text-white',
-    'Ready For Pickup': 'bg-status-active text-white',
-    Retired: 'bg-bg-tertiary text-text-secondary',
-    Sold: 'bg-bg-tertiary text-text-secondary',
-    Spare: 'bg-status-spare text-white',
-    Stationary: 'bg-status-shop text-white',
-    Terminated: 'bg-status-danger text-white',
-    'Third Party Work': 'bg-status-spare text-white',
-    Training: 'bg-status-warning text-white',
-    'Waiting For Shop': 'bg-status-warning text-white'
+const STATUS_TO_TONE = {
+    Active: 'success',
+    'Down In Yard': 'danger',
+    'In Shop': 'info',
+    'No Hire': 'danger',
+    'Pending Start': 'info',
+    'Ready For Pickup': 'success',
+    Retired: 'neutral',
+    Sold: 'neutral',
+    Spare: 'neutral',
+    Stationary: 'info',
+    Terminated: 'danger',
+    'Third Party Work': 'neutral',
+    Training: 'warning',
+    'Waiting For Shop': 'warning'
 }
-
-const NEUTRAL_PILL = 'bg-bg-tertiary text-text-secondary'
-
-const VERIFIED_BUTTON_CLASS = 'bg-status-active text-white hover:brightness-110'
-const UNVERIFIED_BUTTON_CLASS = 'bg-status-warning text-white hover:brightness-110 cursor-pointer'
 
 const ICON_BUTTON_CLASS =
     'relative inline-flex items-center justify-center w-[22px] h-[22px] rounded-md border-none bg-transparent text-[11px] text-text-tertiary cursor-pointer transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset'
 
-const COUNT_BADGE_BASE =
-    'absolute -top-0.5 -right-0.5 inline-flex min-w-[12px] h-3 items-center justify-center rounded-full px-0.5 text-[8px] font-bold leading-none text-white'
-
 const CELL_BASE_CLASS = 'border-b border-border-light px-2.5 py-1.5 text-[12px] align-middle text-text-primary'
 const CELL_BOLD_CLASS = `${CELL_BASE_CLASS} text-[12.5px] font-bold`
 
-/**
- * Resolves the solid-fill pill class for a status string.
- * Centralizes the palette so every asset type renders identical pills.
- */
-const getStatusPillClass = (status) => STATUS_PILL_PALETTE[status] || NEUTRAL_PILL
+/** 9+ clamp for badge counts (keeps inline icon-button dot visually round). */
+const formatBadgeCount = (count) => (count > 9 ? '9+' : count)
+
+const getStatusToneForStatus = (status) => STATUS_TO_TONE[status] || 'neutral'
 
 /**
  * Single table row for the asset list view, driven by column type configs.
@@ -113,12 +105,15 @@ export default function AssetListRow({
             return (
                 <td key={col.key} className={cellClass} style={widthStyle(col.width)}>
                     <div className="flex flex-col gap-1">
-                        <span
-                            className={`inline-flex items-center self-start rounded-md px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider ${getStatusPillClass(displayStatus)}`}
+                        <Badge
+                            tone={getStatusToneForStatus(displayStatus)}
+                            variant="solid"
+                            size="sm"
+                            shape="rounded-md"
+                            className="self-start"
                         >
-                            {displayStatus || '---'}
-                            {daysSuffix}
-                        </span>
+                            {`${displayStatus || '---'}${daysSuffix}`}
+                        </Badge>
                         <StatusHistoryBar
                             itemId={item.id}
                             itemType={config.historyType}
@@ -163,49 +158,73 @@ export default function AssetListRow({
                             {assignedTrainees.length > 0 && (
                                 <div className="flex flex-wrap items-center gap-1">
                                     {assignedTrainees.map((trainee) => (
-                                        <span
+                                        <Badge
                                             key={trainee.employeeId}
-                                            className="inline-flex items-center gap-1 rounded-md bg-status-warning/10 text-status-warning text-[9.5px] font-semibold px-1 py-0.5"
+                                            tone="warning"
+                                            variant="soft"
+                                            size="sm"
+                                            shape="rounded-md"
+                                            weight="semibold"
+                                            uppercase={false}
+                                            icon="user-graduate"
                                             title={`Trainee: ${trainee.name}`}
                                         >
-                                            <i className="fas fa-user-graduate text-[8px]" />
                                             {trainee.name}
-                                        </span>
+                                        </Badge>
                                     ))}
                                 </div>
                             )}
                             <div className="flex items-center gap-1">
-                                <button
-                                    type="button"
+                                <Badge
+                                    as="button"
+                                    tone="neutral"
+                                    variant="custom"
+                                    size="sm"
+                                    shape="rounded-md"
+                                    weight="semibold"
+                                    uppercase={false}
+                                    icon="comment"
                                     onClick={(event) => {
                                         event.stopPropagation()
                                         onOperatorComment?.(operator)
                                     }}
                                     title="Operator comments"
                                     aria-label="Operator comments"
-                                    className="relative inline-flex items-center gap-1 rounded-md text-[10px] px-1.5 py-0.5 cursor-pointer bg-bg-secondary border border-border-light text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                                    className="relative bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                 >
-                                    <i className="fas fa-comment text-[8px]" />
                                     <span>Comments</span>
                                     {operator.commentsCount > 0 && (
-                                        <span className={`${COUNT_BADGE_BASE} bg-accent`}>
-                                            {operator.commentsCount > 9 ? '9+' : operator.commentsCount}
-                                        </span>
+                                        <Badge
+                                            tone="accent"
+                                            variant="solid"
+                                            size="xs"
+                                            shape="pill"
+                                            uppercase={false}
+                                            className="absolute -top-0.5 -right-0.5 min-w-[12px] justify-center"
+                                        >
+                                            {formatBadgeCount(operator.commentsCount)}
+                                        </Badge>
                                     )}
-                                </button>
-                                <button
-                                    type="button"
+                                </Badge>
+                                <Badge
+                                    as="button"
+                                    tone="neutral"
+                                    variant="custom"
+                                    size="sm"
+                                    shape="rounded-md"
+                                    weight="semibold"
+                                    uppercase={false}
+                                    icon="history"
                                     onClick={(event) => {
                                         event.stopPropagation()
                                         onOperatorHistory?.(operator)
                                     }}
                                     title="Operator history"
                                     aria-label="Operator history"
-                                    className="inline-flex items-center gap-1 rounded-md text-[10px] px-1.5 py-0.5 cursor-pointer bg-bg-secondary border border-border-light text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                                    className="bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                 >
-                                    <i className="fas fa-history text-[8px]" />
                                     <span>History</span>
-                                </button>
+                                </Badge>
                             </div>
                         </div>
                     ) : (
@@ -231,9 +250,9 @@ export default function AssetListRow({
                                 />
                             ))}
                             {col.dirtyWarning && rating > 0 && rating < 3 && (
-                                <span className="ml-1.5 inline-flex items-center rounded-md bg-status-danger/10 text-status-danger text-[9px] font-bold uppercase tracking-wider px-1 py-0.5">
+                                <Badge tone="danger" variant="soft" size="xs" shape="rounded-md" className="ml-1.5">
                                     Dirty
-                                </span>
+                                </Badge>
                             )}
                         </div>
                     )}
@@ -243,29 +262,30 @@ export default function AssetListRow({
 
         if (col.type === 'verified') {
             const isVerified = col.getIsVerified ? col.getIsVerified(item) : item.isVerified?.()
-            const palette = isVerified ? VERIFIED_BUTTON_CLASS : UNVERIFIED_BUTTON_CLASS
             return (
                 <td key={col.key} className={cellClass} style={widthStyle(col.width)}>
                     {item.status === 'Retired' ? (
-                        <span className="inline-flex items-center rounded-md bg-bg-tertiary text-text-tertiary text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5">
+                        <Badge tone="neutral" variant="soft" size="sm" shape="rounded-md">
                             N/A
-                        </span>
+                        </Badge>
                     ) : (
-                        <button
-                            type="button"
+                        <Badge
+                            as="button"
+                            tone={isVerified ? 'success' : 'warning'}
+                            variant="solid"
+                            size="sm"
+                            shape="rounded-md"
+                            icon={isVerified ? 'check-circle' : 'exclamation-circle'}
                             onClick={(event) => {
                                 event.stopPropagation()
                                 onVerify?.(item.id, config.getModalIdentifier(item))
                             }}
                             title={isVerified ? 'Verified' : 'Click to verify'}
                             aria-label={isVerified ? 'Verified' : 'Verify'}
-                            className={`inline-flex items-center gap-1 rounded-md border-none text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${palette} ${isVerified ? 'cursor-default' : ''}`}
+                            className={`hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${isVerified ? '!cursor-default' : ''}`}
                         >
-                            <i
-                                className={`fas ${isVerified ? 'fa-check-circle' : 'fa-exclamation-circle'} text-[8px]`}
-                            />
-                            <span>{isVerified ? 'Verified' : 'Verify'}</span>
-                        </button>
+                            {isVerified ? 'Verified' : 'Verify'}
+                        </Badge>
                     )}
                 </td>
             )
@@ -295,12 +315,15 @@ export default function AssetListRow({
                             <span className="tabular-nums">{vinVal}</span>
                             {copyButton(vinVal, 'Copy VIN')}
                             {isDuplicate && (
-                                <span
-                                    className="inline-flex items-center rounded-md bg-status-warning/10 text-status-warning text-[9px] font-bold uppercase tracking-wider px-1 py-0.5"
+                                <Badge
+                                    tone="warning"
+                                    variant="soft"
+                                    size="xs"
+                                    shape="rounded-md"
+                                    icon="exclamation-triangle"
                                     title="Duplicate VIN"
-                                >
-                                    <i className="fas fa-exclamation-triangle text-[8px]" />
-                                </span>
+                                    aria-label="Duplicate VIN"
+                                />
                             )}
                         </div>
                     ) : (
@@ -318,12 +341,16 @@ export default function AssetListRow({
                 <td key={col.key} className={cellClass} style={widthStyle(col.width)}>
                     {val || '---'}
                     {isDuplicate && (
-                        <span
-                            className="ml-1.5 inline-flex items-center rounded-md bg-status-warning/10 text-status-warning text-[9px] font-bold uppercase tracking-wider px-1 py-0.5"
+                        <Badge
+                            tone="warning"
+                            variant="soft"
+                            size="xs"
+                            shape="rounded-md"
+                            icon="exclamation-triangle"
                             title={col.warningTitle}
-                        >
-                            <i className="fas fa-exclamation-triangle text-[8px]" />
-                        </span>
+                            aria-label={col.warningTitle}
+                            className="ml-1.5"
+                        />
                     )}
                 </td>
             )
@@ -338,12 +365,15 @@ export default function AssetListRow({
                         <span className="inline-flex items-center gap-1.5">
                             <span className="tabular-nums font-mono">{val}</span>
                             {hasWarning && (
-                                <span
-                                    className="inline-flex items-center rounded-md bg-status-danger/10 text-status-danger text-[9px] font-bold uppercase tracking-wider px-1 py-0.5"
+                                <Badge
+                                    tone="danger"
+                                    variant="soft"
+                                    size="xs"
+                                    shape="rounded-md"
+                                    icon="exclamation-triangle"
                                     title={col.warningTitle}
-                                >
-                                    <i className="fas fa-exclamation-triangle text-[8px]" />
-                                </span>
+                                    aria-label={col.warningTitle}
+                                />
                             )}
                         </span>
                     ) : (
@@ -370,9 +400,16 @@ export default function AssetListRow({
                         >
                             <i className="fas fa-comments" />
                             {item.commentsCount > 0 && (
-                                <span className={`${COUNT_BADGE_BASE} bg-accent`}>
-                                    {item.commentsCount > 9 ? '9+' : item.commentsCount}
-                                </span>
+                                <Badge
+                                    tone="accent"
+                                    variant="solid"
+                                    size="xs"
+                                    shape="pill"
+                                    uppercase={false}
+                                    className="absolute -top-0.5 -right-0.5 min-w-[12px] justify-center"
+                                >
+                                    {formatBadgeCount(item.commentsCount)}
+                                </Badge>
                             )}
                         </button>
                         <button
@@ -387,9 +424,16 @@ export default function AssetListRow({
                         >
                             <i className="fas fa-tools" />
                             {item.openIssuesCount > 0 && (
-                                <span className={`${COUNT_BADGE_BASE} bg-status-danger`}>
-                                    {item.openIssuesCount > 9 ? '9+' : item.openIssuesCount}
-                                </span>
+                                <Badge
+                                    tone="danger"
+                                    variant="solid"
+                                    size="xs"
+                                    shape="pill"
+                                    uppercase={false}
+                                    className="absolute -top-0.5 -right-0.5 min-w-[12px] justify-center"
+                                >
+                                    {formatBadgeCount(item.openIssuesCount)}
+                                </Badge>
                             )}
                         </button>
                         <button

@@ -1,24 +1,39 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { fmtDate, fmtInt, fmtScorePct } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../utils/PlantColocationUtility'
+import Badge from '../../../common/Badge'
 
-const HEAVY = '#dc2626'
-const SOFT = '#f59e0b'
-const NEUTRAL = '#64748b'
+/* Severity tone → Tailwind tint class for the icon chip behind a KPI tile.
+ * Maps onto the same semantic palette the rest of the app uses (status-*
+ * CSS tokens) so the colour reads identically under dark / light / gray. */
+const TONE_ICON_CHIP = {
+    danger: 'bg-status-danger/10',
+    neutral: 'bg-status-spare/10',
+    warning: 'bg-status-warning/10'
+}
+
+const EVENT_TO_TONE = { cancel: 'danger', edit: 'neutral', move: 'warning' }
+const EVENT_TO_LABEL = { cancel: 'Cancel', edit: 'Edit', move: 'Move' }
+const MOVE_ARROW_ICON = { earlier: 'arrow-left-long', later: 'arrow-right-long' }
+
+const eventIconKey = (event) => {
+    if (event.kind === 'cancel') return 'circle-minus'
+    if (event.kind === 'move') return MOVE_ARROW_ICON[event.timeDirection] || 'shuffle'
+    return 'pen-to-square'
+}
 
 /** Inline KPI tile mirroring the one on the parent page so the per-customer
  *  drawer reads with the same vocabulary as the top-of-page strip. The
- *  accent only tints the icon chip (tinted bg + matching fg); the headline
- *  number stays in theme text. */
-function StatTile({ accent, icon, label, sub, value }) {
+ *  tone only tints the icon chip (tinted bg + theme-primary fg); the
+ *  headline number stays in theme text. */
+function StatTile({ icon, label, sub, tone = 'neutral', value }) {
+    const chipBg = TONE_ICON_CHIP[tone] || TONE_ICON_CHIP.neutral
     return (
         <div className="flex items-start gap-3">
             {icon && (
                 <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: `${accent || NEUTRAL}1a`, color: 'var(--text-primary)' }}
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-text-primary ${chipBg}`}
                 >
                     <i className={`fas ${icon} text-[14px]`} />
                 </div>
@@ -33,42 +48,17 @@ function StatTile({ accent, icon, label, sub, value }) {
 }
 
 function EventBadge({ event }) {
-    if (event.kind === 'cancel') {
-        return (
-            <span
-                className="inline-flex items-center gap-1 rounded-full text-[10.5px] font-semibold px-2 py-0.5"
-                style={{ background: 'rgba(220, 38, 38, 0.12)', color: 'var(--text-primary)' }}
-            >
-                <i className="fas fa-circle-minus text-[9px]" />
-                Cancel
-            </span>
-        )
-    }
-    if (event.kind === 'move') {
-        const arrow =
-            event.timeDirection === 'earlier'
-                ? 'fa-arrow-left-long'
-                : event.timeDirection === 'later'
-                  ? 'fa-arrow-right-long'
-                  : 'fa-shuffle'
-        return (
-            <span
-                className="inline-flex items-center gap-1 rounded-full text-[10.5px] font-semibold px-2 py-0.5"
-                style={{ background: 'rgba(245, 158, 11, 0.14)', color: 'var(--text-primary)' }}
-            >
-                <i className={`fas ${arrow} text-[9px]`} />
-                Move
-            </span>
-        )
-    }
     return (
-        <span
-            className="inline-flex items-center gap-1 rounded-full text-[10.5px] font-semibold px-2 py-0.5"
-            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
+        <Badge
+            tone={EVENT_TO_TONE[event.kind] ?? 'neutral'}
+            size="md"
+            shape="pill"
+            weight="semibold"
+            uppercase={false}
+            icon={eventIconKey(event)}
         >
-            <i className="fas fa-pen-to-square text-[9px]" />
-            Edit
-        </span>
+            {EVENT_TO_LABEL[event.kind] ?? 'Edit'}
+        </Badge>
     )
 }
 
@@ -128,17 +118,17 @@ export default function PlanStatisticsMovesCancelsDetail({ colocationMap, custom
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-5 pb-4 border-b border-border-light">
                 <StatTile
-                    accent={HEAVY}
                     icon="fa-circle-minus"
                     label="Cancel rate"
                     sub="of total orders"
+                    tone="danger"
                     value={fmtScorePct(customer.cancelRate)}
                 />
                 <StatTile
-                    accent={SOFT}
                     icon="fa-shuffle"
                     label="Move rate"
                     sub="of total orders"
+                    tone="warning"
                     value={fmtScorePct(customer.moveRate)}
                 />
                 <StatTile
@@ -148,10 +138,10 @@ export default function PlanStatisticsMovesCancelsDetail({ colocationMap, custom
                     value={fmtInt(customer.churnEvents)}
                 />
                 <StatTile
-                    accent={customer.churnRate >= 0.5 ? HEAVY : undefined}
                     icon="fa-gauge-high"
                     label="Churn %"
                     sub="combined rate"
+                    tone={customer.churnRate >= 0.5 ? 'danger' : 'neutral'}
                     value={fmtScorePct(customer.churnRate)}
                 />
             </div>

@@ -1,24 +1,29 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
+
+import Badge from '../../common/Badge'
 
 /**
  * Toggleable pill button used by the recap modal's date/type filter rows.
- * Active state is themed with the user's accent color.
+ * Active state uses the unified Badge's accent tone in solid variant; idle
+ * uses the soft tint. Theme tokens flow through Badge so all three themes
+ * stay consistent automatically. The `accentColor` prop is accepted but
+ * ignored — Badge reads `var(--accent)` directly via the `accent` tone.
  */
-function RecapFilterPill({ active, label, onClick, accentColor }) {
+function RecapFilterPill({ active, label, onClick }) {
     return (
-        <button
-            type="button"
+        <Badge
+            as="button"
+            tone="accent"
+            variant={active ? 'solid' : 'soft'}
+            active={active}
+            size="md"
+            shape="rounded-md"
+            weight="semibold"
+            uppercase={false}
             onClick={onClick}
-            className="rounded text-[10.5px] font-semibold uppercase tracking-wider px-2 py-1 transition-colors"
-            style={{
-                background: active ? accentColor : 'var(--bg-secondary)',
-                border: active ? `1px solid ${accentColor}` : '1px solid var(--border-light)',
-                color: active ? '#fff' : 'var(--text-secondary)'
-            }}
         >
             {label}
-        </button>
+        </Badge>
     )
 }
 

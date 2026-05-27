@@ -2,6 +2,7 @@
 import React from 'react'
 
 import { timeToMinutes } from '../../../../utils/PlanUtility'
+import Badge from '../../common/Badge'
 
 // Sequential 1-based position of each ticket in this order's load sequence —
 // gives the dispatcher a quick way to talk about "load 12 was late" without
@@ -119,26 +120,30 @@ function TicketRow({
             >
                 {idx + 1}
                 {isFirstKickerRow && (
-                    <span
-                        className="ml-1.5 inline-block text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-text-primary"
-                        style={{ background: 'rgba(217, 119, 6, 0.15)' }}
+                    <Badge
+                        tone="warning"
+                        size="xs"
+                        className="ml-1.5"
                         title="First load after a gap — treated as a kicker (customer added yardage mid-pour). Excluded from pace calc."
                     >
                         Kicker
-                    </span>
+                    </Badge>
                 )}
             </td>
             <td className="px-3 py-2 whitespace-nowrap">
                 <span className="font-mono font-semibold text-text-primary">{plantCode || '—'}</span>
                 {plantName && <span className="ml-2 text-[11px] text-text-tertiary">{plantName}</span>}
                 {!isHomePlant && plantCode && (
-                    <span
-                        className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider bg-[rgba(217,_119,_6,_0.15)] text-text-primary"
+                    <Badge
+                        tone="warning"
+                        size="xs"
+                        shape="pill"
+                        icon="shuffle"
+                        className="ml-2"
                         title={`Loaded from ${plantCode} for an order whose home plant is ${homePlantCode}`}
                     >
-                        <i className="fas fa-shuffle text-[9px]" />
                         Cross-plant
-                    </span>
+                    </Badge>
                 )}
             </td>
             <td className="px-3 py-2 font-mono whitespace-nowrap text-text-primary">

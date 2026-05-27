@@ -20,6 +20,8 @@
  *     can scan for risk in one glance.
  */
 
+import { renderBadgeHtml } from './badgeHtml.js'
+
 const ACCENT = '#c12033'
 const ACCENT_DARK = '#8a1521'
 const NAVY = '#1e3a5f'
@@ -31,10 +33,6 @@ const INK_FAINT = '#94a3b8'
 const BORDER = '#e2e8f0'
 const SURFACE = '#f8fafc'
 const SURFACE_ALT = '#f1f5f9'
-const STATUS_OK_BG = 'rgba(22,163,74,0.12)'
-const STATUS_OK_FG = '#15803d'
-const STATUS_RISK_BG = 'rgba(220,38,38,0.12)'
-const STATUS_RISK_FG = '#b91c1c'
 
 function htmlEscape(value) {
     return String(value ?? '')
@@ -153,8 +151,8 @@ function renderOrdersTable({ orders }) {
             const trucks = Number.isFinite(order.truckCount) ? order.truckCount : '—'
             const spacing = Number.isFinite(order.spacingMin) ? `${order.spacingMin} min` : '—'
             const status = order.needsHelp
-                ? `<span style="display:inline-block;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;background:${STATUS_RISK_BG};color:${STATUS_RISK_FG};">Needs help</span>`
-                : `<span style="display:inline-block;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;background:${STATUS_OK_BG};color:${STATUS_OK_FG};">Covered</span>`
+                ? renderBadgeHtml({ label: 'Needs help', tone: 'danger' })
+                : renderBadgeHtml({ label: 'Covered', tone: 'success' })
             const isLast = idx === orders.length - 1
             const rowBg = idx % 2 === 0 ? '#ffffff' : '#fbfcfd'
             const cellBase = `padding:12px 12px;vertical-align:top;${isLast ? '' : `border-bottom:1px solid ${SURFACE_ALT};`}background:${rowBg};`
@@ -229,7 +227,7 @@ function renderHelpRow({ direction, row, isLast }) {
     const forOrder = row.forOrder
     const forLine = forOrder
         ? `<div style="font-size:11.5px;color:${INK};margin-top:4px;">
-                <span style="display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(14,165,233,0.12);color:#0369a1;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;margin-right:6px;">Direct load</span>
+                ${renderBadgeHtml({ label: 'Direct load', marginRight: '6px', tone: 'info' })}
                 ${forOrder.orderNum ? `<strong>#${htmlEscape(forOrder.orderNum)}</strong> ` : ''}${htmlEscape(forOrder.customer)}${forOrder.productCode ? ` &middot; <span style="color:${INK_SOFT};">${htmlEscape(forOrder.productCode)}</span>` : ''}${forOrder.startTime ? ` &middot; <span style="color:${INK_SOFT};">pour ${htmlEscape(String(forOrder.startTime).slice(0, 5))}</span>` : ''}
            </div>`
         : ''
@@ -246,21 +244,22 @@ function renderHelpRow({ direction, row, isLast }) {
 }
 
 function renderHelpCell({ direction, rows }) {
-    const directionColor = direction === 'in' ? '#15803d' : '#c2410c'
-    const directionBg = direction === 'in' ? 'rgba(22,163,74,0.08)' : 'rgba(217,119,6,0.08)'
-    const arrow = direction === 'in' ? '&#8600;' : '&#8599;'
-    const label = direction === 'in' ? 'Help coming IN' : 'Help going OUT'
+    const isIncoming = direction === 'in'
+    const headerBadge = `<div style="margin:0 0 12px;">${renderBadgeHtml({
+        label: isIncoming ? 'Incoming' : 'Outgoing',
+        tone: isIncoming ? 'success' : 'warning'
+    })}</div>`
     if (!rows || rows.length === 0) {
         return `
 <td valign="top" style="background:${SURFACE};border:1px solid ${BORDER};border-radius:10px;padding:16px 18px;width:50%;vertical-align:top;">
-    <div style="display:inline-block;padding:4px 10px;border-radius:999px;background:${directionBg};font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 12px;color:${directionColor};">${arrow}&nbsp; ${label}</div>
-    <div style="font-size:12.5px;color:${INK_FAINT};">No cross-plant ${direction === 'in' ? 'arrivals' : 'departures'} scheduled.</div>
+    ${headerBadge}
+    <div style="font-size:12.5px;color:${INK_FAINT};">No cross-plant ${isIncoming ? 'arrivals' : 'departures'} scheduled.</div>
 </td>`
     }
     const body = rows.map((r, idx) => renderHelpRow({ direction, isLast: idx === rows.length - 1, row: r })).join('')
     return `
 <td valign="top" style="background:${SURFACE};border:1px solid ${BORDER};border-radius:10px;padding:16px 18px;width:50%;vertical-align:top;">
-    <div style="display:inline-block;padding:4px 10px;border-radius:999px;background:${directionBg};font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 12px;color:${directionColor};">${arrow}&nbsp; ${label}</div>
+    ${headerBadge}
     ${body}
 </td>`
 }
@@ -292,23 +291,17 @@ function renderRoster({ roster }) {
                   ? htmlEscape(op.clockIn)
                   : '—'
             const destinationTag = op.destinationPlant
-                ? `<span style="font-size:10.5px;font-weight:700;color:#0369a1;background:rgba(14,165,233,0.12);padding:3px 9px;border-radius:999px;letter-spacing:0.06em;text-transform:uppercase;">&rarr;&nbsp; ${htmlEscape(op.destinationPlant)}</span>`
+                ? renderBadgeHtml({ label: `→ ${op.destinationPlant}`, size: 'md', tone: 'info' })
                 : ''
-            const flagTone = isLeaveOff
-                ? 'color:#64748b;background:#e2e8f0;'
-                : op.isOutbound
-                  ? 'color:#0369a1;background:rgba(14,165,233,0.12);'
-                  : 'color:#b45309;background:rgba(217,119,6,0.12);'
-            const flagTag = op.flag
-                ? `<span style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;${flagTone}padding:3px 9px;border-radius:999px;">${htmlEscape(op.flag)}</span>`
-                : ''
+            const flagToneName = isLeaveOff ? 'neutral' : op.isOutbound ? 'info' : 'warning'
+            const flagTag = op.flag ? renderBadgeHtml({ label: op.flag, tone: flagToneName }) : ''
             const notesCell = [destinationTag, flagTag].filter(Boolean).join(' &nbsp;')
             const slotNumber = op.index ? String(op.index) : (op.name || '—').slice(0, 1).toUpperCase()
             const slotName = op.index ? `Slot ${op.index}` : op.name || '—'
             return `
 <tr>
     <td style="${baseCell}width:90px;">
-        <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:999px;background:${slotChipBg};color:${slotChipFg};font-weight:700;font-size:11px;margin-right:8px;vertical-align:middle;">${htmlEscape(slotNumber)}</span>
+        ${renderBadgeHtml({ bg: slotChipBg, fg: slotChipFg, label: slotNumber, marginRight: '8px', shape: 'pill', size: 'md' })}
         <span style="font-weight:600;color:${isLeaveOff ? INK_FAINT : INK};font-size:12.5px;vertical-align:middle;">${htmlEscape(slotName)}</span>
     </td>
     <td style="${baseCell}font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:100px;font-weight:600;color:${isLeaveOff ? INK_FAINT : INK};">${clockInCell}</td>

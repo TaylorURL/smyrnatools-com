@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../../../../app/components/common/Badge'
 import { FORM_FIELD_STYLE, FORM_SECTION_LABEL_CLASS } from './formStyles'
 
 /** Compact-mode input class — smaller padding + font than the shared
@@ -48,6 +49,22 @@ const SOURCE_LABELS = {
     tickets: 'Tickets'
 }
 
+/** Maps cell state -> Badge tone. `missing` flags that an auto source
+ *  exists but returned no value, so the user must type one. */
+const STATE_TO_BADGE_TONE = {
+    auto: 'info',
+    manual: 'neutral',
+    missing: 'danger',
+    override: 'warning'
+}
+
+const STATE_TO_BADGE_ICON = {
+    auto: 'check',
+    manual: null,
+    missing: 'triangle-exclamation',
+    override: 'pen'
+}
+
 const PlantProductionFieldCell = ({
     autoSource,
     autoValue,
@@ -65,6 +82,13 @@ const PlantProductionFieldCell = ({
     const isAutoActive = !!autoSource && hasAutoValue && !isOverridden
     const editable = !readOnly && !isAutoActive
     const showToggle = !readOnly && !!autoSource && hasAutoValue
+    const cellState = isAutoActive
+        ? 'auto'
+        : isOverridden
+          ? 'override'
+          : autoSource && !hasAutoValue
+            ? 'missing'
+            : 'manual'
     const badgeText = isOverridden
         ? 'Manual override'
         : isAutoActive
@@ -72,13 +96,6 @@ const PlantProductionFieldCell = ({
           : autoSource
             ? `Manual · no ${SOURCE_LABELS[autoSource] || autoSource} data`
             : 'Manual entry'
-    const badgeTone = isAutoActive
-        ? 'bg-emerald-600 text-white border-emerald-700'
-        : isOverridden
-          ? 'bg-amber-600 text-white border-amber-700'
-          : autoSource && !hasAutoValue
-            ? 'bg-rose-600 text-white border-rose-700'
-            : 'bg-slate-600 text-white border-slate-700'
 
     return (
         <div className="flex flex-col gap-1 rounded-md p-1.5 bg-bg-secondary border border-border-light">
@@ -121,16 +138,18 @@ const PlantProductionFieldCell = ({
                 className={COMPACT_INPUT_CLASS}
                 style={INPUT_STYLE_OVERRIDES}
             />
-            <div
-                className={`inline-flex items-center gap-1 self-start rounded-full px-1.5 py-0 text-[8.5px] font-semibold tracking-wide border ${badgeTone}`}
+            <Badge
+                tone={STATE_TO_BADGE_TONE[cellState]}
+                variant="outline"
+                size="xs"
+                shape="pill"
+                weight="semibold"
+                uppercase={false}
+                icon={STATE_TO_BADGE_ICON[cellState]}
+                className="self-start"
             >
-                {isAutoActive && <i className="fas fa-check text-[7px]" />}
-                {isOverridden && <i className="fas fa-pen text-[7px]" />}
-                {!isAutoActive && !isOverridden && autoSource && hasAutoValue === false && (
-                    <i className="fas fa-triangle-exclamation text-[7px]" />
-                )}
                 {badgeText}
-            </div>
+            </Badge>
         </div>
     )
 }

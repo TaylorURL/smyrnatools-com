@@ -1,8 +1,8 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { SERVICE_TIER_META } from '../../../../../utils/PlanUtility'
+import Badge from '../../../common/Badge'
 
 /* The three "bad" tiers, in worsening order. `good` is intentionally
  * omitted because this component renders the breakdown of the BAD
@@ -19,6 +19,15 @@ const TIER_THRESHOLDS = {
     veryBad: '> 60 min late'
 }
 
+/* Semantic tone mapping: amber-late tier maps to warning, the two
+ * red tiers (bad / veryBad) collapse to danger since the Badge palette
+ * has a single danger tone. Empty tiers fall through to neutral. */
+const TIER_TO_TONE = {
+    bad: 'danger',
+    notGood: 'warning',
+    veryBad: 'danger'
+}
+
 /** Inline pill row showing how many orders fell into each bad tier
  *  ("Not Good" / "Bad" / "Very Bad"). Empty tiers either render as
  *  muted zero pills (`showZero=true`) or get dropped entirely
@@ -33,29 +42,28 @@ export default function ServiceTierBreakdown({ tierCounts, showZero = false, com
     }
     return (
         <div
-            className={`inline-flex flex-wrap items-center ${compact ? 'gap-1' : 'gap-1.5'}`}
-            style={{ justifyContent: align === 'right' ? 'flex-end' : 'flex-start' }}
+            className={`inline-flex flex-wrap items-center ${compact ? 'gap-1' : 'gap-1.5'} ${
+                align === 'right' ? 'justify-end' : 'justify-start'
+            }`}
         >
             {visible.map((tier) => {
                 const count = tierCounts[tier] || 0
                 const meta = SERVICE_TIER_META[tier]
                 const muted = count === 0
-                const padX = compact ? 'px-1.5' : 'px-2'
-                const padY = compact ? 'py-0' : 'py-0.5'
-                const fontSize = compact ? 'text-[10px]' : 'text-[10.5px]'
                 return (
-                    <span
+                    <Badge
                         key={tier}
-                        className={`inline-flex items-center gap-1 rounded-full ${padX} ${padY} ${fontSize} font-semibold tabular-nums`}
-                        style={{
-                            background: muted ? 'var(--bg-tertiary)' : `${meta.color}1f`,
-                            color: muted ? 'var(--text-tertiary)' : meta.color
-                        }}
+                        tone={muted ? 'neutral' : TIER_TO_TONE[tier]}
+                        size={compact ? 'sm' : 'md'}
+                        shape="pill"
+                        weight="semibold"
+                        uppercase={false}
+                        className="tabular-nums"
                         title={`${meta.label} (${TIER_THRESHOLDS[tier]}) — ${count} order${count === 1 ? '' : 's'}`}
                     >
                         <span>{fmtInt(count)}</span>
-                        <span className="font-medium">{meta.label}</span>
-                    </span>
+                        <span className="font-medium ml-1">{meta.label}</span>
+                    </Badge>
                 )
             })}
         </div>

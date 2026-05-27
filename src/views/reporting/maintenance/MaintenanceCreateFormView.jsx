@@ -76,10 +76,7 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                         className="flex items-center gap-2 rounded-md border border-status-danger/30 bg-status-danger/10 px-3 py-2 text-[12px] font-medium text-text-primary animate-fade-slide-in"
                         role="alert"
                     >
-                        <i
-                            className="fas fa-exclamation-circle text-[11px] text-status-danger"
-                            aria-hidden="true"
-                        />
+                        <i className="fas fa-exclamation-circle text-[11px] text-status-danger" aria-hidden="true" />
                         <span>{form.errors.save}</span>
                     </div>
                 )}

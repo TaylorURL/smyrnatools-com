@@ -1,7 +1,25 @@
 import React from 'react'
 
 import { ListService } from '../../../services/ListService'
-import { getItemStatusIconColor, getItemStatusStyle } from '../../constants/listViewConstants'
+import Badge from '../common/Badge'
+
+const STATUS_TO_TONE = {
+    completed: 'success',
+    in_progress: 'info',
+    ordered_materials: 'info',
+    overdue: 'danger',
+    pending: 'warning',
+    waiting: 'warning'
+}
+
+const PRIORITY_TO_TONE = {
+    high: 'danger',
+    low: 'neutral',
+    medium: 'warning',
+    none: 'neutral'
+}
+
+const stripFaPrefix = (icon) => (icon ? icon.replace(/^fa-/, '') : icon)
 
 /**
  * Single row in the grouped task list — checkbox, status pill, priority pill,
@@ -19,9 +37,7 @@ export default function ListItemRow({ isMobile, isSelected, item, onSelectItem, 
             onClick={() => onSelectItem(item.id)}
             className={`group flex items-center gap-2 cursor-pointer border-b border-border-light transition-colors duration-150 ${
                 isMobile ? 'px-2 py-1.5' : 'px-3 py-2'
-            } ${item.completed ? 'opacity-60' : ''} ${
-                isSelected ? 'bg-accent/5' : 'hover:bg-bg-hover'
-            }`}
+            } ${item.completed ? 'opacity-60' : ''} ${isSelected ? 'bg-accent/5' : 'hover:bg-bg-hover'}`}
         >
             <button
                 type="button"
@@ -39,25 +55,25 @@ export default function ListItemRow({ isMobile, isSelected, item, onSelectItem, 
             >
                 {isSelected && <i className="fas fa-check text-white text-[8px]" aria-hidden="true" />}
             </button>
-            <span
-                className="inline-flex items-center shrink-0 rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5 text-text-primary"
-                style={getItemStatusStyle(itemStatus)}
+            <Badge
+                tone={STATUS_TO_TONE[itemStatus] ?? 'warning'}
+                size="xs"
+                weight="bold"
+                icon={stripFaPrefix(ListService.getStatusIcon(itemStatus))}
+                className="shrink-0"
             >
-                <i
-                    className={`fas ${ListService.getStatusIcon(itemStatus)} text-[8px]`}
-                    style={{ color: getItemStatusIconColor(itemStatus) }}
-                    aria-hidden="true"
-                />
                 {ListService.getStatusLabel(itemStatus)}
-            </span>
+            </Badge>
             {!isMobile && (
-                <span
-                    className="inline-flex items-center shrink-0 rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5 border text-text-primary"
-                    style={{ background: pc.bg, borderColor: pc.border }}
+                <Badge
+                    tone={PRIORITY_TO_TONE[item.priority || 'none'] ?? 'neutral'}
+                    size="xs"
+                    weight="bold"
+                    icon={stripFaPrefix(pc.icon)}
+                    className="shrink-0"
                 >
-                    <i className={`fas ${pc.icon} text-[8px]`} style={{ color: pc.color }} aria-hidden="true" />
                     {pc.label}
-                </span>
+                </Badge>
             )}
             <div className="flex flex-1 min-w-0 items-baseline gap-2">
                 <span
@@ -74,13 +90,18 @@ export default function ListItemRow({ isMobile, isSelected, item, onSelectItem, 
                     </span>
                 )}
             </div>
-            <span
-                className="hidden md:inline-flex items-center gap-1 text-[11px] shrink-0 rounded px-1.5 py-0.5 border border-border-light bg-bg-secondary text-text-secondary"
+            <Badge
+                tone="neutral"
+                variant="custom"
+                size="md"
+                uppercase={false}
+                weight="medium"
+                icon="building"
+                className="!hidden md:!inline-flex bg-bg-secondary border border-border-light text-text-secondary shrink-0"
                 title={ListService.getPlantName(item.plant_code)}
             >
-                <i className="fas fa-building text-[9px] opacity-70" aria-hidden="true" />
                 <span className="truncate max-w-[120px]">{ListService.getPlantName(item.plant_code)}</span>
-            </span>
+            </Badge>
             <span
                 className={`inline-flex items-center gap-1 text-[11px] font-mono tabular-nums shrink-0 ${
                     isItemOverdue ? 'font-bold text-status-danger' : 'font-medium text-text-secondary'

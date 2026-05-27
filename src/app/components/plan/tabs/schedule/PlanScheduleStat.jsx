@@ -9,9 +9,7 @@ import React from 'react'
  */
 export default function PlanScheduleStat({ badge, first, hint, label, unit, value }) {
     return (
-        <div
-            className={`flex-1 min-w-[120px] px-3.5 py-2.5 ${first ? '' : 'border-l border-border-light'}`}
-        >
+        <div className={`flex-1 min-w-[120px] px-3.5 py-2.5 ${first ? '' : 'border-l border-border-light'}`}>
             <div className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-text-tertiary">{label}</div>
             <div className="mt-0.5 flex items-baseline gap-1.5 truncate" title={String(value)}>
                 <span className="font-heading font-bold leading-none text-text-primary text-[22px] tracking-tight tabular-nums">

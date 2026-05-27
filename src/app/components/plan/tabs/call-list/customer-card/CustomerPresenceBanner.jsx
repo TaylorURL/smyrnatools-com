@@ -1,6 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import Badge from '../../../../common/Badge'
+
 /** Live "X is also viewing this customer" warning. Hidden when no
  *  other dispatcher is on the same customer detail. Renders an amber
  *  banner with the other viewers' names and roles so the dispatcher
@@ -34,19 +36,18 @@ export function CustomerPresenceBanner({ viewers }) {
                 </div>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {viewers.map((v) => (
-                        <span
+                        <Badge
                             key={v.userId}
-                            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
-                            style={{
-                                background: 'rgba(245, 158, 11, 0.18)',
-                                color: 'var(--text-primary)'
-                            }}
+                            tone="warning"
+                            size="md"
+                            weight="semibold"
+                            uppercase={false}
+                            icon="circle"
                             title={v.role || undefined}
                         >
-                            <i className="fas fa-circle text-[6px]" style={{ color: 'var(--text-primary)' }} />
                             {v.name}
-                            {v.role && <span className="opacity-70">· {v.role}</span>}
-                        </span>
+                            {v.role && <span className="opacity-70"> · {v.role}</span>}
+                        </Badge>
                     ))}
                 </div>
             </div>

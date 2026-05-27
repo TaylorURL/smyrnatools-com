@@ -2,7 +2,16 @@ import React, { useEffect, useState } from 'react'
 
 import { MaintenanceLogService } from '../../../services/MaintenanceLogService'
 import { formatLogDate, getProgressInfo, STATUS_CONFIG } from '../../../utils/MaintenanceLogUtility'
+import Badge from '../common/Badge'
 import { SkeletonBar } from './MaintenanceLogSkeleton'
+
+/** Maps a maintenance-log service-status string to the unified Badge tone. */
+const STATUS_TO_TONE = {
+    due_soon: 'warning',
+    never_serviced: 'neutral',
+    ok: 'success',
+    overdue: 'danger'
+}
 
 /** Slide-out detail panel for a single piece of equipment. */
 export function MaintenanceEquipmentDetail({
@@ -266,15 +275,12 @@ export function MaintenanceEquipmentDetail({
 }
 
 /** Small inline status badge used in the detail panel header. */
+// eslint-disable-next-line unused-imports/no-unused-vars -- `isDark` retained for signature compatibility; Badge handles theming.
 function StatusBadge({ status, isDark }) {
     const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.ok
     return (
-        <span
-            className="inline-flex items-center gap-1 rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 text-text-primary"
-            style={{ background: isDark ? cfg.darkBg : cfg.bg }}
-        >
-            <i className={`fas ${cfg.icon} text-[9px]`} />
+        <Badge tone={STATUS_TO_TONE[status] || 'neutral'} size="xs" weight="bold" icon={cfg.icon.replace(/^fa-/, '')}>
             {cfg.badge}
-        </span>
+        </Badge>
     )
 }

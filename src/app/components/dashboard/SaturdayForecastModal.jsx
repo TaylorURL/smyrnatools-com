@@ -213,10 +213,7 @@ export default function SaturdayForecastModal({
                             Saturday Operator Forecast
                         </h2>
                         <p className="m-0 text-[12.5px] text-text-secondary truncate">
-                            <span
-                                className="font-semibold"
-                                style={accentColor ? { color: accentColor } : undefined}
-                            >
+                            <span className="font-semibold" style={accentColor ? { color: accentColor } : undefined}>
                                 {saturdayLabel}
                             </span>
                         </p>
@@ -235,8 +232,8 @@ export default function SaturdayForecastModal({
                 <div className="px-5 py-3 border-b border-border-light bg-bg-secondary">
                     <p id={descriptionId} className="m-0 text-[12.5px] leading-relaxed text-text-secondary">
                         Enter the number of operators you expect to have on this Saturday for each plant you manage.
-                        Dispatch will use these counts when building the Saturday plan. You can leave a plant blank
-                        and come back later.
+                        Dispatch will use these counts when building the Saturday plan. You can leave a plant blank and
+                        come back later.
                     </p>
                 </div>
 
@@ -335,14 +332,14 @@ export default function SaturdayForecastModal({
                         onClick={handleSubmit}
                         disabled={submitting || rows.length === 0}
                         className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-md text-[12.5px] font-semibold text-white border-none transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none hover:opacity-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_45%,transparent)] disabled:opacity-60 disabled:cursor-not-allowed"
-                        style={{ background: accentColor || 'var(--accent)', boxShadow: `0 6px 16px -8px ${accentTint}` }}
+                        style={{
+                            background: accentColor || 'var(--accent)',
+                            boxShadow: `0 6px 16px -8px ${accentTint}`
+                        }}
                     >
                         {submitting ? (
                             <>
-                                <i
-                                    className="fas fa-circle-notch animate-dv-spin text-[11px]"
-                                    aria-hidden="true"
-                                />
+                                <i className="fas fa-circle-notch animate-dv-spin text-[11px]" aria-hidden="true" />
                                 <span>Submitting…</span>
                             </>
                         ) : (

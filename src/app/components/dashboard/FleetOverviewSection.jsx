@@ -46,7 +46,11 @@ function FleetRow({ active, allocation, dotColor, isTotal, label, shop, spare, s
         <tr className={rowClass}>
             <td className="px-3 py-2 text-[12.5px] text-text-primary">
                 <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: dotColor }} aria-hidden="true" />
+                    <span
+                        className="w-2 h-2 rounded-sm flex-shrink-0"
+                        style={{ background: dotColor }}
+                        aria-hidden="true"
+                    />
                     <span>{label}</span>
                 </div>
             </td>

@@ -240,7 +240,11 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                 </div>
                                             </div>
 
-                                            <div role="listbox" aria-label="Recipients" className="flex-1 overflow-y-auto">
+                                            <div
+                                                role="listbox"
+                                                aria-label="Recipients"
+                                                className="flex-1 overflow-y-auto"
+                                            >
                                                 {filteredManagers.length === 0 ? (
                                                     <div className="text-center text-[13px] py-4 text-text-secondary">
                                                         {managers.length === 0 ? 'No team members found' : 'No matches'}

@@ -5,11 +5,6 @@ import { fmtDate, fmtInt, fmtScorePct } from '../../../../../utils/PlanStatistic
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../utils/PlantColocationUtility'
 import ScorePercent from './ScorePercent'
 
-/* `HEAVY` is the accent that lights kicker dots in the per-customer trail
- * and the kicker share-bar — kept as a background-only signal so the
- * value text itself reads in the theme's primary color. */
-const HEAVY = '#dc2626'
-
 /* Customers whose AVERAGE kicker meets or exceeds this many yards land
  * in the "Heavy kickers" filter. Tuned so a typical 3-yard top-up
  * doesn't qualify but anything that meaningfully reshapes the pool
@@ -64,7 +59,8 @@ function withinDays(iso, days) {
 
 /** One dot per kicker job, chronological. Dot size scales with the
  *  kicker yardage (capped) so a 30-yard surprise visually outweighs a
- *  3-yard nudge. */
+ *  3-yard nudge. Fill uses the shared `status-danger` semantic token so
+ *  the kicker signal reads consistently with the rest of the suite. */
 function KickerTrail({ orders }) {
     const dots = useMemo(() => {
         const sorted = [...orders].sort((a, b) => a.date.localeCompare(b.date))
@@ -80,8 +76,8 @@ function KickerTrail({ orders }) {
                     <div
                         key={m.orderId}
                         title={`${fmtDate(m.date)} · ${fmtYards(m.kickerYards)}`}
-                        className="rounded-full shrink-0"
-                        style={{ background: HEAVY, height: `${size}px`, width: `${size}px` }}
+                        className="rounded-full shrink-0 bg-status-danger"
+                        style={{ height: `${size}px`, width: `${size}px` }}
                     />
                 )
             })}
@@ -90,16 +86,16 @@ function KickerTrail({ orders }) {
 }
 
 /** Stacked horizontal bar: total scheduled yards (muted) vs. kicker
- *  yards (HEAVY).  The width ratio reads at-a-glance as "kickers were
- *  this fraction of their book." */
+ *  yards (`status-danger`). The width ratio reads at-a-glance as
+ *  "kickers were this fraction of their book." */
 function KickerShareBar({ kickerYards, scheduledYards }) {
     const total = scheduledYards + kickerYards
     if (total <= 0) return null
     const kickerPct = (kickerYards / total) * 100
     return (
         <div className="rounded-sm h-1.5 overflow-hidden flex bg-bg-tertiary">
-            <div style={{ background: 'var(--text-tertiary)', opacity: 0.35, width: `${100 - kickerPct}%` }} />
-            <div style={{ background: HEAVY, width: `${kickerPct}%` }} />
+            <div className="bg-text-tertiary/35" style={{ width: `${100 - kickerPct}%` }} />
+            <div className="bg-status-danger" style={{ width: `${kickerPct}%` }} />
         </div>
     )
 }

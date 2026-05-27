@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 
+import Badge from '../../../app/components/common/Badge'
 import PlanDashboardActivityFeed from '../../../app/components/plan/tabs/dashboard/PlanDashboardActivityFeed'
 import { PlanDashboardAtAGlance } from '../../../app/components/plan/tabs/dashboard/PlanDashboardAtAGlance'
 import PlanDashboardClockInBoard from '../../../app/components/plan/tabs/dashboard/PlanDashboardClockInBoard'
@@ -299,15 +300,22 @@ function PlanDashboardView({
                             title={yourSectionTitle}
                             right={
                                 onSwitchToPlanner && (
-                                    <button
+                                    <Badge
+                                        as="button"
+                                        variant="custom"
+                                        bg={accentColor}
+                                        fg="#ffffff"
+                                        size="md"
+                                        shape="rounded-md"
+                                        weight="semibold"
+                                        uppercase={false}
                                         onClick={onSwitchToPlanner}
-                                        className="text-[11px] font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer shrink-0 text-white"
-                                        style={{ background: accentColor }}
                                         title="Open Planner"
+                                        icon={<i className="fas fa-project-diagram sm:mr-1" aria-hidden="true" />}
+                                        className="px-3 py-1.5 text-[11px] shrink-0"
                                     >
-                                        <i className="fas fa-project-diagram sm:mr-1" />
                                         <span className="hidden sm:inline">Open Planner</span>
-                                    </button>
+                                    </Badge>
                                 )
                             }
                         >

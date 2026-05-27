@@ -10,6 +10,7 @@ import {
     isLikelyBadAddress
 } from '../../../../../utils/PlanScheduleUtility'
 import { getCalculatedTruckCount } from '../../../../../utils/PlanUtility'
+import Badge from '../../../common/Badge'
 import PhoneLink from '../../../common/PhoneLink'
 import { BigPourBadge, HoursLimitBadge, KeyValue, OrderStatusBadge, ServiceBadge } from './PlanScheduleBadges'
 
@@ -136,13 +137,16 @@ export default function PlanScheduleOrderCard({
                     </div>
                     {hasAddress &&
                         (addressBad ? (
-                            <span
-                                className="status-badge-danger mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider"
+                            <Badge
+                                tone="danger"
+                                size="sm"
+                                shape="pill"
+                                icon="triangle-exclamation"
+                                className="mt-1"
                                 title={`Address looks invalid — original value: "${clean(order.address)}"`}
                             >
-                                <i className="fas fa-triangle-exclamation text-[9px]" />
                                 Bad Address
-                            </span>
+                            </Badge>
                         ) : onOpenLocation ? (
                             <div className="mt-1 flex flex-col gap-1">
                                 <button
@@ -158,13 +162,16 @@ export default function PlanScheduleOrderCard({
                                     </span>
                                 </button>
                                 {closerPlant && (
-                                    <span
-                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap self-start bg-[rgba(37,_99,_235,_0.12)] text-text-primary"
+                                    <Badge
+                                        tone="info"
+                                        size="xs"
+                                        shape="pill"
+                                        icon="route"
+                                        className="self-start"
                                         title={`Live drive time: ${closerPlant.minutes} min from plant ${closerPlant.plantCode}${closerPlant.plantName ? ` (${closerPlant.plantName})` : ''} vs ${closerPlant.assignedMinutes} min from assigned plant ${plantCode}. Saves ~${closerPlant.savings} min one-way.`}
                                     >
-                                        <i className="fas fa-route text-[9px]" />
                                         Closer to {closerPlant.plantCode} · −{closerPlant.savings}m
-                                    </span>
+                                    </Badge>
                                 )}
                             </div>
                         ) : (
