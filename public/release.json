@@ -1,7 +1,7 @@
 {
   "version": "2026.22.5",
   "projectName": "smyrnatools.com",
-  "branch": "core",
+  "branch": "production",
   "provider": "claude-code",
   "cleanLogs": true,
   "cleanCss": true,

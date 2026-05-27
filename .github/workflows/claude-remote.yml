@@ -22,7 +22,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: core
+          ref: production
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
@@ -78,7 +78,7 @@ jobs:
           Automated edit via Claude Code from issue #${{ github.event.issue.number }}
 
           Co-Authored-By: Claude <noreply@anthropic.com>"
-          git push origin core
+          git push origin production
 
       - name: Comment and close issue on success
         if: steps.changes.outputs.has_changes == 'true'
@@ -89,7 +89,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: '✅ Changes committed and pushed to `core`. Vercel deployment should start shortly.'
+              body: '✅ Changes committed and pushed to `production`. Vercel deployment should start shortly.'
             });
             await github.rest.issues.update({
               owner: context.repo.owner,
