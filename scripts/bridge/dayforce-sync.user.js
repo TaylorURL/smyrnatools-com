@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Smyrna Dayforce Sync
 // @namespace    smyrna-tools
-// @version      1.3.0
+// @version      1.4.0
 // @description  Syncs Houston RMX_TX_* timesheet bundles + raw clock punches from Dayforce (wkdus261) to Supabase every 5 minutes. Captures the session GUID + CSRF token from the live UI's own traffic, calls the same internal endpoints the timesheet view calls (ObfuscatingTimesheet/GetManagerTimesheetLoadBundle, EmployeeSelfService/TimeAndAttendance/GetManagerEmployeeRawPunches), POSTs structured JSON to the dayforce-import edge function which decodes and upserts. Manual triggers under window.dayforceSync. On session expiry navigates to the Dayforce IdP (dfid.dayforcehcm.com) and auto-submits stored credentials — fully unattended re-login. Falls back to silent-reload + banner if credentials aren't stored or MFA is enforced. On first install (or any time the GM-stored completed-year flag is older than the current year) the script runs a one-shot YTD backfill: weekly slices from Jan 1 of the current year → today, gap-checked against Supabase so existing data isn't re-fetched, resumable across reloads, throttled at 1s/week so Dayforce doesn't 429.
 // @match        https://wkdus261.dayforcehcm.com/*
 // @match        https://dfid.dayforcehcm.com/*
@@ -297,6 +297,14 @@
     // Dayforce gateway is HTTPS to the cloud and tolerates a handful of
     // simultaneous calls; tune down if we ever see 429.
     const WORKER_CONCURRENCY = 4
+
+    // Heartbeat cadence. Dayforce's idle timeout is 90 minutes (sliding —
+    // resets on any authenticated request). The 5-minute sync cycle already
+    // resets it indirectly, but a dedicated heartbeat at a shorter cadence
+    // is cheap insurance against a missed cycle. 2.5 min matches the
+    // typical pattern for inactivity keep-alives and stays well under the
+    // page's own 5-min KeepAlive interval observed in the HAR.
+    const HEARTBEAT_INTERVAL_MS = 2.5 * 60 * 1000
 
     // Active sync window in America/Chicago. Dayforce is the system of
     // record outside dispatch hours too (PTO requests, late-night maintenance
@@ -835,6 +843,50 @@
             endDate: periodEnd,
             isPunchCheckSumRequired: false,
             startDate: periodStart
+        }
+    }
+
+    // ============================================================
+    // SESSION HEARTBEAT
+    //
+    // Dayforce's server-side idle timeout is 90 minutes; the page itself
+    // pings /Framework/Timeout/SendHeartbeat (and /KeepAlive) every 5 min
+    // to keep that timer reset. We do the same here so the session never
+    // dies from inactivity — independent of the 5-min sync cycle, so a
+    // missed cycle (e.g. throttled by an outside-window guard, or a slow
+    // backfill week) doesn't leave the session unprotected.
+    //
+    // Also dispatches a synthetic mousemove on document so any client-side
+    // idle detector on the page (Dayforce's UI sometimes shows its own
+    // "still there?" modal independent of the server timer) stays quiet.
+    //
+    // Heartbeat failures are deliberately silent — the next sync cycle or
+    // heartbeat will surface any real problem, and if the session actually
+    // died the existing handleSessionExpired path is already triggered by
+    // dayforcePost's error handling.
+    // ============================================================
+    async function sendHeartbeat() {
+        if (!sessionGuid) return
+        if (syncState === 'session-expired' || syncState === 'recovering') return
+
+        try {
+            document.dispatchEvent(
+                new MouseEvent('mousemove', {
+                    bubbles: true,
+                    clientX: Math.floor(Math.random() * (window.innerWidth || 800)),
+                    clientY: Math.floor(Math.random() * (window.innerHeight || 600))
+                })
+            )
+        } catch {
+            // non-essential — the API ping is the load-bearing part
+        }
+
+        try {
+            await dayforcePost('/Framework/Timeout/SendHeartbeat', {})
+        } catch (err) {
+            if (err?.sessionExpired) return
+            // Quiet on transient failures — they're non-fatal and noise
+            // here would flood the console every 2.5 min.
         }
     }
 
@@ -1406,7 +1458,7 @@
     const backfillCompletedYear = Number(GM_getValue(BACKFILL_GM_KEY_COMPLETED_YEAR, 0)) || 0
     const backfillPending = backfillCompletedYear < new Date().getFullYear()
     log(
-        `Smyrna Dayforce Sync v1.3.0 loaded — host ${DAYFORCE_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${RMX_ORG_UNITS.length} RMX orgs. Auto-login: ${autoLoginEnabled ? 'ENABLED' : 'DISABLED — run dayforceSync.setCredentials(user, pass)'}. YTD backfill: ${backfillPending ? 'PENDING (will kick after first live sync)' : `COMPLETED for ${backfillCompletedYear}`}. Manual triggers under window.dayforceSync`
+        `Smyrna Dayforce Sync v1.4.0 loaded — host ${DAYFORCE_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${RMX_ORG_UNITS.length} RMX orgs. Auto-login: ${autoLoginEnabled ? 'ENABLED' : 'DISABLED — run dayforceSync.setCredentials(user, pass)'}. YTD backfill: ${backfillPending ? 'PENDING (will kick after first live sync)' : `COMPLETED for ${backfillCompletedYear}`}. Heartbeat: every ${Math.round(HEARTBEAT_INTERVAL_MS / 1000)}s. Manual triggers under window.dayforceSync`
     )
 
     setTimeout(() => {
@@ -1415,6 +1467,11 @@
         // capture the session GUID + CSRF token.
         setTimeout(runSync, 10000)
         setInterval(runSync, INTERVAL_MS)
+        // Heartbeat starts after a short delay so the initial session
+        // capture happens first. Runs continuously thereafter to keep the
+        // Dayforce idle timer reset regardless of sync cadence.
+        setTimeout(sendHeartbeat, 30000)
+        setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS)
     }, 1000)
 
     // ============================================================
@@ -1538,6 +1595,13 @@
             }
             log('Manual: backfill status', snap)
             return snap
+        },
+        // Manual heartbeat — verifies the keep-alive endpoint is reachable
+        // with the captured session. Useful for confirming the session is
+        // still alive without waiting for the next 2.5-min interval.
+        pingHeartbeat() {
+            log('Manual: sending heartbeat now')
+            return sendHeartbeat()
         }
     }
     log('Manual triggers ready — call dayforceSync.runNow() from devtools to test')

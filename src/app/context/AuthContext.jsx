@@ -21,6 +21,11 @@ const AUTH_FUNCTION = '/auth-service'
  * holds a usable token. */
 const JWT_REFRESH_FLOOR_SECONDS = 600
 const JWT_REFRESH_INTERVAL_MS = 60 * 1000
+/* Visibility wake-up probe throttle. Tab focus / visibility events fire
+ * dozens of times in a normal session — we only need one whoami probe per
+ * 5 minutes to (a) confirm the session is still alive and (b) trigger the
+ * server-side cookie re-issue that keeps the sliding 30-day window fresh. */
+const VISIBILITY_PROBE_THROTTLE_MS = 5 * 60 * 1000
 
 /**
  * Authentication context providing sign-in, sign-up, sign-out, session restoration,
@@ -160,6 +165,42 @@ export function AuthProvider({ children }) {
         }
         const interval = setInterval(tick, JWT_REFRESH_INTERVAL_MS)
         return () => clearInterval(interval)
+    }, [])
+
+    /* Visibility wake-up probe. Catches two cases the JWT-refresh tick can't:
+     *   1. Tab was hidden / laptop was closed for hours/days. On return, we
+     *      need to verify the session is still alive BEFORE the user clicks
+     *      something and gets a confusing broken-UI experience.
+     *   2. Sliding cookie refresh — every successful whoami re-issues the
+     *      session cookies with a fresh 30-day Max-Age, so any user who
+     *      opens the app at least once a month effectively never has to
+     *      re-authenticate due to cookie expiry.
+     *
+     * On a 401 we manually dispatch SESSION_INVALID_EVENT because whoami is
+     * in APIUtility's PUBLIC_AUTH_PATHS allowlist — auto-dispatch is
+     * suppressed for that path to avoid bouncing the LoginView itself when
+     * a stale whoami fires after sign-out. */
+    useEffect(() => {
+        let lastProbeAt = 0
+        const probe = async () => {
+            if (typeof document === 'undefined') return
+            if (document.visibilityState !== 'visible') return
+            const hasCookie = document.cookie.split(';').some((part) => part.trim().startsWith('smyrna_auth=1'))
+            const hasMemory = Boolean(getSessionUserId())
+            if (!hasCookie && !hasMemory) return
+            if (Date.now() - lastProbeAt < VISIBILITY_PROBE_THROTTLE_MS) return
+            lastProbeAt = Date.now()
+            const userId = await whoami()
+            if (!userId) {
+                window.dispatchEvent(new CustomEvent(SESSION_INVALID_EVENT, { detail: { reason: 'visibility-probe' } }))
+            }
+        }
+        document.addEventListener('visibilitychange', probe)
+        window.addEventListener('focus', probe)
+        return () => {
+            document.removeEventListener('visibilitychange', probe)
+            window.removeEventListener('focus', probe)
+        }
     }, [])
 
     const loadUserProfile = useCallback(async (userId) => {

@@ -1,5 +1,93 @@
 # Changelog
 
+## [2026.22.15] - 2026-05-27
+
+- Mid-session 401s now redirect cleanly to LoginView instead of leaving
+  the user clicking around a dead view tree. Root cause was a missing
+  wire: APIUtility was correctly dispatching `auth:session-invalid` on
+  every server 401, and AuthContext was clearing its `user` state in
+  response, but `useAuthSession` (the hook that owns App.jsx's local
+  `userId` state) only listened for `authSuccess` / `authSignOut` —
+  so App.jsx kept rendering the same view tree with broken endpoints
+  forever, and the only escape was a hard refresh. Added the missing
+  `SESSION_INVALID_EVENT` listener to `src/app/hooks/useAuth.js` that
+  mirrors the sign-out handler (clear userId, reset view to Dashboard,
+  drop guest / roles flags, mark sessionChecked=true so LoginView
+  paints immediately).
+- New one-shot "Your session expired. Please sign in again." amber
+  banner on `src/views/common/login/LoginView.jsx` when the user lands
+  there via an involuntary session loss (not via an explicit Sign Out
+  click). The marker is a sessionStorage flag (`SESSION_EXPIRED_BANNER`
+  in `src/app/constants/authConstants.js`) set by useAuthSession's
+  session-invalid handler and cleared the moment LoginView reads it,
+  on explicit sign-out, and on successful re-auth so it can't surface
+  inappropriately.
+- Server-side session expiry bumped from 7 → 30 days of inactivity in
+  `supabase/functions/_shared/requireSession.ts`. The constant is now
+  exported and `supabase/functions/auth-service/index.ts` imports it
+  instead of carrying its own duplicate (`restore-session`,
+  `refresh-token`, and `whoami` all now agree on one source of truth).
+  Companion bump in `supabase/functions/_shared/cookies.ts` brings
+  `SESSION_MAX_AGE_SECONDS` from 7 → 30 days so the cookie's Max-Age
+  matches the server-side window.
+- Sliding cookie refresh on every `/auth-service/whoami` success.
+  Previously the three session cookies (smyrna_uid / smyrna_sid /
+  smyrna_auth flag) were set once at sign-in and never refreshed, so
+  a daily user got logged out at exactly 7 days post-sign-in regardless
+  of how active they'd been. The whoami handler now bumps `last_active`
+  on the `users_sessions` row AND re-issues all three cookies with a
+  fresh 30-day Max-Age, so any user who hits the visibility probe at
+  least once a month is effectively immortal. Combined with the
+  30-day inactivity window above, the realistic re-login cadence drops
+  from "weekly" to "only when truly idle for a full month".
+- New visibility wake-up probe in `src/app/context/AuthContext.jsx`.
+  On `visibilitychange` and `focus` events (throttled to once per
+  5 minutes via `VISIBILITY_PROBE_THROTTLE_MS`), pings whoami if the
+  `smyrna_auth=1` cookie or in-memory userId signal is present. On
+  401, manually dispatches `SESSION_INVALID_EVENT` — necessary because
+  whoami is in APIUtility's `PUBLIC_AUTH_PATHS` allowlist where
+  auto-dispatch is suppressed. Catches the "closed my laptop for the
+  weekend" case and bounces cleanly to LoginView instead of letting
+  the user click around and watch each call fail one by one. Also
+  triggers the cookie re-issue above as a side effect, so any active
+  user keeps a fresh cookie naturally.
+- Operator detail view rating picker now uses the centralized
+  `<StarRating>` component. `src/views/people/operators/detail/BasicInfoSection.jsx`
+  was the only remaining hand-rolled star renderer left over from the
+  2026.22.14 centralization sweep — it used raw `fas fa-star`
+  `<i>` tags at `text-xl` with `text-text-primary` fill, which didn't
+  match the other 5 interactive pickers (Mixer / Tractor / Trailer /
+  Equipment cleanliness, Verification operator rating). Now renders
+  `<StarRating value={rating} onChange={...} size="lg" tone="warning" />`
+  same as every other picker; the "Excellent / Good / Poor" label
+  readout stays external.
+- `StatusHistoryBar` tooltip now renders through a React portal so it
+  escapes the virtualized row's transform-induced stacking context.
+  `src/app/components/common/StatusHistoryBar.jsx` was emitting the
+  tooltip as an in-tree absolute sibling with `z-[1000]`, but any
+  `<tr>` with a transform contains absolutely-positioned descendants
+  regardless of their z-index — so the tooltip painted under the next
+  row in long virtualized lists. Coordinates are recomputed on scroll
+  and resize while open so the tooltip tracks the bar through
+  virtualized scrolling.
+- `PlanScheduleFilterDrawer` status pills drop the accent-hex tinting
+  in favor of the project's neutral Dot + Text language. Active pill
+  now lifts to `bg-tertiary` body + `border-medium` border + primary
+  text + tertiary count chip — the same "more pronounced neutral
+  step" treatment used everywhere else in Statistics / Plan tabs.
+  Selected state reads through neutral weight alone, no hue.
+- Dayforce userscript v1.4.0 (`scripts/bridge/dayforce-sync.user.js`)
+  adds a dedicated 2.5-minute session heartbeat against
+  `/Framework/Timeout/SendHeartbeat`, independent of the 5-minute sync
+  cycle. Dayforce's server-side idle timeout is 90 minutes (sliding —
+  resets on any authenticated request); the page itself pings KeepAlive
+  every 5 min. Running a dedicated heartbeat at 2.5 min is cheap
+  insurance against a missed sync cycle (outside-window guard, slow
+  backfill week, etc.) leaving the session unprotected. Also dispatches
+  a synthetic mousemove so any client-side "still there?" idle modal
+  stays quiet. Failures are silent — the next cycle surfaces real
+  problems via the existing `handleSessionExpired` path.
+
 ## [2026.22.14] - 2026-05-27
 
 - Schedule corrections email pipeline. A new 4 PM email_baseline snapshot

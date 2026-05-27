@@ -14,7 +14,13 @@ import { errorResponse } from './cors.ts'
 import { readSessionCookies } from './cookies.ts'
 
 const SESSIONS_TABLE = 'users_sessions'
-const SESSION_EXPIRY_DAYS = 7
+/**
+ * Rolling inactivity window. A session stays valid as long as it has been
+ * touched (any authenticated edge function call updates `last_active`) within
+ * this many days. Bumped 7 → 30 in 2026.22 so users who use the app once or
+ * twice a month don't have to re-authenticate from scratch.
+ */
+export const SESSION_EXPIRY_DAYS = 30
 
 /** Creates an admin client using the service role key to bypass RLS for session validation. */
 function getAdminClient(): any {

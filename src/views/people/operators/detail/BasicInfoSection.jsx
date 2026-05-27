@@ -1,3 +1,4 @@
+import StarRating from '../../../../app/components/common/StarRating'
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
 import { INPUT_CLASS, RATING_LABELS } from '../../../../app/constants/operatorDetailConstants'
 import GrammarUtility from '../../../../utils/GrammarUtility'
@@ -58,22 +59,12 @@ function BasicInfoSection({
                 <div className="flex flex-col gap-1.5">
                     <label>Rating</label>
                     <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-0.5">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                    key={star}
-                                    type="button"
-                                    className={`p-1 bg-transparent border-none text-xl transition-colors ${!canEditOperator ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                    onClick={() => canEditOperator && setRating(star === rating ? 0 : star)}
-                                    aria-label={`Rate ${star} of 5 stars`}
-                                    disabled={!canEditOperator}
-                                >
-                                    <i
-                                        className={`fas fa-star ${star <= rating ? 'text-text-primary' : 'text-border-light'}`}
-                                    ></i>
-                                </button>
-                            ))}
-                        </div>
+                        <StarRating
+                            value={rating}
+                            onChange={canEditOperator ? setRating : undefined}
+                            size="lg"
+                            tone="warning"
+                        />
                         {rating > 0 && (
                             <span className="text-sm font-medium text-text-secondary">{RATING_LABELS[rating]}</span>
                         )}

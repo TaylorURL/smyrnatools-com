@@ -30,7 +30,7 @@ import {
 // @ts-ignore
 import { mintSessionJwt } from '../_shared/jwt.ts'
 // @ts-ignore
-import { requireAuthenticated } from '../_shared/requireSession.ts'
+import { requireAuthenticated, SESSION_EXPIRY_DAYS } from '../_shared/requireSession.ts'
 
 const JWT_TTL_SECONDS = 3600
 
@@ -87,7 +87,6 @@ function getRateLimitKey(req: Request, identifier: string): string {
 
 // ── Session-based auth for protected operations ────────────────────────
 const SESSIONS_TABLE = 'users_sessions'
-const SESSION_EXPIRY_DAYS = 7
 const ELEVATED_WEIGHT_THRESHOLD = 75
 
 /**
@@ -783,6 +782,21 @@ Deno.serve(async (req) => {
                     const expiry = new Date()
                     expiry.setDate(expiry.getDate() - SESSION_EXPIRY_DAYS)
                     if (lastActive < expiry) return errorResponse('Session expired', headers, 401)
+                    /* Sliding window — bump server-side last_active AND
+                     * re-issue the cookies with a fresh Max-Age. The
+                     * AuthContext visibility probe hits this endpoint
+                     * every time the tab regains focus (throttled to once
+                     * per 5 minutes), so an active user's cookies are
+                     * effectively immortal. Without the cookie re-issue
+                     * the cookies would expire 30 days after sign-in
+                     * regardless of how often the user came back. */
+                    supabase
+                        .from(SESSIONS_TABLE)
+                        .update({ last_active: nowISO() })
+                        .eq('id', sessionId)
+                        .then(() => {})
+                        .catch(() => {})
+                    return respondWithCookies({ userId }, headers, buildSessionCookieHeaders(userId, sessionId))
                 }
                 return jsonResponse({ userId }, headers)
             }

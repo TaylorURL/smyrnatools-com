@@ -2,6 +2,7 @@
 import React, { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
 import VersionPopup from '../../../app/components/common/VersionPopup'
+import { SESSION_STORAGE_KEYS } from '../../../app/constants/authConstants'
 import { useAuth } from '../../../app/context/AuthContext'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { useVersion } from '../../../app/hooks/useVersion'
@@ -100,10 +101,22 @@ function LoginView() {
     const [animatedStats, setAnimatedStats] = useState({ assets: 0, operators: 0, plants: 0 })
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [videoLoaded, setVideoLoaded] = useState(false)
+    // One-shot notice when the user lands here because their session expired
+    // mid-use (not because they clicked Sign Out). Flag is set by useAuthSession
+    // on SESSION_INVALID_EVENT and cleared the moment LoginView mounts.
+    const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false)
     const strengthCheckRef = useRef(null)
     useEffect(() => {
         const timer = setTimeout(() => setVideoLoaded(true), 100)
         return () => clearTimeout(timer)
+    }, [])
+    useEffect(() => {
+        try {
+            if (sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_EXPIRED_BANNER) === '1') {
+                setSessionExpiredNotice(true)
+                sessionStorage.removeItem(SESSION_STORAGE_KEYS.SESSION_EXPIRED_BANNER)
+            }
+        } catch {}
     }, [])
     // Fetch aggregate fleet counts after a 1s delay (so the UI paints first),
     // then animate them with a cubic ease-out over 1.5s.
@@ -425,6 +438,19 @@ function LoginView() {
                                     >
                                         Forgot password?
                                     </button>
+                                </div>
+                            )}
+                            {sessionExpiredNotice && !errorMessage && !successMessage && (
+                                <div
+                                    role="status"
+                                    aria-live="polite"
+                                    className="flex items-start gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in motion-reduce:animate-none bg-amber-50 border border-amber-200 text-amber-900"
+                                >
+                                    <i
+                                        className="fas fa-info-circle shrink-0 mt-0.5 text-[0.9rem]"
+                                        aria-hidden="true"
+                                    />
+                                    <span>Your session expired. Please sign in again.</span>
                                 </div>
                             )}
                             {errorMessage && (

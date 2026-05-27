@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { memo, useEffect, useState } from 'react'
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { Database } from '../../../services/DatabaseService'
 
@@ -44,6 +45,14 @@ const StatusHistoryBar = memo(function StatusHistoryBar({ itemId, itemType, curr
     const [loading, setLoading] = useState(true)
     const [isHovered, setIsHovered] = useState(false)
     const [animateIn, setAnimateIn] = useState(false)
+    /* Tooltip lives in a portal to escape the virtualized row's transform-
+     * induced stacking context (any `<tr>` with a transform contains
+     * absolutely-positioned descendants regardless of their z-index, which
+     * is why the previous in-tree `z-[1000]` got painted under the next
+     * row). Coordinates are recomputed on scroll / resize while open so the
+     * tooltip tracks the bar through virtualized scrolling. */
+    const wrapperRef = useRef(null)
+    const [tooltipPosition, setTooltipPosition] = useState({ left: 0, top: 0 })
     useEffect(() => {
         if (!itemId || !itemType) return
         let cancelled = false
@@ -144,13 +153,34 @@ const StatusHistoryBar = memo(function StatusHistoryBar({ itemId, itemType, curr
             return () => clearTimeout(timer)
         }
     }, [loading, statusPercentages])
+    const computeTooltipPosition = useCallback(() => {
+        const rect = wrapperRef.current?.getBoundingClientRect()
+        if (!rect) return null
+        return { left: rect.left + rect.width / 2, top: rect.bottom + 4 }
+    }, [])
+    const showTooltip = useCallback(() => {
+        const next = computeTooltipPosition()
+        if (next) setTooltipPosition(next)
+        setIsHovered(true)
+    }, [computeTooltipPosition])
+    const hideTooltip = useCallback(() => setIsHovered(false), [])
+    useEffect(() => {
+        if (!isHovered) return
+        const reposition = () => {
+            const next = computeTooltipPosition()
+            if (next) setTooltipPosition(next)
+        }
+        window.addEventListener('scroll', reposition, { capture: true, passive: true })
+        window.addEventListener('resize', reposition, { passive: true })
+        return () => {
+            window.removeEventListener('scroll', reposition, { capture: true })
+            window.removeEventListener('resize', reposition)
+        }
+    }, [isHovered, computeTooltipPosition])
     const totalDays = statusPercentages?.reduce((sum, s) => sum + s.days, 0) || 0
+    const shouldShowTooltip = isHovered && !loading && statusPercentages && statusPercentages.length > 0
     return (
-        <div
-            className="relative mt-2 w-full"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
+        <div ref={wrapperRef} className="relative mt-2 w-full" onMouseEnter={showTooltip} onMouseLeave={hideTooltip}>
             <div className="flex h-1.5 w-full overflow-hidden rounded-md bg-bg-hover">
                 {loading ? (
                     <div
@@ -178,26 +208,31 @@ const StatusHistoryBar = memo(function StatusHistoryBar({ itemId, itemType, curr
                     ))
                 ) : null}
             </div>
-            {isHovered && !loading && statusPercentages && statusPercentages.length > 0 && (
-                <div className="absolute left-1/2 top-full z-[1000] min-w-[140px] -translate-x-1/2 mt-1 rounded-card border border-border-light bg-bg-secondary p-2.5 shadow-modal animate-fade-in-fast">
-                    <div className="mb-1.5 text-[9px] font-semibold uppercase tracking-wider text-text-tertiary">
-                        {totalDays} days tracked
-                    </div>
-                    {statusPercentages.map((item, index) => (
-                        <div
-                            key={index}
-                            className={`flex items-center gap-1.5 ${index < statusPercentages.length - 1 ? 'mb-1' : ''}`}
-                        >
-                            <div
-                                className="h-2 w-2 flex-shrink-0 rounded-sm"
-                                style={{ background: resolveStatusColor(item.status) }}
-                            />
-                            <span className="flex-1 text-[11px] font-medium text-text-primary">{item.status}</span>
-                            <span className="text-[10px] text-text-secondary">{item.percentage}%</span>
+            {shouldShowTooltip &&
+                createPortal(
+                    <div
+                        className="pointer-events-none fixed z-[1000] min-w-[140px] -translate-x-1/2 rounded-card border border-border-light bg-bg-secondary p-2.5 shadow-modal animate-fade-in-fast"
+                        style={{ left: tooltipPosition.left, top: tooltipPosition.top }}
+                    >
+                        <div className="mb-1.5 text-[9px] font-semibold uppercase tracking-wider text-text-tertiary">
+                            {totalDays} days tracked
                         </div>
-                    ))}
-                </div>
-            )}
+                        {statusPercentages.map((item, index) => (
+                            <div
+                                key={index}
+                                className={`flex items-center gap-1.5 ${index < statusPercentages.length - 1 ? 'mb-1' : ''}`}
+                            >
+                                <div
+                                    className="h-2 w-2 flex-shrink-0 rounded-sm"
+                                    style={{ background: resolveStatusColor(item.status) }}
+                                />
+                                <span className="flex-1 text-[11px] font-medium text-text-primary">{item.status}</span>
+                                <span className="text-[10px] text-text-secondary">{item.percentage}%</span>
+                            </div>
+                        ))}
+                    </div>,
+                    document.body
+                )}
         </div>
     )
 })

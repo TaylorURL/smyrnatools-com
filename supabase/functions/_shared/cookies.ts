@@ -14,7 +14,14 @@ const COOKIE_UID = 'smyrna_uid'
 const COOKIE_SID = 'smyrna_sid'
 const COOKIE_FLAG = 'smyrna_auth'
 const COOKIE_DOMAIN = '.smyrnatools.com'
-const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
+/**
+ * 30 days, matching SESSION_EXPIRY_DAYS in requireSession.ts. Cookies are
+ * re-issued on every successful `/auth-service/whoami` probe (called by the
+ * AuthContext visibility-change listener every time the tab regains focus),
+ * so any user who opens the app at least once a month effectively never
+ * hits the cookie expiry — the sliding window keeps the cookie fresh.
+ */
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 
 interface CookieOptions {
     httpOnly: boolean

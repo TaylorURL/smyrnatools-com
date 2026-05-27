@@ -18,13 +18,15 @@ const FIELD_INPUT_STYLE = {
  * subtle (12% bg + 100% fg) to match the rest of Statistics / Plan tabs.
  * ────────────────────────────────────────────────────────────────────────── */
 
-/** Pill button used for the Status row. Active state uses the user's accent
- *  at 18% background; idle uses bg-secondary. Click-through props match a
- *  plain `<button type="button">`. Renders through the unified `Badge` so
- *  layout primitives stay consistent with every other pill in the app; the
- *  per-user `accent` hex is dynamic so styling goes through `variant="custom"`
- *  with a manual `style` (which the Badge passes through via spread). */
-function StatusPill({ accent, active, count, label, onClick }) {
+/** Pill button used for the Status row. Active state lifts the body to
+ *  `--bg-tertiary` (always the "more pronounced" neutral step beyond
+ *  `--bg-secondary` in every theme — darker in light mode, lighter in
+ *  dark / gray mode), with a stronger border and primary text. No accent
+ *  hue — the selected state reads through neutral weight alone so it
+ *  matches the project's Dot + Text language. Renders through the unified
+ *  `Badge` so layout primitives stay consistent with every other pill in
+ *  the app. */
+function StatusPill({ active, count, label, onClick }) {
     return (
         <Badge
             as="button"
@@ -36,17 +38,17 @@ function StatusPill({ accent, active, count, label, onClick }) {
             onClick={onClick}
             className="gap-1.5 border active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             style={{
-                background: active ? `${accent}26` : 'var(--bg-secondary)',
-                borderColor: active ? accent : 'var(--border-light)',
-                color: active ? accent : 'var(--text-secondary)'
+                background: active ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
+                borderColor: active ? 'var(--border-medium)' : 'var(--border-light)',
+                color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
             }}
         >
             {label}
             <span
                 className="rounded px-1 text-[10.5px] font-mono tabular-nums"
                 style={{
-                    background: active ? `${accent}33` : 'var(--bg-tertiary)',
-                    color: active ? accent : 'var(--text-tertiary)'
+                    background: active ? 'var(--border-medium)' : 'var(--bg-tertiary)',
+                    color: active ? 'var(--text-primary)' : 'var(--text-tertiary)'
                 }}
             >
                 {count}
@@ -269,21 +271,18 @@ export default function PlanScheduleFilterDrawer({
             {/* Status pills. */}
             <div className="inline-flex items-center gap-1">
                 <StatusPill
-                    accent={accentColor}
                     active={statusFilter === 'all'}
                     count={statusCounts.all}
                     label="All"
                     onClick={() => onChangeStatus('all')}
                 />
                 <StatusPill
-                    accent={accentColor}
                     active={statusFilter === 'scheduled'}
                     count={statusCounts.scheduled}
                     label="Scheduled"
                     onClick={() => onChangeStatus('scheduled')}
                 />
                 <StatusPill
-                    accent={accentColor}
                     active={statusFilter === 'sameDay'}
                     count={statusCounts.sameDay}
                     label="Same-day"
