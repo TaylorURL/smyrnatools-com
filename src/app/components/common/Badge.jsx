@@ -1,145 +1,109 @@
 import React from 'react'
 
 /**
- * Unified Badge component — single source of truth for status pills, count badges,
- * tags, chips, and labels across the entire app. Theme-aware across light/dark/gray
- * via existing CSS custom properties (--status-*, --text-primary, --accent).
+ * Unified Badge — brutalist treatment.
+ *
+ * Every badge across the app shares one visual identity: saturated tone
+ * background, white 800-weight uppercase text with wide tracking, sharp
+ * 2px corners, and a hard offset drop shadow. Picked from #12 in
+ * `badge-designs.html` because the dashboard is fleet/industrial software
+ * and the brutalist look carries the no-nonsense weight that fits.
+ *
+ * What varies per call site is only the tone (success / warning / danger /
+ * info / neutral / accent) and optionally the size (xs–lg). Everything
+ * else — shape, weight, casing, shadow offset scale, padding rhythm — is
+ * fixed by the component so a status pill in a table cell, a count overlay
+ * on an icon button, and a plant code chip in a header all look visually
+ * identical. The shadow colour is theme-aware via the
+ * `--badge-shadow-color` CSS custom property so the offset stays visible
+ * in light, dark, and grayed themes.
+ *
+ * The `variant`, `weight`, and `uppercase` props are retained for
+ * backwards compatibility with the ~290 existing call sites but are now
+ * effectively no-ops — the brutalist style is the only style. The single
+ * meaningful escape hatch is `variant="custom"`, which keeps the
+ * brutalist shape (corners, padding, shadow, weight, casing) but lets
+ * the caller pass `bg` / `fg` for data-driven colors (per-plant
+ * identifier, per-user accent, role colour from DB).
  *
  * Common patterns:
  *   <Badge tone="success">Active</Badge>
- *   <Badge tone="warning" size="md" icon="exclamation-triangle">Overdue</Badge>
- *   <Badge tone="danger" variant="solid" shape="pill">Cancelled</Badge>
- *   <Badge tone="danger" count={3} shape="pill" size="xs" />
- *   <Badge tone="accent" removable onRemove={handleRemove}>Plant SC</Badge>
- *   <Badge as="button" tone="accent" active onClick={handleToggle}>Filter</Badge>
- *   <Badge variant="custom" bg="#a1b2c3" fg="#fff">Plant 404</Badge>
- *
- * Migration replaces every inline `<span className="rounded ... px-1 ... text-[9px]
- * font-bold uppercase tracking-wider">` and every per-feature StatusPill/StatusBadge/
- * Chip/Tag/Pill component across the codebase.
+ *   <Badge tone="danger" size="xs" count={3} />
+ *   <Badge variant="custom" bg={plantColor}>{plantCode}</Badge>
+ *   <Badge as="button" tone="accent" onClick={...}>Filter</Badge>
  */
 
-/**
- * Tone palette. Soft tints use specific hex codes (`#dcfce7`, `#fef9c3`, …) that
- * the legacy dark-mode CSS shim in `src/app/index.css` auto-flips to dark
- * equivalents (`#162616`, `#1a170a`, …) so the same Tailwind class works across
- * all three themes. Solid variants use the semantic `bg-status-*` tokens with
- * white text. Outline variants use the same status colors at 40% border opacity.
- */
-const TONE_STYLES = {
-    accent: {
-        dotColor: 'bg-accent',
-        iconColor: 'text-accent',
-        outline: 'border border-accent/40 text-accent bg-transparent',
-        soft: 'bg-accent/10 text-accent',
-        solid: 'bg-accent text-white'
-    },
-    danger: {
-        dotColor: 'bg-status-danger',
-        iconColor: 'text-status-danger',
-        outline: 'border border-status-danger/40 text-status-danger bg-transparent',
-        soft: 'bg-[#fee2e2] text-text-primary',
-        solid: 'bg-status-danger text-white'
-    },
-    info: {
-        dotColor: 'bg-status-shop',
-        iconColor: 'text-status-shop',
-        outline: 'border border-status-shop/40 text-status-shop bg-transparent',
-        soft: 'bg-[#dbeafe] text-text-primary',
-        solid: 'bg-status-shop text-white'
-    },
-    neutral: {
-        dotColor: 'bg-status-spare',
-        iconColor: 'text-text-tertiary',
-        outline: 'border border-border-medium text-text-secondary bg-transparent',
-        soft: 'bg-[#f1f5f9] text-text-primary',
-        solid: 'bg-status-spare text-white'
-    },
-    success: {
-        dotColor: 'bg-status-active',
-        iconColor: 'text-status-active',
-        outline: 'border border-status-active/40 text-status-active bg-transparent',
-        soft: 'bg-[#dcfce7] text-text-primary',
-        solid: 'bg-status-active text-white'
-    },
-    warning: {
-        dotColor: 'bg-status-warning',
-        iconColor: 'text-status-warning',
-        outline: 'border border-status-warning/40 text-status-warning bg-transparent',
-        soft: 'bg-[#fef9c3] text-text-primary',
-        solid: 'bg-status-warning text-white'
-    }
+const TONE_BG = {
+    accent: 'bg-accent',
+    danger: 'bg-status-danger',
+    info: 'bg-status-shop',
+    neutral: 'bg-status-spare',
+    success: 'bg-status-active',
+    warning: 'bg-status-warning'
 }
 
+/**
+ * Per-size rhythm. The shadow offset scales with the badge so xs chips
+ * carry a 1.5px shadow while lg chips carry 3px — brutalism remains
+ * visually proportional at every size.
+ */
 const SIZE_STYLES = {
     lg: {
-        dotSize: 'h-2 w-2',
         gap: 'gap-1.5',
         iconSize: 'text-[11px]',
-        pad: 'px-2.5 py-1',
+        pad: 'px-3.5 py-1',
         removeSize: 'h-4 w-4',
-        text: 'text-xs'
+        shadow: 'shadow-[3px_3px_0_var(--badge-shadow-color)]',
+        text: 'text-[12px]'
     },
     md: {
-        dotSize: 'h-1.5 w-1.5',
         gap: 'gap-1',
         iconSize: 'text-[10px]',
-        pad: 'px-2 py-0.5',
+        pad: 'px-3 py-0.5',
         removeSize: 'h-3.5 w-3.5',
+        shadow: 'shadow-[2px_2px_0_var(--badge-shadow-color)]',
         text: 'text-[11px]'
     },
     sm: {
-        dotSize: 'h-1.5 w-1.5',
         gap: 'gap-1',
-        iconSize: 'text-[9px]',
-        pad: 'px-1.5 py-0.5',
-        removeSize: 'h-3.5 w-3.5',
+        iconSize: 'text-[10px]',
+        pad: 'px-2.5 py-0.5',
+        removeSize: 'h-3 w-3',
+        shadow: 'shadow-[2px_2px_0_var(--badge-shadow-color)]',
         text: 'text-[10px]'
     },
     xs: {
-        dotSize: 'h-1 w-1',
         gap: 'gap-0.5',
         iconSize: 'text-[8px]',
-        pad: 'px-1 py-0',
+        pad: 'px-1.5 py-0',
         removeSize: 'h-3 w-3',
+        shadow: 'shadow-[1.5px_1.5px_0_var(--badge-shadow-color)]',
         text: 'text-[9px]'
     }
 }
 
-const SHAPE_STYLES = {
-    pill: 'rounded-full',
-    rounded: 'rounded',
-    'rounded-md': 'rounded-md',
-    square: 'rounded-sm'
-}
-
-const WEIGHT_STYLES = {
-    bold: 'font-bold',
-    medium: 'font-medium',
-    semibold: 'font-semibold'
-}
-
 /**
- * Formats a count badge value. >99 becomes "99+", otherwise stringifies as-is.
- * Returns null for non-positive values so the badge renders nothing.
+ * Brutalism is most legible at near-square. The `shape` prop survives so
+ * call sites that request a pill (e.g. count overlays) get one, but the
+ * default radius is 2px — square enough to feel structural.
  */
+const SHAPE_CLS = {
+    pill: 'rounded-full',
+    rounded: 'rounded-sm',
+    'rounded-md': 'rounded',
+    square: 'rounded-none'
+}
+
 const formatCount = (count) => {
     if (typeof count !== 'number' || count <= 0) return null
     if (count > 99) return '99+'
     return String(count)
 }
 
-/**
- * Renders an icon node. Accepts a Font Awesome class suffix (e.g. "check") or
- * any ReactNode (svg, emoji, etc.). FA strings get themed automatically.
- */
-const renderIconNode = (node, sizeCfg, toneIconColor, isCustomVariant) => {
+const renderIconNode = (node, sizeCfg) => {
     if (!node) return null
     if (typeof node === 'string') {
-        // For custom variant, omit toneIconColor so the inline `fg` (color) cascades
-        // to the icon via currentColor instead of being overridden by tone gray.
-        const colorCls = isCustomVariant ? '' : toneIconColor
-        return <i className={`fas fa-${node} ${sizeCfg.iconSize} ${colorCls}`} aria-hidden="true" />
+        return <i className={`fas fa-${node} ${sizeCfg.iconSize}`} aria-hidden="true" />
     }
     return node
 }
@@ -147,11 +111,14 @@ const renderIconNode = (node, sizeCfg, toneIconColor, isCustomVariant) => {
 export default function Badge({
     children,
     tone = 'neutral',
-    variant = 'soft',
+    variant,
     size = 'sm',
     shape = 'rounded',
-    weight = 'bold',
-    uppercase = true,
+    // weight / uppercase accepted for back-compat with the ~290 existing call
+    // sites — the brutalist treatment fixes weight at 800 and casing at
+    // uppercase, so these are intentionally consumed-then-ignored.
+    weight: _weight,
+    uppercase: _uppercase,
     icon,
     trailingIcon,
     dot = false,
@@ -170,72 +137,46 @@ export default function Badge({
     ...rest
 }) {
     const sizeCfg = SIZE_STYLES[size] ?? SIZE_STYLES.sm
-    const shapeCls = SHAPE_STYLES[shape] ?? SHAPE_STYLES.rounded
-    const toneCfg = TONE_STYLES[tone] ?? TONE_STYLES.neutral
-    const weightCls = WEIGHT_STYLES[weight] ?? WEIGHT_STYLES.bold
-
-    const isCustom = variant === 'custom'
-    const variantCls = isCustom ? '' : (toneCfg[variant] ?? toneCfg.soft)
+    const shapeCls = SHAPE_CLS[shape] ?? SHAPE_CLS.rounded
+    const isCustom = variant === 'custom' || variant === 'custom-solid'
+    const toneBgCls = isCustom ? '' : (TONE_BG[tone] ?? TONE_BG.neutral)
 
     const interactive = Boolean(onClick) || as === 'button' || Boolean(href)
     const Element = as || (href ? 'a' : interactive ? 'button' : 'span')
 
-    // Base classes are intentionally defensive so the badge looks identical in
-    // every parent context (table cell with text-align:right, flex row with
-    // justify-end, header, anywhere). `justify-center` + `text-center` neutralize
-    // alignment bleed; `shrink-0` prevents crushing in narrow flex layouts;
-    // `align-middle` anchors the badge on the inline baseline; `box-border`
-    // keeps padding from inflating width unpredictably; `leading-none` already
-    // prevents line-height inflation.
+    /*
+     * Single visual treatment for every badge:
+     *   - inline-flex + defensive centering (justify-center / text-center /
+     *     align-middle / shrink-0 / box-border) so badges render identically
+     *     regardless of parent text-align, justify-content, or width pressure.
+     *   - white 800-weight uppercase text with 0.08em tracking.
+     *   - hard offset shadow scaled per size, colour driven by
+     *     --badge-shadow-color (set in src/app/index.css per theme).
+     *   - active:translate + shadow-none feels "pressed in" — the badge
+     *     drops into the space its shadow occupied.
+     */
     const classes = [
-        'inline-flex items-center justify-center text-center align-middle shrink-0 box-border whitespace-nowrap leading-none',
+        'inline-flex items-center justify-center text-center align-middle shrink-0 box-border whitespace-nowrap leading-none uppercase tracking-[0.08em] font-extrabold text-white',
         sizeCfg.text,
         sizeCfg.pad,
         sizeCfg.gap,
         shapeCls,
-        weightCls,
-        variantCls,
-        uppercase && 'uppercase tracking-wider',
+        toneBgCls,
+        sizeCfg.shadow,
         interactive &&
-            'cursor-pointer transition-[transform,filter,background-color,color] duration-150 ease-out active:scale-[0.97]',
-        interactive && !active && variant === 'soft' && 'hover:brightness-95',
-        active && 'ring-1 ring-inset ring-current/40',
+            'cursor-pointer transition-[transform,box-shadow,filter] duration-100 ease-out hover:brightness-110 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none',
+        active && 'translate-x-[1px] translate-y-[1px] !shadow-none',
         pulse && 'animate-pulse',
         className
     ]
         .filter(Boolean)
         .join(' ')
 
-    /**
-     * Custom variant ALWAYS renders as a soft pastel (12% tint of `bg`) with
-     * `--text-primary` text — regardless of what `fg` the caller passes. This
-     * is intentional: it forces every badge in the app (tone-driven OR
-     * data-driven) to share the same saturation / contrast treatment, so a
-     * plant-color badge looks visually identical to a danger-tone badge.
-     * Hue carries identity; intensity is uniform.
-     *
-     * The escape hatch for callers who genuinely need a saturated fill (rare —
-     * notification overlays on dark surfaces, etc.) is `variant="custom-solid"`,
-     * which honors `bg`/`fg` as-is.
-     */
-    const isCustomSolid = variant === 'custom-solid'
-    let inlineStyle
-    if (isCustom && bg) {
-        inlineStyle = {
-            background: `color-mix(in srgb, ${bg} 12%, transparent)`,
-            color: 'var(--text-primary)'
-        }
-    } else if (isCustomSolid && (bg || fg)) {
-        inlineStyle = { background: bg, color: fg }
-    } else if (bg || fg) {
-        inlineStyle = { background: bg, color: fg }
-    }
+    const inlineStyle = isCustom && (bg || fg) ? { background: bg, color: fg || '#ffffff' } : undefined
 
     const dotEl = dot ? (
         <span
-            className={`shrink-0 rounded-full ${sizeCfg.dotSize} ${typeof dot === 'string' ? '' : toneCfg.dotColor}`}
-            // eslint-disable-next-line react/forbid-dom-props -- data-driven dot color (e.g., per-plant accent) requires inline style
-            style={typeof dot === 'string' ? { background: dot } : undefined}
+            className={`shrink-0 rounded-full bg-white/85 ${size === 'xs' || size === 'sm' ? 'h-1 w-1' : 'h-1.5 w-1.5'}`}
             aria-hidden="true"
         />
     ) : null
@@ -249,7 +190,7 @@ export default function Badge({
                 e.stopPropagation()
                 onRemove?.()
             }}
-            className={`ml-0.5 inline-flex items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/10 ${sizeCfg.removeSize} ${sizeCfg.iconSize}`}
+            className={`-mr-1 ml-0.5 inline-flex items-center justify-center hover:bg-white/20 ${sizeCfg.removeSize} ${sizeCfg.iconSize}`}
             aria-label="Remove"
         >
             <i className="fas fa-times" aria-hidden="true" />
@@ -263,7 +204,6 @@ export default function Badge({
         title,
         ...rest
     }
-
     if (Element === 'button') {
         elementProps.type = elementProps.type ?? 'button'
     }
@@ -274,12 +214,12 @@ export default function Badge({
     return (
         <Element {...elementProps}>
             {dotEl}
-            {renderIconNode(icon, sizeCfg, toneCfg.iconColor, isCustom)}
+            {renderIconNode(icon, sizeCfg)}
             {content != null && content !== '' && <span>{content}</span>}
-            {renderIconNode(trailingIcon, sizeCfg, toneCfg.iconColor, isCustom)}
+            {renderIconNode(trailingIcon, sizeCfg)}
             {removeBtn}
         </Element>
     )
 }
 
-export { formatCount, SHAPE_STYLES, SIZE_STYLES, TONE_STYLES, WEIGHT_STYLES }
+export { formatCount,SHAPE_CLS, SIZE_STYLES, TONE_BG }

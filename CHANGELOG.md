@@ -1,5 +1,51 @@
 # Changelog
 
+## [2026.22.9] - 2026-05-27
+
+- Replace the soft pastel-tint badge treatment across the entire app with
+  a brutalist treatment — saturated tone background, white 800-weight
+  uppercase text with 0.08em tracking, sharp 2px corners, and a hard
+  offset drop shadow scaled per badge size. Picked from #12 of the
+  badge-designs mockup because the dashboard is fleet/industrial software
+  and the brutalist look carries the no-nonsense weight that fits. Every
+  badge across every page now renders with this single visual identity:
+  status pills (Heavy / Light / Steady / Overbooked / Active / Down /
+  etc.), count overlays on icon buttons, notification badges, plant code
+  chips, role badges, accent toggle pills, kicker badges, same-day flags,
+  likely-to-cancel / likely-to-move indicators, verification chips,
+  trainee badges, comment counts — all of them.
+- Rewrote `src/app/components/common/Badge.jsx` so the brutalist style is
+  the only style. The `variant`, `weight`, and `uppercase` props are
+  retained in the component signature for backwards compatibility with
+  the ~290 existing call sites but are now effectively no-ops — every
+  variant resolves to the brutalist look. The single meaningful escape
+  hatch is `variant="custom"`, which keeps the brutalist shape (corners,
+  padding, shadow, weight, casing) but lets the caller pipe in `bg` /
+  `fg` for data-driven colors (per-plant identifier, per-user accent,
+  role colour from DB). This eliminates the previous "Heavy badge looks
+  light pastel next to plant code badge that looks saturated dark" drift
+  — every chip now sits at the same saturation level.
+- Padding, font-size, and shadow offset all scale together so the
+  brutalist proportion holds at every chip size: xs carries a 1.5px
+  shadow at 9px text, sm/md carry 2px at 10–11px, lg carries 3px at 12px.
+  Active/pressed state translates the badge 1px right and 1px down while
+  removing the shadow, so the badge feels like it dropped into the space
+  its shadow occupied — the same press feedback pattern Emil Kowalski
+  uses for buttons, applied to the badge form factor.
+- Theme-aware shadow color via a new `--badge-shadow-color` CSS custom
+  property in `src/app/index.css`. Light theme: `rgba(0, 0, 0, 0.75)`,
+  dark theme: `rgba(0, 0, 0, 1)` (pure black still reads at the edges
+  against the saturated badge fill on a dark surface), grayed theme:
+  `rgba(0, 0, 0, 0.85)`. Brutalism stays legible across all three themes
+  without any per-theme component code.
+- Updated `scripts/emails/badgeHtml.js` to mirror the brutalist treatment
+  for server-rendered email templates. Email clients can't read CSS
+  custom properties so the shadow color is hard-coded to
+  `rgba(0, 0, 0, 0.75)` — emails always render against a light backdrop
+  so the offset stays visible. The Daily Plan email now renders Needs
+  Help, Covered, Direct Load, Help direction, destination plant, and
+  operator flag badges with the same brutalist look as the in-app chips.
+
 ## [2026.22.8] - 2026-05-26
 
 - Standardize saturation across every badge in the app, including the
