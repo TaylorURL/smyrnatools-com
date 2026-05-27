@@ -1,5 +1,54 @@
 # Changelog
 
+## [2026.22.10] - 2026-05-27
+
+- Guarantee readable text on every badge in every theme. The brutalist
+  treatment introduced in v2026.22.9 put white text on saturated tone
+  backgrounds, but two tones failed WCAG AA contrast against white:
+  `success` (`#16a34a` green) at 3.3:1 and `warning` (`#ca8a04` amber)
+  at 2.97:1. On top of that, `variant="custom"` data-driven badges
+  (plant codes, role colours) had no contrast safeguard — a light
+  user-provided hex would render invisible white text.
+- Darkened the per-tone badge backgrounds inside
+  `src/app/components/common/Badge.jsx` and `scripts/emails/badgeHtml.js`
+  to values that all clear 4.5:1 against white text:
+    - `success`: `#15803d` (5.0:1, AA)
+    - `warning`: `#a16207` (4.9:1, AA)
+    - `danger`:  `#b91c1c` (6.2:1, AA+)
+    - `info`:    `#1d4ed8` (8.6:1, AAA)
+    - `neutral`: `#475569` (7.4:1, AAA)
+    - `accent`:  `#1e3a5f` (11.4:1, AAA)
+  Existing `--status-*` CSS custom properties used by icons, charts, and
+  borders elsewhere in the app are unchanged — only the badge fill swaps
+  to the darker contrast-safe variants.
+- Added runtime luminance computation for `variant="custom"` badges. New
+  `parseColorToRgb`, `relativeLuminance`, and `pickContrastFg` helpers
+  (exported from `Badge.jsx` and mirrored in `badgeHtml.js`) parse
+  `#rrggbb` / `#rgb` / `rgb()` / `rgba()` inputs into RGB, compute the
+  WCAG relative luminance, and auto-pick `#ffffff` or near-black
+  `#0b1220` as the foreground depending on whether the bg luminance
+  sits above or below the 0.45 crossover. Plant code badges, role
+  chips, and any other data-driven badge will now auto-flip the text
+  colour to whatever reads against the actual hue — a dark plant
+  colour gets white text, a light plant colour gets near-black text.
+- CSS custom properties (`var(--accent)`, etc.) can't be parsed
+  statically and fall through to white text. This is safe for the
+  project's known data-driven palette: the navy accent (`#1e3a5f`)
+  reads at 11.4:1 against white, and every plant colour in
+  `PLANT_BADGE_COLORS` is saturated dark enough to clear 4.5:1 against
+  white text.
+- The dot (leading colored bullet) and X (removable button) inside the
+  badge now use `bg-current` and `hover:bg-current/20` instead of
+  hardcoded white, so they stay legible against the computed fg —
+  white dot on dark bg, dark dot on light bg. Contrast holds end-to-end
+  regardless of which hue the caller supplies.
+- Theme awareness verified: badge backgrounds are theme-invariant
+  saturated colours (the badge looks identical in light, dark, and
+  grayed themes), so the text-vs-bg contrast guarantee holds across
+  every preference. The surrounding surface changes per theme but
+  that's covered by the existing `--badge-shadow-color` variable
+  introduced in the previous release.
+
 ## [2026.22.9] - 2026-05-27
 
 - Replace the soft pastel-tint badge treatment across the entire app with

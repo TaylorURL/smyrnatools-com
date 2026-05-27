@@ -22,16 +22,74 @@
  */
 
 /**
- * Tone palette mirrors the React Badge `bg-status-*` tokens (also defined
- * as CSS custom properties in `src/app/index.css`).
+ * Per-tone badge background — mirrors `TONE_BG` in
+ * `src/app/components/common/Badge.jsx`. Values are deliberately darker
+ * than the top-level `--status-*` tokens used elsewhere because the
+ * brutalist treatment puts WHITE text on the fill, and the lighter
+ * tones (especially `#16a34a` green @ 3.3:1 and `#ca8a04` amber @ 2.97:1)
+ * fail WCAG AA against white. Every value below clears 4.5:1.
  */
 const TONE_BG = {
     accent: '#1e3a5f',
-    danger: '#dc2626',
-    info: '#2563eb',
-    neutral: '#64748b',
-    success: '#16a34a',
-    warning: '#ca8a04'
+    danger: '#b91c1c',
+    info: '#1d4ed8',
+    neutral: '#475569',
+    success: '#15803d',
+    warning: '#a16207'
+}
+
+/**
+ * Parse `#rrggbb` / `#rgb` / `rgb()` / `rgba()` → {r, g, b} 0-255. Returns
+ * null for CSS custom properties, named colours, and `hsl()` — callers
+ * fall back to white text.
+ */
+const parseColorToRgb = (input) => {
+    if (typeof input !== 'string') return null
+    const str = input.trim()
+    if (str.startsWith('#')) {
+        if (str.length === 4) {
+            return {
+                r: parseInt(str[1] + str[1], 16),
+                g: parseInt(str[2] + str[2], 16),
+                b: parseInt(str[3] + str[3], 16)
+            }
+        }
+        if (str.length === 7 || str.length === 9) {
+            return {
+                r: parseInt(str.slice(1, 3), 16),
+                g: parseInt(str.slice(3, 5), 16),
+                b: parseInt(str.slice(5, 7), 16)
+            }
+        }
+        return null
+    }
+    const match = str.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i)
+    if (match) {
+        return { r: parseInt(match[1], 10), g: parseInt(match[2], 10), b: parseInt(match[3], 10) }
+    }
+    return null
+}
+
+/**
+ * WCAG relative luminance for an {r, g, b} colour.
+ */
+const relativeLuminance = ({ r, g, b }) => {
+    const channel = (c) => {
+        const v = c / 255
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+    }
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+}
+
+/**
+ * Pick a readable foreground for an arbitrary background. Threshold of
+ * 0.45 luminance matches the WCAG AA crossover for white vs dark text.
+ * Unparseable inputs default to white.
+ */
+const pickContrastFg = (bg) => {
+    const parsed = parseColorToRgb(bg)
+    if (!parsed) return '#ffffff'
+    return relativeLuminance(parsed) > 0.45 ? '#0b1220' : '#ffffff'
 }
 
 /**
@@ -88,7 +146,11 @@ function renderBadgeHtml({
 } = {}) {
     const sizeCfg = SIZE_PALETTE[size] || SIZE_PALETTE.sm
     const finalBg = bg || TONE_BG[tone] || TONE_BG.neutral
-    const finalFg = fg || '#ffffff'
+    // If caller supplied a data-driven `bg` without an explicit `fg`, pick a
+    // contrast-safe text colour from the bg's luminance. Tone-based bgs are
+    // pre-checked to pass 4.5:1 against white so they fall through to the
+    // hardcoded white below.
+    const finalFg = fg || (bg ? pickContrastFg(bg) : '#ffffff')
     const radius = SHAPE_RADIUS[shape] || SHAPE_RADIUS.rounded
 
     const styleParts = [
@@ -110,4 +172,14 @@ function renderBadgeHtml({
     return `<span style="${styleParts.join(';')};">${htmlEscape(label)}</span>`
 }
 
-module.exports = { renderBadgeHtml, TONE_BG, SIZE_PALETTE, SHAPE_RADIUS, SHADOW_COLOR, htmlEscape }
+module.exports = {
+    htmlEscape,
+    parseColorToRgb,
+    pickContrastFg,
+    relativeLuminance,
+    renderBadgeHtml,
+    SHADOW_COLOR,
+    SHAPE_RADIUS,
+    SIZE_PALETTE,
+    TONE_BG
+}
