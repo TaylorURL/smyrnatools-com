@@ -107,7 +107,6 @@ export default function AssetListRow({
                     <div className="flex flex-col gap-1">
                         <Badge
                             tone={getStatusToneForStatus(displayStatus)}
-                            variant="solid"
                             size="sm"
                             shape="rounded-md"
                             className="self-start"
@@ -196,7 +195,6 @@ export default function AssetListRow({
                                     {operator.commentsCount > 0 && (
                                         <Badge
                                             tone="accent"
-                                            variant="solid"
                                             size="xs"
                                             shape="pill"
                                             uppercase={false}
@@ -272,7 +270,6 @@ export default function AssetListRow({
                         <Badge
                             as="button"
                             tone={isVerified ? 'success' : 'warning'}
-                            variant="solid"
                             size="sm"
                             shape="rounded-md"
                             icon={isVerified ? 'check-circle' : 'exclamation-circle'}
@@ -402,7 +399,6 @@ export default function AssetListRow({
                             {item.commentsCount > 0 && (
                                 <Badge
                                     tone="accent"
-                                    variant="solid"
                                     size="xs"
                                     shape="pill"
                                     uppercase={false}
@@ -426,7 +422,6 @@ export default function AssetListRow({
                             {item.openIssuesCount > 0 && (
                                 <Badge
                                     tone="danger"
-                                    variant="solid"
                                     size="xs"
                                     shape="pill"
                                     uppercase={false}

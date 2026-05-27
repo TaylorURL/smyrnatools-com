@@ -18,7 +18,6 @@ function ActionBadge({ count, accentColor: _accentColor, color, small = false })
     return (
         <Badge
             tone={tone}
-            variant="solid"
             size={small ? 'xs' : 'sm'}
             shape="pill"
             weight="bold"

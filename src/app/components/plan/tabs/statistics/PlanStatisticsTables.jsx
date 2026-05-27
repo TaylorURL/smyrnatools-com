@@ -117,18 +117,23 @@ export function BigPoursTable({ accent, plantNameByCode, pours }) {
 /** Single status pill for a plant scorecard row. Picks between the
  *  single-day yards-per-hour assessment and the multi-day loads/active-day
  *  bucket; returns null when there's nothing useful to show. */
+/**
+ * Resolve the per-plant status pill: tone goes through the unified Badge
+ * tone palette so the pastel soft fill matches every other badge in the app
+ * (no more mixed solid/soft saturation across the page).
+ */
 const buildScorecardStatus = ({ isSingleDay, plant, singleDayShiftSpan, trucks }) => {
     if (isSingleDay && trucks > 0 && singleDayShiftSpan && plant.yardage > 0) {
         const yph = plant.yardage / (trucks * singleDayShiftSpan)
-        if (yph > MAX_YPH) return { color: '#dc2626', label: 'Overbooked' }
-        if (yph < TARGET_YPH - 0.5 && plant.loads >= 6) return { color: '#16a34a', label: 'Slack' }
-        return { color: '#0ea5e9', label: 'On target' }
+        if (yph > MAX_YPH) return { tone: 'danger', label: 'Overbooked' }
+        if (yph < TARGET_YPH - 0.5 && plant.loads >= 6) return { tone: 'success', label: 'Slack' }
+        return { tone: 'info', label: 'On target' }
     }
     if (plant.activeDays > 0) {
         const loadsPerDay = plant.loads / plant.activeDays
-        if (loadsPerDay > 30) return { color: '#dc2626', label: 'Heavy' }
-        if (loadsPerDay >= 12) return { color: '#0ea5e9', label: 'Steady' }
-        return { color: '#16a34a', label: 'Light' }
+        if (loadsPerDay > 30) return { tone: 'danger', label: 'Heavy' }
+        if (loadsPerDay >= 12) return { tone: 'info', label: 'Steady' }
+        return { tone: 'success', label: 'Light' }
     }
     return null
 }
@@ -284,14 +289,7 @@ export function PlantScorecardTable({
                                     </td>
                                     <td className="px-3 py-2 text-right">
                                         {status && (
-                                            <Badge
-                                                variant="custom"
-                                                bg={`${status.color}1f`}
-                                                fg="var(--text-primary)"
-                                                size="sm"
-                                                weight="semibold"
-                                                uppercase={false}
-                                            >
+                                            <Badge tone={status.tone} size="sm" weight="semibold" uppercase={false}>
                                                 {status.label}
                                             </Badge>
                                         )}

@@ -30,7 +30,6 @@ const WarnPill = ({ children, tone }) => {
     return (
         <Badge
             tone={tone === 'danger' ? 'danger' : 'warning'}
-            variant="solid"
             size="md"
             shape="pill"
             weight="bold"

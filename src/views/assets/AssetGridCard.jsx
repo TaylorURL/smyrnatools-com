@@ -36,7 +36,6 @@ function CountBadge({ count, tone = 'accent' }) {
     return (
         <Badge
             tone={tone === 'danger' ? 'danger' : 'accent'}
-            variant="solid"
             size="xs"
             shape="pill"
             uppercase={false}
@@ -69,7 +68,6 @@ function CardFooterAction({ count, countTone, icon, label, onActivate, divider }
             {count > 0 && (
                 <Badge
                     tone={countTone === 'danger' ? 'danger' : 'accent'}
-                    variant="solid"
                     size="xs"
                     shape="pill"
                     uppercase={false}
@@ -190,7 +188,6 @@ function AssetGridCard({
                 )}
                 <Badge
                     tone={STATUS_BADGE_CLASS_TO_TONE[statusBadgeClass] || 'neutral'}
-                    variant="solid"
                     size="md"
                     shape="rounded-md"
                     uppercase={false}

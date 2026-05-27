@@ -180,7 +180,6 @@ export default function PlantScorecardTable({ colocationMap, plantNameByCode, ro
                                     ) : (
                                         <Badge
                                             tone={goodPctTone(row.goodPct)}
-                                            variant="solid"
                                             size="md"
                                             shape="rounded-md"
                                             uppercase={false}

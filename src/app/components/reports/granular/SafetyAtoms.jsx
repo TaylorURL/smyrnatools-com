@@ -121,7 +121,6 @@ export function IssueCardHeader({ idx, issue, onRemove, readOnly }) {
             <div className="flex items-center gap-2 flex-wrap">
                 <Badge
                     tone="accent"
-                    variant="solid"
                     size="md"
                     shape="pill"
                     weight="bold"

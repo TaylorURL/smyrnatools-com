@@ -130,15 +130,7 @@ export function OperatorSegmentHeader({ count, hint, title }) {
     return (
         <div className="flex items-baseline gap-2.5 px-3 py-2 bg-bg-tertiary border-y border-border-light">
             <span className="text-[10.5px] font-bold uppercase tracking-[.08em] text-text-secondary">{title}</span>
-            <Badge
-                tone="neutral"
-                variant="solid"
-                size="sm"
-                shape="square"
-                weight="bold"
-                uppercase={false}
-                className="tabular-nums"
-            >
+            <Badge tone="neutral" size="sm" shape="square" weight="bold" uppercase={false} className="tabular-nums">
                 {fmtInt(count)}
             </Badge>
             {hint && <span className="text-[11px] text-text-tertiary">{hint}</span>}

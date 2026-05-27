@@ -29,7 +29,7 @@ export function TimelineHeader({ label, isCurrent, badge }) {
         <div className="flex items-center gap-1.5 mb-1">
             <span className="text-[12.5px] font-semibold leading-tight text-text-primary">{label}</span>
             {isCurrent && (
-                <Badge tone="success" variant="solid" size="md" shape="rounded-md">
+                <Badge tone="success" size="md" shape="rounded-md">
                     Current
                 </Badge>
             )}

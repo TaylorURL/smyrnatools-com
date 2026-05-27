@@ -1,5 +1,58 @@
 # Changelog
 
+## [2026.22.7] - 2026-05-26
+
+- Enforce visual consistency across every badge in the app. Two distinct
+  problems were still leaking through: (1) the PlantScorecardTable inside
+  `src/app/components/plan/tabs/statistics/PlanStatisticsTables.jsx` was
+  rendering its per-plant status pills (Heavy, Overbooked, Slack, Steady,
+  Light, On target) through `<Badge variant="custom" bg={\`${color}1f\`}
+  fg="var(--text-primary)" />` with hand-rolled hex colors instead of the
+  unified tone palette, and (2) twenty-one `<Badge variant="solid" />`
+  call sites across fourteen files were rendering with saturated dark
+  backgrounds + white text while every other badge on the same page
+  rendered with the soft pastel-tint + dark-text treatment that the
+  project's existing `status-badge-*` CSS spec uses. The page looked
+  inconsistent because saturation, contrast, and foreground color shifted
+  from badge to badge for no semantic reason.
+- Refactored `buildScorecardStatus` in
+  `src/app/components/plan/tabs/statistics/PlanStatisticsTables.jsx` to
+  return `{ tone, label }` instead of `{ color, label }` — `Overbooked` /
+  `Heavy` → `tone="danger"`, `Slack` / `Light` → `tone="success"`,
+  `On target` / `Steady` → `tone="info"`. The Badge render site drops
+  `variant="custom"` and uses `tone={status.tone}` (default soft), so
+  every plant status pill now resolves through the same pastel palette as
+  the rest of the app.
+- Stripped `variant="solid"` from every consumer call site so all
+  tone-based badges resolve to the soft pastel-tint variant by default.
+  Affected files:
+  `src/app/components/ui/TimelineItem.jsx`,
+  `src/app/components/myaccount/CockpitHeader.jsx`,
+  `src/app/components/plan/tabs/statistics/service/PlantScorecardTable.jsx`,
+  `src/app/components/plan/tabs/statistics/pages/operators/OperatorRowCells.jsx`,
+  `src/app/components/plan/tabs/flow/PlanTimelineHomeBar.jsx`,
+  `src/app/components/dayforce/DayforceEfficiencyPieces.jsx`,
+  `src/app/components/common/navigation/NavigationActionButtons.jsx`,
+  `src/app/components/notifications/ConversationSidebar.jsx`,
+  `src/app/components/reports/granular/SafetyAtoms.jsx`,
+  `src/views/reporting/reports/types/WeeklyEfficiencyReport.jsx`,
+  `src/views/people/operators/list/OperatorListRow.jsx`,
+  `src/views/assets/AssetListRow.jsx`,
+  `src/views/assets/AssetGridCard.jsx`. Twenty-one `variant="solid"`
+  removals total. Counter overlays (notification dots, comment counts,
+  trainee chips), main status pills, verification buttons, and stat-row
+  chips all now share the same soft pastel-tint + `--text-primary` text
+  treatment that matches the project's canonical `.status-badge-*` CSS
+  classes. Visual hierarchy across the app now comes from tone (danger /
+  warning / info / success / neutral / accent) and size/shape, not from
+  mixed saturation.
+- Net effect: no more "fully filled out dark red next to opaque light
+  green" mismatch. Every badge — status pill, count chip, notification
+  overlay, tag, label — renders with the same color treatment regardless
+  of which surface it sits on. `variant="solid"` remains in the Badge
+  component API for future cases that genuinely need saturated emphasis,
+  but no consumer currently uses it.
+
 ## [2026.22.6] - 2026-05-26
 
 - Unify every badge, status pill, count chip, and tag in the app under

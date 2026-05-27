@@ -60,7 +60,6 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
                 {hasUnread && (
                     <Badge
                         tone="accent"
-                        variant="solid"
                         size="xs"
                         shape="pill"
                         weight="bold"

@@ -135,7 +135,7 @@ function YphBadge({ metrics }) {
     const { overMax, underTarget, ydsPerHrOp } = metrics
     if (overMax) {
         return (
-            <Badge tone="danger" variant="solid" size="xs" shape="pill" weight="bold" uppercase={false}>
+            <Badge tone="danger" size="xs" shape="pill" weight="bold" uppercase={false}>
                 {ydsPerHrOp} yph
             </Badge>
         )

@@ -66,12 +66,7 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
             </td>
             <td className={`${CELL_SECONDARY} w-[14%] group-hover:bg-bg-tertiary`}>
                 <div>
-                    <Badge
-                        tone={getOperatorStatusTone(operator.status)}
-                        variant="solid"
-                        size="sm"
-                        className="self-start"
-                    >
+                    <Badge tone={getOperatorStatusTone(operator.status)} size="sm" className="self-start">
                         {operator.status || '—'}
                         {operator.status &&
                             operator.status !== 'Terminated' &&
@@ -103,7 +98,6 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
                         {operator.commentsCount > 0 && (
                             <Badge
                                 tone="accent"
-                                variant="solid"
                                 size="xs"
                                 shape="pill"
                                 uppercase={false}

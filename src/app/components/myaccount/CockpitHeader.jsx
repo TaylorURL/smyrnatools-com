@@ -54,7 +54,6 @@ export default function CockpitHeader({
                         {unreadMessageCount > 0 && (
                             <Badge
                                 tone="danger"
-                                variant="solid"
                                 size="xs"
                                 shape="pill"
                                 weight="bold"

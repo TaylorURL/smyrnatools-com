@@ -216,7 +216,6 @@ export function PlantScorecard({ fleetYph, row }) {
                 </div>
                 <Badge
                     tone={statusConfig.tone}
-                    variant="solid"
                     size="sm"
                     shape="pill"
                     uppercase={false}
