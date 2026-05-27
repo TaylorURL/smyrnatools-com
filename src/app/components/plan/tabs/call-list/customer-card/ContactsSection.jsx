@@ -25,9 +25,9 @@ export function ContactsSection({
     const handleDelete = async (entry) => {
         if (!onDeleteContact) return
         const ok = await confirm({
-            title: `Remove ${entry.display}?`,
+            confirmLabel: 'Remove',
             message: 'This number will be removed from this customer.',
-            confirmLabel: 'Remove'
+            title: `Remove ${entry.display}?`
         })
         if (!ok) return
         await onDeleteContact(customerNum, entry.phoneDigits, entry.phoneDisplay)

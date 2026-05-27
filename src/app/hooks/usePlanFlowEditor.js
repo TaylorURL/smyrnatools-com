@@ -111,8 +111,8 @@ export function usePlanFlowEditor({ assignments, setAssignments }) {
         const assignment = assignments[assignmentIndex]
         if (!assignment) return
         const ok = await confirm({
-            title: `Delete ${assignment.fromPlant || '?'} → ${assignment.toPlant || '?'} route?`,
-            confirmLabel: 'Delete'
+            confirmLabel: 'Delete',
+            title: `Delete ${assignment.fromPlant || '?'} → ${assignment.toPlant || '?'} route?`
         })
         if (!ok) return
         setAssignments((prev) => prev.filter((_, idx) => idx !== assignmentIndex))

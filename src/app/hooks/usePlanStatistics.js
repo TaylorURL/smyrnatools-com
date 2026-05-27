@@ -250,14 +250,14 @@ export function usePlanStatistics({
      *  Days with no detail data are scored as null. */
     const { detailByDay, satisfactionLoading } = usePlanStatisticsDetailByDay({
         currentDays,
-        previousDays,
-        scheduleMetaByDate,
-        satisfactionEnabled,
-        operatorsEnabled,
         helpCrossLoadingEnabled,
-        plantsEnabled,
-        serviceEnabled,
         kickersEnabled,
+        operatorsEnabled,
+        plantsEnabled,
+        previousDays,
+        satisfactionEnabled,
+        scheduleMetaByDate,
+        serviceEnabled,
         ticketLookupEnabled
     })
 

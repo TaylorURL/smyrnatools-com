@@ -115,7 +115,7 @@ function HistoryViewSection({ item, onClose, type }) {
         issue.created_by && userNames[issue.created_by] ? userNames[issue.created_by] : 'Unknown'
 
     const onDeleteIssue = async (issueId) => {
-        if (!(await confirm({ title: 'Delete this issue?', confirmLabel: 'Delete' }))) return
+        if (!(await confirm({ confirmLabel: 'Delete', title: 'Delete this issue?' }))) return
         try {
             await handleDeleteIssue(issueId)
         } catch {

@@ -19,11 +19,10 @@ import {
     makeGetJobTravelMin,
     makeGetTravelOverrides,
     selectLiveOrders,
-    summarizeActiveFilters,
     sumDayYardage,
     sumLiveTrucks,
-    sumLiveYards
-} from '../../utils/PlanScheduleDataUtility'
+    sumLiveYards,
+    summarizeActiveFilters} from '../../utils/PlanScheduleDataUtility'
 import {
     applyLoadingPlantReassignment,
     buildHelpRows,

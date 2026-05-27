@@ -1,21 +1,20 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useState } from 'react'
 
+import { canonicalNameKey } from '../../../utils/OperatorNameLookupUtility'
 import { fmtFloat, fmtInt, fmtRange, fmtYards } from '../../../utils/PlanStatisticsFormatUtility'
 import useDayforceOperatorFilters from '../../hooks/useDayforceOperatorFilters'
 import useDayforceOperatorMetrics from '../../hooks/useDayforceOperatorMetrics'
 import useOperatorYardageByDay from '../../hooks/useOperatorYardageByDay'
-import { canonicalNameKey } from '../../../utils/OperatorNameLookupUtility'
 import { EmptySection, RefreshingHint } from '../plan/tabs/statistics/PlanStatisticsPages'
 import { Panel, Stat, StatGroup } from '../ui/Panel'
 import {
     LoadingSkeleton,
     OperatorEfficiencyRow,
-    plantStatusFor,
     PlantScorecard,
+    plantStatusFor,
     SpotlightChip,
     SpotlightColumn,
-    YPH_EXCEPTIONAL,
     YPH_TARGET
 } from './DayforceEfficiencyPieces'
 import { DayforceFilters } from './DayforceFilters'

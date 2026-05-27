@@ -126,7 +126,7 @@ const LostLoadRow = ({ report, getUserName, accentColor, canDelete, onDelete, on
                     type="button"
                     onClick={async (e) => {
                         e.stopPropagation()
-                        if (await confirm({ title: 'Delete this lost load report?', confirmLabel: 'Delete' })) {
+                        if (await confirm({ confirmLabel: 'Delete', title: 'Delete this lost load report?' })) {
                             onDelete(report.id)
                         }
                     }}

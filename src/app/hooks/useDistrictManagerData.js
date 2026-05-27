@@ -102,7 +102,7 @@ export function useDistrictHelpBreakdown({ districtPlantCodes, plants, weekIso }
                 if (cancelled) return
                 const plansMap = {}
                 if (plansResult.status === 'fulfilled') {
-                    ;(plansResult.value || []).forEach((row) => {
+                    (plansResult.value || []).forEach((row) => {
                         if (row?.plan_date) plansMap[row.plan_date] = row
                     })
                 }

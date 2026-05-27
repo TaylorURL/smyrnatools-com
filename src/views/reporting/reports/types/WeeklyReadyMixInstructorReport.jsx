@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
-import { useConfirm } from '../../../../app/context/ConfirmContext'
 import RmiAddPendingModal from '../../../../app/components/reports/granular/RmiAddPendingModal'
 import RmiAddTrainerModal from '../../../../app/components/reports/granular/RmiAddTrainerModal'
 import { ActionChip } from '../../../../app/components/reports/granular/RmiAtoms'
@@ -13,6 +12,7 @@ import {
     TrainingSection
 } from '../../../../app/components/reports/granular/RmiSections'
 import { POSITIONS } from '../../../../app/constants/rmiReportConstants'
+import { useConfirm } from '../../../../app/context/ConfirmContext'
 import { useRmiLiveData } from '../../../../app/hooks/useRmiLiveData'
 import { useRmiRegionScope } from '../../../../app/hooks/useRmiRegionScope'
 import { OperatorService } from '../../../../services/OperatorService'
@@ -188,9 +188,9 @@ export function ReadyMixInstructorSubmitPlugin({ form, plants, readOnly, setForm
 
     const clearData = async (key) => {
         const ok = await confirm({
-            title: `Clear all ${key.replace(/_/g, ' ')} data?`,
+            confirmLabel: 'Clear',
             message: 'This action cannot be undone.',
-            confirmLabel: 'Clear'
+            title: `Clear all ${key.replace(/_/g, ' ')} data?`
         })
         if (!ok) return
         updateSnapshotData(key, [])

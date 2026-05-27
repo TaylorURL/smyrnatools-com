@@ -21,8 +21,8 @@ export function ScaleRow({ scale, allPlants, onReload, accentColor }) {
 
     async function confirmDelete() {
         const ok = await confirm({
-            title: `Delete scale "${scale.scale_name}"?`,
-            confirmLabel: 'Delete'
+            confirmLabel: 'Delete',
+            title: `Delete scale "${scale.scale_name}"?`
         })
         if (!ok) return
         NRMCAService.deleteScale(scale.id)

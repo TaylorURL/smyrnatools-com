@@ -13,8 +13,6 @@ import { useReportsRailCollapse } from '../../../app/hooks/useReportsRailCollaps
 import { useReportSubmission } from '../../../app/hooks/useReportSubmission'
 import { useReportsWeekTimeline } from '../../../app/hooks/useReportsWeekTimeline'
 import { ReportUtility } from '../../../utils/ReportUtility'
-import ReportsTabContent from './parts/ReportsTabContent'
-import { ReportsHomeOfficeBranch, ReportsReviewBranch, ReportsSubmitBranch } from './parts/ReportsViewBranches'
 import {
     buildAllowedReviewReportNames,
     buildMyPlantCodesSet,
@@ -24,6 +22,8 @@ import {
     getPreviousTwoCompletedWeekIsos,
     resolvePlantDisplayText
 } from './parts/reportsHelpers'
+import ReportsTabContent from './parts/ReportsTabContent'
+import { ReportsHomeOfficeBranch, ReportsReviewBranch, ReportsSubmitBranch } from './parts/ReportsViewBranches'
 
 /**
  * Top-level reports hub. Presents a week-timeline layout for "My Reports",

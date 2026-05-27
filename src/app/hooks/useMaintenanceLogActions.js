@@ -23,7 +23,7 @@ export function useMaintenanceLogActions({ onFormDataReload }) {
     const handleDeleteSubmission = useCallback(
         async (event, submissionId) => {
             event?.stopPropagation()
-            if (!(await confirm({ title: 'Delete this submission?', confirmLabel: 'Delete' }))) return
+            if (!(await confirm({ confirmLabel: 'Delete', title: 'Delete this submission?' }))) return
             const { res } = await APIUtility.post('/maintenance-service/delete-submission', { submissionId })
             if (!res.ok) return
             if (selectedFormItem?.id === submissionId) setSelectedFormItem(null)

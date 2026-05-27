@@ -7,6 +7,10 @@ import useDayforceOperatorMetrics from '../../hooks/useDayforceOperatorMetrics'
 import { EmptySection, RefreshingHint } from '../plan/tabs/statistics/PlanStatisticsPages'
 import { Panel, Stat, StatGroup } from '../ui/Panel'
 import { DayforceFilters } from './DayforceFilters'
+import OperatorDailyStrip from './hours/OperatorDailyStrip'
+import OperatorHoursRow from './hours/OperatorHoursRow'
+import PlantPressureTable from './hours/PlantPressureTable'
+import SpotlightColumn, { SpotlightChip } from './hours/SpotlightColumn'
 
 const HOURS_SORT_IDS = ['hours', 'ot', 'name']
 
@@ -26,7 +30,6 @@ const UNDERUTILIZED_THRESHOLD = 30
 const COLOR_DANGER = 'var(--status-danger)'
 const COLOR_WARN = 'var(--status-warning)'
 const COLOR_CALM = 'var(--accent)'
-const COLOR_PTO = '#0ea5e9'
 
 const USD = new Intl.NumberFormat('en-US', { currency: 'USD', maximumFractionDigits: 0, style: 'currency' })
 
@@ -53,305 +56,6 @@ function LoadingSkeleton() {
                 <div key={i} className={`rounded-card bg-bg-secondary border border-border-light ${h}`} />
             ))}
         </div>
-    )
-}
-
-/** Compact operator chip used inside the spotlight callouts — name +
- *  badge + the headline number for the bucket. Whole chip is a button
- *  so clicking it filters the operator table to just this person. */
-function SpotlightChip({ accent, onClick, primary, secondary, row }) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            title={`Filter table to ${row.name}`}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded border border-border-light bg-bg-primary text-[12px] text-left w-full hover:bg-bg-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
-        >
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="font-semibold text-text-primary truncate">{row.name}</span>
-                    {row.plantCode && (
-                        <span
-                            className="font-mono tabular-nums text-[10px] px-1 rounded shrink-0 text-text-primary"
-                            style={{ background: `${accent}18` }}
-                        >
-                            {row.plantCode}
-                        </span>
-                    )}
-                </div>
-                {secondary && <div className="text-[10.5px] text-text-tertiary truncate">{secondary}</div>}
-            </div>
-            <span className="font-mono tabular-nums font-semibold shrink-0 text-text-primary">{primary}</span>
-        </button>
-    )
-}
-
-/** Spotlight column wrapper — colored header + scrollable chip list +
- *  empty fallback. Keeps the three callout panels visually balanced
- *  even when one of them has nothing to show. */
-function SpotlightColumn({ accentColor, children, count, emptyMessage, hint, icon, title }) {
-    return (
-        <div className="flex flex-col gap-2 rounded border border-border-light bg-bg-primary p-3 min-h-0">
-            <div className="flex items-center gap-2">
-                <span
-                    className="inline-flex items-center justify-center w-7 h-7 rounded-full shrink-0"
-                    style={{ background: `${accentColor}1a`, color: accentColor }}
-                >
-                    <i className={`fas ${icon} text-[12px]`} />
-                </span>
-                <div className="flex-1 min-w-0">
-                    <div className="text-[12.5px] font-semibold text-text-primary truncate">{title}</div>
-                    {hint && <div className="text-[10.5px] text-text-tertiary truncate">{hint}</div>}
-                </div>
-                <span className="font-mono tabular-nums text-[12.5px] font-bold shrink-0 text-text-primary">
-                    {fmtInt(count)}
-                </span>
-            </div>
-            {count === 0 ? (
-                <div className="text-[11.5px] text-text-tertiary px-1 py-2">{emptyMessage}</div>
-            ) : (
-                <div className="flex flex-col gap-1.5">{children}</div>
-            )}
-        </div>
-    )
-}
-
-/** Plant pressure table — matches the visual vocabulary of
- *  PlantScorecardTable on the Service tab: real <table>, bg-bg-tertiary
- *  headers in 10.5px uppercase, 12.5px row cells. The single difference
- *  is a "Pressure" column with an inline bar showing relative OT cost,
- *  and that each row is clickable to scope the page to that plant. */
-function PlantPressureTable({ focusedPlantCode, maxOtCost, onTogglePlant, plants }) {
-    return (
-        <div className="overflow-x-auto rounded border border-border-light">
-            <table className="w-full min-w-[680px] border-collapse">
-                <thead>
-                    <tr>
-                        <th className="text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap border-b border-border-light bg-bg-tertiary text-text-tertiary text-left">
-                            Plant
-                        </th>
-                        <th className="text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap border-b border-border-light bg-bg-tertiary text-text-tertiary text-left hidden sm:table-cell">
-                            Pressure (rel. OT cost)
-                        </th>
-                        <th
-                            className="text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap border-b border-border-light bg-bg-tertiary text-text-tertiary text-right cursor-help"
-                            title="Operators in OT / total operators at plant"
-                        >
-                            In OT
-                        </th>
-                        <th className="text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap border-b border-border-light bg-bg-tertiary text-text-tertiary text-right">
-                            OT hrs
-                        </th>
-                        <th className="text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap border-b border-border-light bg-bg-tertiary text-text-tertiary text-right">
-                            OT cost
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {plants.map((plant) => {
-                        const isSelected = focusedPlantCode === plant.code
-                        const otCostPct = maxOtCost > 0 ? (plant.otCost / maxOtCost) * 100 : 0
-                        return (
-                            <tr
-                                key={plant.code}
-                                onClick={() => onTogglePlant(plant.code)}
-                                title={isSelected ? 'Clear plant filter' : `Filter to ${plant.code}`}
-                                className={`border-t border-border-light cursor-pointer transition-colors ${
-                                    isSelected ? 'bg-bg-secondary' : 'hover:bg-bg-secondary'
-                                }`}
-                            >
-                                <td className="px-3 py-2 text-[12.5px] text-text-primary">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-mono text-[11px] tabular-nums text-text-tertiary">
-                                            {plant.code || '—'}
-                                        </span>
-                                        <span className="font-semibold truncate">
-                                            {plant.name || plant.code || '—'}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td className="px-3 py-2 hidden sm:table-cell">
-                                    <div className="h-2 rounded-sm overflow-hidden bg-bg-tertiary w-full max-w-[240px]">
-                                        <div
-                                            className="h-full"
-                                            style={{ background: COLOR_WARN, width: `${otCostPct}%` }}
-                                        />
-                                    </div>
-                                </td>
-                                <td className="px-3 py-2 text-right text-[12.5px] tabular-nums text-text-secondary">
-                                    {plant.operatorsOverOt > 0
-                                        ? `${plant.operatorsOverOt}/${plant.operatorCount}`
-                                        : '—'}
-                                </td>
-                                <td className="px-3 py-2 text-right text-[12.5px] tabular-nums font-semibold text-text-primary">
-                                    {plant.otHours > 0 ? fmtHours(plant.otHours) : '—'}
-                                </td>
-                                <td className="px-3 py-2 text-right text-[12.5px] tabular-nums font-semibold text-text-primary">
-                                    {plant.otCost > 0 ? fmtMoney(plant.otCost) : '—'}
-                                </td>
-                            </tr>
-                        )
-                    })}
-                </tbody>
-            </table>
-        </div>
-    )
-}
-
-/** Inline 7-day shift breakdown — appears when a row in the operator
- *  table is expanded. Each bar is one calendar day in the date range;
- *  OT chunks (anything over 8h on a day) render in amber on top of the
- *  accent base so a single glance reveals the daily OT pattern. */
-function OperatorDailyStrip({ accent, dailyShifts }) {
-    if (!dailyShifts.length) {
-        return (
-            <div className="px-6 py-3 border-t border-border-light bg-bg-secondary text-[11.5px] text-text-tertiary">
-                No shifts in the window.
-            </div>
-        )
-    }
-    const maxHours = dailyShifts.reduce((m, d) => Math.max(m, d.actualHours || 0), 8)
-    return (
-        <div className="px-6 py-3 border-t border-border-light bg-bg-secondary">
-            <div className="flex items-end gap-1.5 h-20">
-                {dailyShifts.map((d) => {
-                    const total = d.actualHours || 0
-                    const totalPct = (total / maxHours) * 100
-                    const otHours = total > 8 ? total - 8 : 0
-                    const otPct = (otHours / maxHours) * 100
-                    const regPct = totalPct - otPct
-                    const tipParts = [
-                        d.shiftDate,
-                        d.isPto ? `PTO ${fmtHours(d.ptoHours || 0)}` : fmtHours(total),
-                        otHours > 0 ? `${fmtHours(otHours)} OT` : null,
-                        d.exceptionText ? `Exception: ${d.exceptionText}` : null
-                    ].filter(Boolean)
-                    return (
-                        <div key={d.dayforceShiftId} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                            <div className="w-full flex-1 flex items-end" title={tipParts.join(' · ')}>
-                                <div className="w-full flex flex-col-reverse" style={{ height: `${totalPct}%` }}>
-                                    {d.isPto ? (
-                                        <div
-                                            className="w-full rounded-t-sm"
-                                            style={{ background: COLOR_PTO, height: '100%' }}
-                                        />
-                                    ) : (
-                                        <>
-                                            <div
-                                                className="w-full"
-                                                style={{
-                                                    background: accent,
-                                                    height: `${(regPct / totalPct) * 100 || 0}%`,
-                                                    borderTopLeftRadius: otHours > 0 ? 0 : 2,
-                                                    borderTopRightRadius: otHours > 0 ? 0 : 2
-                                                }}
-                                            />
-                                            {otHours > 0 && (
-                                                <div
-                                                    className="w-full rounded-t-sm"
-                                                    style={{
-                                                        background: COLOR_WARN,
-                                                        height: `${(otPct / totalPct) * 100 || 0}%`
-                                                    }}
-                                                />
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                            <span className="text-[9.5px] text-text-tertiary font-mono tabular-nums">
-                                {(d.shiftDate || '').slice(5)}
-                            </span>
-                            <span className="text-[10px] text-text-primary font-mono tabular-nums">
-                                {total > 0 ? fmtFloat(total, 1) : '—'}
-                            </span>
-                        </div>
-                    )
-                })}
-            </div>
-        </div>
-    )
-}
-
-/** Single operator row — actual / OT / OT% / OT cost / PTO. Clickable:
- *  expands to reveal an inline 7-day shift strip below. */
-function OperatorHoursRow({ accent, isExpanded, maxHours, onToggle, row }) {
-    const otSharePct = row.actualHours > 0 ? (row.otHours / row.actualHours) * 100 : 0
-    const pct = maxHours > 0 ? (row.actualHours / maxHours) * 100 : 0
-    const otPct = maxHours > 0 ? (row.otHours / maxHours) * 100 : 0
-    return (
-        <button
-            type="button"
-            onClick={onToggle}
-            aria-expanded={isExpanded}
-            className={`w-full flex flex-col gap-1 px-3 py-2 border-t border-border-light first:border-t-0 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none ${
-                isExpanded ? 'bg-bg-secondary' : 'hover:bg-bg-secondary'
-            } active:scale-[0.97]`}
-        >
-            <div className="flex items-center gap-2 text-[12.5px]">
-                <i
-                    className={`fas ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[9px] text-text-tertiary w-3 shrink-0`}
-                    aria-hidden="true"
-                />
-                <span className="font-mono tabular-nums w-12 shrink-0 text-text-tertiary">{row.badge || '—'}</span>
-                <div className="flex-1 min-w-0 flex items-center gap-2">
-                    <span className="truncate text-text-primary font-semibold">{row.name}</span>
-                    {row.position && (
-                        <span className="text-[11px] text-text-tertiary truncate hidden sm:inline">
-                            · {row.position}
-                        </span>
-                    )}
-                    {row.plantCode && (
-                        <span className="font-mono tabular-nums text-[11px] text-text-tertiary hidden md:inline">
-                            · {row.plantCode}
-                        </span>
-                    )}
-                </div>
-                <span className="font-mono tabular-nums w-14 text-right shrink-0 text-text-primary font-semibold">
-                    {fmtHours(row.actualHours)}
-                </span>
-                <span
-                    className={`font-mono tabular-nums w-14 text-right shrink-0 font-semibold ${
-                        row.otHours > 0 ? 'text-text-primary' : 'text-text-tertiary'
-                    }`}
-                >
-                    {row.otHours > 0 ? fmtHours(row.otHours) : '—'}
-                </span>
-                <span
-                    className={`font-mono tabular-nums w-12 text-right shrink-0 hidden sm:inline ${
-                        otSharePct >= 15 ? 'text-text-primary' : 'text-text-tertiary'
-                    }`}
-                >
-                    {otSharePct > 0 ? `${fmtFloat(otSharePct, 0)}%` : '—'}
-                </span>
-                <span
-                    className={`font-mono tabular-nums w-20 text-right shrink-0 font-semibold ${
-                        row.otCost > 0 ? 'text-text-primary' : 'text-text-tertiary'
-                    }`}
-                >
-                    {row.otCost > 0 ? fmtMoney(row.otCost) : '—'}
-                </span>
-                <span className="font-mono tabular-nums w-14 text-right shrink-0 text-text-tertiary hidden md:inline">
-                    {row.ptoHours > 0 ? fmtHours(row.ptoHours) : '—'}
-                </span>
-            </div>
-            {/* Stacked bar: regular hours in accent, OT hours in amber, on a
-             *  shared canvas so the dispatcher sees both the absolute
-             *  workload AND the OT chunk inside it without doing math. */}
-            <div className="h-1.5 rounded-sm overflow-hidden bg-bg-tertiary ml-[60px] relative">
-                <div className="h-full absolute left-0 top-0" style={{ background: accent, width: `${pct}%` }} />
-                {row.otHours > 0 && (
-                    <div
-                        className="h-full absolute top-0"
-                        style={{
-                            background: COLOR_WARN,
-                            left: `${pct - otPct}%`,
-                            width: `${otPct}%`
-                        }}
-                    />
-                )}
-            </div>
-        </button>
     )
 }
 
@@ -610,8 +314,8 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
 
             <Panel title="At-risk operators">
                 <div className="text-[11.5px] mb-2 text-text-secondary">
-                    Three buckets the dispatcher acts on daily: who already triggered OT, who's one rough day from it,
-                    and who's been under-scheduled. Click any operator chip to filter the table below.
+                    Three buckets the dispatcher acts on daily: who already triggered OT, who&apos;s one rough day from
+                    it, and who&apos;s been under-scheduled. Click any operator chip to filter the table below.
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                     <SpotlightColumn

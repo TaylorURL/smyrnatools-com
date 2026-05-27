@@ -36,9 +36,9 @@ export function PlantCard({ plant, scales, allPlants, regionPlants, onReload, ac
 
     async function confirmDeletePlant() {
         const ok = await confirm({
-            title: `Delete "${plant.plant_label}"?`,
+            confirmLabel: 'Delete',
             message: 'This will also remove all associated scales and history.',
-            confirmLabel: 'Delete'
+            title: `Delete "${plant.plant_label}"?`
         })
         if (!ok) return
         NRMCAService.deletePlant(plant.id)

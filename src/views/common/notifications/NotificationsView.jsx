@@ -128,9 +128,9 @@ function NotificationsView({ initialConversationId = null }) {
         const convo = conversations.find((c) => c.otherId === otherId)
         if (!convo) return
         const ok = await confirm({
-            title: 'Delete this conversation?',
+            confirmLabel: 'Delete',
             message: 'Messages will disappear from your inbox.',
-            confirmLabel: 'Delete'
+            title: 'Delete this conversation?'
         })
         if (!ok) return
         await Promise.all((convo.messages || []).map((m) => deleteMessage(m.id)))

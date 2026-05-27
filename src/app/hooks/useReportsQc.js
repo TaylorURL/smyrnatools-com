@@ -66,7 +66,7 @@ export function useReportsQc({ fetchProfilesFor, user }) {
         async (report) => {
             const submitterWeight = await fetchWeightForUser(report.userId)
             if (currentUserWeight < submitterWeight) return
-            if (!(await confirm({ title: 'Delete this QC Strength Report?', confirmLabel: 'Delete' }))) return
+            if (!(await confirm({ confirmLabel: 'Delete', title: 'Delete this QC Strength Report?' }))) return
             const { res } = await APIUtility.post('/report-service/delete-report', { reportId: report.id })
             if (!res.ok) return
             setQcReports((prev) => prev.filter((r) => r.id !== report.id))

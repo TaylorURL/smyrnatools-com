@@ -7,8 +7,8 @@ const COLLAPSED_LIMIT = 3
 
 const SEVERITY_STRIPE = {
     danger: 'border-l-status-danger',
-    warning: 'border-l-status-warning',
-    info: 'border-l-accent'
+    info: 'border-l-accent',
+    warning: 'border-l-status-warning'
 }
 
 /** Inline alert row — left-edge severity stripe, monospace identifier,

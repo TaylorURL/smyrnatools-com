@@ -334,7 +334,7 @@ export default function DocumentsView() {
 
     const handleDelete = useCallback(
         async (doc) => {
-            const ok = await confirm({ title: `Delete "${doc.name}"?`, confirmLabel: 'Delete' })
+            const ok = await confirm({ confirmLabel: 'Delete', title: `Delete "${doc.name}"?` })
             if (ok) deleteDocument(doc)
         },
         [confirm, deleteDocument]

@@ -18,9 +18,9 @@ export function HistoryEntries({ currentUserId, entries, isLoading, onDelete }) 
     const handleDelete = async (entry) => {
         if (!onDelete) return
         const ok = await confirm({
-            title: 'Delete this entry?',
+            confirmLabel: 'Delete',
             message: 'This cannot be undone.',
-            confirmLabel: 'Delete'
+            title: 'Delete this entry?'
         })
         if (!ok) return
         setDeletingId(entry.id)

@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 
+import { canonicalNameKey } from '../../utils/OperatorNameLookupUtility'
 import { filterExceptionText, shiftHasRedFlag } from '../components/dayforce/schedules/scheduleFlags'
 import { addDays, fmtWeekLabel, mondayOf } from '../components/dayforce/schedules/scheduleFormatters'
 import { WEEKDAYS, YPH_TARGET } from '../constants/dayforceScheduleConstants'
-import { canonicalNameKey } from '../../utils/OperatorNameLookupUtility'
 
 /** Operator-row sort comparator factory. Sort options are limited to the
  *  ones that make sense in a per-week grid (date-based sort drops out

@@ -118,9 +118,9 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
         if (!isEditing) return
         if (
             !(await confirm({
-                title: 'Delete this quality issue?',
+                confirmLabel: 'Delete',
                 message: 'This action cannot be undone.',
-                confirmLabel: 'Delete'
+                title: 'Delete this quality issue?'
             }))
         )
             return
