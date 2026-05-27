@@ -1,5 +1,37 @@
 # Changelog
 
+## [2026.22.12] - 2026-05-27
+
+- Migrate the per-order verdict pill in Customer Service Lookup
+  (Ops → Stats → Service Lookup) to the unified `<Badge />` component.
+  Two callsites were hand-rolling a raw `<span>` with `inline-flex
+  items-center rounded-md px-2 py-0.5 text-[11px] font-bold uppercase
+  tracking-wider text-white whitespace-nowrap` and an inline
+  `style={{ background: verdictColor(m) }}` — the previous Brutalist
+  migration sweep missed them because the className didn't match the
+  search patterns I used. As a result, the Service Lookup customer
+  detail table rendered Good / Bad / Not Good / Very Bad / Slow
+  pills using the lighter top-level `--status-*` palette directly
+  instead of routing through Badge's contrast-checked darker bgs,
+  producing inconsistent saturation against the rest of the page.
+- Added a `verdictTone(m)` helper to both
+  `src/app/components/plan/tabs/statistics/customer-lookup/
+  customerLookupShared.js` and
+  `src/app/components/plan/tabs/statistics/CustomerServiceContext.jsx`
+  that mirrors `verdictColor` but maps tiers to the project's
+  semantic tone names (good → success, bad → danger, notGood →
+  warning, veryBad → danger, isSlow only → warning). Both
+  CustomerOrdersTable variants — the standalone one in
+  `customer-lookup/CustomerOrdersTable.jsx` and the inline one
+  exported from `CustomerServiceContext.jsx` (reused by the Call
+  List customer detail) — now render verdicts through `<Badge
+  tone={verdictTone(m)} size="md" shape="rounded-md">{verdictLabel(m)}</Badge>`.
+- The CustomerServiceContext variant previously rendered the verdict
+  label as plain unstyled text (`<span>{verdictLabel(m)}</span>`); it
+  now picks up the brutalist pill treatment for consistency with the
+  customer-lookup variant. Same-day flags rendered alongside the
+  verdict were already on `<Badge>` and remain unchanged.
+
 ## [2026.22.11] - 2026-05-27
 
 - Fix unreadable white text on data-driven badges that route their colour

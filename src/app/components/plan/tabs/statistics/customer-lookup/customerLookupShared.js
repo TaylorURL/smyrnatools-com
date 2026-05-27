@@ -34,6 +34,19 @@ export const verdictColor = (m) => {
     return GOOD
 }
 
+/* Tier-aware verdict tone for the unified `<Badge />` component. Mirrors
+ * `verdictColor` but maps to the project's semantic tone names instead of
+ * hex codes, so verdict pills render through the same brutalist treatment
+ * as every other badge in the app (saturated bg + white text + hard shadow)
+ * with WCAG AA contrast guarantees. */
+const TIER_TO_TONE = { bad: 'danger', good: 'success', notGood: 'warning', veryBad: 'danger' }
+
+export const verdictTone = (m) => {
+    if (m.tier && m.tier !== 'good') return TIER_TO_TONE[m.tier]
+    if (m.isSlow) return 'warning'
+    return 'success'
+}
+
 export const verdictLabel = (m) => {
     const slowSuffix = m.isSlow ? ' + slow' : ''
     switch (m.tier) {

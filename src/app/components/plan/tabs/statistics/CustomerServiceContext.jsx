@@ -26,10 +26,27 @@ const TIER_TO_COLOR = {
     veryBad: '#7f1d1d'
 }
 
+const TIER_TO_TONE = {
+    bad: 'danger',
+    good: 'success',
+    notGood: 'warning',
+    veryBad: 'danger'
+}
+
 export const verdictColor = (m) => {
     if (m.tier && m.tier !== 'good') return TIER_TO_COLOR[m.tier]
     if (m.isSlow) return SERVICE_COLOR_SLOW
     return SERVICE_COLOR_GOOD
+}
+
+/* Verdict tone for the unified <Badge /> — mirrors verdictColor but routes
+ * through the brutalist tone palette so the per-order verdict pills in
+ * Call List → Customer detail render with the same saturated-bg + white-
+ * text treatment as every other status pill in the app. */
+export const verdictTone = (m) => {
+    if (m.tier && m.tier !== 'good') return TIER_TO_TONE[m.tier]
+    if (m.isSlow) return 'warning'
+    return 'success'
 }
 
 export const verdictLabel = (m) => {
@@ -166,7 +183,9 @@ export function CustomerOrdersTable({ colocationMap, emptyMessage, orders, plant
                                 </td>
                                 <td className="px-3 py-2 text-[12px] font-semibold">
                                     <div className="flex items-center gap-1.5">
-                                        <span>{verdictLabel(m)}</span>
+                                        <Badge tone={verdictTone(m)} size="md" shape="rounded-md">
+                                            {verdictLabel(m)}
+                                        </Badge>
                                         {m.isSameDay && (
                                             <Badge
                                                 tone="warning"

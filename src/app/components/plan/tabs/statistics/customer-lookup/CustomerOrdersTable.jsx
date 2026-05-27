@@ -5,7 +5,7 @@ import { fmtDate } from '../../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../../utils/PlantColocationUtility'
 import Badge from '../../../../common/Badge'
 import ScorePercent from '../ScorePercent'
-import { fmtMinutes, fmtYards, verdictColor, verdictLabel } from './customerLookupShared'
+import { fmtMinutes, fmtYards, verdictLabel, verdictTone } from './customerLookupShared'
 
 export default function CustomerOrdersTable({ colocationMap, orders, plantNameByCode }) {
     if (!orders.length) {
@@ -65,12 +65,9 @@ export default function CustomerOrdersTable({ colocationMap, orders, plantNameBy
                                 </td>
                                 <td className="px-3 py-2">
                                     <div className="flex items-center gap-1.5">
-                                        <span
-                                            className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white whitespace-nowrap"
-                                            style={{ background: verdictColor(m) }}
-                                        >
+                                        <Badge tone={verdictTone(m)} size="md" shape="rounded-md">
                                             {verdictLabel(m)}
-                                        </span>
+                                        </Badge>
                                         {m.isSameDay && (
                                             <Badge
                                                 tone="warning"
