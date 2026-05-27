@@ -19,8 +19,10 @@ import { usePlantGeocoding } from '../../../app/hooks/usePlantGeocoding'
 import { usePlantMarkers } from '../../../app/hooks/usePlantMarkers'
 import { useRouteFetching } from '../../../app/hooks/useRouteFetching'
 import { useRoutePolylines } from '../../../app/hooks/useRoutePolylines'
+import { useSaturdayForecasts } from '../../../app/hooks/useSaturdayForecasts'
 import { yphColorFor } from '../../../utils/PlanFlowLayoutUtility'
 import {
+    getForecastedOperatorCount,
     getMissingOperators,
     getSaturdayOverride,
     isSaturday,
@@ -61,6 +63,14 @@ function PlanFlowMapView({
 }) {
     const { preferences } = usePreferences()
     const stateHint = resolveStateHint(preferences?.selectedRegion)
+
+    /* The forecast only applies on Saturday plans; on every other weekday
+     * we pass null so the hook short-circuits and never hits the network.
+     * `planDate` is already a `YYYY-MM-DD` string anchored to CST so it
+     * doubles as the Saturday key the forecast service expects. */
+    const saturdayIso = useMemo(() => (isSaturday(planDate) ? planDate : null), [planDate])
+    const plantCodes = useMemo(() => (plants || []).map((plant) => plant.plant_code).filter(Boolean), [plants])
+    const { forecastsByPlant } = useSaturdayForecasts({ plantCodes, saturdayDate: saturdayIso })
 
     const {
         containerRef,
@@ -253,6 +263,7 @@ function PlanFlowMapView({
                             setMissingOperators(setPlantProduction, selected.code, count)
                         }
                         isSaturday={isSaturday(planDate)}
+                        saturdayForecast={getForecastedOperatorCount(forecastsByPlant, selected.code)}
                         saturdayOverride={getSaturdayOverride(plantProduction, selected.code)}
                         onSaturdayOverrideChange={(count) =>
                             setSaturdayOverride(setPlantProduction, selected.code, count)
