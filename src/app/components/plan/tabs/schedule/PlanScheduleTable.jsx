@@ -1,10 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
-import { buildOrderCoveragePayload, getScheduleRowDelay } from '../../../../../utils/PlanScheduleUtility'
+import { getScheduleRowDelay } from '../../../../../utils/PlanScheduleUtility'
 import { usePlanScheduleRowContextMenu } from '../../../../hooks/usePlanScheduleRowContextMenu'
-import OrderInfoModal from '../../../schedule/OrderInfoModal'
-import OrderTicketsModal from '../../../schedule/OrderTicketsModal'
 import PlanScheduleOrderRow from './PlanScheduleOrderRow'
 import {
     ClockInRow,
@@ -69,7 +67,6 @@ export default function PlanScheduleTable({
     filteredPlantCode = null,
     firstLoadOutByPlant = null,
     getCloserPlantForOrder,
-    getJobTravelMin,
     getTravelOverrides,
     helpRows = [],
     isMaximized = false,
@@ -80,12 +77,12 @@ export default function PlanScheduleTable({
     nowMin = null,
     onOpenAudit,
     onOpenLocation,
+    onViewOrder,
+    onViewTickets,
     orders,
     plantCityByCode,
     plantNameByCode,
-    poolSourceByCode,
     poolTimeline,
-    poolTimelinesByPlant,
     pullUpRows = [],
     /** Optional ref to attach to the table's scroll viewport. The split
      *  view passes a ref into each side so it can mirror scrollTop /
@@ -101,8 +98,7 @@ export default function PlanScheduleTable({
      *  shows just the essentials. */
     visibleColumns = null
 }) {
-    const { infoOrder, openRowMenu, rowMenu, setInfoOrder, setRowMenu, setTicketsOrder, ticketsOrder } =
-        usePlanScheduleRowContextMenu()
+    const { openRowMenu, rowMenu, setRowMenu } = usePlanScheduleRowContextMenu()
 
     // Synthetic rows require a plant filter AND the toggle to be on — both
     // gates collapse into one effective flag for the rest of the component.
@@ -308,57 +304,24 @@ export default function PlanScheduleTable({
                               }
                             : null
                     }
-                    onViewOrder={() => {
-                        setInfoOrder(rowMenu.order)
-                        setRowMenu(null)
-                    }}
-                    onViewTickets={() => {
-                        setTicketsOrder(rowMenu.order)
-                        setRowMenu(null)
-                    }}
+                    onViewOrder={
+                        onViewOrder
+                            ? () => {
+                                  onViewOrder(rowMenu.order)
+                                  setRowMenu(null)
+                              }
+                            : null
+                    }
+                    onViewTickets={
+                        onViewTickets
+                            ? () => {
+                                  onViewTickets(rowMenu.order)
+                                  setRowMenu(null)
+                              }
+                            : null
+                    }
                     rowMenu={rowMenu}
                 />
-                {ticketsOrder && (
-                    <OrderTicketsModal
-                        accentColor={accentColor}
-                        detail={ticketsOrder.orderId ? detailByOrderId[ticketsOrder.orderId] : null}
-                        getJobTravelMin={getJobTravelMin}
-                        onClose={() => setTicketsOrder(null)}
-                        order={ticketsOrder}
-                        plantNameByCode={plantNameByCode}
-                    />
-                )}
-                {infoOrder && (
-                    <OrderInfoModal
-                        accentColor={accentColor}
-                        closerPlant={getCloserPlantForOrder ? getCloserPlantForOrder(infoOrder) : null}
-                        coverage={buildOrderCoveragePayload(infoOrder, {
-                            poolSourceByCode,
-                            poolTimeline,
-                            poolTimelinesByPlant,
-                            rowKey: keyForOrder(infoOrder),
-                            travelOverrides: getTravelOverrides ? getTravelOverrides(infoOrder) : undefined
-                        })}
-                        onClose={() => setInfoOrder(null)}
-                        onOpenLocation={
-                            onOpenLocation
-                                ? (o) => {
-                                      setInfoOrder(null)
-                                      onOpenLocation(o)
-                                  }
-                                : undefined
-                        }
-                        onViewTickets={(o) => {
-                            setInfoOrder(null)
-                            setTicketsOrder(o)
-                        }}
-                        order={infoOrder}
-                        plantName={plantNameByCode?.[infoOrder.plantCode] || ''}
-                        ticketCount={
-                            infoOrder.orderId ? (detailByOrderId?.[infoOrder.orderId]?.ticketCount ?? null) : null
-                        }
-                    />
-                )}
             </div>
         </div>
     )

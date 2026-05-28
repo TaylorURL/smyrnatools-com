@@ -30,6 +30,8 @@ export default function PlanScheduleOrderCard({
     onPickPlant,
     onPickProduct,
     onPickStatus,
+    onViewOrder,
+    onViewTickets,
     order,
     plantCode,
     plantName,
@@ -56,9 +58,27 @@ export default function PlanScheduleOrderCard({
     const trucks = computedTrucks ?? 0
     const addressBad = isLikelyBadAddress(clean(order.address))
     const hasAddress = !!(clean(order.address) || clean(order.city))
+    // The whole card opens the order detail; nested filter chips below call
+    // stopPropagation so a chip tap filters instead of opening the modal.
+    const interactive = typeof onViewOrder === 'function'
+    const openOrder = () => onViewOrder?.(order)
     return (
         <div
-            className="rounded-xl p-3 flex flex-col gap-2"
+            className={`rounded-xl p-3 flex flex-col gap-2${interactive ? ' cursor-pointer transition-transform duration-150 ease-out active:scale-[0.99] motion-reduce:transition-none' : ''}`}
+            onClick={interactive ? openOrder : undefined}
+            onKeyDown={
+                interactive
+                    ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              openOrder()
+                          }
+                      }
+                    : undefined
+            }
+            role={interactive ? 'button' : undefined}
+            tabIndex={interactive ? 0 : undefined}
+            aria-label={interactive ? `View order details for ${clean(order.customer) || 'this order'}` : undefined}
             style={{
                 background: isCancelled
                     ? 'rgba(220, 38, 38, 0.05)'
@@ -99,7 +119,10 @@ export default function PlanScheduleOrderCard({
                             (onPickStatus ? (
                                 <button
                                     type="button"
-                                    onClick={() => onPickStatus(status.kind)}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onPickStatus(status.kind)
+                                    }}
                                     className="border-none bg-transparent p-0 cursor-pointer shrink-0 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     title={`Filter to ${status.label.toLowerCase()} orders`}
                                 >
@@ -117,7 +140,10 @@ export default function PlanScheduleOrderCard({
                             (onPickPlant ? (
                                 <button
                                     type="button"
-                                    onClick={() => onPickPlant(plantCode)}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onPickPlant(plantCode)
+                                    }}
                                     className="font-semibold underline-offset-2 hover:underline border-none bg-transparent p-0 cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     style={{ color: 'var(--text-primary)' }}
                                     title={`Filter to plant ${plantCode}`}
@@ -151,7 +177,10 @@ export default function PlanScheduleOrderCard({
                             <div className="mt-1 flex flex-col gap-1">
                                 <button
                                     type="button"
-                                    onClick={() => onOpenLocation(order)}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onOpenLocation(order)
+                                    }}
                                     className="text-[12px] flex items-center gap-1.5 border-none bg-transparent p-0 cursor-pointer underline-offset-2 hover:underline w-full text-left active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     style={{ color: 'var(--text-primary)' }}
                                     title="Open route map"
@@ -194,7 +223,10 @@ export default function PlanScheduleOrderCard({
                 (onPickProduct && order.productCode ? (
                     <button
                         type="button"
-                        onClick={() => onPickProduct(clean(order.productCode))}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onPickProduct(clean(order.productCode))
+                        }}
                         className="rounded-md px-2.5 py-1.5 flex items-center gap-2 border cursor-pointer text-left bg-bg-secondary border-border-light active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         title={`Filter to product ${clean(order.productCode)}`}
                     >
@@ -226,9 +258,39 @@ export default function PlanScheduleOrderCard({
                 {loadSize > 0 && <KeyValue label="Load" value={`${loadSize} yd`} />}
                 {order.poNumber && <KeyValue label="PO" value={clean(order.poNumber)} />}
                 {order.jobNumber && <KeyValue label="Job" value={clean(order.jobNumber)} />}
-                {order.phone && <KeyValue label="Contact" value={<PhoneLink phone={clean(order.phone)} />} />}
+                {order.phone && (
+                    <KeyValue
+                        label="Contact"
+                        value={
+                            <span onClick={(e) => e.stopPropagation()}>
+                                <PhoneLink phone={clean(order.phone)} />
+                            </span>
+                        }
+                    />
+                )}
                 {order.contact && <KeyValue label="Dispatcher" value={clean(order.contact)} />}
             </div>
+            {onViewTickets && (
+                <div className="flex items-center gap-2 pt-0.5">
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onViewTickets(order)
+                        }}
+                        className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-border-light bg-bg-secondary px-3 text-[12px] font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
+                    >
+                        <i className="fas fa-ticket text-[11px] text-text-tertiary" />
+                        Tickets
+                    </button>
+                    {interactive && (
+                        <span className="ml-auto inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-wide text-text-tertiary">
+                            Details
+                            <i className="fas fa-chevron-right text-[9px]" />
+                        </span>
+                    )}
+                </div>
+            )}
         </div>
     )
 }

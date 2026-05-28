@@ -1,5 +1,31 @@
 # Changelog
 
+## [2026.22.21] - 2026-05-27
+
+- Operations > Schedule is now usable on a phone: viewing an order and viewing
+  its tickets both work on mobile. The "view order" (`OrderInfoModal`) and
+  "view tickets" (`OrderTicketsModal`) modals were lifted out of
+  `PlanScheduleTable` up to `PlanScheduleView`, so the desktop right-click menu,
+  the compare split-view, and the new mobile order cards all open one shared
+  modal instance (desktop behavior is unchanged). `PlanScheduleOrderCard` opens
+  the order detail when the card body is tapped and adds a dedicated Tickets
+  button; the nested plant / status / product / address / phone chips call
+  `stopPropagation` so a chip tap still filters instead of opening the modal,
+  and a subtle "Details ›" hint signals the card is tappable.
+- `OrderInfoModal` and `OrderTicketsModal` render as full-width bottom sheets on
+  mobile — slide up from the bottom (`dv-slide-up`), rounded top, capped at 90vh
+  with a scrollable body and tap-the-scrim-to-dismiss — while staying centered
+  cards on desktop (`sm:` breakpoint). Inline-embed mode is untouched.
+- Operations > Statistics is now reachable on mobile. It was previously gated to
+  Dashboard + Schedule only; `statistics` was added to both `MOBILE_TAB_MODES`
+  in `PlanTabSwitcher.jsx` (with a compact "Stats" label) and `MOBILE_VIEW_MODES`
+  in `OperationsView.jsx`.
+- The plant scorecard on Statistics collapses to stacked cards on mobile instead
+  of a 9-column horizontal-scroll table. `PlantScorecardTable` derives each
+  plant's row values once into a shared array that feeds both the `md+` table and
+  the below-`md` card list, so the two can never diverge. (The Worst-orders and
+  Customer-orders tables remain contained horizontal-scroll for now.)
+
 ## [2026.22.20] - 2026-05-27
 
 - Fixed a fencepost error in the pour-pace calculation that let under-served

@@ -13,22 +13,22 @@ const PLAN_TABS = [
     { icon: 'fa-calendar-days', label: 'Schedule', mobileLabel: 'Schedule', mode: 'schedule' },
     { icon: 'fa-project-diagram', label: 'Planner', mode: 'flow' },
     { icon: 'fa-chart-column', label: 'Demand', mode: 'demand' },
-    { icon: 'fa-chart-line', label: 'Statistics', mode: 'statistics' },
+    { icon: 'fa-chart-line', label: 'Statistics', mobileLabel: 'Stats', mode: 'statistics' },
     { icon: 'fa-phone-volume', label: 'Call List', mode: 'call-list' },
     { icon: 'fa-sliders', label: 'Settings', mode: 'settings', requiresSettings: true }
 ]
 
 /** Tabs that survive on a phone. Wide-layout tabs (Planner / Demand /
- *  Statistics / Call List / Settings) need horizontal real estate that
- *  doesn't exist on mobile, so they're hidden in favour of Dashboard +
- *  Schedule — the two surfaces that already render usefully at narrow
- *  widths and cover the most frequent on-the-go workflows. */
-const MOBILE_TAB_MODES = new Set(['dashboard', 'schedule'])
+ *  Call List / Settings) need horizontal real estate that doesn't exist
+ *  on mobile, so they're hidden in favour of Dashboard, Schedule, and
+ *  Statistics — the surfaces that render usefully at narrow widths and
+ *  cover the most frequent on-the-go workflows. */
+const MOBILE_TAB_MODES = new Set(['dashboard', 'schedule', 'statistics'])
 
 /**
  * Tab toggle in the Plan header. Desktop renders the full ladder; mobile
- * collapses to a compact two-tab switcher (Dashboard + Schedule) so the
- * header stays single-line on a phone. Settings tab only appears when the
+ * collapses to a compact switcher (Dashboard + Schedule + Statistics) so
+ * the header stays tight on a phone. Settings tab only appears when the
  * caller passes `canSeeSettings` — gated by the `plan.settings` permission.
  */
 export function PlanTabSwitcher({ accentColor, canSeeSettings = false, isMobile = false, onChange, viewMode }) {

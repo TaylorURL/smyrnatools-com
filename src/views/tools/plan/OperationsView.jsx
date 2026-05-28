@@ -93,7 +93,7 @@ function OperationsViewImpl({ accentColor, isDark }) {
      * Schedule (the full daily order list in card mode). Any other tab
      * (Planner, Demand, Statistics, etc.) falls back to Dashboard
      * because their wide layouts don't fit a phone. */
-    const MOBILE_VIEW_MODES = new Set(['dashboard', 'schedule'])
+    const MOBILE_VIEW_MODES = new Set(['dashboard', 'schedule', 'statistics'])
     const [viewMode, setViewModeRaw] = useState('dashboard')
     const effectiveViewMode = isMobile && !MOBILE_VIEW_MODES.has(viewMode) ? 'dashboard' : viewMode
     const { planDate, setPlanDate } = usePlanDate(effectiveViewMode)

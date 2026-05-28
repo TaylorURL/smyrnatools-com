@@ -11,13 +11,15 @@ import PlanScheduleTable from '../../../app/components/plan/tabs/schedule/PlanSc
 import PlanScheduleTitleRow from '../../../app/components/plan/tabs/schedule/PlanScheduleTitleRow'
 import JobMapModal from '../../../app/components/schedule/JobMapModal'
 import OrderAuditModal from '../../../app/components/schedule/OrderAuditModal'
+import OrderInfoModal from '../../../app/components/schedule/OrderInfoModal'
+import OrderTicketsModal from '../../../app/components/schedule/OrderTicketsModal'
 import { DEFAULT_SCHEDULE_FILTERS } from '../../../app/constants/planScheduleViewConstants'
 import { usePlanScheduleAdjacentTotals } from '../../../app/hooks/usePlanScheduleAdjacentTotals'
 import { usePlanScheduleData } from '../../../app/hooks/usePlanScheduleData'
 import { usePlanScheduleFilterSetters } from '../../../app/hooks/usePlanScheduleFilterSetters'
 import { usePlanScheduleMaximize } from '../../../app/hooks/usePlanScheduleMaximize'
 import { ScheduleSnapshotService } from '../../../services/ScheduleSnapshotService'
-import { computeScheduleHeadlineMetrics } from '../../../utils/PlanScheduleUtility'
+import { buildOrderCoveragePayload, computeScheduleHeadlineMetrics } from '../../../utils/PlanScheduleUtility'
 
 /**
  * Schedule view — flat, filterable, sortable table (or grouped cards) of every
@@ -172,6 +174,11 @@ function PlanScheduleView({
     // persist across date changes — closing this view should drop the open
     // map modal (the order it points at no longer exists in the new day).
     const [mapOrder, setMapOrder] = useState(null)
+    // "View order" / "View tickets" modal targets. Owned here (not in the
+    // table) so the desktop right-click menu, the compare split-view, AND
+    // the mobile order cards can all open the same single modal instance.
+    const [infoOrder, setInfoOrder] = useState(null)
+    const [ticketsOrder, setTicketsOrder] = useState(null)
     // Order audit (right-click → diff this order against the 5:30 PM
     // snapshot) is still a modal — per-order popup. The compare flow is
     // NOT modal: `compareMode` flips the whole schedule body into a
@@ -401,6 +408,8 @@ function PlanScheduleView({
                                     nowMin={nowMin}
                                     onOpenAudit={setAuditOrder}
                                     onOpenLocation={setMapOrder}
+                                    onViewOrder={setInfoOrder}
+                                    onViewTickets={setTicketsOrder}
                                     plantCityByCode={plantCityByCode}
                                     plantNameByCode={plantNameByCode}
                                     poolSourceByCode={poolSourceByCode}
@@ -433,6 +442,8 @@ function PlanScheduleView({
                                     nowMin={nowMin}
                                     onOpenAudit={setAuditOrder}
                                     onOpenLocation={setMapOrder}
+                                    onViewOrder={setInfoOrder}
+                                    onViewTickets={setTicketsOrder}
                                     orders={filtered}
                                     plantCityByCode={plantCityByCode}
                                     plantNameByCode={plantNameByCode}
@@ -458,6 +469,8 @@ function PlanScheduleView({
                                     onPickPlant={togglePlantFilter}
                                     onPickProduct={(p) => setProductFilter((prev) => (prev === p ? 'all' : p))}
                                     onPickStatus={(s) => setStatusFilter((prev) => (prev === s ? 'all' : s))}
+                                    onViewOrder={setInfoOrder}
+                                    onViewTickets={setTicketsOrder}
                                     plantFilterSet={plantFilterSet}
                                     plantNameByCode={plantNameByCode}
                                 />
@@ -483,6 +496,41 @@ function PlanScheduleView({
                     onClose={() => setAuditOrder(null)}
                     order={auditOrder}
                     planDate={planDate}
+                />
+            )}
+            {ticketsOrder && (
+                <OrderTicketsModal
+                    accentColor={accentColor}
+                    detail={ticketsOrder.orderId ? detailByOrderId[ticketsOrder.orderId] : null}
+                    getJobTravelMin={getJobTravelMin}
+                    onClose={() => setTicketsOrder(null)}
+                    order={ticketsOrder}
+                    plantNameByCode={plantNameByCode}
+                />
+            )}
+            {infoOrder && (
+                <OrderInfoModal
+                    accentColor={accentColor}
+                    closerPlant={getCloserPlantForOrder ? getCloserPlantForOrder(infoOrder) : null}
+                    coverage={buildOrderCoveragePayload(infoOrder, {
+                        poolSourceByCode,
+                        poolTimeline,
+                        poolTimelinesByPlant,
+                        rowKey: keyForOrder(infoOrder),
+                        travelOverrides: getTravelOverrides ? getTravelOverrides(infoOrder) : undefined
+                    })}
+                    onClose={() => setInfoOrder(null)}
+                    onOpenLocation={(o) => {
+                        setInfoOrder(null)
+                        setMapOrder(o)
+                    }}
+                    onViewTickets={(o) => {
+                        setInfoOrder(null)
+                        setTicketsOrder(o)
+                    }}
+                    order={infoOrder}
+                    plantName={plantNameByCode?.[infoOrder.plantCode] || ''}
+                    ticketCount={infoOrder.orderId ? (detailByOrderId?.[infoOrder.orderId]?.ticketCount ?? null) : null}
                 />
             )}
         </div>

@@ -198,15 +198,16 @@ function OrderTicketsModal({
              * popping in flat. `motion-reduce:animate-none` honors the
              * OS reduced-motion preference. Inline embed skips the
              * animation since it isn't a modal entrance in that mode. */
-            className={`rounded-2xl flex flex-col w-full overflow-hidden bg-bg-primary border border-border-light ${
-                inline ? '' : 'animate-dv-fade-in motion-reduce:animate-none'
+            className={`flex flex-col w-full overflow-hidden bg-bg-primary border border-border-light ${
+                inline
+                    ? 'rounded-2xl'
+                    : 'max-h-[90vh] rounded-t-2xl sm:rounded-2xl animate-dv-slide-up sm:animate-dv-fade-in motion-reduce:animate-none'
             }`}
             style={
                 inline
                     ? undefined
                     : {
                           boxShadow: 'var(--shadow-lg, 0 20px 60px rgba(0,0,0,0.35))',
-                          maxHeight: '90vh',
                           maxWidth: 900
                       }
             }
@@ -255,7 +256,7 @@ function OrderTicketsModal({
              * opacity down from 0.55 → 0.45 because the blur already
              * does most of the focus-pulling work — keeping it darker
              * on top of the blur reads as heavy. */
-            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(0,0,0,0.45)] backdrop-blur-sm z-[2147483000] animate-fade-in-fast motion-reduce:animate-none"
+            className="fixed inset-0 flex items-end justify-center p-0 sm:items-center sm:p-4 bg-[rgba(0,0,0,0.45)] backdrop-blur-sm z-[2147483000] animate-fade-in-fast motion-reduce:animate-none"
         >
             {card}
         </div>,

@@ -23,6 +23,8 @@ export default function PlanScheduleGroupedCards({
     onPickPlant,
     onPickProduct,
     onPickStatus,
+    onViewOrder,
+    onViewTickets,
     plantFilterSet,
     plantNameByCode
 }) {
@@ -65,6 +67,8 @@ export default function PlanScheduleGroupedCards({
                                     onPickPlant={onPickPlant}
                                     onPickProduct={onPickProduct}
                                     onPickStatus={onPickStatus}
+                                    onViewOrder={onViewOrder}
+                                    onViewTickets={onViewTickets}
                                     order={o}
                                     plantCode={code}
                                     plantName={plantNameByCode?.[code]}

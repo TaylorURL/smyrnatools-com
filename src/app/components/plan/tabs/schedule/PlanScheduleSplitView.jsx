@@ -206,6 +206,8 @@ export default function PlanScheduleSplitView({
     nowMin,
     onOpenAudit,
     onOpenLocation,
+    onViewOrder,
+    onViewTickets,
     plantCityByCode,
     plantNameByCode,
     poolSourceByCode,
@@ -333,6 +335,8 @@ export default function PlanScheduleSplitView({
         isPlantFiltered: !!singlePlant,
         isToday,
         keyForOrder,
+        onViewOrder,
+        onViewTickets,
         plantCityByCode,
         plantNameByCode,
         visibleColumns

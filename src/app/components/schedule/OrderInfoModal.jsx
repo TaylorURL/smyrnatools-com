@@ -164,13 +164,16 @@ function OrderInfoModal({
     const card = (
         <div
             onClick={inline ? undefined : (e) => e.stopPropagation()}
-            className="rounded-lg flex flex-col w-full overflow-hidden bg-bg-primary border border-border-light"
+            className={`flex flex-col w-full overflow-hidden bg-bg-primary border border-border-light ${
+                inline
+                    ? 'rounded-lg'
+                    : 'max-h-[90vh] rounded-t-2xl sm:rounded-lg animate-dv-slide-up sm:animate-dv-fade-in motion-reduce:animate-none'
+            }`}
             style={
                 inline
                     ? undefined
                     : {
                           boxShadow: 'var(--shadow-lg, 0 20px 60px rgba(0,0,0,0.35))',
-                          maxHeight: '88vh',
                           maxWidth: 760
                       }
             }
@@ -373,7 +376,7 @@ function OrderInfoModal({
             role="dialog"
             aria-modal="true"
             onClick={onClose}
-            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)] z-[2147483000]"
+            className="fixed inset-0 flex items-end justify-center p-0 sm:items-center sm:p-4 bg-[rgba(0,0,0,0.55)] z-[2147483000] animate-fade-in-fast motion-reduce:animate-none"
         >
             {card}
         </div>,

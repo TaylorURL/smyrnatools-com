@@ -143,6 +143,19 @@ const buildScorecardStatus = ({ isSingleDay, plant, singleDayShiftSpan, trucks }
  * by yardage, with utilization context (loads/active-day, share of regional
  * yardage, plus a status pill when truck counts are known for the day).
  */
+function ScorecardStat({ label, strong, value }) {
+    return (
+        <div className="flex items-center justify-between gap-2">
+            <span className="text-text-tertiary">{label}</span>
+            <span
+                className={`font-mono tabular-nums ${strong ? 'font-semibold text-text-primary' : 'text-text-secondary'}`}
+            >
+                {value}
+            </span>
+        </div>
+    )
+}
+
 export function PlantScorecardTable({
     accent,
     isSingleDay,
@@ -157,6 +170,24 @@ export function PlantScorecardTable({
         return <div className="text-[12px] py-4 text-center text-text-tertiary">No plant production in this range.</div>
     }
     const sorted = [...rows].sort((a, b) => b.yardage - a.yardage)
+    /* Derived per-plant values computed once so the desktop table and the
+     * mobile card list can never diverge. */
+    const computed = sorted.map((plant) => {
+        const attribution = loadAttributionByPlant?.[plant.code]
+        return {
+            crossInYards: attribution?.crossInYards || 0,
+            crossOutYards: attribution?.crossOutYards || 0,
+            plant,
+            selfLoadedYards: attribution?.selfLoaded || 0,
+            share: totalYardage > 0 ? (plant.yardage / totalYardage) * 100 : 0,
+            status: buildScorecardStatus({
+                isSingleDay,
+                plant,
+                singleDayShiftSpan,
+                trucks: mixerCountsByPlant?.[plant.code] || 0
+            })
+        }
+    })
     return (
         <div className="flex flex-col">
             <div className="px-3 py-2.5 text-[11.5px] leading-relaxed border-b border-border-light text-text-secondary">
@@ -172,7 +203,58 @@ export function PlantScorecardTable({
                 <span className="font-semibold">Own mixers loaded + Help given</span> = this plant&apos;s total mixer
                 output for the day.
             </div>
-            <div className="overflow-x-auto">
+            <div className="md:hidden flex flex-col gap-2 p-2">
+                {computed.map(({ crossInYards, crossOutYards, plant, selfLoadedYards, share, status }) => (
+                    <div
+                        key={plant.code}
+                        className="flex flex-col gap-2 rounded-lg border border-border-light bg-bg-secondary p-3"
+                    >
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-2">
+                                <Badge
+                                    variant="custom"
+                                    bg={plantBadgeColor(plant.code, accent)}
+                                    fg="#ffffff"
+                                    size="md"
+                                    weight="semibold"
+                                    className="font-mono tabular-nums"
+                                >
+                                    {plant.code}
+                                </Badge>
+                                {plantNameByCode?.[plant.code] && (
+                                    <span className="truncate text-[12px] text-text-secondary">
+                                        {plantNameByCode[plant.code]}
+                                    </span>
+                                )}
+                            </div>
+                            {status && (
+                                <Badge tone={status.tone} size="sm" weight="semibold" uppercase={false}>
+                                    {status.label}
+                                </Badge>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[12px]">
+                            <ScorecardStat label="Scheduled" strong value={`${fmtYards(plant.yardage)} yd³`} />
+                            <ScorecardStat
+                                label="Own loaded"
+                                value={selfLoadedYards > 0 ? `${fmtYards(selfLoadedYards)} yd³` : '—'}
+                            />
+                            <ScorecardStat
+                                label="Help received"
+                                value={crossInYards > 0 ? `${fmtYards(crossInYards)} yd³` : '—'}
+                            />
+                            <ScorecardStat
+                                label="Help given"
+                                value={crossOutYards > 0 ? `${fmtYards(crossOutYards)} yd³` : '—'}
+                            />
+                            <ScorecardStat label="Loads" value={fmtInt(plant.loads)} />
+                            <ScorecardStat label="Orders" value={fmtInt(plant.orderCount)} />
+                            <ScorecardStat label="Share" value={`${share.toFixed(1)}%`} />
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-[12px] border-collapse">
                     <thead>
                         <tr className="text-text-tertiary">
@@ -218,85 +300,64 @@ export function PlantScorecardTable({
                         </tr>
                     </thead>
                     <tbody>
-                        {sorted.map((plant) => {
-                            const share = totalYardage > 0 ? (plant.yardage / totalYardage) * 100 : 0
-                            const trucks = mixerCountsByPlant?.[plant.code] || 0
-                            const status = buildScorecardStatus({
-                                isSingleDay,
-                                plant,
-                                singleDayShiftSpan,
-                                trucks
-                            })
-                            const attribution = loadAttributionByPlant?.[plant.code]
-                            /* `selfLoaded` = this plant's own mixers loading
-                             * for this plant's own orders (the loaded total
-                             * minus help received). Switching to selfLoaded
-                             * makes the four yardage columns non-overlapping
-                             * so the row is actually addable: scheduled ≈
-                             * selfLoaded + helpReceived, mixerOutput =
-                             * selfLoaded + helpGiven. */
-                            const selfLoadedYards = attribution?.selfLoaded || 0
-                            const crossInYards = attribution?.crossInYards || 0
-                            const crossOutYards = attribution?.crossOutYards || 0
-                            return (
-                                <tr className="border-t border-border-light" key={plant.code}>
-                                    <td className="px-3 py-2">
-                                        <div className="flex items-center gap-2">
-                                            <Badge
-                                                variant="custom"
-                                                bg={plantBadgeColor(plant.code, accent)}
-                                                fg="#ffffff"
-                                                size="md"
-                                                weight="semibold"
-                                                className="font-mono tabular-nums"
-                                            >
-                                                {plant.code}
-                                            </Badge>
-                                            {plantNameByCode?.[plant.code] && (
-                                                <span className="truncate text-text-secondary">
-                                                    {plantNameByCode[plant.code]}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-2 py-2 text-right font-mono tabular-nums font-semibold text-text-primary">
-                                        {fmtYards(plant.yardage)}
-                                    </td>
-                                    <td
-                                        className="px-2 py-2 text-right font-mono tabular-nums text-text-primary"
-                                        title={
-                                            selfLoadedYards > 0
-                                                ? `${fmtYards(selfLoadedYards)} yd³ — this plant's own mixers, this plant's own orders`
-                                                : 'No own-mixer ticket data for this plant'
-                                        }
-                                    >
-                                        {selfLoadedYards > 0 ? fmtYards(selfLoadedYards) : '—'}
-                                    </td>
-                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
-                                        {crossInYards > 0 ? fmtYards(crossInYards) : '—'}
-                                    </td>
-                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
-                                        {crossOutYards > 0 ? fmtYards(crossOutYards) : '—'}
-                                    </td>
-                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
-                                        {fmtInt(plant.loads)}
-                                    </td>
-                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
-                                        {fmtInt(plant.orderCount)}
-                                    </td>
-                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
-                                        {share.toFixed(1)}%
-                                    </td>
-                                    <td className="px-3 py-2 text-right">
-                                        {status && (
-                                            <Badge tone={status.tone} size="sm" weight="semibold" uppercase={false}>
-                                                {status.label}
-                                            </Badge>
+                        {computed.map(({ crossInYards, crossOutYards, plant, selfLoadedYards, share, status }) => (
+                            <tr className="border-t border-border-light" key={plant.code}>
+                                <td className="px-3 py-2">
+                                    <div className="flex items-center gap-2">
+                                        <Badge
+                                            variant="custom"
+                                            bg={plantBadgeColor(plant.code, accent)}
+                                            fg="#ffffff"
+                                            size="md"
+                                            weight="semibold"
+                                            className="font-mono tabular-nums"
+                                        >
+                                            {plant.code}
+                                        </Badge>
+                                        {plantNameByCode?.[plant.code] && (
+                                            <span className="truncate text-text-secondary">
+                                                {plantNameByCode[plant.code]}
+                                            </span>
                                         )}
-                                    </td>
-                                </tr>
-                            )
-                        })}
+                                    </div>
+                                </td>
+                                <td className="px-2 py-2 text-right font-mono tabular-nums font-semibold text-text-primary">
+                                    {fmtYards(plant.yardage)}
+                                </td>
+                                <td
+                                    className="px-2 py-2 text-right font-mono tabular-nums text-text-primary"
+                                    title={
+                                        selfLoadedYards > 0
+                                            ? `${fmtYards(selfLoadedYards)} yd³ — this plant's own mixers, this plant's own orders`
+                                            : 'No own-mixer ticket data for this plant'
+                                    }
+                                >
+                                    {selfLoadedYards > 0 ? fmtYards(selfLoadedYards) : '—'}
+                                </td>
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
+                                    {crossInYards > 0 ? fmtYards(crossInYards) : '—'}
+                                </td>
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
+                                    {crossOutYards > 0 ? fmtYards(crossOutYards) : '—'}
+                                </td>
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
+                                    {fmtInt(plant.loads)}
+                                </td>
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
+                                    {fmtInt(plant.orderCount)}
+                                </td>
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
+                                    {share.toFixed(1)}%
+                                </td>
+                                <td className="px-3 py-2 text-right">
+                                    {status && (
+                                        <Badge tone={status.tone} size="sm" weight="semibold" uppercase={false}>
+                                            {status.label}
+                                        </Badge>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
