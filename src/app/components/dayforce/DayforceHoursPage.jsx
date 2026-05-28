@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 
 import { fmtFloat, fmtInt, fmtRange } from '../../../utils/PlanStatisticsFormatUtility'
 import useDayforceOperatorFilters from '../../hooks/useDayforceOperatorFilters'
@@ -7,9 +7,8 @@ import useDayforceOperatorMetrics from '../../hooks/useDayforceOperatorMetrics'
 import { EmptySection, RefreshingHint } from '../plan/tabs/statistics/PlanStatisticsPages'
 import { Panel, Stat, StatGroup } from '../ui/Panel'
 import { DayforceFilters } from './DayforceFilters'
-import OperatorDailyStrip from './hours/OperatorDailyStrip'
 import OperatorHoursRow from './hours/OperatorHoursRow'
-import PlantPressureTable from './hours/PlantPressureTable'
+import PlantLaborCostTable from './hours/PlantLaborCostTable'
 
 const HOURS_SORT_IDS = ['hours', 'ot', 'name']
 
@@ -50,10 +49,10 @@ function LoadingSkeleton() {
  *
  * Answers three operational questions in order:
  *   1. What's the headline OT exposure for the window? — summary stats
- *   2. Which plants are driving it? — "OT pressure by plant" table.
- *      Click a row to scope the operator table to that plant.
+ *   2. What does each plant cost? — per-plant regular vs OT hours and
+ *      total labor cost (time-and-a-half over 8/day OR 40/week).
  *   3. What does one operator's pattern look like? — per-operator
- *      table rows expand inline to reveal a 7-day shift mini-chart.
+ *      table rows showing actual / OT / OT% / PTO.
  *
  * Scheduled hours intentionally dropped from the headline view — the
  * dispatcher cares about what got worked, not what was on the schedule.
@@ -61,48 +60,44 @@ function LoadingSkeleton() {
 export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selectedPlant }) {
     const accent = accentColor || '#1e3a5f'
     const dayforceMetrics = useDayforceOperatorMetrics({ dateRange, plantCodes, selectedPlant })
-    const { diagnostics, excluded, hasSyncedData, isLoading, perOperator, perPlant, perShift, perWeek, totals } =
-        dayforceMetrics
+    const { diagnostics, excluded, hasSyncedData, isLoading, perOperator, perPlant, perWeek, totals } = dayforceMetrics
     const filters = useDayforceOperatorFilters({ defaultSort: 'hours', rows: perOperator })
 
-    /* Local plant filter that scopes the operator table to a single plant
-     * when the user clicks a row in the plant pressure panel. Independent
-     * from the page-level `selectedPlant` prop so the dispatcher can drill
-     * in without leaving the page. */
-    const [focusedPlantCode, setFocusedPlantCode] = useState(null)
-    const [expandedOperatorId, setExpandedOperatorId] = useState(null)
-
-    /* Roll up OT exposure per rostered plant. The shared hook ships
-     * `perPlant` with totals only — to surface OT specifically we have
-     * to bucket from `perOperator` (where the OT split lives, since OT
-     * is computed per operator-week, not per shift). */
-    const plantPressure = useMemo(() => {
+    /* Per-plant labor cost rollup. `perOperator` already has the weekly
+     * OT split applied via `computeWeeklyCost` (daily >8h AND weekly
+     * >40h, both at 1.5x), so we can sum regHours/otHours/regCost/otCost
+     * straight into plant buckets without re-computing OT here. */
+    const plantLaborCosts = useMemo(() => {
         const nameByCode = new Map((perPlant || []).map((p) => [String(p.code), p.name]))
         const buckets = new Map()
         for (const row of perOperator) {
             const code = row.plantCode || 'Unassigned'
             const bucket = buckets.get(code) || {
-                actualHours: 0,
                 code,
                 name: nameByCode.get(String(code)) || (code === 'Unassigned' ? 'Unassigned' : code),
                 operatorCount: 0,
-                operatorsOverOt: 0,
                 otCost: 0,
-                otHours: 0
+                otHours: 0,
+                regCost: 0,
+                regHours: 0,
+                totalCost: 0,
+                totalHours: 0
             }
-            bucket.actualHours += row.actualHours
-            bucket.otHours += row.otHours
-            bucket.otCost += row.otCost
+            bucket.regHours += row.regHours || 0
+            bucket.otHours += row.otHours || 0
+            bucket.regCost += row.regCost || 0
+            bucket.otCost += row.otCost || 0
+            bucket.totalHours += row.actualHours || 0
+            bucket.totalCost += row.totalCost || 0
             bucket.operatorCount += 1
-            if (row.otHours > 0) bucket.operatorsOverOt += 1
             buckets.set(code, bucket)
         }
-        return Array.from(buckets.values()).sort((a, b) => b.otCost - a.otCost || b.actualHours - a.actualHours)
+        return Array.from(buckets.values()).sort((a, b) => b.totalCost - a.totalCost || b.totalHours - a.totalHours)
     }, [perOperator, perPlant])
 
-    const maxPlantOtCost = useMemo(
-        () => plantPressure.reduce((max, p) => Math.max(max, p.otCost || 0), 0),
-        [plantPressure]
+    const maxPlantTotalCost = useMemo(
+        () => plantLaborCosts.reduce((max, p) => Math.max(max, p.totalCost || 0), 0),
+        [plantLaborCosts]
     )
 
     const avgWeeklyHours = useMemo(() => computeAvgWeeklyHours(perOperator, perWeek), [perOperator, perWeek])
@@ -110,35 +105,12 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
     const operatorsInOt = useMemo(() => perOperator.filter((r) => r.otHours > 0).length, [perOperator])
     const otCostShareOfPayroll = totals.totalCost > 0 ? (totals.otCost / totals.totalCost) * 100 : 0
 
-    /* Apply both the plant focus and the user filter to the table rows. */
-    const tableRows = useMemo(() => {
-        if (!focusedPlantCode) return filters.filtered
-        return filters.filtered.filter((r) => (r.plantCode || 'Unassigned') === focusedPlantCode)
-    }, [filters.filtered, focusedPlantCode])
+    const tableRows = filters.filtered
 
     const maxOperatorHours = useMemo(
         () => tableRows.reduce((max, row) => Math.max(max, row.actualHours || 0), 1),
         [tableRows]
     )
-
-    /* Pre-bucket per-shift rows by employee so the row-expand handler
-     * doesn't re-filter the entire perShift list on every render. */
-    const shiftsByEmployee = useMemo(() => {
-        const map = new Map()
-        for (const s of perShift || []) {
-            const arr = map.get(s.dayforceEmployeeId) || []
-            arr.push(s)
-            map.set(s.dayforceEmployeeId, arr)
-        }
-        for (const arr of map.values()) {
-            arr.sort((a, b) => String(a.shiftDate).localeCompare(String(b.shiftDate)))
-        }
-        return map
-    }, [perShift])
-
-    const togglePlantFocus = (code) => {
-        setFocusedPlantCode((current) => (current === code ? null : code))
-    }
 
     if (isLoading && diagnostics.shiftsLoaded === 0) return <LoadingSkeleton />
 
@@ -230,33 +202,15 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
                 </div>
             </Panel>
 
-            <Panel
-                title="OT pressure by plant"
-                right={
-                    focusedPlantCode ? (
-                        <button
-                            type="button"
-                            onClick={() => setFocusedPlantCode(null)}
-                            className="text-[11px] text-text-secondary hover:text-text-primary flex items-center gap-1 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                        >
-                            <i className="fas fa-xmark text-[10px]" /> Clear plant filter ({focusedPlantCode})
-                        </button>
-                    ) : null
-                }
-            >
+            <Panel title="Labor cost by plant">
                 <div className="text-[11.5px] mb-2 text-text-secondary">
-                    Which plants are eating the OT budget — sorted by OT cost, worst first. Click any row to filter the
-                    operator table below to that plant.
+                    Per-plant breakdown of regular vs OT hours and total labor cost — sorted by labor cost, highest
+                    first. OT is time-and-a-half on hours past 8 in a single day or past 40 in a single week.
                 </div>
-                {plantPressure.length === 0 ? (
+                {plantLaborCosts.length === 0 ? (
                     <EmptySection icon="fa-circle-info" message="No plant data in the window." />
                 ) : (
-                    <PlantPressureTable
-                        focusedPlantCode={focusedPlantCode}
-                        maxOtCost={maxPlantOtCost}
-                        onTogglePlant={togglePlantFocus}
-                        plants={plantPressure}
-                    />
+                    <PlantLaborCostTable accent={accent} maxTotalCost={maxPlantTotalCost} plants={plantLaborCosts} />
                 )}
             </Panel>
 
@@ -282,7 +236,6 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
                     ) : (
                         <span className="text-[11px] text-text-tertiary">
                             {tableRows.length} of {perOperator.length} shown
-                            {focusedPlantCode ? ` · ${focusedPlantCode} only` : ''}
                         </span>
                     )
                 }
@@ -295,7 +248,6 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
                 ) : (
                     <div>
                         <div className="flex items-center gap-2 px-3 py-2 text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary border-b border-border-light bg-bg-tertiary">
-                            <span className="w-3 shrink-0" aria-hidden="true" />
                             <span className="w-12 shrink-0">Badge</span>
                             <span className="flex-1">Operator</span>
                             <span className="w-14 text-right shrink-0">Actual</span>
@@ -303,28 +255,14 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
                             <span className="w-12 text-right shrink-0 hidden sm:inline">OT %</span>
                             <span className="w-14 text-right shrink-0 hidden md:inline">PTO</span>
                         </div>
-                        {tableRows.map((row) => {
-                            const isExpanded = expandedOperatorId === row.dayforceEmployeeId
-                            return (
-                                <React.Fragment key={row.dayforceEmployeeId}>
-                                    <OperatorHoursRow
-                                        accent={accent}
-                                        isExpanded={isExpanded}
-                                        maxHours={maxOperatorHours}
-                                        onToggle={() =>
-                                            setExpandedOperatorId(isExpanded ? null : row.dayforceEmployeeId)
-                                        }
-                                        row={row}
-                                    />
-                                    {isExpanded && (
-                                        <OperatorDailyStrip
-                                            accent={accent}
-                                            dailyShifts={shiftsByEmployee.get(row.dayforceEmployeeId) || []}
-                                        />
-                                    )}
-                                </React.Fragment>
-                            )
-                        })}
+                        {tableRows.map((row) => (
+                            <OperatorHoursRow
+                                key={row.dayforceEmployeeId}
+                                accent={accent}
+                                maxHours={maxOperatorHours}
+                                row={row}
+                            />
+                        ))}
                     </div>
                 )}
             </Panel>

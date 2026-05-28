@@ -122,6 +122,19 @@ function CallListView({ accentColor, planColocationMap, plantNameByCode }) {
         setSelectedCustomerNum(null)
     }, [activeSection])
 
+    /* Reset scroll on every section change — sister Asset / Person
+     * Statistics views ship the same effect. Hits every marked
+     * `[data-content-scroll]` container so swapping between Outreach /
+     * Activity / Team Monitor / Directory always lands the user at the
+     * top of the new page. */
+    useEffect(() => {
+        if (typeof document === 'undefined') return
+        document.querySelectorAll('[data-content-scroll]').forEach((el) => {
+            if (typeof el?.scrollTo === 'function') el.scrollTo({ top: 0 })
+            else if (el) el.scrollTop = 0
+        })
+    }, [activeSection])
+
     /** Clicking a row in the Activity Feed jumps the user to that
      *  customer's detail view on the Outreach page. The customer might
      *  live in the cooldown tier (already called), so we fall back to

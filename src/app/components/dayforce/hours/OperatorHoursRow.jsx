@@ -7,26 +7,15 @@ const COLOR_WARN = 'var(--status-warning)'
 
 const fmtHours = (n) => `${fmtFloat(n, 1)}h`
 
-/** Single operator row — actual / OT / OT% / PTO. Clickable: expands to
- *  reveal an inline 7-day shift strip below. */
-function OperatorHoursRow({ accent, isExpanded, maxHours, onToggle, row }) {
+/** Single operator row — actual / OT / OT% / PTO. Read-only: the row
+ *  surfaces the totals for the window without a per-day drill-down. */
+function OperatorHoursRow({ accent, maxHours, row }) {
     const otSharePct = row.actualHours > 0 ? (row.otHours / row.actualHours) * 100 : 0
     const pct = maxHours > 0 ? (row.actualHours / maxHours) * 100 : 0
     const otPct = maxHours > 0 ? (row.otHours / maxHours) * 100 : 0
     return (
-        <button
-            type="button"
-            onClick={onToggle}
-            aria-expanded={isExpanded}
-            className={`w-full flex flex-col gap-1 px-3 py-2 border-t border-border-light first:border-t-0 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none ${
-                isExpanded ? 'bg-bg-secondary' : 'hover:bg-bg-secondary'
-            } active:scale-[0.97]`}
-        >
+        <div className="w-full flex flex-col gap-1 px-3 py-2 border-t border-border-light first:border-t-0">
             <div className="flex items-center gap-2 text-[12.5px]">
-                <i
-                    className={`fas ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[9px] text-text-tertiary w-3 shrink-0`}
-                    aria-hidden="true"
-                />
                 <span className="font-mono tabular-nums w-12 shrink-0 text-text-tertiary">{row.badge || '—'}</span>
                 <div className="flex-1 min-w-0 flex items-center gap-2">
                     <span className="truncate text-text-primary font-semibold">{row.name}</span>
@@ -65,7 +54,7 @@ function OperatorHoursRow({ accent, isExpanded, maxHours, onToggle, row }) {
             {/* Stacked bar: regular hours in accent, OT hours in amber, on a
              *  shared canvas so the dispatcher sees both the absolute
              *  workload AND the OT chunk inside it without doing math. */}
-            <div className="h-1.5 rounded-sm overflow-hidden bg-bg-tertiary ml-[60px] relative">
+            <div className="h-1.5 rounded-sm overflow-hidden bg-bg-tertiary ml-12 relative">
                 <div className="h-full absolute left-0 top-0" style={{ background: accent, width: `${pct}%` }} />
                 {row.otHours > 0 && (
                     <div
@@ -78,7 +67,7 @@ function OperatorHoursRow({ accent, isExpanded, maxHours, onToggle, row }) {
                     />
                 )}
             </div>
-        </button>
+        </div>
     )
 }
 

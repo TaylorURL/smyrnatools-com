@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { StatisticsSkeleton } from '../../../app/components/common/PlanSkeletons'
@@ -192,6 +192,20 @@ function PlanStatisticsView({
         () => PLAN_STATS_SECTIONS.find((s) => s.id === activeSection) || PLAN_STATS_SECTIONS[0],
         [activeSection]
     )
+
+    /* Reset scroll on every section change — sister Asset / Person
+     * Statistics views ship the same effect. Hits every marked
+     * `[data-content-scroll]` container (Navigation chrome + this view's
+     * inner scroller) so swapping between Workforce tabs (Hours,
+     * Schedules, Efficiency) or any other section always lands the user
+     * at the top of the new page. */
+    useEffect(() => {
+        if (typeof document === 'undefined') return
+        document.querySelectorAll('[data-content-scroll]').forEach((el) => {
+            if (typeof el?.scrollTo === 'function') el.scrollTo({ top: 0 })
+            else if (el) el.scrollTop = 0
+        })
+    }, [activeSection])
 
     /** Each sub-page now owns its own empty + loading state, so we render
      *  the active sub-page unconditionally and pass `loading` + the

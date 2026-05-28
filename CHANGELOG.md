@@ -1,5 +1,44 @@
 # Changelog
 
+## [2026.22.18] - 2026-05-27
+
+- Operations > Statistics > Hours tab rework. The "OT pressure by plant"
+  panel and its click-to-filter behavior are gone, replaced by a new
+  "Labor cost by plant" panel in `src/app/components/dayforce/hours/
+  PlantLaborCostTable.jsx`. Each row surfaces the plant code + name, a
+  subtle cost-share bar (accent-tinted), regular hours, OT hours, total
+  hours (md+), and the combined labor cost — sorted by labor cost desc
+  so the highest-spend plant reads first. OT respects the daily-AND-
+  weekly rule already baked into `computeWeeklyCost` (time-and-a-half
+  on hours past 8/day OR 40/week, no double-counting), so the table
+  inherits the correct premium without recomputing anything plant-side.
+- Per-operator hours rows are no longer expandable. The chevron, daily
+  shift mini-chart, and the click-to-toggle button semantics are
+  removed from `OperatorHoursRow.jsx` — rows render as plain divs with
+  the same actual/OT/OT%/PTO columns and the stacked bar underneath.
+  `DayforceHoursPage.jsx` drops `expandedOperatorId`, `shiftsByEmployee`,
+  the row-fragment wrapper, and the now-unused `perShift` destructure;
+  the focused-plant filter caption ("X only") in the panel header is
+  gone too since the OT-pressure panel that drove it no longer exists.
+- Three dead Hours sub-components removed: `PlantPressureTable.jsx`
+  (replaced by the new labor-cost table), `OperatorDailyStrip.jsx` (the
+  expand-only daily mini-chart), and a duplicate `hours/SpotlightColumn
+  .jsx` that was never imported — the live Efficiency-page version
+  exported from `DayforceEfficiencyPieces.jsx` continues to be the only
+  one in use.
+- Scroll-to-top fix on Operations > Statistics and Operations > Call
+  list. Swapping side-menu options (Hours / Schedules / Efficiency,
+  plus every other Plan Statistics section, and Call-list Outreach /
+  Activity / Team Monitor / Directory) used to preserve the previous
+  page's scroll position, which read as "the new tab dropped me into
+  the middle of itself." Added a `useEffect` keyed on the active
+  section in both `PlanStatisticsView.jsx` and `CallListView.jsx` that
+  walks every `[data-content-scroll]` container and resets `scrollTop`
+  to 0 — same pattern Asset Statistics and Person Statistics already
+  ship. Only became obvious now because Hours / Schedules / Efficiency
+  are the first Plan-Statistics subpages long enough to require
+  scrolling.
+
 ## [2026.22.17] - 2026-05-27
 
 - Plan Dashboard yardage breakdown redesigned and relocated. The
