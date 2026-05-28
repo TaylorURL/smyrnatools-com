@@ -77,6 +77,16 @@ async function getMaxRoleWeight(userId: string): Promise<number> {
     return Math.max(0, ...data.map((p: any) => p.users_roles?.weight ?? 0))
 }
 
+async function requireITAccess(_supabase: any, req: Request, headers: any, body?: any): Promise<Response | null> {
+    const auth = await requireAuthenticated(_supabase, req, headers, body)
+    if (auth instanceof Response) return auth
+    const admin = getAdminClient()
+    const { data } = await admin.from(PERMISSIONS_TABLE).select('users_roles(name)').eq('user_id', auth)
+    const hasITAccess = data?.some((p: any) => p.users_roles?.name === 'IT Access')
+    if (!hasITAccess) return errorResponse('Forbidden: IT Access required', headers, 403)
+    return null
+}
+
 async function requireElevatedOrOutranking(
     _supabase: any,
     req: Request,
@@ -446,9 +456,9 @@ Deno.serve(async (req) => {
             case 'delete-manager': {
                 const { userId: delId } = body
                 if (!delId) return errorResponse('User ID is required', headers)
-                const resolvedDelId = resolveUserId(delId)
-                const authErr = await requireElevatedOrOutranking(supabase, req, headers, body, resolvedDelId)
+                const authErr = await requireITAccess(supabase, req, headers, body)
                 if (authErr) return authErr
+                const resolvedDelId = resolveUserId(delId)
                 const { error } = await supabase.from(USERS_TABLE).delete().eq('id', resolvedDelId)
                 if (error) return errorResponse('Failed to delete manager', headers, 500)
                 return jsonResponse(true, headers)

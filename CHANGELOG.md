@@ -1,5 +1,33 @@
 # Changelog
 
+## [2026.22.19] - 2026-05-27
+
+- Managers detail view now supports hard-deleting a user, gated to IT Access
+  holders. The footer "Delete" button in `ManagerDetailFooterActions.jsx` was
+  wired to a state setter that was never called (`_setCanDeleteManager`), so it
+  never rendered; `ManagerDetailView.jsx` now resolves the current user's roles
+  via `UserService.getUserRoles` and enables the button on the `IT Access` role.
+  Delete is shown independently of edit permission — an IT admin can remove a
+  manager they can't otherwise edit (different plant / higher role weight) —
+  while Save stays gated on edit rights.
+- `user-service` `delete-manager` endpoint hardened. It previously accepted any
+  elevated-or-outranking caller; it now calls a new `requireITAccess` guard that
+  rejects anyone without the `IT Access` role (403). Paired with cascade foreign
+  keys on the user account tables, deleting the parent `users` row now purges the
+  dependent `users_profiles` / `users_permissions` / `users_sessions` /
+  `users_preferences` / `users_presence` records in a single operation.
+- Manager detail footer buttons now collapse with the sidebar. Save/Delete used
+  hardcoded inline Tailwind classes that ignored the `.dv-sidebar-collapsed`
+  state; switched to the shared `global-button-secondary` class (matching
+  `MixerDetailToolbar.jsx`) so the label hides, padding tightens, and the buttons
+  stack vertically when the detail sidebar is minimized.
+- Role badge dots are now tier-colored instead of a washed-out near-white. New
+  `src/utils/RoleColorUtility.js` maps role weight to a theme-aware status token
+  (admin → danger, executive → warning, manager → accent, specialist → shop,
+  field → active, entry → spare, inactive → text-tertiary). `ManagerCard.jsx`
+  (grid) and `ManagersView.jsx` (list) consume `getRoleColor` for the role pill,
+  replacing a hardcoded `var(--accent)` and a hardcoded `#e0e7ff` respectively.
+
 ## [2026.22.18] - 2026-05-27
 
 - Operations > Statistics > Hours tab rework. The "OT pressure by plant"

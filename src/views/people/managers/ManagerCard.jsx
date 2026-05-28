@@ -2,10 +2,11 @@ import React from 'react'
 
 import Badge from '../../../app/components/common/Badge'
 import CardSection from '../../../app/components/sections/CardSection'
+import { getRoleColor } from '../../../utils/RoleColorUtility'
 
 /** Grid-mode card for a single manager displaying email, plant, and role badge. */
 function ManagerCard({ manager, plantName, onSelect }) {
-    const roleColor = 'var(--accent)'
+    const roleColor = getRoleColor(manager)
     return (
         <CardSection
             item={manager}

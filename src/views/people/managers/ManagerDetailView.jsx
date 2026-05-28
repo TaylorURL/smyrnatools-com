@@ -55,12 +55,30 @@ function ManagerDetailView({ managerId, onClose }) {
     const [showPlantModal, setShowPlantModal] = useState(false)
     const [showAdditionalPlantsModal, setShowAdditionalPlantsModal] = useState(false)
     const [canEditManager, setCanEditManager] = useState(false)
-    const [canDeleteManager, _setCanDeleteManager] = useState(false)
+    const [canDeleteManager, setCanDeleteManager] = useState(false)
 
     useEffect(() => {
         document.body.classList.add('in-detail-view')
         return () => document.body.classList.remove('in-detail-view')
     }, [])
+
+    useEffect(() => {
+        if (!user?.id) {
+            setCanDeleteManager(false)
+            return
+        }
+        let cancelled = false
+        UserService.getUserRoles(user.id)
+            .then((roles) => {
+                if (!cancelled) setCanDeleteManager(roles.some((role) => role?.name === 'IT Access'))
+            })
+            .catch(() => {
+                if (!cancelled) setCanDeleteManager(false)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [user?.id])
 
     const fetchManagerDetails = useCallback(
         async function fetchManagerDetails() {

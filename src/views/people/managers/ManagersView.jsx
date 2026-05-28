@@ -12,6 +12,7 @@ import AssetListSkeleton from '../../../app/components/ui/AssetListSkeleton'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { PlantService } from '../../../services/PlantService'
 import { UserService } from '../../../services/UserService'
+import { getRoleColor } from '../../../utils/RoleColorUtility'
 import ManagerCard from './ManagerCard'
 import ManagerDetailView from './ManagerDetailView'
 
@@ -388,7 +389,7 @@ function ManagersView({ title = 'Managers', onSelectManager }) {
                                                     {manager.roleName ? (
                                                         <Badge
                                                             variant="custom"
-                                                            bg="#e0e7ff"
+                                                            bg={getRoleColor(manager)}
                                                             fg="var(--text-primary)"
                                                             size="sm"
                                                         >
