@@ -4,10 +4,7 @@ import Badge from '../../../app/components/common/Badge'
 import PlanDashboardActivityFeed from '../../../app/components/plan/tabs/dashboard/PlanDashboardActivityFeed'
 import { PlanDashboardAtAGlance } from '../../../app/components/plan/tabs/dashboard/PlanDashboardAtAGlance'
 import PlanDashboardClockInBoard from '../../../app/components/plan/tabs/dashboard/PlanDashboardClockInBoard'
-import {
-    PlanInsightsList,
-    PlanYardageByPlantList
-} from '../../../app/components/plan/tabs/dashboard/PlanDashboardLists'
+import { PlanInsightsList } from '../../../app/components/plan/tabs/dashboard/PlanDashboardLists'
 import { PlanChecklistRow, PlanFlowSummary } from '../../../app/components/plan/tabs/dashboard/PlanDashboardYourScope'
 import PlanNotesSection from '../../../app/components/plan/tabs/dashboard/PlanNotesSection'
 import { Panel as SharedPanel, Stat as SharedStat } from '../../../app/components/ui/Panel'
@@ -456,24 +453,17 @@ function PlanDashboardView({
                         <PlanInsightsList warnings={planInsights.warnings} suggestions={planInsights.suggestions} />
                     )}
 
-                    {stats.length > 0 && (
-                        <PlanYardageByPlantList
-                            accentColor={accentColor}
-                            plantProduction={plantProduction}
-                            stats={stats}
-                            totalYardage={totalYardage}
-                        />
-                    )}
-
                     <div className="h-8" />
                 </div>
 
                 <PlanDashboardAtAGlance
+                    accentColor={accentColor}
                     earliestClockIn={earliestClockIn}
                     planDate={planDate}
+                    plantNameByCode={plantNameByCode}
+                    plantProduction={plantProduction}
                     shiftSpanHours={shiftSpanHours}
-                    specialCount={specialJobs.length}
-                    qcCount={qcJobs.length}
+                    stats={stats}
                     totalOps={totalOps}
                     totalYardage={totalYardage}
                     validAssignmentCount={validAssignmentCount}

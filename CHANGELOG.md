@@ -1,5 +1,39 @@
 # Changelog
 
+## [2026.22.17] - 2026-05-27
+
+- Plan Dashboard yardage breakdown redesigned and relocated. The
+  "Yardage by plant" panel at the bottom of the center column is gone;
+  the breakdown now lives in the right-rail at-a-glance beneath the
+  existing stat rows. The new `YardageByPlantRail` / `YardageRow` in
+  `src/app/components/plan/tabs/dashboard/PlanDashboardAtAGlance.jsx`
+  adopts the Schedule tab's visual vocabulary — `PlantBadge` chips on
+  the left, hairline `border-b border-border-light` dividers between
+  rows, heading-font hero values (`font-heading font-bold text-[15px]
+  tracking-tight tabular-nums`) with a small uppercase `yd` suffix,
+  and the Schedule's signature 9.5px uppercase section label. Zero-
+  yardage plants are hidden so the 240px column stays scannable;
+  sorted descending so the day's top producer reads first.
+- `PlanYardageByPlantList` removed from `PlanDashboardLists.jsx` (46
+  LOC) — the standalone center-column panel is dead code now that the
+  rail owns the breakdown. Import + call site cleaned up in
+  `PlanDashboardView.jsx`.
+- Right-rail metrics overhaul on the Plan dashboard. Removed the
+  "Extra Diligence" row (the special + QC tally still surfaces inside
+  the "Your X" attention chip — the rail copy was a duplicate).
+  Renamed "Operators" to "Operators Assisting" so the label matches
+  what the metric actually counts (operators moving between plants
+  today, not the full roster). Added a new "Clocked In" row above it
+  sourced from `OperatorClockStatusContext.statusByBadge`, polled
+  every 90s, so dispatchers see the live on-clock headcount next to
+  the assist count. Dropped the now-unused `specialCount` / `qcCount`
+  props on `PlanDashboardAtAGlance` and the matching arguments at the
+  call site in `PlanDashboardView.jsx`.
+- Title Case label sweep on the Plan rail — `Earliest Clock-In`,
+  `Shift Span`, and the new `Yardage By Plant` section header all
+  follow the same per-word capitalization rule the main Dashboard
+  at-a-glance adopted in v22.16.
+
 ## [2026.22.16] - 2026-05-27
 
 - Operations > Statistics > Workforce data-fetch fixes. Two bugs that
