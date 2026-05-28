@@ -259,7 +259,13 @@ async function resolvePlantRecipients(
     const normalizeDistricts = (value: unknown): string[] => {
         if (!Array.isArray(value)) return []
         return value
-            .map((entry) => (typeof entry === 'string' ? entry : entry && typeof entry === 'object' ? (entry as { name?: string }).name || '' : ''))
+            .map((entry) =>
+                typeof entry === 'string'
+                    ? entry
+                    : entry && typeof entry === 'object'
+                      ? (entry as { name?: string }).name || ''
+                      : ''
+            )
             .map((s) => String(s || '').trim())
             .filter((s) => s.length > 0)
     }
@@ -428,7 +434,9 @@ async function resolvePlantRecipients(
         const email = emailById.get(id)
         if (!email) return null
         const profile = profileById.get(id)
-        const name = profile ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || undefined : undefined
+        const name = profile
+            ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || undefined
+            : undefined
         return { email, name }
     }
 
@@ -473,11 +481,7 @@ async function resolvePlantName(supabase: any, plantCode: string, fallback?: str
  * intended recipients (TO / CC), subject, HTML body, plus the redirected
  * send-time recipients with TEST_REDIRECT_EMAIL baked in.
  */
-async function resolveAllPlants(
-    supabase: any,
-    planDate: string,
-    plants: PlantInput[]
-): Promise<ResolvedPlant[]> {
+async function resolveAllPlants(supabase: any, planDate: string, plants: PlantInput[]): Promise<ResolvedPlant[]> {
     const out: ResolvedPlant[] = []
     for (const input of plants) {
         const code = isFiniteString(input?.code) ? input.code.trim() : ''
@@ -861,6 +865,9 @@ interface RosterRow {
     index: number
     isLeaveOff: boolean
     isOutbound: boolean
+    operatorHours?: number | null
+    operatorName?: string
+    operatorUnmatched?: boolean
 }
 
 function computeClockInRowsInternal(orders: any[], baseByPlant: Record<string, number>): ClockInRow[] {
@@ -941,7 +948,8 @@ function buildOutboundClockInRowsInternal(
             destinationOrder = destOrders.find((o: any) => (o.orderId || o.orderNum) === a.forOrderId) || null
         }
         const toJobMinutes = parseDurationMin(destinationOrder?.toJobTime)
-        const loadedTravelToJob = (travelMinutes as number) + (Number.isFinite(toJobMinutes) ? (toJobMinutes as number) : 0)
+        const loadedTravelToJob =
+            (travelMinutes as number) + (Number.isFinite(toJobMinutes) ? (toJobMinutes as number) : 0)
         const clockInOffset = isLoadedFromPlant
             ? PRE_TRIP_MIN + LOAD_MIN + loadedTravelToJob
             : PRE_TRIP_MIN + (travelMinutes as number)
@@ -1027,7 +1035,10 @@ function buildServerPayloads(
     plantNameByCode: Record<string, string>,
     planDate: string,
     activeMixerBaseByPlant: Record<string, number>,
-    travelMinutesByPair: Map<string, number>
+    travelMinutesByPair: Map<string, number>,
+    mixerOperatorsByPlant: Record<string, MixerOperator[]> = {},
+    workedHoursByOperatorId: Record<string, number> = {},
+    matchedOperatorIds: Set<string> = new Set()
 ): PlantInput[] {
     const production = planRow?.plant_production || {}
     const assignments = Array.isArray(planRow?.assignments) ? planRow.assignments : []
@@ -1078,10 +1089,20 @@ function buildServerPayloads(
                 return am - bm
             })
 
-        const customerSet = new Set(orders.map((o: any) => String(o.customer || '').trim().toUpperCase()).filter(Boolean))
+        const customerSet = new Set(
+            orders
+                .map((o: any) =>
+                    String(o.customer || '')
+                        .trim()
+                        .toUpperCase()
+                )
+                .filter(Boolean)
+        )
         const yardage = orders.reduce((sum: number, o: any) => sum + (o.yardage || 0), 0)
         const loadCount = orders.reduce((sum: number, o: any) => sum + (o.truckCount || 0), 0)
-        const startMinutes = orders.map((o: any) => timeToMin(o.startTime)).filter((m: number | null) => Number.isFinite(m)) as number[]
+        const startMinutes = orders
+            .map((o: any) => timeToMin(o.startTime))
+            .filter((m: number | null) => Number.isFinite(m)) as number[]
         const firstStart = startMinutes.length ? formatMin(Math.min(...startMinutes)) : ''
         const lastStart = startMinutes.length ? formatMin(Math.max(...startMinutes)) : ''
         const kpi = {
@@ -1119,7 +1140,9 @@ function buildServerPayloads(
                 const arriveTime = Number.isFinite(dt.arriveMin) ? formatMin(dt.arriveMin) : ''
                 const leaveTime = Number.isFinite(dt.leaveMin) ? formatMin(dt.leaveMin) : ''
                 const durationLabel =
-                    Number.isFinite(dt.arriveMin) && Number.isFinite(dt.leaveMin) && (dt.leaveMin as number) > (dt.arriveMin as number)
+                    Number.isFinite(dt.arriveMin) &&
+                    Number.isFinite(dt.leaveMin) &&
+                    (dt.leaveMin as number) > (dt.arriveMin as number)
                         ? `${arriveTime} – ${leaveTime}`
                         : ''
                 const base = {
@@ -1149,7 +1172,8 @@ function buildServerPayloads(
                 }
             })
         }
-        const byArrive = (a: any, b: any) => (timeToMin(a.arriveTime) ?? Infinity) - (timeToMin(b.arriveTime) ?? Infinity)
+        const byArrive = (a: any, b: any) =>
+            (timeToMin(a.arriveTime) ?? Infinity) - (timeToMin(b.arriveTime) ?? Infinity)
         helpIn.sort(byArrive)
         helpOut.sort(byArrive)
 
@@ -1179,6 +1203,37 @@ function buildServerPayloads(
         const localRows = computeClockInRowsInternal(flattenedOrders, localBaseByPlant)
         const roster = buildPlantRosterInternal(plantCode, effectiveBase, localRows, outboundRows)
 
+        /* Name and rank the roster: the plant's mixer operators sorted by
+         * fewest hours worked this week zip onto the slots in order. The
+         * roster is already brought-in-first then leave-off, so the lowest-
+         * hours operators fill the clock-in slots and the highest-hours land
+         * on the leave-off tail — keeping the crew's weekly hours even.
+         * Operators with no Dayforce match are flagged `unmatched` (hours
+         * unknown, NOT a real zero) and sink to the bottom so a name mismatch
+         * never wrongly schedules them first. Falls back to numbered slots
+         * when operator data is missing. */
+        const rankedOperators = (mixerOperatorsByPlant[plantCode] || [])
+            .map((operator) => {
+                const worked = workedHoursByOperatorId[operator.employeeId]
+                const isMatched = worked != null || matchedOperatorIds.has(operator.employeeId)
+                return {
+                    hours: worked != null ? worked : isMatched ? 0 : null,
+                    name: operator.name || operator.badge || '',
+                    unmatched: !isMatched
+                }
+            })
+            .sort((a, b) => {
+                if (a.unmatched !== b.unmatched) return a.unmatched ? 1 : -1
+                return (a.hours ?? 0) - (b.hours ?? 0) || a.name.localeCompare(b.name)
+            })
+        roster.forEach((slot, index) => {
+            const assigned = rankedOperators[index]
+            if (!assigned) return
+            slot.operatorName = assigned.name
+            slot.operatorHours = assigned.hours
+            slot.operatorUnmatched = assigned.unmatched
+        })
+
         out.push({
             code: plantCode,
             helpIn,
@@ -1201,6 +1256,161 @@ async function fetchPlantNameMap(supabase: any): Promise<Record<string, string>>
         if (row?.plant_code) map[row.plant_code] = row.plant_name || ''
     })
     return map
+}
+
+interface MixerOperator {
+    badge: string
+    employeeId: string
+    name: string
+    plantCode: string
+}
+
+/** Token-sorted canonical name key — verbatim port of `canonicalNameKey`
+ *  in `OperatorNameLookupUtility.ts` so server-side Dayforce↔operator
+ *  matching produces the same keys the client uses. Inlined (not imported)
+ *  to keep the edge bundle self-contained across the src/ boundary. */
+function canonicalNameKey(name?: string | null): string | null {
+    if (!name) return null
+    const stripped = String(name)
+        .toLowerCase()
+        .replace(/\s+\d+\s*$/, '')
+        .replace(/\s*\([^)]*\)\s*/g, ' ')
+        .replace(/[^a-z\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    const tokens = stripped.split(' ').filter(Boolean)
+    if (tokens.length === 0) return null
+    return tokens.sort().join(' ')
+}
+
+/** Monday (ISO week start) of `dateStr`, computed in UTC so a plain
+ *  YYYY-MM-DD never drifts a day. Returns YYYY-MM-DD. */
+function isoWeekStartStr(dateStr: string): string {
+    const date = new Date(`${dateStr}T00:00:00Z`)
+    if (Number.isNaN(date.getTime())) return ''
+    const isoDay = date.getUTCDay() || 7
+    date.setUTCDate(date.getUTCDate() - (isoDay - 1))
+    return date.toISOString().slice(0, 10)
+}
+
+/** `dateStr` shifted by `deltaDays`, UTC-safe, as YYYY-MM-DD. */
+function shiftDateStr(dateStr: string, deltaDays: number): string {
+    const date = new Date(`${dateStr}T00:00:00Z`)
+    if (Number.isNaN(date.getTime())) return ''
+    date.setUTCDate(date.getUTCDate() + deltaDays)
+    return date.toISOString().slice(0, 10)
+}
+
+/** Active mixer operators with the fields needed to name and rank them on
+ *  the clock-in roster. Mixer Operators only — the clock-in board staffs
+ *  concrete pours, so tractor (haul-side) operators never appear. */
+async function fetchActiveMixerOperators(supabase: any): Promise<MixerOperator[]> {
+    const { data, error } = await supabase
+        .from('operators')
+        .select('employee_id, name, smyrna_id, plant_code')
+        .eq('status', 'Active')
+        .eq('position', 'Mixer Operator')
+    if (error) {
+        console.warn('[daily-plan-email] fetchActiveMixerOperators failed:', error.message)
+        return []
+    }
+    return (data || []).map((row: any) => ({
+        badge: row.smyrna_id ? String(row.smyrna_id) : '',
+        employeeId: row.employee_id,
+        name: (row.name || '').trim(),
+        plantCode: row.plant_code || ''
+    }))
+}
+
+/** Each mixer operator's hours worked so far this pay week (ISO Monday
+ *  through the day before `planDate`), keyed by operator id. Sums Dayforce
+ *  `actual_hours` for the window and maps each Dayforce employee to an
+ *  operator via the same name-canonical / badge match the client uses, so
+ *  the email's "current hours" agrees with the dashboard. The window is a
+ *  few days (well under PostgREST's 1000-row cap), so no pagination. */
+async function fetchWorkedHoursByOperator(
+    supabase: any,
+    planDate: string,
+    mixerOperators: MixerOperator[]
+): Promise<{ matchedOperatorIds: Set<string>; workedHoursByOperatorId: Record<string, number> }> {
+    const weekStart = isoWeekStartStr(planDate)
+    const workedEnd = shiftDateStr(planDate, -1)
+    if (!weekStart || !workedEnd || workedEnd < weekStart) {
+        return { matchedOperatorIds: new Set(), workedHoursByOperatorId: {} }
+    }
+
+    const operatorByName = new Map<string, string>()
+    const operatorByBadge = new Map<string, string>()
+    for (const operator of mixerOperators) {
+        const key = canonicalNameKey(operator.name)
+        if (key && !operatorByName.has(key)) operatorByName.set(key, operator.employeeId)
+        if (operator.badge && !operatorByBadge.has(operator.badge))
+            operatorByBadge.set(operator.badge, operator.employeeId)
+    }
+
+    const { data: employees, error: empErr } = await supabase
+        .from('dayforce_employees')
+        .select('dayforce_employee_id, display_name, first_name, last_name, employee_badge')
+    if (empErr) {
+        console.warn('[daily-plan-email] dayforce_employees fetch failed:', empErr.message)
+        return { matchedOperatorIds: new Set(), workedHoursByOperatorId: {} }
+    }
+    const operatorIdByEmployeeId = new Map<string, string>()
+    for (const employee of employees || []) {
+        const nameKey =
+            canonicalNameKey(employee.display_name) ||
+            canonicalNameKey([employee.first_name, employee.last_name].filter(Boolean).join(' '))
+        let operatorId: string | undefined
+        if (nameKey && operatorByName.has(nameKey)) operatorId = operatorByName.get(nameKey)
+        if (!operatorId && employee.employee_badge && operatorByBadge.has(String(employee.employee_badge))) {
+            operatorId = operatorByBadge.get(String(employee.employee_badge))
+        }
+        if (operatorId) operatorIdByEmployeeId.set(employee.dayforce_employee_id, operatorId)
+    }
+
+    const { data: shifts, error: shiftErr } = await supabase
+        .from('dayforce_shifts')
+        .select('dayforce_employee_id, actual_hours, shift_date')
+        .gte('shift_date', weekStart)
+        .lte('shift_date', workedEnd)
+    if (shiftErr) {
+        console.warn('[daily-plan-email] dayforce_shifts fetch failed:', shiftErr.message)
+        return { matchedOperatorIds: new Set(operatorIdByEmployeeId.values()), workedHoursByOperatorId: {} }
+    }
+    const workedHoursByOperatorId: Record<string, number> = {}
+    for (const shift of shifts || []) {
+        const operatorId = operatorIdByEmployeeId.get(shift.dayforce_employee_id)
+        if (!operatorId) continue
+        workedHoursByOperatorId[operatorId] =
+            (workedHoursByOperatorId[operatorId] || 0) + (Number(shift.actual_hours) || 0)
+    }
+    return { matchedOperatorIds: new Set(operatorIdByEmployeeId.values()), workedHoursByOperatorId }
+}
+
+/** Bundles the two roster-naming inputs: each plant's active mixer operators
+ *  and every operator's hours-worked-this-week. Used by both the 4 PM send
+ *  and the 5 PM corrections pass so they name and rank operators identically. */
+async function fetchOperatorScheduleData(
+    supabase: any,
+    planDate: string
+): Promise<{
+    matchedOperatorIds: Set<string>
+    mixerOperatorsByPlant: Record<string, MixerOperator[]>
+    workedHoursByOperatorId: Record<string, number>
+}> {
+    const mixerOperators = await fetchActiveMixerOperators(supabase)
+    const { matchedOperatorIds, workedHoursByOperatorId } = await fetchWorkedHoursByOperator(
+        supabase,
+        planDate,
+        mixerOperators
+    )
+    const mixerOperatorsByPlant: Record<string, MixerOperator[]> = {}
+    for (const operator of mixerOperators) {
+        if (!operator.plantCode) continue
+        if (!mixerOperatorsByPlant[operator.plantCode]) mixerOperatorsByPlant[operator.plantCode] = []
+        mixerOperatorsByPlant[operator.plantCode].push(operator)
+    }
+    return { matchedOperatorIds, mixerOperatorsByPlant, workedHoursByOperatorId }
 }
 
 /** Active mixer-operator headcount per plant — the canonical "base"
@@ -1331,17 +1541,21 @@ async function handleCronSend(req: Request, headers: any): Promise<Response> {
     if (planErr) return errorResponse(planErr.message || 'Plan lookup failed', headers, 500)
     if (!planRow) return jsonResponse({ dryRun, planDate, reason: 'no-plan', skipped: true }, headers)
 
-    const [plantNameByCode, activeMixerBaseByPlant, travelMinutesByPair] = await Promise.all([
+    const [plantNameByCode, activeMixerBaseByPlant, travelMinutesByPair, scheduleData] = await Promise.all([
         fetchPlantNameMap(supabase),
         fetchActiveMixerBaseByPlant(supabase),
-        fetchTravelMinutesByPair(supabase)
+        fetchTravelMinutesByPair(supabase),
+        fetchOperatorScheduleData(supabase, planDate)
     ])
     const plants = buildServerPayloads(
         planRow,
         plantNameByCode,
         planDate,
         activeMixerBaseByPlant,
-        travelMinutesByPair
+        travelMinutesByPair,
+        scheduleData.mixerOperatorsByPlant,
+        scheduleData.workedHoursByOperatorId,
+        scheduleData.matchedOperatorIds
     )
     if (plants.length === 0) {
         return jsonResponse({ dryRun, planDate, reason: 'no-plants-with-content', skipped: true }, headers)
@@ -1662,10 +1876,11 @@ async function handleCronSendCorrections(req: Request, headers: any): Promise<Re
         plant_production: synthesizedProduction
     }
 
-    const [plantNameByCode, activeMixerBaseByPlant, travelMinutesByPair] = await Promise.all([
+    const [plantNameByCode, activeMixerBaseByPlant, travelMinutesByPair, scheduleData] = await Promise.all([
         fetchPlantNameMap(supabase),
         fetchActiveMixerBaseByPlant(supabase),
-        fetchTravelMinutesByPair(supabase)
+        fetchTravelMinutesByPair(supabase),
+        fetchOperatorScheduleData(supabase, planDate)
     ])
 
     const allPayloads = buildServerPayloads(
@@ -1673,7 +1888,10 @@ async function handleCronSendCorrections(req: Request, headers: any): Promise<Re
         plantNameByCode,
         planDate,
         activeMixerBaseByPlant,
-        travelMinutesByPair
+        travelMinutesByPair,
+        scheduleData.mixerOperatorsByPlant,
+        scheduleData.workedHoursByOperatorId,
+        scheduleData.matchedOperatorIds
     )
 
     const payloadsWithCorrections: PlantInput[] = allPayloads
@@ -1758,14 +1976,12 @@ async function handleBootstrap(req: Request, headers: any): Promise<Response> {
             ? body.edgeUrl.trim().replace(/\/$/, '')
             : `${supabaseUrl.replace(/\/$/, '')}/functions/v1`
     const admin = createAdminClient()
-    const { error } = await admin
-        .from(CRON_CONFIG_TABLE)
-        .upsert({
-            edge_internal_token: internalToken,
-            edge_url: edgeUrl,
-            id: 1,
-            updated_at: new Date().toISOString()
-        })
+    const { error } = await admin.from(CRON_CONFIG_TABLE).upsert({
+        edge_internal_token: internalToken,
+        edge_url: edgeUrl,
+        id: 1,
+        updated_at: new Date().toISOString()
+    })
     if (error) return errorResponse(error.message || 'Bootstrap failed', headers, 500)
     return jsonResponse({ edgeUrl, success: true }, headers)
 }

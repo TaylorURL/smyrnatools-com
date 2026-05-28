@@ -1,5 +1,37 @@
 # Changelog
 
+## [2026.22.22] - 2026-05-28
+
+- Operator scheduling by weekly hours on the Plan Dashboard clock-in board.
+  Instead of anonymous "Operator 1/2/3" slots, the board now names each
+  plant's Mixer Operators and orders them by the fewest hours worked so far
+  this week — the operators most owed work fill the clock-in slots first and
+  the highest-hours operators surface in a named "Leave off" list, so the
+  crew's weekly hours trend even. Each row shows the operator's name and
+  their week-to-date hours. The selection is automatic (no manual picker);
+  Mixer Operators only — tractor/haul-side operators never appear on this
+  board. New `src/app/components/plan/tabs/dashboard/PlanDashboardClockInBoard.jsx`
+  roster logic backed by `src/app/hooks/useOperatorWeeklyHours.js` (Dayforce
+  worked-hours for the ISO week through the day before the plan date) and
+  `src/app/hooks/useActiveOperatorsByPlant.js` (active mixer roster grouped
+  by plant).
+- The daily plan email mirrors the same logic server-side. `daily-plan-email`
+  computes each operator's week-to-date Dayforce hours in the edge function,
+  matches Dayforce employees to operators with a verbatim port of the
+  client's `canonicalNameKey` (name first, badge fallback), ranks each
+  plant's mixer operators by fewest hours, and names the roster slots +
+  leave-offs with their hours. The roster table header changed from "Slot"
+  to "Operator". Both the 4 PM send and the 5 PM corrections pass use it.
+- Unmatched operators are flagged, not zeroed. An operator whose name/badge
+  doesn't resolve to a Dayforce employee now shows "not on Dayforce" (hours
+  unknown) instead of an implied 0, and sorts to the bottom of the roster so
+  a name mismatch never wrongly schedules them first. Distinguished from a
+  real zero (matched but no shifts this week) via a new `matchedOperatorIds`
+  set exposed from `useDayforceOperatorMetrics`.
+- Added a footnote on both the Plan Dashboard clock-in board and the email:
+  operator hours rely on each driver's name matching across Dayforce, Tools,
+  and Jonel; if a name differs between systems the data shown will be wrong.
+
 ## [2026.22.21] - 2026-05-27
 
 - Operations > Schedule is now usable on a phone: viewing an order and viewing

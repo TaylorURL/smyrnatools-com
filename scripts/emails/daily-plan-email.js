@@ -199,9 +199,7 @@ function renderOrdersTable({ orders }) {
 function renderPlantBadge(code, name) {
     if (!code) return ''
     const safeCode = htmlEscape(code)
-    const safeName = name
-        ? `&nbsp;<span style="color:${INK_SOFT};font-weight:500;">${htmlEscape(name)}</span>`
-        : ''
+    const safeName = name ? `&nbsp;<span style="color:${INK_SOFT};font-weight:500;">${htmlEscape(name)}</span>` : ''
     return `<span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;color:${INK};">${safeCode}</span>${safeName}`
 }
 
@@ -296,13 +294,22 @@ function renderRoster({ roster }) {
             const flagToneName = isLeaveOff ? 'neutral' : op.isOutbound ? 'info' : 'warning'
             const flagTag = op.flag ? renderBadgeHtml({ label: op.flag, tone: flagToneName }) : ''
             const notesCell = [destinationTag, flagTag].filter(Boolean).join(' &nbsp;')
-            const slotNumber = op.index ? String(op.index) : (op.name || '—').slice(0, 1).toUpperCase()
-            const slotName = op.index ? `Slot ${op.index}` : op.name || '—'
+            const slotNumber = op.index
+                ? String(op.index)
+                : (op.operatorName || op.name || '—').slice(0, 1).toUpperCase()
+            const slotName = op.operatorName || (op.index ? `Slot ${op.index}` : op.name || '—')
+            const hoursLabel =
+                typeof op.operatorHours === 'number' ? `${(Math.round(op.operatorHours * 10) / 10).toFixed(1)}h` : ''
+            const metaLabel = op.operatorUnmatched
+                ? `<span style="color:#b45309;font-weight:400;font-size:11px;margin-left:6px;vertical-align:middle;">not on Dayforce</span>`
+                : hoursLabel
+                  ? `<span style="color:${INK_FAINT};font-weight:400;font-size:11px;margin-left:6px;vertical-align:middle;">${hoursLabel}</span>`
+                  : ''
             return `
 <tr>
-    <td style="${baseCell}width:90px;">
+    <td style="${baseCell}width:200px;">
         ${renderBadgeHtml({ bg: slotChipBg, fg: slotChipFg, label: slotNumber, marginRight: '8px', shape: 'pill', size: 'md' })}
-        <span style="font-weight:600;color:${isLeaveOff ? INK_FAINT : INK};font-size:12.5px;vertical-align:middle;">${htmlEscape(slotName)}</span>
+        <span style="font-weight:600;color:${isLeaveOff ? INK_FAINT : INK};font-size:12.5px;vertical-align:middle;">${htmlEscape(slotName)}</span>${metaLabel}
     </td>
     <td style="${baseCell}font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:100px;font-weight:600;color:${isLeaveOff ? INK_FAINT : INK};">${clockInCell}</td>
     <td style="${baseCell}">${notesCell || '<span style="color:#cbd5e1;">—</span>'}</td>
@@ -315,13 +322,16 @@ function renderRoster({ roster }) {
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;font-size:12.5px;border-radius:10px;overflow:hidden;border:1px solid ${BORDER};">
     <thead>
         <tr>
-            ${th('Slot', 'left', '90px')}
+            ${th('Operator', 'left', '200px')}
             ${th('Clock in', 'right', '100px')}
             ${th('Notes', 'left', null)}
         </tr>
     </thead>
     <tbody>${rows}</tbody>
-</table>`
+</table>
+<p style="margin:10px 2px 0;font-size:10.5px;line-height:1.5;color:${INK_FAINT};">
+    Operator hours rely on each driver&rsquo;s name matching across Dayforce, Tools, and Jonel. If a name differs between systems, their hours won&rsquo;t link up and the data shown here will be wrong.
+</p>`
 }
 
 /** "What changed since 4 PM" callout used by the 5 PM corrections email.
@@ -456,11 +466,7 @@ function renderCorrectionsText({ corrections }) {
 
 function renderTextFallback({ plantLabel, dateLabel, kpi, orders, notes, corrections }) {
     const isCorrections = !!corrections
-    const lines = [
-        `${isCorrections ? '[UPDATED] ' : ''}Daily Plan — ${plantLabel}`,
-        dateLabel,
-        ''
-    ]
+    const lines = [`${isCorrections ? '[UPDATED] ' : ''}Daily Plan — ${plantLabel}`, dateLabel, '']
     const correctionsLines = renderCorrectionsText({ corrections })
     if (correctionsLines.length) lines.push(...correctionsLines)
     lines.push(

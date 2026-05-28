@@ -11,7 +11,16 @@ import {
     PLAN_META_KEY,
     PRE_TRIP_MINUTES
 } from '../../../../../utils/PlanUtility'
+import useActiveOperatorsByPlant from '../../../../hooks/useActiveOperatorsByPlant'
+import useOperatorWeeklyHours from '../../../../hooks/useOperatorWeeklyHours'
 import Badge from '../../../common/Badge'
+
+/** The clock-in board staffs concrete pours, so only Mixer Operators are
+ *  scheduled here. Tractor operators (aggregate hauling) are a separate
+ *  operation and never belong on this board. */
+const CLOCK_IN_POSITIONS = new Set(['Mixer Operator'])
+
+const fmtWeeklyHours = (hours) => `${(Math.round(hours * 10) / 10).toFixed(1)}h`
 
 /** Flatten `plantProduction` into a single orders list filtered to the
  *  scope plants — the shape `computeClockInRows` expects. */
@@ -91,10 +100,13 @@ const buildOutboundClockInRows = ({ assignments, getTravelTime, plantProduction,
 const buildPlantBreakdowns = ({
     clockInRows,
     effectiveBaseByCode,
+    matchedOperatorIds,
+    operatorsByPlant,
     outboundClockInRows,
     plantCodes,
     plantNameByCode,
-    plantProduction
+    plantProduction,
+    workedByOperator
 }) => {
     return plantCodes
         .map((code) => {
@@ -116,13 +128,43 @@ const buildPlantBreakdowns = ({
                 .filter((entry) => entry.time != null)
                 .sort((a, b) => a.time - b.time)
 
-            const slotCount = Math.max(base, combined.length)
-            const slots = Array.from({ length: slotCount }, (_, i) => ({
-                index: i + 1,
-                outbound: combined[i]?.outbound ?? null,
-                time: combined[i]?.time ?? null
-            }))
             const needed = combined.length
+
+            /* Roster ordered by fewest hours worked so far this week: the
+             * operators most "owed" work fill the clock-in slots first, and
+             * the surplus (most hours) become the leave-off list — keeping the
+             * crew's weekly hours even. Operators with no Dayforce match are
+             * flagged `unmatched` (hours unknown, NOT a real zero) and sink to
+             * the bottom so a name mismatch never wrongly schedules them first. */
+            const roster = (operatorsByPlant?.get(code) || [])
+                .filter((operator) => CLOCK_IN_POSITIONS.has(operator.position))
+                .map((operator) => {
+                    const worked = workedByOperator?.get(operator.employeeId)
+                    const isMatched = worked != null || !!matchedOperatorIds?.has(operator.employeeId)
+                    return {
+                        hours: worked != null ? worked : isMatched ? 0 : null,
+                        name: operator.name || operator.smyrnaId || '',
+                        unmatched: !isMatched
+                    }
+                })
+                .sort((a, b) => {
+                    if (a.unmatched !== b.unmatched) return a.unmatched ? 1 : -1
+                    return (a.hours ?? 0) - (b.hours ?? 0) || a.name.localeCompare(b.name)
+                })
+
+            const slotCount = Math.max(base, combined.length)
+            const slots = Array.from({ length: slotCount }, (_, i) => {
+                const assigned = i < needed ? roster[i] : undefined
+                return {
+                    index: i + 1,
+                    operatorHours: assigned?.hours ?? null,
+                    operatorName: assigned?.name || null,
+                    operatorUnmatched: assigned?.unmatched ?? false,
+                    outbound: combined[i]?.outbound ?? null,
+                    time: combined[i]?.time ?? null
+                }
+            })
+            const leaveOffOperators = roster.slice(needed)
             const leaveOffCount = Math.max(0, base - needed)
             const earliestMinutes = combined[0]?.time ?? null
             const outboundCount = outboundSlots.length
@@ -132,6 +174,7 @@ const buildPlantBreakdowns = ({
                 earliestClockIn: earliestMinutes != null ? formatMinutesClock(earliestMinutes) : null,
                 firstJob,
                 leaveOffCount,
+                leaveOffOperators,
                 name: plantNameByCode?.[code] || '',
                 needed,
                 outboundCount,
@@ -177,8 +220,19 @@ function OutboundDestinationTag({ outbound }) {
  *  distinct from active clock-ins. Outbound-help slots show a destination
  *  tag so the manager spots operators leaving the yard. */
 function ClockInPlantCard({ accentColor, breakdown }) {
-    const { base, code, earliestClockIn, firstJob, leaveOffCount, name, needed, outboundCount, slots, totalYardage } =
-        breakdown
+    const {
+        base,
+        code,
+        earliestClockIn,
+        firstJob,
+        leaveOffCount,
+        leaveOffOperators,
+        name,
+        needed,
+        outboundCount,
+        slots,
+        totalYardage
+    } = breakdown
     return (
         <div className="rounded-lg overflow-hidden flex flex-col bg-bg-secondary border border-border-light">
             <div className="flex items-center gap-2 px-3 py-2 border-b border-border-light">
@@ -233,7 +287,19 @@ function ClockInPlantCard({ accentColor, breakdown }) {
                                 className="flex items-center justify-between gap-2 text-[11.5px] px-2 py-1 rounded bg-bg-primary border border-border-light text-text-primary"
                             >
                                 <span className="font-semibold flex items-center gap-2 min-w-0">
-                                    <span className="shrink-0">Operator {slot.index}</span>
+                                    <span className="truncate">{slot.operatorName || `Operator ${slot.index}`}</span>
+                                    {slot.operatorUnmatched ? (
+                                        <span
+                                            className="shrink-0 font-normal text-[10px] text-[color:var(--status-warning)]"
+                                            title="No matching Dayforce record — hours unknown"
+                                        >
+                                            not on Dayforce
+                                        </span>
+                                    ) : slot.operatorHours != null ? (
+                                        <span className="shrink-0 font-normal font-mono tabular-nums text-[10.5px] text-text-tertiary">
+                                            {fmtWeeklyHours(slot.operatorHours)}
+                                        </span>
+                                    ) : null}
                                     <OutboundDestinationTag outbound={slot.outbound} />
                                 </span>
                                 <span className="font-mono font-bold font-heading shrink-0">
@@ -242,11 +308,37 @@ function ClockInPlantCard({ accentColor, breakdown }) {
                             </div>
                         ))
                 )}
-                {leaveOffCount > 0 && (
+                {leaveOffOperators.length > 0 ? (
+                    <div className="mt-1 px-2 py-1.5 rounded border border-border-light flex flex-col gap-1">
+                        <span className="text-[9.5px] uppercase tracking-wider text-text-tertiary">
+                            Leave off · most hours
+                        </span>
+                        {leaveOffOperators.map((operator) => (
+                            <div
+                                key={operator.name}
+                                className="flex items-center justify-between gap-2 text-[11.5px] text-text-secondary"
+                            >
+                                <span className="truncate">{operator.name}</span>
+                                {operator.unmatched ? (
+                                    <span
+                                        className="shrink-0 text-[10px] text-[color:var(--status-warning)]"
+                                        title="No matching Dayforce record — hours unknown"
+                                    >
+                                        not on Dayforce
+                                    </span>
+                                ) : (
+                                    <span className="font-mono tabular-nums shrink-0 text-text-tertiary">
+                                        {operator.hours != null ? fmtWeeklyHours(operator.hours) : '—'}
+                                    </span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                ) : leaveOffCount > 0 ? (
                     <div className="text-[11.5px] italic mt-1 px-2 py-1.5 rounded bg-transparent border border-border-light text-text-tertiary">
                         The rest of the operators should be scheduled off.
                     </div>
-                )}
+                ) : null}
             </div>
         </div>
     )
@@ -276,6 +368,14 @@ export default function PlanDashboardClockInBoard({
     stats
 }) {
     const plantSet = useMemo(() => new Set(scopePlantCodes || []), [scopePlantCodes])
+
+    /* Who to bring in, by hours: each scope plant's active operators plus
+     * each operator's hours worked so far this week. The breakdown builder
+     * orders the roster by fewest hours to fill clock-in slots and name the
+     * leave-offs. Both degrade to empty without breaking the numbered-slot
+     * fallback. */
+    const { matchedOperatorIds, workedByOperator } = useOperatorWeeklyHours({ planDate, plantCodes: scopePlantCodes })
+    const { operatorsByPlant } = useActiveOperatorsByPlant()
 
     const orders = useMemo(() => flattenOrders(plantProduction, plantSet), [plantProduction, plantSet])
 
@@ -350,12 +450,25 @@ export default function PlanDashboardClockInBoard({
             buildPlantBreakdowns({
                 clockInRows,
                 effectiveBaseByCode,
+                matchedOperatorIds,
+                operatorsByPlant,
                 outboundClockInRows,
                 plantCodes: scopePlantCodes || [],
                 plantNameByCode,
-                plantProduction
+                plantProduction,
+                workedByOperator
             }),
-        [clockInRows, effectiveBaseByCode, outboundClockInRows, scopePlantCodes, plantNameByCode, plantProduction]
+        [
+            clockInRows,
+            effectiveBaseByCode,
+            matchedOperatorIds,
+            operatorsByPlant,
+            outboundClockInRows,
+            scopePlantCodes,
+            plantNameByCode,
+            plantProduction,
+            workedByOperator
+        ]
     )
 
     if (breakdowns.length === 0) return null
@@ -373,6 +486,13 @@ export default function PlanDashboardClockInBoard({
                     <ClockInPlantCard key={breakdown.code} accentColor={accentColor} breakdown={breakdown} />
                 ))}
             </div>
+            <p className="flex items-start gap-1.5 text-[10.5px] leading-snug text-text-tertiary">
+                <i className="fas fa-circle-info text-[9px] mt-[3px] shrink-0" aria-hidden="true" />
+                <span>
+                    Operator hours rely on each driver&apos;s name matching across Dayforce, Tools, and Jonel. If a name
+                    differs between systems, their hours won&apos;t link up and the data shown here will be wrong.
+                </span>
+            </p>
         </div>
     )
 }

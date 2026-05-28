@@ -266,6 +266,16 @@ export default function useDayforceOperatorMetrics({
             filteredShifts.filter((s) => s.exception_code).map((s) => s.dayforce_employee_id)
         ).size
 
+        // Operator ids that resolved to a Dayforce employee (name/badge
+        // match), regardless of whether they logged shifts in the window.
+        // Lets consumers tell "found on Dayforce but worked 0 hours" apart
+        // from "never matched" — the latter means missing/mismatched data,
+        // not a real zero.
+        const matchedOperatorIds = new Set()
+        for (const operator of operatorByEmployeeId.values()) {
+            if (operator?.employeeId) matchedOperatorIds.add(operator.employeeId)
+        }
+
         return {
             // Diagnostic counts so the empty-state messaging can tell
             // "tables empty" apart from "rows loaded but filtered out."
@@ -292,6 +302,7 @@ export default function useDayforceOperatorMetrics({
                 total: perOperator.length,
                 unmatched: perOperator.filter((r) => !r.isMatched).length
             },
+            matchedOperatorIds,
             perOperator,
             perPlant,
             perShift,
