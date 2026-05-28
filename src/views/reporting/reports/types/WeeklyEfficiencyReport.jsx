@@ -145,7 +145,7 @@ function Toolbar({ filterText, setFilterText, sortKey, sortDir, setSort }) {
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
                 placeholder="Filter operators or trucks…"
-                className="min-w-[200px] flex-1 rounded px-2.5 py-1.5 text-[12.5px] outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
+                className="min-w-0 sm:min-w-[200px] w-full sm:w-auto flex-1 rounded px-2.5 py-1.5 text-[16px] sm:text-[12.5px] outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
                 style={FIELD_STYLE}
             />
             {sortButtons.map(({ key, label }) => {

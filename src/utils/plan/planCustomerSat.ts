@@ -94,22 +94,27 @@ export const SERVICE_TIER_META: Record<ServiceTier, { color: string; label: stri
     veryBad: { color: '#7f1d1d', label: 'Very Bad' }
 }
 
-/** Maps a verdict to its LATENESS tier. Pure function of `latenessMin`
- *  — slow is tracked separately via `isSlow`, never folded into a
- *  lateness tier. A slow-only order returns `good` here; callers still
- *  surface it via the slow flag. */
+/** Maps a verdict to its severity tier. Late orders band by minutes
+ *  (Not Good → Bad → Very Bad); a slow-but-on-time order lands in
+ *  `notGood`. `good` is returned only when the order is neither late nor
+ *  slow, so the tier always agrees with `isBad` (good ⟺ not bad) and the
+ *  graded breakdown can never disagree with the binary good/bad count. */
 export function classifyServiceTier({
     isLate,
+    isSlow = false,
     latenessMin
 }: {
     isLate: boolean
     isSlow?: boolean
     latenessMin: number
 }): ServiceTier {
-    if (!isLate) return 'good'
-    if (latenessMin > VERY_BAD_LATE_MIN) return 'veryBad'
-    if (latenessMin >= BAD_LATE_MIN) return 'bad'
-    return 'notGood'
+    if (isLate) {
+        if (latenessMin > VERY_BAD_LATE_MIN) return 'veryBad'
+        if (latenessMin >= BAD_LATE_MIN) return 'bad'
+        return 'notGood'
+    }
+    if (isSlow) return 'notGood'
+    return 'good'
 }
 
 /** Verdict shape returned by `scoreOrderExperience`. Consumers either care
@@ -123,9 +128,9 @@ export interface OrderExperienceVerdict {
     measured: boolean
     /** Late = first loaded ticket landed > 15 min after scheduled start. */
     isLate: boolean
-    /** Slow = pace fell below 70% of requested AND the pour isn't a small
-     *  job (≤3 trucks or ≤30 yd). Small pours get a free pass — their
-     *  cadence is set by the customer's finishing crew, not dispatch. */
+    /** Slow = pace fell below the requested-rate threshold
+     *  (`slow_pace_min_ratio`, default 1.0). Applies to every pour — small
+     *  jobs are no longer exempt from the slow check. */
     isSlow: boolean
     /** Combined verdict — bad service when either dimension trips. */
     isBad: boolean
@@ -204,9 +209,10 @@ const UNMEASURED_VERDICT: OrderExperienceVerdict = {
  * and the Statistics → Service sub-page (which needs the breakdown).
  *
  * An order is "late" when the first loaded ticket landed > 15 min after
- * the scheduled start. An order is "slow" when — for non-small pours —
- * the actual yd/hr fell below 70% of the requested rate. Either flag
- * (or both) marks the order as bad service.
+ * the scheduled start. An order is "slow" when the actual yd/hr fell below
+ * the requested-rate threshold (`slow_pace_min_ratio`, default 1.0) — this
+ * applies to every pour, small jobs included. Either flag (or both) marks
+ * the order as bad service.
  *
  * Pace is evaluated against the ORIGINAL cohort only — load times after
  * a kicker gap (customer adding yardage mid-pour) are excluded from the
@@ -274,12 +280,23 @@ export function scoreOrderExperience(order, detail): OrderExperienceVerdict {
     const effectiveSpan = Math.max(actualDuration, plannedSpan)
 
     const requestedYdPerHr = computeRequestedYardsPerHour(loadSize, spacing)
-    const actualYdPerHr = computeActualYardsPerHour(paceYardage, effectiveSpan)
+    // Pace counts yards delivered ACROSS the pour window, excluding the
+    // opening truck — it lands at the window start, so N loads only span
+    // N−1 gaps. Counting the full cohort against that span double-counts
+    // load #1 and masks doubled spacing (a 25-min request served every
+    // 50 min would otherwise score 100%). Mirrors OrderTicketsModal so the
+    // badge and the View Tickets popup never disagree.
+    const openingLoad = originalYardage > 0 ? first.quantity : paceYardage / originalTickets.length
+    const spanYardage = originalTickets.length > 1 ? Math.max(0, paceYardage - openingLoad) : 0
+    const actualYdPerHr = computeActualYardsPerHour(spanYardage, effectiveSpan)
     const paceScore = requestedYdPerHr && actualYdPerHr ? clamp01(actualYdPerHr / requestedYdPerHr) : null
     const paceScoreForCheck = paceScore == null ? 1 : paceScore
 
     const isLate = startLateness > BAD_SERVICE_LATE_THRESHOLD_MIN
-    const isSlow = !isSmallPourJob(numTrucks, paceYardage) && paceScoreForCheck < BAD_SERVICE_PACE_THRESHOLD
+    // Every pour is held to the requested pace — small jobs are no longer
+    // exempt. A 2-truck order served at half the requested spacing is slow
+    // service regardless of size.
+    const isSlow = paceScoreForCheck < BAD_SERVICE_PACE_THRESHOLD
     const tier = classifyServiceTier({ isLate, isSlow, latenessMin: startLateness })
 
     return {

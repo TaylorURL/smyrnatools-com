@@ -34,7 +34,7 @@ export function DeleteConfirmModal({ onCancel, onConfirm, saving }) {
                         type="button"
                         onClick={onConfirm}
                         disabled={saving}
-                        className="inline-flex items-center gap-1.5 rounded-md bg-status-danger px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-md bg-status-danger px-3 py-2 min-h-[36px] text-[10.5px] font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                     >
                         <i
                             className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-trash'} text-[10px]`}

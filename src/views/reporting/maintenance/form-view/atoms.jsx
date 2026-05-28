@@ -60,9 +60,9 @@ export function PageHeader({
                 type="button"
                 onClick={onBack}
                 aria-label="Back"
-                className="flex h-7 w-7 items-center justify-center rounded border-none cursor-pointer bg-bg-tertiary text-text-primary"
+                className="flex h-9 w-9 items-center justify-center rounded border-none cursor-pointer bg-bg-tertiary text-text-primary shrink-0"
             >
-                <i className="fas fa-arrow-left text-[11px]" />
+                <i className="fas fa-arrow-left text-[12px]" />
             </button>
             <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-primary">
                 <i className="fas fa-file-pdf text-[11px]" />
@@ -113,8 +113,7 @@ export function PdfEmbed({ url }) {
             <iframe
                 title="Submitted maintenance form"
                 src={url}
-                className="w-full bg-bg-secondary h-[70vh]"
-                style={{ border: 'none', minHeight: 480 }}
+                className="w-full bg-bg-secondary border-0 h-[60vh] sm:h-[70vh] min-h-[320px] sm:min-h-[480px]"
             />
             <div className="flex items-center justify-between px-3 py-2 text-[11px] bg-bg-secondary border-t border-border-light">
                 <span className="text-text-tertiary">Embedded scan — open in a new tab for full view</span>

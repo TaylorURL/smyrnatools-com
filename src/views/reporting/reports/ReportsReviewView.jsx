@@ -244,7 +244,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
 
     return (
         <div ref={containerRef} className="bg-bg-secondary min-h-screen w-full">
-            <div className="flex items-center justify-between flex-wrap gap-4 bg-bg-primary border-b border-border-light px-6 py-4 sticky top-0 z-40">
+            <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4 bg-bg-primary border-b border-border-light px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-40">
                 <div className="flex items-center gap-4">
                     <button
                         className={`w-10 h-10 flex items-center justify-center bg-bg-secondary text-text-secondary rounded-md hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 active:scale-[0.98] ${FOCUS_RING}`}
@@ -286,7 +286,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                     )}
                 </div>
             </div>
-            <div className="flex items-center flex-wrap gap-6 bg-bg-secondary border-b border-border-light px-6 py-4">
+            <div className="flex items-center flex-wrap gap-x-6 gap-y-2 bg-bg-secondary border-b border-border-light px-4 sm:px-6 py-3 sm:py-4">
                 {reportDateVerbose && (
                     <MetaItem icon="far fa-calendar-check" label="Report Date:" value={reportDateVerbose} />
                 )}
@@ -333,7 +333,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 </div>
             )}
             {!isPlantShutdown && (
-                <div className="p-6 w-full">
+                <div className="p-4 sm:p-6 w-full">
                     {report.name === 'plant_manager' && renderPlantManagerForm()}
                     {!PLUGIN_ONLY_REPORTS.includes(report.name) &&
                         report.name !== 'plant_manager' &&

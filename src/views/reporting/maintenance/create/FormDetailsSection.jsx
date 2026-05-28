@@ -125,8 +125,8 @@ export function FormDetailsSection({
                     />
                 </div>
 
-                <div className="flex items-end gap-3 flex-wrap">
-                    <div className="flex-1 min-w-[180px]">
+                <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                    <div className="w-full sm:flex-1 sm:min-w-[180px]">
                         <FieldLabel>Frequency</FieldLabel>
                         <select
                             value={frequency}
@@ -143,7 +143,7 @@ export function FormDetailsSection({
                         </select>
                     </div>
                     {showPerN && (
-                        <div className="w-[160px]">
+                        <div className="w-full sm:w-[160px]">
                             <FieldLabel>Every</FieldLabel>
                             <div className="flex items-center gap-1.5">
                                 <input

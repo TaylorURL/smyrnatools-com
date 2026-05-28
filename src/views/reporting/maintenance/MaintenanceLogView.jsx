@@ -115,15 +115,8 @@ export default function MaintenanceLogView({
     return (
         <>
             <div className="flex-1 overflow-hidden flex flex-col lg:flex-row bg-bg-secondary">
-                {showFormsRail && (
-                    <aside
-                        className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0 overflow-y-auto bg-bg-primary"
-                        style={{
-                            borderBottom: isMobile ? '1px solid var(--border-light)' : 'none',
-                            borderRight: isMobile ? 'none' : '1px solid var(--border-light)',
-                            maxHeight: isMobile ? '50vh' : 'none'
-                        }}
-                    >
+                {showFormsRail && !(isMobile && selectedFormItem) && (
+                    <aside className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0 overflow-y-auto bg-bg-primary max-h-[50vh] lg:max-h-none border-b lg:border-b-0 lg:border-r border-border-light">
                         <MaintenanceFormsRail
                             accentColor={accentColor}
                             canReview={!!permissions.canReview}

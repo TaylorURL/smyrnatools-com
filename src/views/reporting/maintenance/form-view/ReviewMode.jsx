@@ -114,7 +114,7 @@ export function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, su
                             type="button"
                             onClick={() => handleReview('approved')}
                             disabled={submitting}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-status-active px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-wider text-white shadow-sm transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-active focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                            className="inline-flex flex-1 sm:flex-none items-center justify-center gap-1.5 rounded-md bg-status-active px-3 py-2.5 min-h-[40px] text-[11.5px] font-bold uppercase tracking-wider text-white shadow-sm transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-active focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                         >
                             <i className="fas fa-check text-[10px]" aria-hidden="true" />
                             Approve
@@ -123,7 +123,7 @@ export function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, su
                             type="button"
                             onClick={() => handleReview('rejected')}
                             disabled={submitting}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-status-danger px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-wider text-white shadow-sm transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                            className="inline-flex flex-1 sm:flex-none items-center justify-center gap-1.5 rounded-md bg-status-danger px-3 py-2.5 min-h-[40px] text-[11.5px] font-bold uppercase tracking-wider text-white shadow-sm transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                         >
                             <i className="fas fa-times text-[10px]" aria-hidden="true" />
                             Reject

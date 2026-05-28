@@ -231,11 +231,10 @@ const CalculatorView = () => {
                 sticky
                 title="Calculators"
             />
-            <div className="px-3 sm:px-4 lg:px-6 py-4 flex gap-4">
+            <div className="px-3 sm:px-4 lg:px-6 py-4 flex flex-col lg:flex-row gap-4">
                 <CatalogNav
                     active={active}
                     grouped={grouped}
-                    isMobile={isMobile}
                     onSelect={setSelectedId}
                     recentCalculators={recentCalculators}
                 />
@@ -250,9 +249,10 @@ const CalculatorView = () => {
 
 /* ─── Left rail · catalog ──────────────────────────────────────── */
 
-function CatalogNav({ active, grouped, isMobile, onSelect, recentCalculators }) {
-    if (isMobile) {
-        return (
+function CatalogNav({ active, grouped, onSelect, recentCalculators }) {
+    return (
+        <>
+            {/* Mobile + tablet: horizontal scrollable chip bar (shown below lg) */}
             <aside className="lg:hidden -mx-3 px-3 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
                 {grouped.flatMap(([, items]) =>
                     items.map((c) => (
@@ -260,8 +260,17 @@ function CatalogNav({ active, grouped, isMobile, onSelect, recentCalculators }) 
                     ))
                 )}
             </aside>
-        )
-    }
+            <DesktopCatalogNav
+                active={active}
+                grouped={grouped}
+                onSelect={onSelect}
+                recentCalculators={recentCalculators}
+            />
+        </>
+    )
+}
+
+function DesktopCatalogNav({ active, grouped, onSelect, recentCalculators }) {
     return (
         <aside className="hidden lg:flex flex-col gap-3 w-[224px] shrink-0 self-start sticky top-2">
             <nav className="rounded border border-border-light bg-bg-primary overflow-hidden">

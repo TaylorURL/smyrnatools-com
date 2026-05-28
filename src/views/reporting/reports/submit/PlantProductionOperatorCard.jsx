@@ -164,7 +164,7 @@ const PlantProductionOperatorCard = ({
                         <button
                             type="button"
                             onClick={onExclude}
-                            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold cursor-pointer border bg-rose-600 border-rose-700 text-white hover:bg-rose-700"
+                            className="inline-flex items-center gap-1 rounded px-2 py-1 min-h-[32px] text-[10px] font-semibold cursor-pointer border bg-rose-600 border-rose-700 text-white hover:bg-rose-700"
                             title="Exclude this operator from the report"
                         >
                             <i className="fas fa-user-minus text-[8.5px]" />
@@ -174,7 +174,7 @@ const PlantProductionOperatorCard = ({
                 </div>
             </div>
 
-            <div className="grid gap-1 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="grid gap-1 grid-cols-1 sm:grid-cols-3 lg:grid-cols-5">
                 {FIELD_DEFS.map((def) => {
                     const autoValue = resolveAutoValue(def, dayforcePunch, ticketAgg)
                     const hasAutoValue = !!autoValue

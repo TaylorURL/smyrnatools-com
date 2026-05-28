@@ -54,7 +54,7 @@ function HistoryRow({ accentColor, isCurrent, submission }) {
                     href={pdfUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer bg-bg-secondary border border-border-light text-text-secondary shrink-0"
+                    className="inline-flex items-center justify-center gap-1 rounded px-2.5 py-2 min-h-[36px] text-[11.5px] font-semibold cursor-pointer bg-bg-secondary border border-border-light text-text-secondary shrink-0"
                     title="Open the scanned PDF in a new tab"
                 >
                     <i className="fas fa-file-pdf text-[10px]" />

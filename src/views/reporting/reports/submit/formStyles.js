@@ -6,7 +6,7 @@
 export const FORM_SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
 
 export const FORM_FIELD_BASE_CLASS =
-    'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border disabled:opacity-90 disabled:cursor-not-allowed transition-colors duration-150 [color-scheme:light] dark:[color-scheme:dark] hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary placeholder:text-text-tertiary'
+    'w-full rounded px-2.5 py-1.5 text-[16px] sm:text-[12.5px] outline-none box-border disabled:opacity-90 disabled:cursor-not-allowed transition-colors duration-150 [color-scheme:light] dark:[color-scheme:dark] hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary placeholder:text-text-tertiary'
 
 export const FORM_FIELD_STYLE = {
     background: 'var(--bg-secondary)',

@@ -43,7 +43,7 @@ export function PrimaryButton({ accentColor, children, disabled, icon, onClick, 
             type={type}
             onClick={onClick}
             disabled={disabled}
-            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-2 min-h-[36px] disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: accentColor }}
         >
             {icon && <i className={`fas ${icon} text-[10px]`} />}
@@ -58,7 +58,7 @@ export function SubtleButton({ children, danger = false, disabled = false, icon,
             type={type}
             onClick={onClick}
             disabled={disabled}
-            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:brightness-95 border border-border-light"
+            className="inline-flex items-center justify-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-2 min-h-[36px] disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:brightness-95 border border-border-light"
             style={{
                 background: danger ? '#fee2e2' : 'var(--bg-secondary)',
                 color: danger ? 'var(--text-primary)' : 'var(--text-secondary)'
@@ -81,10 +81,10 @@ export function IconButton({ bg, danger, disabled, fg, icon, onClick, title }) {
             disabled={disabled}
             title={title}
             aria-label={title}
-            className="flex h-6 w-6 items-center justify-center rounded border-none cursor-pointer transition-colors hover:brightness-95 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex h-9 w-9 items-center justify-center rounded border-none cursor-pointer transition-colors hover:brightness-95 disabled:opacity-30 disabled:cursor-not-allowed"
             style={{ background: palette.bg, color: palette.fg }}
         >
-            <i className={`fas ${icon} text-[10px]`} />
+            <i className={`fas ${icon} text-[12px]`} />
         </button>
     )
 }

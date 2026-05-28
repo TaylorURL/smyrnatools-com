@@ -11,11 +11,11 @@ export function PageHeader({ accentColor, editingForm, onBack, onRequestDelete }
                 <button
                     type="button"
                     onClick={onBack}
-                    className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer bg-bg-tertiary"
+                    className="flex h-9 w-9 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer bg-bg-tertiary shrink-0"
                     style={{ color: accentColor }}
                     aria-label="Back"
                 >
-                    <i className="fas fa-arrow-left text-[11px]" />
+                    <i className="fas fa-arrow-left text-[12px]" />
                 </button>
                 <div className="flex items-center gap-2 min-w-0">
                     <div

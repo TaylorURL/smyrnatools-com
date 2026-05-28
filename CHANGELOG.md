@@ -1,5 +1,42 @@
 # Changelog
 
+## [2026.22.20] - 2026-05-27
+
+- Fixed a fencepost error in the pour-pace calculation that let under-served
+  jobs read as on-pace. Both the View Tickets popup (`OrderTicketsModal.jsx`)
+  and the service scorer (`scoreOrderExperience` in `planCustomerSat.ts`)
+  divided the full load cohort's yardage by the first-to-last span — but N
+  loads only span N−1 gaps, so the opening truck (which lands at the start of
+  the window) was double-counted. A two-load order served every 50 min against
+  a 25-min request showed 24 yd/hr · 100% of target. Pace now counts only the
+  yards delivered after the opening truck, so that order correctly reads
+  12 yd/hr · 50%. Both call sites stay in lockstep so the badge and popup never
+  disagree.
+- Small pours are no longer exempt from the slow-pace flag. `scoreOrderExperience`
+  previously gave jobs of ≤3 trucks or ≤30 yards a free pass on the slow check;
+  every pour is now held to the requested rate (`slow_pace_min_ratio`). A small
+  job served at half the requested spacing now correctly flags slow / bad
+  service across the Schedule row, Service tab, Customer Lookup, and
+  Satisfaction score.
+- `classifyServiceTier` now folds in the slow flag. A slow-but-on-time order
+  used to count as bad service (`isBad`) yet still land in the green "Good"
+  tier on the graded breakdowns; it now lands in "Not Good". The tier always
+  agrees with `isBad` (good ⟺ not bad), so the Statistics → Service and
+  Customer Lookup tier spreads can never disagree with the binary good/bad
+  count.
+- Responsive/mobile pass across the Maintenance views (`MaintenanceView.jsx`,
+  `MaintenanceLogView.jsx`, the `create/` form sections, and the `form-view/`
+  review surfaces): rows stack on small screens, inputs size up to 16px on
+  mobile to avoid iOS zoom, and action buttons get ≥36px touch targets.
+- Responsive/mobile pass across the report submit + review surfaces
+  (`ReportsReviewView.jsx`, `PlantProductionFieldCell.jsx`,
+  `PlantProductionOperatorCard.jsx`, `formStyles.js`, and the weekly report
+  types): breakpoint-aware grids, stacked headers, and touch-friendly controls.
+- Calculator catalog navigation is now responsive. `CalculatorView.jsx`'s
+  `CatalogNav` was split into a horizontal scrollable chip bar (below `lg`) and
+  a `DesktopCatalogNav` left rail, dropping the imperative `isMobile` prop in
+  favor of CSS breakpoints.
+
 ## [2026.22.19] - 2026-05-27
 
 - Managers detail view now supports hard-deleting a user, gated to IT Access

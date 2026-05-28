@@ -161,7 +161,14 @@ function OrderTicketsModal({
             loadSize > 0 && paceYardage > 0 ? Math.max(1, Math.ceil(paceYardage / loadSize)) : original.length
         const plannedSpan = expectedTrucks > 1 ? (expectedTrucks - 1) * spacing : 0
         const effectiveSpan = Math.max(originalSpan, plannedSpan)
-        const yph = effectiveSpan > 0 && paceYardage > 0 ? (paceYardage / effectiveSpan) * 60 : null
+        // Pace is yards delivered ACROSS the pour window, not the whole cohort.
+        // The opening truck lands at the window's start, so the span [first,
+        // last] only contains the loads after it — N loads span N−1 gaps.
+        // Dividing the full cohort by that span double-counts truck #1 and
+        // makes a doubled-spacing pour read as on-target (two loads 50 min
+        // apart against a 25-min request used to show 24 yd/hr · 100%).
+        const spanYardage = original.length > 1 ? Math.max(0, paceYardage - firstOriginal.quantity) : 0
+        const yph = effectiveSpan > 0 && spanYardage > 0 ? (spanYardage / effectiveSpan) * 60 : null
         const targetYph = computeRequestedYardsPerHour(loadSize, spacing)
 
         return {

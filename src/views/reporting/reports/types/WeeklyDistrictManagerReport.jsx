@@ -57,7 +57,7 @@ function DailyRecapSection({ form, handleChange, readOnly }) {
                                 disabled={readOnly}
                                 rows={5}
                                 aria-label={`${day.label} notes`}
-                                className="w-full rounded px-2 py-1.5 text-[12px] outline-none resize-y min-h-[88px] disabled:opacity-90 disabled:cursor-not-allowed bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
+                                className="w-full rounded px-2 py-1.5 text-[16px] sm:text-[12px] outline-none resize-y min-h-[88px] disabled:opacity-90 disabled:cursor-not-allowed bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                             />
                         </div>
                     )

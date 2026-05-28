@@ -12,7 +12,8 @@ import { FORM_FIELD_STYLE, FORM_SECTION_LABEL_CLASS } from './formStyles'
  *  Intentionally NO disabled-state opacity: auto-filled values still need
  *  to be fully legible — the user identifies them by the badge, not by a
  *  greyed-out input. */
-const COMPACT_INPUT_CLASS = 'w-full rounded px-1.5 py-1 text-[11px] outline-none box-border tabular-nums'
+const COMPACT_INPUT_CLASS =
+    'w-full rounded px-1.5 py-1.5 sm:py-1 text-[16px] sm:text-[11px] outline-none box-border tabular-nums'
 
 /** Browsers apply a user-agent grey to `<input disabled>` text via
  *  `-webkit-text-fill-color` (Chrome/Safari) and a reduced opacity on
@@ -108,20 +109,20 @@ const PlantProductionFieldCell = ({
                         <button
                             type="button"
                             onClick={onResetToAuto}
-                            className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[8.5px] font-semibold uppercase tracking-wider cursor-pointer border border-border-light bg-bg-primary text-text-secondary hover:text-text-primary"
+                            className="inline-flex items-center gap-1 rounded px-1.5 py-1 min-h-[28px] sm:min-h-0 sm:px-1 sm:py-0.5 text-[10px] sm:text-[8.5px] font-semibold uppercase tracking-wider cursor-pointer border border-border-light bg-bg-primary text-text-secondary hover:text-text-primary"
                             title={`Reset to ${SOURCE_LABELS[autoSource] || autoSource} value`}
                         >
-                            <i className="fas fa-rotate-left text-[7px]" />
+                            <i className="fas fa-rotate-left text-[8px] sm:text-[7px]" />
                             Reset
                         </button>
                     ) : (
                         <button
                             type="button"
                             onClick={onSetOverride}
-                            className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[8.5px] font-semibold uppercase tracking-wider cursor-pointer border border-border-light bg-bg-primary text-text-secondary hover:text-text-primary"
+                            className="inline-flex items-center gap-1 rounded px-1.5 py-1 min-h-[28px] sm:min-h-0 sm:px-1 sm:py-0.5 text-[10px] sm:text-[8.5px] font-semibold uppercase tracking-wider cursor-pointer border border-border-light bg-bg-primary text-text-secondary hover:text-text-primary"
                             title="Edit this value manually"
                         >
-                            <i className="fas fa-pen text-[7px]" />
+                            <i className="fas fa-pen text-[8px] sm:text-[7px]" />
                             Edit
                         </button>
                     ))}

@@ -328,7 +328,7 @@ export default function MaintenanceView() {
                         <button
                             type="button"
                             onClick={() => setShowCreateForm(true)}
-                            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 text-white border-none cursor-pointer"
+                            className="inline-flex items-center justify-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-2 min-h-[36px] text-white border-none cursor-pointer"
                             style={{ background: accentColor }}
                         >
                             <i className="fas fa-plus text-[10px]" />
