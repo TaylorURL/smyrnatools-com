@@ -5,8 +5,11 @@ import { UserService } from '../../services/UserService'
 
 /**
  * Owns the multi-select state and every bulk operation (complete, delete,
- * update status, update priority). Each action mutates via ListService and
- * clears the selection on completion so the floating action bar dismisses.
+ * update status, update priority). Mutations fire in parallel via Promise.all
+ * so a 20-item bulk action lands as 20 concurrent requests instead of 20
+ * sequential ones. Each underlying ListService method already patches the
+ * local cache optimistically, so the floating action bar dismisses
+ * immediately and rows reflect the new state before the network confirms.
  */
 export function useListBulkActions() {
     const [selectedIds, setSelectedIds] = useState(new Set())
@@ -24,22 +27,35 @@ export function useListBulkActions() {
 
     const clearSelection = useCallback(() => setSelectedIds(new Set()), [])
 
+    const runForSelected = useCallback(async (ids, runner) => {
+        const settled = await Promise.allSettled(Array.from(ids).map(runner))
+        return settled.filter((s) => s.status === 'rejected').length
+    }, [])
+
     const bulkToggleCompletion = useCallback(
         async (markComplete) => {
             if (!selectedIds.size) return
             const user = await UserService.getCurrentUser()
             if (!user?.id) return
             const itemsById = new Map(ListService.listItems.map((i) => [i.id, i]))
+            const targets = []
             for (const id of selectedIds) {
                 const item = itemsById.get(id)
-                if (!item || (markComplete ? item.completed : !item.completed)) continue
-                try {
-                    await ListService.toggleCompletion(item, user.id)
-                } catch {}
+                if (!item) continue
+                if (markComplete && item.completed) continue
+                if (!markComplete && !item.completed) continue
+                targets.push(item)
             }
             setSelectedIds(new Set())
+            await runForSelected(
+                targets.map((t) => t.id),
+                (id) => {
+                    const item = itemsById.get(id)
+                    return item ? ListService.toggleCompletion(item, user.id).catch(() => null) : null
+                }
+            )
         },
-        [selectedIds]
+        [selectedIds, runForSelected]
     )
 
     const requestBulkDelete = useCallback(() => {
@@ -49,45 +65,36 @@ export function useListBulkActions() {
 
     const confirmBulkDelete = useCallback(async () => {
         setShowDeleteConfirm(false)
-        for (const id of selectedIds) {
-            try {
-                await ListService.deleteListItem(id)
-            } catch {}
-        }
+        const ids = Array.from(selectedIds)
         setSelectedIds(new Set())
-    }, [selectedIds])
+        await runForSelected(ids, (id) => ListService.deleteListItem(id).catch(() => null))
+    }, [selectedIds, runForSelected])
 
     const cancelBulkDelete = useCallback(() => setShowDeleteConfirm(false), [])
 
-    const bulkUpdateStatus = useCallback(
-        async (newStatus) => {
+    const bulkUpdateField = useCallback(
+        async (field, newValue) => {
             const itemsById = new Map(ListService.listItems.map((i) => [i.id, i]))
+            const targets = []
             for (const id of selectedIds) {
                 const item = itemsById.get(id)
-                if (!item || item.status === newStatus) continue
-                try {
-                    await ListService.updateListItem({ ...item, status: newStatus })
-                } catch {}
+                if (!item || item[field] === newValue) continue
+                targets.push(item)
             }
             setSelectedIds(new Set())
+            await runForSelected(
+                targets.map((t) => t.id),
+                (id) => {
+                    const item = itemsById.get(id)
+                    return item ? ListService.updateListItem({ ...item, [field]: newValue }).catch(() => null) : null
+                }
+            )
         },
-        [selectedIds]
+        [selectedIds, runForSelected]
     )
 
-    const bulkUpdatePriority = useCallback(
-        async (newPriority) => {
-            const itemsById = new Map(ListService.listItems.map((i) => [i.id, i]))
-            for (const id of selectedIds) {
-                const item = itemsById.get(id)
-                if (!item || item.priority === newPriority) continue
-                try {
-                    await ListService.updateListItem({ ...item, priority: newPriority })
-                } catch {}
-            }
-            setSelectedIds(new Set())
-        },
-        [selectedIds]
-    )
+    const bulkUpdateStatus = useCallback((newStatus) => bulkUpdateField('status', newStatus), [bulkUpdateField])
+    const bulkUpdatePriority = useCallback((newPriority) => bulkUpdateField('priority', newPriority), [bulkUpdateField])
 
     return {
         bulkToggleCompletion,

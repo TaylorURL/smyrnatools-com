@@ -27,7 +27,7 @@ function SkeletonAssetCard({ compact }) {
                     {rows.map((width, index) => (
                         <div
                             key={index}
-                            className="flex items-center justify-between py-2 border-b border-border-light/60 last:border-b-0"
+                            className="flex items-center justify-between py-2 border-b border-border-light last:border-b-0"
                         >
                             <div className="h-3.5 w-20 rounded-md bg-bg-tertiary animate-pulse-slow motion-reduce:animate-none" />
                             <div
@@ -67,7 +67,7 @@ function SkeletonTaskRow({ compact }) {
     const metaH = compact ? '16px' : '20px'
     return (
         <div
-            className={`flex border-b border-border-light/60 ${compact ? 'items-start gap-3 px-4 py-3' : 'items-center gap-4 px-6 py-4'}`}
+            className={`flex border-b border-border-light last:border-b-0 ${compact ? 'items-start gap-3 px-4 py-3' : 'items-center gap-4 px-6 py-4'}`}
         >
             <div className="h-4 w-4 shrink-0 rounded-md bg-bg-tertiary animate-pulse-slow motion-reduce:animate-none" />
             <div className="flex flex-1 flex-col min-w-0" style={{ gap: compact ? '0.375rem' : '0.5rem' }}>
@@ -109,7 +109,7 @@ function SkeletonTaskGroup({ rowCount, compact }) {
     return (
         <div className="overflow-hidden rounded-card border border-border-light bg-bg-secondary shadow-sm">
             <div
-                className={`flex items-center gap-3 border-b border-border-light bg-bg-tertiary/40 ${compact ? 'px-4 py-3' : 'px-6 py-4'}`}
+                className={`flex items-center gap-3 border-b border-border-light bg-bg-tertiary ${compact ? 'px-4 py-3' : 'px-6 py-4'}`}
             >
                 <div className="h-4 w-4 rounded-md bg-bg-tertiary animate-pulse-slow motion-reduce:animate-none" />
                 <div className="h-4 w-24 rounded-md bg-bg-tertiary animate-pulse-slow motion-reduce:animate-none" />

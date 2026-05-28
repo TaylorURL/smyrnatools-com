@@ -10,8 +10,21 @@ export const OT_DAILY_THRESHOLD_HOURS = 8
 export const OT_WEEKLY_THRESHOLD_HOURS = 40
 export const OT_MULTIPLIER = 1.5
 
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * Normalizes a date-ish input to a `YYYY-MM-DD` string in local time.
+ *
+ * An already-ISO `YYYY-MM-DD` string is returned as-is. Without this
+ * passthrough, `new Date("2026-05-25")` parses as UTC midnight and the
+ * subsequent local-time extraction shifts the date back one day in
+ * every west-of-UTC timezone (Chicago included) — which is what made
+ * the Hours / Schedules / Efficiency tabs filter Sun–Fri when the
+ * period selector said Mon–Sat.
+ */
 export const toDateString = (date) => {
     if (!date) return null
+    if (typeof date === 'string' && ISO_DATE_PATTERN.test(date)) return date
     const d = date instanceof Date ? date : new Date(date)
     if (Number.isNaN(d.getTime())) return null
     const y = d.getFullYear()

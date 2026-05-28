@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import { ListService } from '../../../services/ListService'
 import {
@@ -10,20 +10,39 @@ import {
     STATUS_OPTIONS,
     VIEW_MODES
 } from '../../constants/listViewConstants'
-
-const dropdownTrigger = (isMobile) =>
-    `flex items-center rounded cursor-pointer font-medium transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
-        isMobile ? 'text-[11px] gap-1 px-2 py-[5px]' : 'text-xs gap-1.5 px-2.5 py-1.5'
-    } text-text-secondary`
-
-const dropdownItemClass =
-    'flex items-center gap-2.5 w-full rounded px-3 py-2 text-xs font-medium cursor-pointer transition-colors duration-100 border-none bg-transparent text-text-primary hover:bg-bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40'
+import Badge from '../common/Badge'
+import ListQuickAdd from './ListQuickAdd'
 
 /**
- * Sticky filter bar inside TopSection's custom bottom slot: view-mode toggles,
- * status + role chip filters with searchable dropdowns, overdue badge, and a
- * total task count. All state lives in the parent — this component is purely
- * presentational and lifts callbacks for every interaction.
+ * View definitions: the row of icon buttons at the very left of the filter
+ * bar. List = grouped row layout; Board = kanban columns; Activity = the
+ * change feed. Group-by only applies in List view (Board groups by status,
+ * Activity is a flat timeline) — the Group segmented control disables when
+ * a different view is active.
+ */
+const LAYOUT_OPTIONS = [
+    { icon: 'fa-list-ul', id: 'list', label: 'List' },
+    { icon: 'fa-table-columns', id: 'board', label: 'Board' },
+    { icon: 'fa-clock-rotate-left', id: 'activity', label: 'Activity' }
+]
+
+const GROUP_OPTIONS = VIEW_MODES.filter((m) => m.id !== 'activity')
+
+function chipBtnClass(active, isMobile) {
+    return [
+        'inline-flex items-center gap-1.5 rounded-md text-[11.5px] font-medium transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+        isMobile ? 'px-2 py-1' : 'px-2.5 py-1.5',
+        active
+            ? 'bg-text-primary text-bg-primary'
+            : 'bg-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+    ].join(' ')
+}
+
+/**
+ * Sticky filter bar inside the page's TopSection custom-bottom slot. Owns
+ * the layout toggle (List · Board · Activity), grouping segmented control,
+ * and a combined Filters popover for status + role. The overdue indicator
+ * is a quiet inline chip; the total count is a subtle stat label.
  */
 export default function ListFilterBar({
     accentColor,
@@ -32,220 +51,254 @@ export default function ListFilterBar({
     onClearRoleFilter,
     onClearStatusFilter,
     onLayoutChange,
-    onRoleDropdownToggle,
     onRoleFilterChange,
-    onStatusDropdownToggle,
     onStatusFilterChange,
     onViewModeChange,
-    roleDropdownOpen,
-    roleDropdownRef,
+    quickAddProps,
     roleFilter,
-    statusDropdownOpen,
-    statusDropdownRef,
     statusFilter,
     summaryStats,
     viewMode
 }) {
-    const isCards = layout === 'cards'
-    const statusDisplayValue = STATUS_MAP[statusFilter] || 'All Statuses'
-    const roleDisplayValue = ROLE_MAP[roleFilter] || 'All Roles'
+    const filtersBtnRef = useRef(null)
+    const filtersMenuRef = useRef(null)
+    const [filtersOpen, setFiltersOpen] = useState(false)
+
+    useEffect(() => {
+        const onDoc = (e) => {
+            if (filtersMenuRef.current?.contains(e.target)) return
+            if (filtersBtnRef.current?.contains(e.target)) return
+            setFiltersOpen(false)
+        }
+        if (filtersOpen) document.addEventListener('mousedown', onDoc)
+        return () => document.removeEventListener('mousedown', onDoc)
+    }, [filtersOpen])
+
+    const isBoard = layout === 'board'
+    const isActivity = layout === 'activity'
+    const groupingDisabled = isBoard || isActivity
+    const activeFilterCount = useMemo(() => (statusFilter ? 1 : 0) + (roleFilter ? 1 : 0), [statusFilter, roleFilter])
+
+    const statusDisplay = STATUS_MAP[statusFilter]
+    const roleDisplay = ROLE_MAP[roleFilter]
+
+    const onSelectStatus = (label) => {
+        if (label === statusDisplay) {
+            onClearStatusFilter?.()
+        } else {
+            onStatusFilterChange?.(label)
+        }
+    }
+
+    const onSelectRole = (label) => {
+        if (label === roleDisplay) {
+            onClearRoleFilter?.()
+        } else {
+            onRoleFilterChange?.(label)
+        }
+    }
 
     return (
-        <div className="flex items-center flex-wrap gap-2 bg-bg-secondary border border-border-light rounded-[10px] px-3.5 py-2.5">
-            <div className="inline-flex items-center rounded-md border border-border-light overflow-hidden">
-                <button
-                    type="button"
-                    onClick={() => onLayoutChange('list')}
-                    className={`flex items-center text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer ${
-                        !isCards ? 'bg-text-primary text-bg-primary' : 'bg-transparent text-text-secondary'
-                    } active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40`}
-                    aria-label="List view"
-                    aria-pressed={!isCards}
-                >
-                    <i className="fas fa-list text-[11px]" />
-                    {isMobile ? '' : 'List'}
-                </button>
-                <button
-                    type="button"
-                    onClick={() => onLayoutChange('cards')}
-                    className={`flex items-center text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer ${
-                        isCards ? 'bg-text-primary text-bg-primary' : 'bg-transparent text-text-secondary'
-                    } active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40`}
-                    aria-label="Cards view"
-                    aria-pressed={isCards}
-                >
-                    <i className="fas fa-columns text-[11px]" />
-                    {isMobile ? '' : 'Cards'}
-                </button>
-            </div>
-            {!isCards && (
-                <div className="flex items-center gap-1.5">
-                    {VIEW_MODES.map((mode) => (
+        <div className="flex flex-wrap items-center gap-2 rounded-[12px] border border-border-light bg-bg-secondary px-3 py-2">
+            <div
+                role="group"
+                aria-label="View"
+                className="inline-flex items-center gap-0.5 rounded-md border border-border-light bg-bg-primary p-0.5"
+            >
+                {LAYOUT_OPTIONS.map((opt) => {
+                    const active = layout === opt.id
+                    return (
                         <button
-                            key={mode.id}
+                            key={opt.id}
                             type="button"
-                            onClick={() => onViewModeChange(mode.id)}
-                            aria-pressed={viewMode === mode.id}
-                            className={`flex items-center rounded-md text-xs font-medium gap-1.5 px-3 py-1.5 cursor-pointer ${
-                                viewMode === mode.id
-                                    ? 'bg-text-primary text-bg-primary border-none'
-                                    : 'bg-transparent text-text-secondary border border-border-light'
-                            } active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40`}
+                            onClick={() => onLayoutChange?.(opt.id)}
+                            aria-pressed={active}
+                            className={chipBtnClass(active, isMobile)}
+                            title={`${opt.label} view`}
                         >
-                            <i className={`fas ${mode.icon} text-[11px]`} />
-                            {mode.label}
+                            <i className={`fas ${opt.icon} text-[11px]`} aria-hidden="true" />
+                            {!isMobile && <span>{opt.label}</span>}
                         </button>
-                    ))}
-                </div>
-            )}
-            <div className="h-5 w-px bg-[var(--border-light)]" />
-            {statusFilter ? (
-                <button
-                    onClick={onClearStatusFilter}
-                    className="flex items-center rounded-md text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                    style={{
-                        background: `${accentColor}10`,
-                        border: `1px solid ${accentColor}30`,
-                        color: accentColor
-                    }}
+                    )
+                })}
+            </div>
+
+            {!groupingDisabled && (
+                <div
+                    role="group"
+                    aria-label="Group by"
+                    className="inline-flex items-center gap-0.5 rounded-md border border-border-light bg-bg-primary p-0.5"
                 >
-                    {statusDisplayValue}
-                    <i className="fas fa-times text-[10px] opacity-70" />
-                </button>
-            ) : (
-                <div className="relative" ref={statusDropdownRef}>
-                    <button
-                        type="button"
-                        onClick={onStatusDropdownToggle}
-                        aria-haspopup="listbox"
-                        aria-expanded={statusDropdownOpen}
-                        aria-label="Filter by status"
-                        className={dropdownTrigger(isMobile)}
-                        style={{
-                            background: statusDropdownOpen ? 'var(--bg-secondary)' : 'var(--bg-tertiary)',
-                            border: statusDropdownOpen ? `1px solid ${accentColor}50` : '1px solid var(--border-light)'
-                        }}
-                    >
-                        <i className="fas fa-filter text-[9px] opacity-60" />
-                        {isMobile ? '+Status' : '+ Status'}
-                        <i
-                            className={`fas fa-chevron-down text-[8px] opacity-50 transition-transform duration-150 ${
-                                statusDropdownOpen ? 'rotate-180' : ''
-                            }`}
-                        />
-                    </button>
-                    {statusDropdownOpen && (
-                        <div
-                            role="listbox"
-                            aria-label="Status filter"
-                            className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[180px] animate-filter-fade bg-bg-primary border border-border-light"
-                        >
-                            <div className="p-1.5">
-                                {STATUS_OPTIONS.map((opt) => {
-                                    const key = Object.keys(STATUS_MAP).find((k) => STATUS_MAP[k] === opt)
-                                    const color = STATUS_COLORS[key] || STATUS_COLORS.pending
-                                    return (
-                                        <button
-                                            key={opt}
-                                            type="button"
-                                            role="option"
-                                            aria-selected={false}
-                                            onClick={() => onStatusFilterChange(opt)}
-                                            className={dropdownItemClass}
-                                        >
-                                            <span
-                                                className="flex items-center justify-center h-5 w-5 rounded-md text-[9px]"
-                                                style={{ background: color.bg, color: color.text }}
-                                            >
-                                                <i className={`fas ${ListService.getStatusIcon(key)}`} />
-                                            </span>
-                                            {opt}
-                                        </button>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )}
+                    {GROUP_OPTIONS.map((opt) => {
+                        const active = viewMode === opt.id
+                        return (
+                            <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => onViewModeChange?.(opt.id)}
+                                aria-pressed={active}
+                                className={chipBtnClass(active, isMobile)}
+                                title={`Group by ${opt.label.toLowerCase()}`}
+                            >
+                                <i className={`fas ${opt.icon} text-[11px]`} aria-hidden="true" />
+                                {!isMobile && <span>{opt.label}</span>}
+                            </button>
+                        )
+                    })}
                 </div>
             )}
-            {roleFilter ? (
+
+            <div className="relative">
                 <button
-                    onClick={onClearRoleFilter}
-                    className="flex items-center rounded-md text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                    style={{
-                        background: `${accentColor}10`,
-                        border: `1px solid ${accentColor}30`,
-                        color: accentColor
-                    }}
+                    ref={filtersBtnRef}
+                    type="button"
+                    onClick={() => setFiltersOpen((o) => !o)}
+                    aria-haspopup="menu"
+                    aria-expanded={filtersOpen}
+                    className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11.5px] font-medium transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                        activeFilterCount > 0
+                            ? 'text-accent'
+                            : 'border-border-light bg-bg-primary text-text-secondary hover:bg-bg-hover'
+                    }`}
+                    style={
+                        activeFilterCount > 0
+                            ? {
+                                  background: `${accentColor}1a`,
+                                  borderColor: `${accentColor}66`
+                              }
+                            : undefined
+                    }
                 >
-                    {roleDisplayValue}
-                    <i className="fas fa-times text-[10px] opacity-70" />
-                </button>
-            ) : (
-                <div className="relative" ref={roleDropdownRef}>
-                    <button
-                        type="button"
-                        onClick={onRoleDropdownToggle}
-                        aria-haspopup="listbox"
-                        aria-expanded={roleDropdownOpen}
-                        aria-label="Filter by assigned role"
-                        className={dropdownTrigger(isMobile)}
-                        style={{
-                            background: roleDropdownOpen ? 'var(--bg-secondary)' : 'var(--bg-tertiary)',
-                            border: roleDropdownOpen ? `1px solid ${accentColor}50` : '1px solid var(--border-light)'
-                        }}
-                    >
-                        <i className="fas fa-user text-[9px] opacity-60" />
-                        {isMobile ? '+Role' : '+ Assigned'}
-                        <i
-                            className={`fas fa-chevron-down text-[8px] opacity-50 transition-transform duration-150 ${
-                                roleDropdownOpen ? 'rotate-180' : ''
-                            }`}
-                        />
-                    </button>
-                    {roleDropdownOpen && (
-                        <div
-                            role="listbox"
-                            aria-label="Role filter"
-                            className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[170px] animate-filter-fade bg-bg-primary border border-border-light"
+                    <i className="fas fa-filter text-[10px] opacity-80" aria-hidden="true" />
+                    <span>Filters</span>
+                    {activeFilterCount > 0 && (
+                        <span
+                            className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-bold tabular-nums"
+                            style={{ background: 'var(--accent)', color: 'white' }}
                         >
-                            <div className="p-1.5">
-                                {ROLE_OPTIONS.map((opt) => (
-                                    <button
-                                        key={opt}
-                                        type="button"
-                                        role="option"
-                                        aria-selected={false}
-                                        onClick={() => onRoleFilterChange(opt)}
-                                        className={dropdownItemClass}
-                                    >
-                                        <span className="flex items-center justify-center h-5 w-5 rounded-md bg-bg-tertiary text-text-secondary text-[9px]">
-                                            <i className="fas fa-user" />
-                                        </span>
-                                        {opt}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                            {activeFilterCount}
+                        </span>
                     )}
-                </div>
-            )}
-            {!isMobile && <div className="flex-1" />}
-            <div className={`flex items-center ${isMobile ? 'gap-2 ml-auto' : 'gap-3'}`}>
-                {summaryStats.overdue > 0 && (
+                    <i
+                        className={`fas fa-chevron-down text-[8px] opacity-60 transition-transform duration-150 ${filtersOpen ? 'rotate-180' : ''}`}
+                        aria-hidden="true"
+                    />
+                </button>
+                {filtersOpen && (
                     <div
-                        className={`flex items-center animate-pulse rounded-md font-semibold border border-[color:color-mix(in_srgb,var(--danger)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--danger)_12%,transparent)] text-[var(--danger)] ${
-                            isMobile ? 'text-[10px] gap-1 px-1.5 py-1' : 'text-xs gap-1.5 px-2.5 py-1.5'
-                        }`}
+                        ref={filtersMenuRef}
+                        role="menu"
+                        className="absolute left-0 top-full z-50 mt-1.5 w-[280px] origin-top-left rounded-lg border border-border-light bg-bg-primary p-3 shadow-[0_12px_32px_rgba(0,0,0,0.18)] animate-filter-fade"
+                        style={{ transformOrigin: 'top left' }}
                     >
-                        <i className={`fas fa-exclamation-circle ${isMobile ? 'text-[9px]' : 'text-[11px]'}`} />
-                        {summaryStats.overdue}
-                        {isMobile ? '' : ' overdue'}
+                        <div className="space-y-3">
+                            <div>
+                                <div className="mb-1.5 flex items-center justify-between">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+                                        Status
+                                    </span>
+                                    {statusFilter && (
+                                        <button
+                                            type="button"
+                                            onClick={() => onClearStatusFilter?.()}
+                                            className="text-[10.5px] font-medium text-text-tertiary hover:text-text-primary"
+                                        >
+                                            Clear
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {STATUS_OPTIONS.map((label) => {
+                                        const key = Object.keys(STATUS_MAP).find((k) => STATUS_MAP[k] === label)
+                                        const color = STATUS_COLORS[key] || STATUS_COLORS.pending
+                                        const active = statusDisplay === label
+                                        return (
+                                            <button
+                                                key={label}
+                                                type="button"
+                                                onClick={() => onSelectStatus(label)}
+                                                aria-pressed={active}
+                                                className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider transition-[transform,box-shadow] duration-150 active:scale-[0.97]`}
+                                                style={{
+                                                    background: active ? color.bg : 'var(--bg-tertiary)',
+                                                    borderColor: active ? color.border : 'var(--border-light)',
+                                                    color: active ? color.text : 'var(--text-secondary)'
+                                                }}
+                                            >
+                                                <i
+                                                    className={`fas ${ListService.getStatusIcon(key)} text-[8px]`}
+                                                    aria-hidden="true"
+                                                />
+                                                {label}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                            <div>
+                                <div className="mb-1.5 flex items-center justify-between">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+                                        Assigned to
+                                    </span>
+                                    {roleFilter && (
+                                        <button
+                                            type="button"
+                                            onClick={() => onClearRoleFilter?.()}
+                                            className="text-[10.5px] font-medium text-text-tertiary hover:text-text-primary"
+                                        >
+                                            Clear
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {ROLE_OPTIONS.map((label) => {
+                                        const active = roleDisplay === label
+                                        return (
+                                            <button
+                                                key={label}
+                                                type="button"
+                                                onClick={() => onSelectRole(label)}
+                                                aria-pressed={active}
+                                                className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider transition-[transform,box-shadow] duration-150 active:scale-[0.97]`}
+                                                style={{
+                                                    background: active ? `${accentColor}1a` : 'var(--bg-tertiary)',
+                                                    borderColor: active ? `${accentColor}55` : 'var(--border-light)',
+                                                    color: active ? accentColor : 'var(--text-secondary)'
+                                                }}
+                                            >
+                                                <i className="fas fa-user text-[8px]" aria-hidden="true" />
+                                                {label}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
-                <span className={`text-text-tertiary ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
-                    <span className="text-text-primary font-semibold">{summaryStats.total}</span>{' '}
-                    {isMobile ? '' : 'tasks'}
+            </div>
+
+            {quickAddProps && (
+                <div className="order-last basis-full min-w-0 lg:order-none lg:basis-auto lg:flex-1 lg:min-w-[220px] lg:max-w-[480px]">
+                    <ListQuickAdd dense {...quickAddProps} />
+                </div>
+            )}
+
+            <div className="ml-auto flex items-center gap-3">
+                {summaryStats.overdue > 0 && (
+                    <Badge
+                        tone="danger"
+                        size={isMobile ? 'xs' : 'sm'}
+                        icon="circle-exclamation"
+                        onClick={() => onStatusFilterChange?.('Overdue')}
+                        title={`${summaryStats.overdue} overdue — click to filter`}
+                    >
+                        {isMobile ? summaryStats.overdue : `${summaryStats.overdue} overdue`}
+                    </Badge>
+                )}
+                <span className={`text-text-tertiary ${isMobile ? 'text-[10.5px]' : 'text-[11.5px]'}`}>
+                    <span className="font-semibold text-text-primary tabular-nums">{summaryStats.total}</span>
+                    {!isMobile && ' tasks'}
                 </span>
             </div>
         </div>

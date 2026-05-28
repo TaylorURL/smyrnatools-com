@@ -80,12 +80,6 @@ export const PLAN_STATS_SECTIONS = [
         label: 'Schedules'
     },
     {
-        description: 'Labor cost from Dayforce — regular vs overtime, blended rate, per-operator and per-plant cost.',
-        icon: 'fa-dollar-sign',
-        id: 'laborCost',
-        label: 'Labor Cost'
-    },
-    {
         description:
             'Yards-per-hour by operator and plant — who is converting clocked hours into yardage and where the data gaps are.',
         icon: 'fa-gauge-high',
@@ -128,7 +122,7 @@ export const PLAN_STATS_GROUPS = [
         id: 'workforce',
         kind: 'group',
         label: 'Workforce',
-        sectionIds: ['hours', 'schedules', 'laborCost', 'efficiency']
+        sectionIds: ['hours', 'schedules', 'efficiency']
     }
 ]
 

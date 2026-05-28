@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo } from 'react'
+import ReactDOM from 'react-dom'
 
 import {
     computeRequestedYardsPerHour,
@@ -183,7 +184,16 @@ function OrderTicketsModal({
     const card = (
         <div
             onClick={inline ? undefined : (e) => e.stopPropagation()}
-            className="rounded-2xl flex flex-col w-full overflow-hidden bg-bg-primary border border-border-light"
+            /* Entrance: card "rises" into focus with a small translate +
+             * fade over 0.3s. Paired with the backdrop's 0.2s fade below,
+             * the staggering reads as layered depth (backdrop arrives
+             * first, content settles on top) instead of both surfaces
+             * popping in flat. `motion-reduce:animate-none` honors the
+             * OS reduced-motion preference. Inline embed skips the
+             * animation since it isn't a modal entrance in that mode. */
+            className={`rounded-2xl flex flex-col w-full overflow-hidden bg-bg-primary border border-border-light ${
+                inline ? '' : 'animate-dv-fade-in motion-reduce:animate-none'
+            }`}
             style={
                 inline
                     ? undefined
@@ -226,15 +236,23 @@ function OrderTicketsModal({
 
     if (inline) return card
 
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+
+    return ReactDOM.createPortal(
         <div
             role="dialog"
             aria-modal="true"
             onClick={onClose}
-            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)] z-[2147483000]"
+            /* Backdrop blur softens the page behind the modal so the
+             * underlying table isn't a sharp distraction. Tuned the
+             * opacity down from 0.55 → 0.45 because the blur already
+             * does most of the focus-pulling work — keeping it darker
+             * on top of the blur reads as heavy. */
+            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(0,0,0,0.45)] backdrop-blur-sm z-[2147483000] animate-fade-in-fast motion-reduce:animate-none"
         >
             {card}
-        </div>
+        </div>,
+        document.body
     )
 }
 

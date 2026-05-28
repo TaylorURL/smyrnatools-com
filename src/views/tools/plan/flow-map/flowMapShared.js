@@ -6,9 +6,38 @@ export const DEFAULT_ZOOM = 8
 export const PLANT_RADIUS_MIN = 34
 export const PLANT_RADIUS_MAX = 56
 
-export const NEEDS_HELP_COLOR = '#dc2626'
-export const LEAVE_OFF_COLOR = '#d97706'
-export const PICKING_COLOR = '#f59e0b'
+/* ── Map palette ──────────────────────────────────────────────────
+ * Three families so colors never compete semantically:
+ *   • Status (warm)        — needs-help, leave-off
+ *   • Interaction (cool)   — picking, selected, draft route
+ *   • Motion (gradient)    — outbound → return → idle
+ * Plus one quiet neutral for the job-assignment line.
+ *
+ * Every color is theme-neutral (reads on both Carto Positron and Dark
+ * Matter basemaps) and accent-independent so the map's visual language
+ * stays stable across users. */
+
+/* Status — warm severity */
+export const NEEDS_HELP_COLOR = '#e11d48' /* rose-600 — alert, cleaner than red-600 */
+export const LEAVE_OFF_COLOR =
+    '#f97316' /* orange-500 — warm "extra capacity" tone, distinct from the deeper return-route orange-600 */
+
+/* Interaction — cool */
+export const PICKING_COLOR = '#22d3ee' /* cyan-400 — friendly "click me" */
+export const SELECTED_RING_COLOR = '#ffffff' /* white halo around the selected pin */
+export const SELECTED_FILL_COLOR = '#1e293b' /* slate-800 — sophisticated dark fill, neutral */
+export const DRAFT_ROUTE_COLOR = '#6366f1' /* indigo-500 — in-progress edit, blue family */
+
+/* Motion — outbound → return → idle */
+export const ROUTE_OUTBOUND_COLOR = '#10b981' /* emerald-500 — modern green */
+export const ROUTE_RETURN_COLOR = '#ea580c' /* orange-600 — deeper return tone, less neon */
+export const ROUTE_IDLE_COLOR = '#475569' /* slate-600 — visible but quiet */
+
+/* Quiet — job assignment ownership line (`useDirectLoadLines`) */
+export const DIRECT_LOAD_COLOR = '#94a3b8' /* slate-400 — lower contrast than idle */
+
+/* Active job pin — kept warm/amber to signal "work happening here". */
+export const JOB_PIN_COLOR = '#f59e0b'
 
 /* Basemap tiles — CartoDB's Positron / Dark Matter sets. Vastly less
  * busy than the default OSM raster (no shaded relief, muted road
@@ -92,13 +121,6 @@ export function resolveStateHint(region) {
     if (region.code && REGION_STATE_HINTS[region.code]) return REGION_STATE_HINTS[region.code]
     return 'Tennessee'
 }
-
-/** Route-leg color tokens. Outbound (going to help) is green, return
- *  (heading home) is orange. Slate is the at-rest base used when a leg's
- *  drivers haven't started moving on it yet. */
-export const ROUTE_OUTBOUND_COLOR = '#16a34a'
-export const ROUTE_RETURN_COLOR = '#f97316'
-export const ROUTE_IDLE_COLOR = '#0f172a'
 
 /** Minutes a direct-load driver holds at the job site before turning to
  *  their return plant. Real pours land somewhere between 30 and 90

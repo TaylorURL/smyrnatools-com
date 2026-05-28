@@ -5,7 +5,6 @@ import { StatisticsSkeleton } from '../../../app/components/common/PlanSkeletons
 import TabFadeIn from '../../../app/components/common/TabFadeIn'
 import DayforceEfficiencyPage from '../../../app/components/dayforce/DayforceEfficiencyPage'
 import DayforceHoursPage from '../../../app/components/dayforce/DayforceHoursPage'
-import DayforceLaborCostPage from '../../../app/components/dayforce/DayforceLaborCostPage'
 import DayforceSchedulesPage from '../../../app/components/dayforce/DayforceSchedulesPage'
 import { PlanStatisticsControls } from '../../../app/components/plan/tabs/statistics/PlanStatisticsControls'
 import PlanStatisticsCustomerLookupPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsCustomerLookupPage'
@@ -201,6 +200,7 @@ function PlanStatisticsView({
     const renderActiveSection = () => {
         const commonProps = {
             accentColor,
+            availablePlantCodes,
             comparison,
             currentDays,
             currentSummary,
@@ -314,16 +314,6 @@ function PlanStatisticsView({
         if (activeSection === 'schedules') {
             return (
                 <DayforceSchedulesPage
-                    accentColor={accentColor}
-                    dateRange={range.current}
-                    plantCodes={availablePlantCodes}
-                    selectedPlant={selectedPlant}
-                />
-            )
-        }
-        if (activeSection === 'laborCost') {
-            return (
-                <DayforceLaborCostPage
                     accentColor={accentColor}
                     dateRange={range.current}
                     plantCodes={availablePlantCodes}

@@ -70,7 +70,24 @@ export default function CockpitHeader({
                     type="button"
                     onClick={onSignOut}
                     title="Sign out"
-                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-status-danger/35 bg-status-danger/10 px-3 py-2 text-xs font-semibold text-status-danger transition-all duration-150 ease-out hover:bg-status-danger/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97] motion-reduce:transition-none"
+                    aria-label="Sign out"
+                    /* Solid theme tokens only — the previous draft used Tailwind
+                     * opacity modifiers (`border-status-danger/35`,
+                     * `bg-status-danger/10`, `hover:bg-status-danger/20`),
+                     * but the `status-danger` token is defined as
+                     * `var(--status-danger)` without an `<alpha-value>`
+                     * placeholder. Tailwind compiles those to invalid
+                     * `rgb(var(--status-danger) / 0.35)` rules that the
+                     * browser drops, leaving the button with no border,
+                     * no background, and no hover state.
+                     *
+                     * Default state mirrors the Messages button's chrome
+                     * (same surface / border / sizing) so they read as a
+                     * set; the destructive identity lives in the icon +
+                     * label color until hover, which flips the whole
+                     * button to a solid red surface as a strong action
+                     * cue. */
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border-light bg-bg-tertiary px-3 py-2 text-xs font-semibold text-status-danger transition-all duration-150 ease-out hover:bg-status-danger hover:text-white hover:border-status-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97] motion-reduce:transition-none"
                 >
                     <i className="fas fa-arrow-right-from-bracket" aria-hidden="true" />
                     {!isMobile && <span>Sign out</span>}

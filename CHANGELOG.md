@@ -1,5 +1,144 @@
 # Changelog
 
+## [2026.22.16] - 2026-05-27
+
+- Operations > Statistics > Workforce data-fetch fixes. Two bugs that
+  silently corrupted every Hours / Schedules / Efficiency reading: (a)
+  `toDateString` in `src/utils/DayforcePayrollUtility.js` ran already-ISO
+  date strings through `new Date('YYYY-MM-DD')` (which parses as UTC
+  midnight) and then extracted local-time year/month/day, shifting every
+  range back one day in west-of-UTC zones (Chicago included) — Mon–Sat
+  queries fetched Sun–Fri. Added a passthrough so ISO strings flow
+  unchanged. (b) `useDayforceOperatorMetrics` was hitting PostgREST's
+  default 1000-row cap with no pagination — Year ranges with ~11,750
+  shifts returned a random 1000-row sample, which is why Quarter totals
+  could come back larger than Year. Added `fetchAllRows` that walks
+  the table in 1000-row pages via `.range(offset, offset + 999)` with
+  `.order('shift_date')` for deterministic pagination, and applied it
+  to shifts / employees / org_units.
+- New Schedules week carousel. The vertical week stack got replaced
+  with a single-week view + prev / next arrows + dot indicator
+  (compact `N / M` counter when there are more than 8 weeks). Keyboard
+  ←/→ navigation (ignores typing in inputs / textareas so the search
+  box keeps its caret movement). Soft cross-fade between weeks via
+  `key={weekLabel}` + `animate-fade-in-fast`. Single-week ranges skip
+  the chrome entirely. Lives in
+  `src/app/components/dayforce/schedules/WeekCarousel.jsx`; `WeekTable`
+  gained a `bare` prop so the carousel can own the Panel chrome instead
+  of nesting two panels. Arrow direction follows the timeline mental
+  model (← back, → forward) by reversing the source array locally so
+  the carousel reads oldest → newest left-to-right and defaults to the
+  newest week.
+- Efficiency tab redesign. The old dense 5-up KPI strip + 3-up plant
+  scorecard grid replaced with a single anchor metric (48px Fleet YPH
+  with target progress bar + status pill + 4-cell micro-stat row) and
+  a ranked plant leaderboard (rank → plant chip + name + ops → big
+  YPH → vs-fleet delta with up/down arrow → status pill → inline
+  progress bar). New `FleetHeroPanel` and `PlantLeaderboardRow` in
+  `DayforceEfficiencyPieces.jsx`; the operator detail table is now
+  always visible (was previously collapsed behind a toggle) since the
+  hero + leaderboard tells the macro story up front.
+- Hours + YPH metrics on the Statistics Overview. `PlanStatisticsView`
+  now passes `availablePlantCodes` through `commonProps`;
+  `PlanStatisticsOverviewPage` calls `useDayforceOperatorMetrics` +
+  `useOperatorYardageByDay` and uses the exact same fleet YPH math as
+  the Efficiency tab (`totalYards / totalActualHours` across the
+  Dayforce-matched roster, plant-scoped when a plant filter is active).
+  Headline marquee now shows Fleet YPH alongside yards, and the top
+  metrics grid expanded from 4 cells to 6 to add Actual hours + Fleet
+  YPH. Hooks only mount when Overview is active so other Stats
+  sub-pages don't trigger the Dayforce fetches.
+- Removed At-risk operators section from the Hours tab + the OT cost
+  column from the per-operator row. Per the dispatcher's request the
+  Hours surface stays a workload view; cost rolls up on the dedicated
+  Labor Cost surface. Cleaned up the now-orphaned spotlights memo,
+  scopedPerOperator memo, focusOperator callback, threshold constants
+  (`OT_THRESHOLD`, `APPROACHING_OT_THRESHOLD`,
+  `UNDERUTILIZED_THRESHOLD`), color constants, and the
+  `hours/SpotlightColumn.jsx` file (Efficiency has its own equivalent
+  in `DayforceEfficiencyPieces`). Removed the unused `fmtMoney` / `USD`
+  helpers from `OperatorHoursRow`.
+- Labor Cost sub-page retired. `DayforceLaborCostPage.jsx` deleted
+  (286 LOC). The page was duplicating workload metrics that now live
+  on Hours and Efficiency.
+- Modal-wide polish pass. Every modal in
+  `src/app/components/common/`, `src/app/components/schedule/`,
+  `src/app/components/maintenance/`, `src/app/components/notifications/`,
+  `src/app/components/reports/`, `src/app/components/plants/`, and
+  `src/app/components/sections/issue-modal/` now portals to
+  `document.body`, fades in via `animate-fade-in-fast` with
+  `backdrop-blur-sm` softening the underlying page, and respects
+  `motion-reduce:animate-none`. The `OrderTicketsModal` card uses
+  `animate-dv-fade-in` so the card "rises" after the backdrop arrives —
+  staggered depth instead of both surfaces popping in flat.
+  Touched: `Modal`, `JobMapModal`, `OrderAuditModal`, `OrderInfoModal`,
+  `OrderTicketsModal`, `MediaViewer`, `EmbeddedViewModal`,
+  `ConfirmationModal`, `ComposeModal`, `AppInstallPromptModal`,
+  `TerminatedOverlay`, `VersionPopup`, `VersionUpdateBanner`,
+  `WebOverlay`, `MaintenanceEquipmentDetail`, `MaintenanceEquipmentModal`,
+  `MaintenanceServiceModal`, `SendIssueMessageModal`,
+  `PlantManagersQuickEditModal`, `AIValidatingModal`,
+  `DeleteConfirmModal`.
+- `StatusHistoryBar` hover tooltip fix. The bar's tooltip lives inside
+  a virtualized `<tr>` whose `transform` creates a stacking context, so
+  the previous `position: absolute` + `z-[1000]` tooltip painted under
+  the next row regardless of z-index. Tooltip now portals to
+  `document.body` with `position: fixed` coords computed from
+  `getBoundingClientRect()`, repositions on scroll (capture phase, so
+  virtualized scroll containers reach it) + resize, and carries
+  `pointer-events-none` so the cursor doesn't get hijacked.
+- Online users overlay: role dedupe + restacked badge/region layout.
+  `OnlineUsersModal` was rendering only the first role; now maps all
+  `user.roles` with case-insensitive dedupe (source data sometimes
+  joins the role assignment + role name with mismatched casing, causing
+  duplicate badges). Role badges sit on their own line, region drops
+  below them, devices + activity timestamp on a third line — clear
+  identity → presence hierarchy.
+- My Account sign-out button fix. The button was using Tailwind
+  opacity-modifier classes (`border-status-danger/35`,
+  `bg-status-danger/10`, `hover:bg-status-danger/20`) against a CSS-var
+  theme token (`'status-danger': 'var(--status-danger)'`) that lacks
+  the `<alpha-value>` placeholder. Tailwind compiled those to invalid
+  `rgb(var(--status-danger) / 0.35)` rules the browser dropped, leaving
+  the button with no border, no background, no hover state. Rewrote
+  with solid theme tokens — `bg-bg-tertiary` + `border-border-light` +
+  `text-status-danger` in the default state, flipping to a solid
+  `bg-status-danger` + `text-white` on hover as a strong destructive
+  cue. Same pattern affects ~78 other call sites across the app
+  (flagged as a follow-up sweep).
+- List view rewrite. `src/views/reporting/list/ListView.jsx` now
+  persists `groupBy` + `layout` via localStorage
+  (`smyrnatools.listView.preferences`) with validation against an
+  allowlist on read. Substantial rewrites across the list component
+  surface: `ListBulkActionsBar`, `ListFilterBar`, `ListItemRow`,
+  `ListCardItem`, `ListEmptyState`, `ListGroupedItems`,
+  `ListFilterBarSkeleton`, `ListActivityFeed`, `ListCardsBoard`,
+  plus new `ListInlineMenu.jsx` and `ListQuickAdd.jsx`. `ListService.js`
+  gained ~200 LOC of bulk-operation surface. `useListBulkActions` and
+  `useListData` reworked. `listViewConstants.js` lost
+  `BULK_ACTION_COLORS` + `getBulkButtonStyle` — bulk button styling
+  centralized in the new components.
+- Dashboard alerts + at-a-glance + mobile nav refresh.
+  `DashboardAlertsPanel` rewritten (+157 LOC), `DashboardAtAGlance`
+  tightened, `NavigationMobile` reworked (+139 LOC).
+- Plan flow map upgrades. New `FlowMapLegend.jsx` (+155 LOC),
+  `FlowMapStyleSheet` reorganized, `FlowMapToolbar` polish,
+  `flowMapIcons` + `flowMapShared` extended. `PlanFlowTimeScrubber`
+  rewrite (~146 LOC) plus `PlanFlowSidePanel` touch-ups.
+- Detail view subcomponents refresh. `DetailViewSubcomponents.jsx`
+  reworked (~151 LOC), `DetailViewSection` and `DetailViewHeader`
+  tightened.
+- Customer satisfaction surfaces. `CustomerList` (Service tab) +
+  `PlanStatisticsCustomerLookupPage` + `PlanStatisticsKickersPage`
+  polish. `PersonStatisticsView` minor adjustments.
+- Asset statistics view + miscellaneous panel touch-ups
+  (`AssetStatisticsView`, `DashboardPodcastPanel`,
+  `AssetListSkeleton`).
+- Hook + view miscellany: `useDirectLoadLines`, `useDraftRoute`,
+  `useJobPins`, `usePlantMarkers` adjustments; `OperatorDetailView`
+  minor cleanup; `ListAddView` minor.
+- README + version manifests bumped.
+
 ## [2026.22.15] - 2026-05-27
 
 - Mid-session 401s now redirect cleanly to LoginView instead of leaving

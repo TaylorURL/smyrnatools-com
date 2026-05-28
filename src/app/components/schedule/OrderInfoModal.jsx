@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo, useState } from 'react'
+import ReactDOM from 'react-dom'
 
 import { formatOrderAddress } from '../../../utils/AddressUtility'
 import { isBigPourOrder, isCancelledOrder, plantBadgeColor, SAME_DAY_ORDER_START } from '../../../utils/PlanUtility'
@@ -365,7 +366,9 @@ function OrderInfoModal({
 
     if (inline) return card
 
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+
+    return ReactDOM.createPortal(
         <div
             role="dialog"
             aria-modal="true"
@@ -373,7 +376,8 @@ function OrderInfoModal({
             className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)] z-[2147483000]"
         >
             {card}
-        </div>
+        </div>,
+        document.body
     )
 }
 

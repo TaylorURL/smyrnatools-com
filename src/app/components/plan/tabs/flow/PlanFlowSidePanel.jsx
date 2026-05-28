@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 /** Empty-state shown when no plant is selected. Matches the flat
  *  `bg-bg-primary` aesthetic the rest of the planner uses — no rounded
  *  badges or accent fills. */
-export function PlanFlowEmptyPanel({ accentColor }) {
+export function PlanFlowEmptyPanel({ accentColor: _accentColor }) {
     return (
         <div className="flex flex-col items-center justify-center text-center px-6 py-10 flex-1">
             <i className="fas fa-arrow-pointer text-[26px] mb-3" style={{ color: 'var(--text-primary)' }} />
@@ -64,7 +64,12 @@ export function PlanFlowPlantOverview({
             <StatRow>
                 <StatCell label="Eff ops" value={selected.eff} />
                 <StatCell label="Yardage" value={production.totalYardage || '—'} />
-                <StatCell label="YPH" value={yph ?? '—'} isLast />
+                <StatCell
+                    label="YPH"
+                    value={yph ?? '—'}
+                    valueColor={yph != null ? yphColorFor(yph, accentColor) : undefined}
+                    isLast
+                />
             </StatRow>
 
             {canEdit && isSaturday && onSaturdayOverrideChange ? (
@@ -186,13 +191,16 @@ function StatRow({ children }) {
     return <div className="grid grid-cols-3 rounded-lg overflow-hidden border border-border-light">{children}</div>
 }
 
-function StatCell({ isLast = false, label, value }) {
+function StatCell({ isLast = false, label, value, valueColor }) {
     return (
         <div
             className={`px-3 py-2 flex flex-col gap-0.5 bg-bg-primary ${isLast ? '' : 'border-r border-border-light'}`}
         >
             <span className="text-[10.5px] text-text-secondary">{label}</span>
-            <span className="text-[16px] font-semibold leading-tight font-mono tabular-nums truncate text-text-primary">
+            <span
+                className="text-[16px] font-semibold leading-tight font-mono tabular-nums truncate text-text-primary"
+                style={valueColor ? { color: valueColor } : undefined}
+            >
                 {value}
             </span>
         </div>
@@ -434,7 +442,7 @@ function RouteSection({
     )
 }
 
-function RouteRow({ accentColor, assignment, canEdit, clockIn, onDelete, onEdit, travel }) {
+function RouteRow({ accentColor: _accentColor, assignment, canEdit, clockIn, onDelete, onEdit, travel }) {
     const ops = parseInt(assignment.driverCount, 10) || 0
     return (
         <div className="rounded-lg px-3 py-2 flex items-center gap-2.5 bg-bg-primary border border-border-light">

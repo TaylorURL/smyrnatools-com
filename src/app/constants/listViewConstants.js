@@ -60,13 +60,6 @@ export const STATUS_COLORS = {
     waiting: { bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)', text: '#f59e0b' }
 }
 
-export const BULK_ACTION_COLORS = {
-    cancel: { bg: 'var(--bg-secondary)', hover: 'var(--border-light)', text: 'var(--text-secondary)' },
-    complete: { bg: 'rgba(22,163,74,0.1)', hover: 'rgba(22,163,74,0.2)', text: '#16a34a' },
-    delete: { bg: 'rgba(239,68,68,0.1)', hover: 'rgba(239,68,68,0.2)', text: '#ef4444' },
-    neutral: { bg: 'rgba(59,130,246,0.1)', hover: 'rgba(59,130,246,0.2)', text: '#3b82f6' }
-}
-
 export const BULK_STATUS_OPTIONS = [
     { label: 'Pending', value: 'pending' },
     { label: 'In Progress', value: 'in_progress' },
@@ -104,13 +97,3 @@ export const getItemStatusStyle = (statusType) => {
  *  status signal. */
 export const getItemStatusIconColor = (statusType) =>
     (STATUS_COLORS[normalizeListStatus(statusType)] || STATUS_COLORS.pending).text
-
-/** Bulk-action button style — same neutralization as status badges.
- *  The action colour reads through the tinted background; the button
- *  label uses theme text. */
-export const getBulkButtonStyle = (type) => {
-    const color = BULK_ACTION_COLORS[type] || BULK_ACTION_COLORS.cancel
-    return {
-        background: color.bg
-    }
-}

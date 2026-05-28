@@ -182,6 +182,258 @@ export function OperatorEfficiencyRow({ accent, fleetYph, row }) {
     )
 }
 
+/** Status tone metadata for the fleet hero — drives the tone pill +
+ *  the headline number colour so "we're crushing it" reads green and
+ *  "we're way off" reads red without the user parsing the number. */
+const FLEET_STATUS_TONES = {
+    'below-target': { label: 'Below target', tone: 'danger' },
+    exceptional: { label: 'Exceptional', tone: 'success' },
+    'no-data': { label: 'No yardage', tone: 'neutral' },
+    'on-target': { label: 'On target', tone: 'success' }
+}
+
+/** Fleet-level hero panel — the single anchor metric for the page. Big
+ *  YPH number, target-referenced progress fill, status pill, supporting
+ *  context line, plus a four-cell secondary KPI strip. Replaces the old
+ *  5-up StatGroup strip so the eye lands on the headline number first
+ *  and only drops to the supporting metrics if it cares. */
+export function FleetHeroPanel({
+    accent,
+    fleetYph,
+    medianYph,
+    operatorCount,
+    plantsAboveTarget,
+    plantsBelowTarget,
+    plantsExceptional,
+    plantsTotal,
+    plantsWithNoData,
+    totalHours,
+    totalYards
+}) {
+    const status = plantStatusFor(fleetYph)
+    const statusConfig = FLEET_STATUS_TONES[status]
+    const scaleMax = Math.max(YPH_EXCEPTIONAL, fleetYph)
+    const fillPct = scaleMax > 0 ? Math.min(100, (fleetYph / scaleMax) * 100) : 0
+    const targetPct = scaleMax > 0 ? (YPH_TARGET / scaleMax) * 100 : 0
+    const exceptionalPct = scaleMax > 0 ? (YPH_EXCEPTIONAL / scaleMax) * 100 : 0
+    const pctOfTarget = YPH_TARGET > 0 && fleetYph > 0 ? Math.round((fleetYph / YPH_TARGET) * 100) : 0
+
+    return (
+        <div className="flex flex-col gap-5 rounded-card border border-border-light bg-bg-primary p-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:gap-6">
+                <div className="flex flex-col gap-2 lg:min-w-[260px]">
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-text-tertiary">
+                            Fleet YPH
+                        </span>
+                        <Badge tone={statusConfig.tone} size="xs" shape="pill" uppercase>
+                            {statusConfig.label}
+                        </Badge>
+                    </div>
+                    <div className="flex items-baseline gap-2.5">
+                        <span className="text-[48px] font-bold tabular-nums leading-none text-text-primary">
+                            {fleetYph > 0 ? fmtYph(fleetYph) : '—'}
+                        </span>
+                        <span className="text-[12px] font-semibold uppercase tracking-wider text-text-tertiary">
+                            yd<sup>3</sup>/h
+                        </span>
+                    </div>
+                    <div className="text-[11.5px] text-text-secondary tabular-nums">
+                        {pctOfTarget > 0 ? `${pctOfTarget}% of ${YPH_TARGET} target` : `Target ${YPH_TARGET} YPH`}
+                        {medianYph > 0 && <span className="text-text-tertiary"> · Median {fmtYph(medianYph)}</span>}
+                    </div>
+                </div>
+
+                <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                    <div className="flex justify-between text-[10px] font-semibold uppercase tracking-wider text-text-tertiary tabular-nums">
+                        <span>0</span>
+                        <span>Target {YPH_TARGET}</span>
+                        <span>Exceptional {YPH_EXCEPTIONAL}</span>
+                    </div>
+                    <div className="h-2 rounded-full overflow-hidden bg-bg-tertiary relative">
+                        <div
+                            className="h-full absolute left-0 top-0 transition-[width] duration-700 ease-out motion-reduce:transition-none"
+                            style={{ background: accent, width: `${fillPct}%` }}
+                        />
+                        <div
+                            className="absolute top-0 bottom-0 w-px"
+                            style={{ background: 'var(--text-tertiary)', left: `${targetPct}%` }}
+                        />
+                        <div
+                            className="absolute top-0 bottom-0 w-px"
+                            style={{ background: 'var(--border-light)', left: `${exceptionalPct}%` }}
+                        />
+                    </div>
+                    <div className="text-[11.5px] text-text-secondary tabular-nums">
+                        <b className="text-text-primary">{fmtYards(totalYards)}</b> on{' '}
+                        <b className="text-text-primary">{fmtHours(totalHours)}</b> across{' '}
+                        <b className="text-text-primary">{fmtInt(operatorCount)}</b>{' '}
+                        {operatorCount === 1 ? 'operator' : 'operators'}
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 pt-3 border-t border-border-light">
+                <HeroMicroStat
+                    accentTone="success"
+                    hint={plantsExceptional > 0 ? `${plantsExceptional} exceptional` : `≥ ${YPH_TARGET} YPH`}
+                    label="Plants at / above target"
+                    value={`${fmtInt(plantsAboveTarget)} / ${fmtInt(plantsTotal)}`}
+                />
+                <HeroMicroStat
+                    accentTone={plantsBelowTarget > 0 ? 'danger' : 'neutral'}
+                    hint={plantsWithNoData > 0 ? `+${plantsWithNoData} with no yardage` : 'All plants reporting'}
+                    label="Plants below target"
+                    value={fmtInt(plantsBelowTarget)}
+                />
+                <HeroMicroStat
+                    accentTone="neutral"
+                    hint="On-roster Dayforce operators"
+                    label="Operators on the road"
+                    value={fmtInt(operatorCount)}
+                />
+                <HeroMicroStat
+                    accentTone="neutral"
+                    hint="Pours credited to operators"
+                    label="Yards"
+                    value={fmtYards(totalYards)}
+                />
+            </div>
+        </div>
+    )
+}
+
+function HeroMicroStat({ accentTone, hint, label, value }) {
+    const dotColor =
+        accentTone === 'success'
+            ? 'var(--status-active)'
+            : accentTone === 'danger'
+              ? 'var(--status-danger)'
+              : accentTone === 'warning'
+                ? 'var(--status-warning)'
+                : 'var(--border-medium)'
+    return (
+        <div className="flex flex-col gap-1 min-w-0">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-text-tertiary">
+                <span className="inline-block h-1.5 w-1.5 rounded-full shrink-0" style={{ background: dotColor }} />
+                <span className="truncate">{label}</span>
+            </div>
+            <div className="text-[18px] font-bold tabular-nums text-text-primary leading-tight">{value}</div>
+            {hint && <div className="text-[10.5px] text-text-tertiary truncate">{hint}</div>}
+        </div>
+    )
+}
+
+/** Dense ranked-row layout for the plant leaderboard. Replaces the older
+ *  3-up scorecard grid: rank + plant chip + name on the left, big YPH +
+ *  vs-fleet delta + inline bar on the right. Reads top-to-bottom like a
+ *  leaderboard rather than left-to-right like a card wall, so the
+ *  "who's winning" question lands instantly. */
+export function PlantLeaderboardRow({ fleetYph, isLast, rank, row }) {
+    const status = plantStatusFor(row.yph)
+    const statusConfig = PLANT_STATUS_TONES[status]
+    const plantColor = PLANT_BADGE_COLORS[row.code] || FALLBACK_PLANT_COLOR
+    const scaleMax = Math.max(YPH_EXCEPTIONAL, row.yph)
+    const fillPct = scaleMax > 0 ? Math.min(100, (row.yph / scaleMax) * 100) : 0
+    const targetPct = scaleMax > 0 ? (YPH_TARGET / scaleMax) * 100 : 0
+    const deltaVsFleet = fleetYph > 0 && row.yph > 0 ? row.yph - fleetYph : null
+    const deltaPct = fleetYph > 0 && row.yph > 0 ? Math.round(((row.yph - fleetYph) / fleetYph) * 100) : null
+    const deltaColor =
+        deltaPct == null
+            ? 'var(--text-tertiary)'
+            : deltaPct > 0
+              ? 'var(--status-active)'
+              : deltaPct < 0
+                ? 'var(--status-danger)'
+                : 'var(--text-tertiary)'
+
+    return (
+        <div
+            className={`grid grid-cols-[28px_1fr_auto] sm:grid-cols-[28px_minmax(160px,1.4fr)_minmax(80px,auto)_minmax(80px,auto)_minmax(60px,auto)_minmax(140px,2fr)] items-center gap-x-3 gap-y-2 px-3 py-2.5 hover:bg-bg-secondary transition-colors ${
+                isLast ? '' : 'border-b border-border-light'
+            }`}
+        >
+            <span className="font-mono tabular-nums text-[12px] font-bold text-text-tertiary text-right">{rank}</span>
+
+            <div className="flex items-center gap-2 min-w-0">
+                <div
+                    className="flex h-7 w-9 items-center justify-center rounded-md text-[11px] font-bold text-white shrink-0 tabular-nums"
+                    style={{ background: plantColor }}
+                >
+                    {row.code}
+                </div>
+                <div className="flex flex-col leading-tight min-w-0">
+                    <span className="text-[12.5px] font-semibold text-text-primary truncate">{row.name}</span>
+                    <span className="text-[10.5px] text-text-tertiary tabular-nums">
+                        {fmtInt(row.operatorCount)} op{row.operatorCount === 1 ? '' : 's'}
+                    </span>
+                </div>
+            </div>
+
+            <span className="hidden sm:flex flex-col leading-tight items-end shrink-0">
+                <span className="text-[16px] font-bold tabular-nums text-text-primary">
+                    {row.yph > 0 ? fmtYph(row.yph) : '—'}
+                </span>
+                <span className="text-[9.5px] uppercase tracking-wider text-text-tertiary">YPH</span>
+            </span>
+
+            <span
+                className="hidden sm:flex items-baseline gap-1 shrink-0 font-mono tabular-nums"
+                style={{ color: deltaColor }}
+            >
+                {deltaPct == null ? (
+                    <span className="text-text-tertiary text-[12px]">—</span>
+                ) : (
+                    <>
+                        <i
+                            className={`fas fa-arrow-${deltaPct > 0 ? 'up' : deltaPct < 0 ? 'down' : 'right'} text-[9px]`}
+                        />
+                        <span className="text-[12.5px] font-semibold">
+                            {deltaPct > 0 ? '+' : ''}
+                            {deltaPct}%
+                        </span>
+                    </>
+                )}
+            </span>
+
+            <Badge
+                tone={statusConfig.tone}
+                size="xs"
+                shape="pill"
+                uppercase={false}
+                className="hidden sm:inline-flex shrink-0"
+            >
+                {statusConfig.label}
+            </Badge>
+
+            <div className="col-span-3 sm:col-span-1 flex flex-col gap-1 min-w-0">
+                <div className="h-1.5 rounded-full overflow-hidden bg-bg-tertiary relative">
+                    <div
+                        className="h-full absolute left-0 top-0 transition-[width] duration-500 ease-out motion-reduce:transition-none"
+                        style={{ background: plantColor, width: `${fillPct}%` }}
+                    />
+                    <div
+                        className="absolute top-0 bottom-0 w-px"
+                        style={{ background: 'var(--text-tertiary)', left: `${targetPct}%` }}
+                        title={`Target ${YPH_TARGET}`}
+                    />
+                </div>
+                <div className="flex justify-between text-[9.5px] text-text-tertiary tabular-nums">
+                    <span>
+                        {fmtHours(row.actualHours)} · {fmtYards(row.yards)}
+                    </span>
+                    {deltaVsFleet != null && (
+                        <span className="sm:hidden">
+                            {deltaVsFleet > 0 ? '+' : ''}
+                            {fmtYph(deltaVsFleet)} vs fleet
+                        </span>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
 /** Large plant-first scorecard. Anchors the redesigned Efficiency page:
  *  one card per plant, ranked by YPH, with the big number front-and-
  *  center, a target-referenced fill bar, a colour-coded status pill,

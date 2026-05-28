@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
+import ReactDOM from 'react-dom'
 
 /** Pre-submit validation modal — single accent color, compact typography,
  *  no marketing copy. Progress bar fills as each operator's comment is
@@ -7,7 +8,8 @@ import React from 'react'
  *  bar reads as a generic loader. */
 const AIValidatingModal = ({ progress, accentColor }) => {
     const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+    return ReactDOM.createPortal(
         <div
             className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-4"
             role="status"
@@ -64,7 +66,8 @@ const AIValidatingModal = ({ progress, accentColor }) => {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 

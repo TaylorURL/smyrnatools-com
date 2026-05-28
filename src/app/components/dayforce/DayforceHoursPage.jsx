@@ -10,26 +10,8 @@ import { DayforceFilters } from './DayforceFilters'
 import OperatorDailyStrip from './hours/OperatorDailyStrip'
 import OperatorHoursRow from './hours/OperatorHoursRow'
 import PlantPressureTable from './hours/PlantPressureTable'
-import SpotlightColumn, { SpotlightChip } from './hours/SpotlightColumn'
 
 const HOURS_SORT_IDS = ['hours', 'ot', 'name']
-
-/** Bucket thresholds — same numbers the dispatcher reads off the floor:
- *  anyone over 40h triggered OT this week, anyone 35-40h is one rough day
- *  away, anyone under 30h had room on the schedule that didn't get used. */
-const OT_THRESHOLD = 40
-const APPROACHING_OT_THRESHOLD = 35
-const UNDERUTILIZED_THRESHOLD = 30
-
-/* Status colors used across the page so OT-related surfaces (spotlights,
- * plant bars, day strip) read as one visual system. These map onto the
- * design system's status tokens — `var(--status-danger)` for overtime
- * breaches, `var(--status-warning)` for "approaching" risk, `var(--accent)`
- * for calm/baseline, and a saturated sky tone for PTO that holds across
- * all three themes. */
-const COLOR_DANGER = 'var(--status-danger)'
-const COLOR_WARN = 'var(--status-warning)'
-const COLOR_CALM = 'var(--accent)'
 
 const USD = new Intl.NumberFormat('en-US', { currency: 'USD', maximumFractionDigits: 0, style: 'currency' })
 
@@ -66,14 +48,11 @@ function LoadingSkeleton() {
  * of titled `Panel`s, each with a short description and either a real
  * `<table>` or a callout grid.
  *
- * Answers four operational questions in order:
+ * Answers three operational questions in order:
  *   1. What's the headline OT exposure for the window? — summary stats
  *   2. Which plants are driving it? — "OT pressure by plant" table.
- *      Click a row to scope spotlights + operator table to that plant.
- *   3. Who's at risk right now? — three spotlight columns (over OT,
- *      approaching OT, under-utilized). Click an operator chip to
- *      filter the table below to just them.
- *   4. What does one operator's pattern look like? — per-operator
+ *      Click a row to scope the operator table to that plant.
+ *   3. What does one operator's pattern look like? — per-operator
  *      table rows expand inline to reveal a 7-day shift mini-chart.
  *
  * Scheduled hours intentionally dropped from the headline view — the
@@ -86,10 +65,10 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
         dayforceMetrics
     const filters = useDayforceOperatorFilters({ defaultSort: 'hours', rows: perOperator })
 
-    /* Local plant filter that scopes the spotlights and the operator
-     * table to a single plant when the user clicks a row in the plant
-     * pressure panel. Independent from the page-level `selectedPlant`
-     * prop so the dispatcher can drill in without leaving the page. */
+    /* Local plant filter that scopes the operator table to a single plant
+     * when the user clicks a row in the plant pressure panel. Independent
+     * from the page-level `selectedPlant` prop so the dispatcher can drill
+     * in without leaving the page. */
     const [focusedPlantCode, setFocusedPlantCode] = useState(null)
     const [expandedOperatorId, setExpandedOperatorId] = useState(null)
 
@@ -126,33 +105,6 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
         [plantPressure]
     )
 
-    const scopedPerOperator = useMemo(
-        () =>
-            focusedPlantCode
-                ? perOperator.filter((r) => (r.plantCode || 'Unassigned') === focusedPlantCode)
-                : perOperator,
-        [focusedPlantCode, perOperator]
-    )
-
-    const spotlights = useMemo(() => {
-        const overOt = scopedPerOperator
-            .filter((row) => row.otHours > 0)
-            .sort((a, b) => b.otHours - a.otHours)
-            .slice(0, 8)
-        const approachingOt = scopedPerOperator
-            .filter(
-                (row) =>
-                    row.otHours === 0 && row.actualHours >= APPROACHING_OT_THRESHOLD && row.actualHours < OT_THRESHOLD
-            )
-            .sort((a, b) => b.actualHours - a.actualHours)
-            .slice(0, 8)
-        const underutilized = scopedPerOperator
-            .filter((row) => row.actualHours > 0 && row.actualHours < UNDERUTILIZED_THRESHOLD)
-            .sort((a, b) => a.actualHours - b.actualHours)
-            .slice(0, 8)
-        return { approachingOt, overOt, underutilized }
-    }, [scopedPerOperator])
-
     const avgWeeklyHours = useMemo(() => computeAvgWeeklyHours(perOperator, perWeek), [perOperator, perWeek])
     const otSharePct = totals.totalActualHours > 0 ? (totals.otHours / totals.totalActualHours) * 100 : 0
     const operatorsInOt = useMemo(() => perOperator.filter((r) => r.otHours > 0).length, [perOperator])
@@ -183,10 +135,6 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
         }
         return map
     }, [perShift])
-
-    const focusOperator = (row) => {
-        filters.setSearch(row.badge || row.name)
-    }
 
     const togglePlantFocus = (code) => {
         setFocusedPlantCode((current) => (current === code ? null : code))
@@ -298,7 +246,7 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
             >
                 <div className="text-[11.5px] mb-2 text-text-secondary">
                     Which plants are eating the OT budget — sorted by OT cost, worst first. Click any row to filter the
-                    spotlights and operator table below to that plant.
+                    operator table below to that plant.
                 </div>
                 {plantPressure.length === 0 ? (
                     <EmptySection icon="fa-circle-info" message="No plant data in the window." />
@@ -310,78 +258,6 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
                         plants={plantPressure}
                     />
                 )}
-            </Panel>
-
-            <Panel title="At-risk operators">
-                <div className="text-[11.5px] mb-2 text-text-secondary">
-                    Three buckets the dispatcher acts on daily: who already triggered OT, who&apos;s one rough day from
-                    it, and who&apos;s been under-scheduled. Click any operator chip to filter the table below.
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                    <SpotlightColumn
-                        accentColor={COLOR_DANGER}
-                        count={spotlights.overOt.length}
-                        emptyMessage={`No operators went over ${OT_THRESHOLD}h${focusedPlantCode ? ' at this plant' : ''} this period.`}
-                        hint={`>${OT_THRESHOLD}h in a week`}
-                        icon="fa-triangle-exclamation"
-                        title="Over OT"
-                    >
-                        {spotlights.overOt.map((row) => (
-                            <SpotlightChip
-                                key={row.dayforceEmployeeId}
-                                accent={accent}
-                                onClick={() => focusOperator(row)}
-                                primary={fmtHours(row.otHours)}
-                                secondary={`${fmtHours(row.actualHours)} actual · ${fmtMoney(row.otCost)} OT cost`}
-                                row={row}
-                            />
-                        ))}
-                    </SpotlightColumn>
-
-                    <SpotlightColumn
-                        accentColor={COLOR_WARN}
-                        count={spotlights.approachingOt.length}
-                        emptyMessage="No operators near the OT threshold."
-                        hint={`${APPROACHING_OT_THRESHOLD}–${OT_THRESHOLD}h in a week`}
-                        icon="fa-stopwatch"
-                        title="Approaching OT"
-                    >
-                        {spotlights.approachingOt.map((row) => (
-                            <SpotlightChip
-                                key={row.dayforceEmployeeId}
-                                accent={accent}
-                                onClick={() => focusOperator(row)}
-                                primary={fmtHours(row.actualHours)}
-                                secondary={
-                                    row.position ? `${row.position} · room to slow down` : 'Room to slow down before OT'
-                                }
-                                row={row}
-                            />
-                        ))}
-                    </SpotlightColumn>
-
-                    <SpotlightColumn
-                        accentColor={COLOR_CALM}
-                        count={spotlights.underutilized.length}
-                        emptyMessage="No operators below the under-utilized threshold."
-                        hint={`<${UNDERUTILIZED_THRESHOLD}h in a week`}
-                        icon="fa-bed"
-                        title="Under-utilized"
-                    >
-                        {spotlights.underutilized.map((row) => (
-                            <SpotlightChip
-                                key={row.dayforceEmployeeId}
-                                accent={accent}
-                                onClick={() => focusOperator(row)}
-                                primary={fmtHours(row.actualHours)}
-                                secondary={
-                                    row.ptoHours > 0 ? `${fmtHours(row.ptoHours)} PTO in window` : 'Capacity available'
-                                }
-                                row={row}
-                            />
-                        ))}
-                    </SpotlightColumn>
-                </div>
             </Panel>
 
             <DayforceFilters
@@ -425,7 +301,6 @@ export function DayforceHoursPage({ accentColor, dateRange, plantCodes, selected
                             <span className="w-14 text-right shrink-0">Actual</span>
                             <span className="w-14 text-right shrink-0">OT</span>
                             <span className="w-12 text-right shrink-0 hidden sm:inline">OT %</span>
-                            <span className="w-20 text-right shrink-0">OT cost</span>
                             <span className="w-14 text-right shrink-0 hidden md:inline">PTO</span>
                         </div>
                         {tableRows.map((row) => {

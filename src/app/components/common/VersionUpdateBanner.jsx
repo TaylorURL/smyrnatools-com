@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
+import ReactDOM from 'react-dom'
 
 import { useAccentColor } from '../../hooks/useAccentColor'
 
@@ -8,7 +9,8 @@ import { useAccentColor } from '../../hooks/useAccentColor'
  */
 function VersionUpdateBanner({ onDismiss }) {
     const accentColor = useAccentColor()
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+    return ReactDOM.createPortal(
         <div
             role="status"
             aria-live="polite"
@@ -40,7 +42,8 @@ function VersionUpdateBanner({ onDismiss }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 export default VersionUpdateBanner

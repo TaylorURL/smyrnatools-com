@@ -21,6 +21,63 @@ class ListServiceImpl {
     creatorProfiles = {}
     plants = []
     plantDistribution = {}
+    _emitScheduled = false
+
+    /**
+     * Notifies subscribers (typically `useListData`) that `listItems` has mutated.
+     * Multiple synchronous patches coalesce into a single dispatch via microtask
+     * scheduling, so a bulk operation that touches N items still produces only
+     * one re-render in React.
+     */
+    _emitChange() {
+        if (typeof window === 'undefined') return
+        if (this._emitScheduled) return
+        this._emitScheduled = true
+        queueMicrotask(() => {
+            this._emitScheduled = false
+            window.dispatchEvent(new Event('list-items-changed'))
+        })
+    }
+
+    /**
+     * Applies a shallow patch to a cached list item in place and notifies
+     * subscribers. Returns the previous snapshot so callers can roll back on
+     * network failure — `null` when the item is not in the cache (no-op).
+     */
+    optimisticPatch(itemId, patch) {
+        const idx = this.listItems.findIndex((i) => i.id === itemId)
+        if (idx < 0) return null
+        const prev = this.listItems[idx]
+        this.listItems[idx] = { ...prev, ...patch }
+        this._emitChange()
+        return prev
+    }
+
+    /** Restores a previously-patched item. Safe to call with a `null` rollback. */
+    optimisticRevertPatch(itemId, prev) {
+        if (!prev) return
+        const idx = this.listItems.findIndex((i) => i.id === itemId)
+        if (idx < 0) this.listItems.push(prev)
+        else this.listItems[idx] = prev
+        this._emitChange()
+    }
+
+    /** Removes an item from the cache and returns a rollback token. */
+    optimisticRemove(itemId) {
+        const idx = this.listItems.findIndex((i) => i.id === itemId)
+        if (idx < 0) return null
+        const [item] = this.listItems.splice(idx, 1)
+        this._emitChange()
+        return { index: idx, item }
+    }
+
+    /** Re-inserts a previously-removed item at its original index. */
+    optimisticRestore(rollback) {
+        if (!rollback) return
+        const clampedIndex = Math.min(rollback.index, this.listItems.length)
+        this.listItems.splice(clampedIndex, 0, rollback.item)
+        this._emitChange()
+    }
 
     /**
      * Fetches all list items with their creator profiles in a single call.
@@ -54,6 +111,7 @@ class ListServiceImpl {
         this.listItems = cleaned
         this.creatorProfiles = profiles
         CacheUtility.set('list:items-with-profiles', { items: cleaned, profiles }, 60_000)
+        this._emitChange()
         return this.listItems
     }
 
@@ -124,55 +182,154 @@ class ListServiceImpl {
         return true
     }
 
-    /** Updates an existing list item with grammar-cleaned text fields. */
+    /**
+     * Optimistic quick-add: inserts a temp item at the top of the cache,
+     * dispatches the change event so the UI updates immediately, then fires
+     * the create request in the background. On success, refetches so the
+     * temp row is replaced by the real one; on failure, removes the temp
+     * row. Returns the temp item so callers can correlate or display state.
+     */
+    quickAdd({
+        comments = '',
+        deadline,
+        description,
+        plantCode,
+        priority = 'none',
+        responsibleRole = null,
+        status = 'pending',
+        userId
+    }) {
+        const desc = GrammarUtility.cleanDescription(description || '')
+        if (!desc.trim()) throw new Error('Description is required')
+        if (!plantCode) throw new Error('Plant is required')
+        if (!userId) throw new Error('User ID is required')
+        const deadlineString = deadline instanceof Date ? deadline.toISOString() : deadline
+        const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+        const tempItem = {
+            _optimistic: true,
+            comments: GrammarUtility.cleanComments(comments || ''),
+            completed: false,
+            completed_at: null,
+            completed_by: null,
+            created_at: new Date().toISOString(),
+            deadline: deadlineString,
+            description: desc,
+            id: tempId,
+            plant_code: plantCode,
+            priority,
+            responsible_role: responsibleRole,
+            status,
+            user_id: userId
+        }
+        this.listItems.unshift(tempItem)
+        this._emitChange()
+        const cleanup = () => this.optimisticRemove(tempId)
+        APIUtility.post('/list-service/create', {
+            comments: tempItem.comments,
+            deadline: deadlineString,
+            description: desc,
+            plantCode,
+            priority,
+            responsible_role: responsibleRole,
+            status,
+            userId
+        })
+            .then(({ res, json }) => {
+                if (!res.ok || json?.success !== true) {
+                    cleanup()
+                    return
+                }
+                CacheUtility.delete('list:items-with-profiles')
+                return this.fetchListItems({ force: true }).catch(cleanup)
+            })
+            .catch(cleanup)
+        return tempItem
+    }
+
+    /**
+     * Updates an existing list item with grammar-cleaned text fields. The local
+     * cache is patched immediately so the UI reflects the change without
+     * waiting for the network; if the API call fails the patch is reverted.
+     */
     async updateListItem(item) {
         if (!item?.id) throw new Error('Item ID is required')
         const desc = GrammarUtility.cleanDescription(item?.description || '')
         if (!desc.trim()) throw new Error('Description is required')
-        const update = {
+        const cleaned = {
             comments: GrammarUtility.cleanComments(item?.comments || ''),
             completed: item.completed ?? false,
             completed_at: item.completed_at,
             deadline: item.deadline,
             description: desc,
-            id: item.id,
             plant_code: item.plant_code?.trim() ?? '',
             priority: item.priority || 'none',
             responsible_role: item.responsible_role || null,
             status: item.status || 'pending'
         }
-        const { res, json } = await APIUtility.post('/list-service/update', { item: update })
-        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to update list item')
-        CacheUtility.delete('list:items-with-profiles')
-        CacheUtility.delete(`${PRIORITY_CACHE_PREFIX}${item.id}`)
-        await this.fetchListItems({ force: true })
-        return true
+        const rollback = this.optimisticPatch(item.id, cleaned)
+        try {
+            const { res, json } = await APIUtility.post('/list-service/update', {
+                item: { ...cleaned, id: item.id }
+            })
+            if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to update list item')
+            CacheUtility.delete('list:items-with-profiles')
+            CacheUtility.delete(`${PRIORITY_CACHE_PREFIX}${item.id}`)
+            return true
+        } catch (err) {
+            this.optimisticRevertPatch(item.id, rollback)
+            throw err
+        }
     }
 
-    /** Toggles the completion status of a list item and records the completing user. */
+    /**
+     * Toggles completion immediately in the local cache, then confirms with the
+     * server. Reverts on failure. Skipping the post-success refetch keeps the
+     * interaction feeling instant; the cache key is invalidated so the next
+     * load fetches fresh data from the server.
+     */
     async toggleCompletion(item, currentUserId) {
         if (!item?.id) throw new Error('Item ID is required')
         if (!currentUserId) throw new Error('No authenticated user')
         const newCompletionStatus = !item.completed
-        const { res, json } = await APIUtility.post('/list-service/toggle-completion', {
+        const rollback = this.optimisticPatch(item.id, {
             completed: newCompletionStatus,
-            currentUserId,
-            id: item.id
+            completed_at: newCompletionStatus ? new Date().toISOString() : null,
+            completed_by: newCompletionStatus ? currentUserId : null,
+            status:
+                newCompletionStatus && item.status !== 'completed'
+                    ? 'completed'
+                    : !newCompletionStatus && item.status === 'completed'
+                      ? 'pending'
+                      : item.status
         })
-        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to toggle completion')
-        CacheUtility.delete('list:items-with-profiles')
-        await this.fetchListItems({ force: true })
-        return true
+        try {
+            const { res, json } = await APIUtility.post('/list-service/toggle-completion', {
+                completed: newCompletionStatus,
+                currentUserId,
+                id: item.id
+            })
+            if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to toggle completion')
+            CacheUtility.delete('list:items-with-profiles')
+            return true
+        } catch (err) {
+            this.optimisticRevertPatch(item.id, rollback)
+            throw err
+        }
     }
 
-    /** Deletes a list item and triggers a notifications refresh. */
+    /** Removes the item from the local cache immediately, then deletes server-side. */
     async deleteListItem(id) {
         if (!id) throw new Error('Item ID is required')
-        const { res, json } = await APIUtility.post('/list-service/delete', { id })
-        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to delete list item')
-        CacheUtility.delete('list:items-with-profiles')
-        await this.fetchListItems({ force: true })
-        return true
+        const rollback = this.optimisticRemove(id)
+        try {
+            const { res, json } = await APIUtility.post('/list-service/delete', { id })
+            if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to delete list item')
+            CacheUtility.delete('list:items-with-profiles')
+            return true
+        } catch (err) {
+            this.optimisticRestore(rollback)
+            throw err
+        }
     }
 
     /**

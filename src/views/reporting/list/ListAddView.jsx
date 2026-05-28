@@ -24,10 +24,11 @@ import GrammarUtility from '../../../utils/GrammarUtility'
  * @param {Function} onClose - Dismiss the form.
  * @param {Function} [onItemAdded] - Callback after successful save.
  * @param {Object} [item] - When provided, switches to edit mode for this existing item.
+ * @param {string} [initialDescription] - Seeds the description in add mode (used by ListQuickAdd's Shift+Enter handoff).
  */
-function ListAddView({ onClose, onItemAdded, item = null }) {
+function ListAddView({ initialDescription = '', onClose, onItemAdded, item = null }) {
     const { preferences } = usePreferences()
-    const [description, setDescription] = useState('')
+    const [description, setDescription] = useState(initialDescription)
     const [plantCode, setPlantCode] = useState('')
     const [selectedPlantCodes, setSelectedPlantCodes] = useState([])
     const [deadline, setDeadline] = useState(() => {

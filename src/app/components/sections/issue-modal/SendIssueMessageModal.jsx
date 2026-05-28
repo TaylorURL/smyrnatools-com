@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useRef, useState } from 'react'
+import ReactDOM from 'react-dom'
 
 import MessageService from '../../../../services/MessageService'
 import { UserService } from '../../../../services/UserService'
@@ -85,7 +86,17 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
         setSending(false)
     }
 
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+
+    /* Portaled to document.body so the z-[2100] backdrop lives in the
+     * root stacking context — required when IssueModalSection is rendered
+     * in `displayMode="panel"` from AssetSidePanel. That aside uses
+     * `position: sticky`, which creates its own stacking context; without
+     * the portal the modal's z-index is scoped to the aside and gets
+     * painted under sibling elements at root (Navigation, other panels,
+     * etc.) — the "send message popup is cut off" symptom on Mixers /
+     * Tractors / Trailers / Equipment list views. */
+    return ReactDOM.createPortal(
         <div
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose()
@@ -331,7 +342,8 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 

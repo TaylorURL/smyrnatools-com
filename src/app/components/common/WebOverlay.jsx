@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
+import ReactDOM from 'react-dom'
 
 import { useAccentColor } from '../../hooks/useAccentColor'
 
@@ -9,7 +10,8 @@ import { useAccentColor } from '../../hooks/useAccentColor'
  */
 function WebOverlay({ url, onClose }) {
     const accentColor = useAccentColor()
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+    return ReactDOM.createPortal(
         <div
             role="dialog"
             aria-modal="true"
@@ -36,7 +38,8 @@ function WebOverlay({ url, onClose }) {
                 className="flex-1 border-none"
                 sandbox="allow-scripts allow-popups allow-forms"
             />
-        </div>
+        </div>,
+        document.body
     )
 }
 export default WebOverlay

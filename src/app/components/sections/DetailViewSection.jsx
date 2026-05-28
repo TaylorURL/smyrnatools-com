@@ -110,16 +110,16 @@ function DetailViewSection({
     return (
         <DetailViewContext.Provider value={{ activeSection, registerSection, sections, setActiveSection }}>
             <div
-                className={`${className} fixed top-16 left-0 right-0 bottom-0 z-40 flex flex-col bg-slate-50`}
+                className={`${className} fixed top-16 left-0 right-0 bottom-0 z-40 flex flex-col bg-bg-secondary`}
                 style={{ '--dv-accent': accent }}
             >
                 {isSaving && (
-                    <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-3.5 bg-white/95">
+                    <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-3 bg-bg-primary/95">
                         <div
-                            className="h-12 w-12 rounded-full border-[3px] border-border-light animate-dv-spin"
+                            className="h-10 w-10 rounded-full border-[3px] border-border-light animate-dv-spin"
                             style={{ borderTopColor: accent }}
                         ></div>
-                        <span className="text-sm font-medium text-slate-500">Saving changes...</span>
+                        <span className="text-[12.5px] font-medium text-text-secondary">Saving changes...</span>
                     </div>
                 )}
                 <DetailViewHeader
@@ -132,12 +132,12 @@ function DetailViewSection({
                 />
                 <div className="dv-container flex min-h-0 flex-1 overflow-hidden w-full">
                     {isLoading ? (
-                        <div className="flex flex-1 flex-col items-center justify-center gap-3.5">
+                        <div className="flex flex-1 flex-col items-center justify-center gap-3">
                             <div
-                                className="h-12 w-12 rounded-full border-[3px] border-border-light animate-dv-spin"
+                                className="h-10 w-10 rounded-full border-[3px] border-border-light animate-dv-spin"
                                 style={{ borderTopColor: accent }}
                             ></div>
-                            <span className="text-sm font-medium text-slate-500">{loadingMessage}</span>
+                            <span className="text-[12.5px] font-medium text-text-secondary">{loadingMessage}</span>
                         </div>
                     ) : (
                         <>
@@ -155,7 +155,7 @@ function DetailViewSection({
                                 setActiveSection={setActiveSection}
                                 sidebarCollapsed={sidebarCollapsed}
                             />
-                            <main className="dv-main-content min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-6">
+                            <main className="dv-main-content min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-bg-secondary p-4">
                                 <div className="animate-dv-fade-in">{children}</div>
                             </main>
                             <DetailViewMobileNav

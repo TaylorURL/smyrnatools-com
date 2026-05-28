@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo, useState } from 'react'
+import ReactDOM from 'react-dom'
 
 import { ScheduleSnapshotService } from '../../../services/ScheduleSnapshotService'
 import { diffOrderAgainstSnapshot } from '../../../utils/ScheduleDiffUtility'
@@ -65,7 +66,9 @@ export default function OrderAuditModal({ accentColor = '#2563eb', onClose, orde
     const customerLabel = order?.customer || ''
     const snapshotMissing = !loading && !snapshot
 
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+
+    return ReactDOM.createPortal(
         <div
             role="dialog"
             aria-modal="true"
@@ -131,7 +134,8 @@ export default function OrderAuditModal({ accentColor = '#2563eb', onClose, orde
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 

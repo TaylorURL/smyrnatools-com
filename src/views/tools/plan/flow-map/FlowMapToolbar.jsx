@@ -1,14 +1,16 @@
 import React from 'react'
 
 import Badge from '../../../../app/components/common/Badge'
+import { SELECTED_FILL_COLOR } from './flowMapShared'
 
 /** Toolbar above the Leaflet surface — stat chips on the left, transient
  *  state pills on the right (picking banner, selected-plant chip, routing
- *  spinner). The route-count chip prefers the actual rendered polyline
- *  count and falls back to the raw assignment count before the polylines
- *  have mounted on the first paint. */
+ *  spinner). The selected-plant chip uses the fixed map-highlight color
+ *  (sky-900) so its tint matches the selected pin's fill — the map's
+ *  visual language stays accent-independent. The route-count chip prefers
+ *  the actual rendered polyline count and falls back to the raw assignment
+ *  count before the polylines have mounted on the first paint. */
 export function FlowMapToolbar({
-    accentColor,
     activeRouteCount,
     pendingPlantGeocodes,
     pendingRoutes,
@@ -78,8 +80,8 @@ export function FlowMapToolbar({
             {selectedCode && !pickingDestination && (
                 <Badge
                     variant="custom"
-                    bg={`${accentColor}1a`}
-                    fg={accentColor}
+                    bg={`${SELECTED_FILL_COLOR}1a`}
+                    fg={SELECTED_FILL_COLOR}
                     size="lg"
                     shape="pill"
                     weight="semibold"
@@ -91,8 +93,8 @@ export function FlowMapToolbar({
                             type="button"
                             onClick={() => setSelectedCode(null)}
                             className="ml-1 border-none bg-transparent cursor-pointer p-0 font-bold transition-transform hover:scale-110"
-                            // eslint-disable-next-line react/forbid-dom-props -- accent color is data-driven and must match parent border/foreground
-                            style={{ color: accentColor }}
+                            // eslint-disable-next-line react/forbid-dom-props -- color is paired with the parent badge fg
+                            style={{ color: SELECTED_FILL_COLOR }}
                             aria-label="Clear selection"
                         >
                             ×

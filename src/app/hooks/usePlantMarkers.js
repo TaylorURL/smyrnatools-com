@@ -40,7 +40,6 @@ export function usePlantMarkers({
             if (!pos) return
             seen.add(stat.code)
             const status = buildPlantStatus({
-                accentColor,
                 activeOrdersAtTime,
                 draft,
                 effAtViewTime,

@@ -4,6 +4,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useAccentColor } from '../../hooks/useAccentColor'
 
 const SHOW_ID = '705426'
+/* Cap the episode list at the 10 most recent so the side rail stays a
+ * fixed-height column even after years of weekly releases. RSS feeds are
+ * newest-first, so a head slice gives us the latest. */
+const MAX_EPISODES = 10
 const RSS_URL = `https://rss.buzzsprout.com/${SHOW_ID}.rss`
 /** Cloudflare blocks direct browser access to `audio.buzzsprout.com` from
  *  some IPs / fingerprints (403 / "Sorry, you have been blocked"). The
@@ -121,7 +125,7 @@ export default function DashboardPodcastPanel() {
                 const res = await fetch(RSS_URL, { cache: 'no-store' })
                 if (!res.ok) throw new Error(`feed responded with ${res.status}`)
                 const text = await res.text()
-                const parsed = parseFeed(text)
+                const parsed = parseFeed(text).slice(0, MAX_EPISODES)
                 if (cancelled) return
                 setEpisodes(parsed)
                 setSelectedKey(parsed[0]?.key ?? null)

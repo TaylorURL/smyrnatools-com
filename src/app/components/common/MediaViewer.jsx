@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import ReactDOM from 'react-dom'
 
 /**
  * Fullscreen media viewer with zoom/pan (images) and playback (videos).
@@ -140,7 +141,9 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
 
     if (!items || items.length === 0) return null
 
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+
+    return ReactDOM.createPortal(
         <div
             className="fixed inset-0 z-[200] bg-black/95 flex flex-col select-none"
             style={{ touchAction: 'none' }}
@@ -291,7 +294,8 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
                     })}
                 </div>
             )}
-        </div>
+        </div>,
+        document.body
     )
 }
 export default MediaViewer

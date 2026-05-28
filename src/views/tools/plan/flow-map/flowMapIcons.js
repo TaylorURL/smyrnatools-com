@@ -1,16 +1,16 @@
 import L from 'leaflet'
 
-import { yphColorFor } from '../../../../utils/PlanFlowLayoutUtility'
 import { getMissingOperators, getSaturdayOverride, isSaturday } from '../../../../utils/PlanUtility'
 import {
-    LEAVE_OFF_COLOR,
     NEEDS_HELP_COLOR,
     PICKING_COLOR,
     PLANT_RADIUS_MAX,
     PLANT_RADIUS_MIN,
     ROUTE_IDLE_COLOR,
     ROUTE_OUTBOUND_COLOR,
-    ROUTE_RETURN_COLOR
+    ROUTE_RETURN_COLOR,
+    SELECTED_FILL_COLOR,
+    SELECTED_RING_COLOR
 } from './flowMapShared'
 
 /** Build a Leaflet DivIcon for a single driver moving along their route.
@@ -137,7 +137,6 @@ function radiusForOps(ops) {
  *  needs-help / leave-off / yph cues without duplicating the entire
  *  visual component. */
 export function buildPlantStatus({
-    accentColor,
     activeOrdersAtTime,
     draft,
     effAtViewTime,
@@ -178,25 +177,43 @@ export function buildPlantStatus({
     const minPool = minPoolByCode?.[stat.code]
     const peakOverbookShortage = isTimeView ? timeDeficit : Number.isFinite(minPool) && minPool < 0 ? -minPool : 0
     const needsHelp = isTimeView ? timeDeficit > 0 : (yph != null && yph > maxYph) || peakOverbookShortage > 0
-    const leaveOffInfo = !needsHelp && !isTimeView ? leaveOffByCode?.[stat.code] || { count: 0 } : { count: 0 }
+    /* Leave-off shows whenever the plant has surplus crew, regardless
+     * of time-view vs all-day mode. The dispatcher always wants the
+     * "you have N extra" hint visible — `useAutoplay` defaults
+     * viewTime to 0 (a finite minute), so gating on `!isTimeView`
+     * would silently hide the popup at every load. The needs-help
+     * branch still wins since a plant can't logically be both
+     * understaffed and overstaffed. */
+    const leaveOffInfo = !needsHelp ? leaveOffByCode?.[stat.code] || { count: 0 } : { count: 0 }
     const hasLeaveOff = (leaveOffInfo.count || 0) > 0
     const isSelected = selectedCode === stat.code
     const isDestinationCandidate = pickingDestination && draft && stat.code !== draft.fromPlant
+    /* Leave-off intentionally NOT in the ring chain anymore — it's a
+     * supplementary "you have N extra operators" hint, not a status
+     * alert, so it renders as an attached popup chip on the pin instead
+     * of competing with needs-help / selected / picking for the ring. */
+    /* Plants without an active status (needs-help / selected / picking
+     * target) get a neutral medium-border ring. YPH no longer colors
+     * the ring — over-max plants still trip the needs-help branch above
+     * via the `needsHelp` calculation, and on-target / under-target
+     * YPH is informational data that lives in the side panel, not a
+     * status alert. Keeps the map's ring vocabulary to three meanings:
+     * needs help, selected, eligible-destination. Everything else is
+     * a quiet neutral. */
     const ringColor = needsHelp
         ? NEEDS_HELP_COLOR
-        : hasLeaveOff
-          ? LEAVE_OFF_COLOR
-          : isSelected
-            ? accentColor
-            : isDestinationCandidate
-              ? PICKING_COLOR
-              : yphColorFor(yph, accentColor) || 'var(--border-medium)'
+        : isSelected
+          ? SELECTED_RING_COLOR
+          : isDestinationCandidate
+            ? PICKING_COLOR
+            : 'var(--border-medium)'
     return {
         base,
         effWithMissing,
         hasLeaveOff,
         isDestinationCandidate,
         isSelected,
+        leaveOffCount: leaveOffInfo.count || 0,
         needsHelp,
         recv,
         ringColor,
@@ -207,8 +224,11 @@ export function buildPlantStatus({
 /** Builds the DivIcon HTML for a single plant marker. Same visual
  *  vocabulary as the schematic Planner — sized by ops count, status ring
  *  in the same colour. Click handling is wired via Leaflet's marker
- *  click event rather than HTML onclick. */
-export function makePlantIcon(stat, status, accentColor) {
+ *  click event rather than HTML onclick. The `accentColor` arg is kept
+ *  in the signature for call-site stability but the map surface itself
+ *  uses fixed colors (SELECTED_FILL_COLOR, SELECTED_RING_COLOR, etc.)
+ *  so the map's visual language doesn't shift with the user's accent. */
+export function makePlantIcon(stat, status, _accentColor) {
     const r = radiusForOps(status.effWithMissing)
     const codeFontSize = Math.max(13, Math.min(18, Math.round(r * 0.32)))
     const ringWidth = status.isSelected ? 4 : status.isDestinationCandidate ? 4 : 3
@@ -223,13 +243,13 @@ export function makePlantIcon(stat, status, accentColor) {
             <div class="${pinClass}" style="
                 width:${r}px;height:${r}px;
                 box-shadow:0 0 0 ${ringWidth}px ${status.ringColor}, 0 2px 6px rgba(0,0,0,0.35);
-                background:${status.isSelected ? accentColor : 'var(--bg-primary)'};
+                background:${status.isSelected ? SELECTED_FILL_COLOR : 'var(--bg-primary)'};
                 color:${status.isSelected ? '#fff' : 'var(--text-primary)'};
             ">
                 <div class="pf-plant-code" style="font-size:${codeFontSize}px">${stat.code}</div>
                 <div class="pf-plant-ops">${status.effWithMissing}<span>OP${status.effWithMissing === 1 ? '' : 'S'}</span></div>
                 ${status.needsHelp ? '<div class="pf-plant-badge pf-needs">!</div>' : ''}
-                ${status.hasLeaveOff ? '<div class="pf-plant-badge pf-leave">·</div>' : ''}
+                ${status.hasLeaveOff ? `<div class="pf-plant-leave-popup" title="${status.leaveOffCount} extra operator${status.leaveOffCount === 1 ? '' : 's'} — can be left off">−${status.leaveOffCount}</div>` : ''}
             </div>
         `,
         iconAnchor: [r / 2, r / 2],

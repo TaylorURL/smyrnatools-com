@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import ReactDOM from 'react-dom'
 
 import { MaintenanceLogService } from '../../../services/MaintenanceLogService'
 import { formatLogDate, getProgressInfo, STATUS_CONFIG } from '../../../utils/MaintenanceLogUtility'
@@ -54,7 +55,9 @@ export function MaintenanceEquipmentDetail({
         }
     }
 
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+
+    return ReactDOM.createPortal(
         <div
             className="fixed inset-0 flex justify-end h-screen bg-[rgba(15,_23,_42,_0.65)] z-[110] animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
             onClick={onClose}
@@ -270,7 +273,8 @@ export function MaintenanceEquipmentDetail({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 

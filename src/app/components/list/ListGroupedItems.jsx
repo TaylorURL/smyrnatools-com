@@ -12,9 +12,10 @@ function isGroupHiddenByStatusFilter(statusFilter, groupKey) {
 }
 
 /**
- * Renders one card per non-empty group, each containing a header with the
- * group icon/label/count followed by ListItemRow entries. Honors the active
- * statusFilter to suppress groups that don't match the current chip.
+ * Renders one card per non-empty group, each containing a header with an
+ * icon pill + sentence-case label + count chip, followed by ListItemRow
+ * entries. Honors the active statusFilter to suppress groups that don't
+ * match the current chip.
  */
 export default function ListGroupedItems({
     accentColor,
@@ -26,24 +27,32 @@ export default function ListGroupedItems({
     statusFilter
 }) {
     return (
-        <div className={`flex flex-col gap-3 w-full ${isMobile ? 'pb-4' : 'pb-6'}`}>
+        <div className={`flex w-full flex-col gap-3 ${isMobile ? 'pb-4' : 'pb-8'}`}>
             {Object.entries(groupedItems).map(([key, group]) => {
                 if (!group.items.length) return null
                 if (isGroupHiddenByStatusFilter(statusFilter, key)) return null
                 return (
-                    <div key={key} className="bg-bg-primary border border-border-light overflow-hidden rounded">
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border-light bg-bg-tertiary">
-                            <i className={`fas ${group.icon} text-[10px]`} style={{ color: accentColor }} />
-                            <span className="text-[10.5px] font-bold uppercase tracking-wider text-text-secondary">
-                                {group.label}
-                            </span>
+                    <section key={key} className="overflow-hidden rounded-xl border border-border-light bg-bg-primary">
+                        <header className="flex items-center gap-2.5 border-b border-border-light bg-bg-secondary px-3.5 py-2">
                             <span
-                                className="inline-flex items-center justify-center rounded text-[9px] font-bold tabular-nums px-1 min-w-[16px] h-3.5"
+                                className="flex h-6 w-6 items-center justify-center rounded-md"
+                                style={{
+                                    background: `${accentColor}1a`,
+                                    color: accentColor
+                                }}
+                            >
+                                <i className={`fas ${group.icon} text-[11px]`} aria-hidden="true" />
+                            </span>
+                            <h3 className="m-0 text-[13px] font-semibold tracking-tight text-text-primary">
+                                {group.label}
+                            </h3>
+                            <span
+                                className="ml-auto inline-flex h-5 min-w-[22px] items-center justify-center rounded-md px-1.5 text-[11px] font-bold tabular-nums"
                                 style={{ background: `${accentColor}14`, color: accentColor }}
                             >
                                 {group.items.length}
                             </span>
-                        </div>
+                        </header>
                         <div className="flex flex-col">
                             {group.items.map((item) => (
                                 <ListItemRow
@@ -57,7 +66,7 @@ export default function ListGroupedItems({
                                 />
                             ))}
                         </div>
-                    </div>
+                    </section>
                 )
             })}
         </div>

@@ -29,6 +29,7 @@ import {
     setMissingOperators,
     setSaturdayOverride
 } from '../../../utils/PlanUtility'
+import { FlowMapLegend } from './flow-map/FlowMapLegend'
 import { resolveStateHint } from './flow-map/flowMapShared'
 import { FlowMapStyleSheet } from './flow-map/FlowMapStyleSheet'
 import { FlowMapToolbar } from './flow-map/FlowMapToolbar'
@@ -216,7 +217,6 @@ function PlanFlowMapView({
 
             <div className="pf-flow-shell relative flex-1 flex flex-col">
                 <FlowMapToolbar
-                    accentColor={accentColor}
                     activeRouteCount={activeRouteCount}
                     pendingPlantGeocodes={pendingPlantGeocodes}
                     pendingRoutes={pendingRoutes}
@@ -229,6 +229,7 @@ function PlanFlowMapView({
 
                 <div className="flex-1 min-h-0 relative">
                     <div className="h-full w-full" ref={containerRef} />
+                    <FlowMapLegend />
                     {/* Scrubber docks flush in the bottom-right corner so
                      * it sits directly over the Leaflet attribution
                      * watermark instead of leaving a strip of map behind
@@ -240,7 +241,6 @@ function PlanFlowMapView({
                      * physically occupy. */}
                     <div className="absolute bottom-0 right-0 z-[1000] pointer-events-none">
                         <PlanFlowTimeScrubber
-                            accentColor={accentColor}
                             hasActivity={scrubberActivityCount}
                             isPlaying={isPlaying}
                             onChange={setViewTime}

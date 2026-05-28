@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useState } from 'react'
+import ReactDOM from 'react-dom'
 
 import { UserPreferencesService } from '../../../services/UserPreferencesService'
 import { UserService } from '../../../services/UserService'
@@ -280,7 +281,8 @@ function AppInstallPromptModal() {
         withCurrentUser((id) => UserPreferencesService.markAsInstalled(id, promptType, deviceType))
     if (!showModal) return null
     const ContentComponent = deviceType === 'desktop' ? DesktopContent : MobileContent
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+    return ReactDOM.createPortal(
         <div
             role="dialog"
             aria-modal="true"
@@ -307,7 +309,8 @@ function AppInstallPromptModal() {
                     onDismissForever={handleDismissForever}
                 />
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 export default AppInstallPromptModal

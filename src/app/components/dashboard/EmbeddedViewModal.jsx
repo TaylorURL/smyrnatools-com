@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect } from 'react'
+import ReactDOM from 'react-dom'
 
 import EquipmentsView from '../../../views/assets/equipment/EquipmentsView'
 import MixersView from '../../../views/assets/mixers/MixersView'
@@ -45,7 +46,8 @@ export default function EmbeddedViewModal({
     const config = VIEW_CONFIG[embeddedView]
     if (!config) return null
     const ViewComponent = config.component
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+    return ReactDOM.createPortal(
         <div
             className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 md:p-4 animate-fade-in-fast"
             role="dialog"
@@ -88,6 +90,7 @@ export default function EmbeddedViewModal({
                     />
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }

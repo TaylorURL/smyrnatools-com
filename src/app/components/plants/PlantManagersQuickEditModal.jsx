@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useState } from 'react'
+import ReactDOM from 'react-dom'
 
 import { PlantService } from '../../../services/PlantService'
 import PlantManagersEditor from './PlantManagersEditor'
@@ -56,7 +57,9 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
         }
     }
 
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+
+    return ReactDOM.createPortal(
         <div
             className="fixed inset-0 z-[1000] flex items-center justify-center bg-text-primary/60 px-4 backdrop-blur-sm animate-fade-in-fast motion-reduce:animate-none"
             onClick={() => {
@@ -123,6 +126,7 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }

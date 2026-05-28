@@ -5,13 +5,10 @@ import { fmtFloat } from '../../../../utils/PlanStatisticsFormatUtility'
 
 const COLOR_WARN = 'var(--status-warning)'
 
-const USD = new Intl.NumberFormat('en-US', { currency: 'USD', maximumFractionDigits: 0, style: 'currency' })
-
-const fmtMoney = (n) => USD.format(Number(n) || 0)
 const fmtHours = (n) => `${fmtFloat(n, 1)}h`
 
-/** Single operator row — actual / OT / OT% / OT cost / PTO. Clickable:
- *  expands to reveal an inline 7-day shift strip below. */
+/** Single operator row — actual / OT / OT% / PTO. Clickable: expands to
+ *  reveal an inline 7-day shift strip below. */
 function OperatorHoursRow({ accent, isExpanded, maxHours, onToggle, row }) {
     const otSharePct = row.actualHours > 0 ? (row.otHours / row.actualHours) * 100 : 0
     const pct = maxHours > 0 ? (row.actualHours / maxHours) * 100 : 0
@@ -60,13 +57,6 @@ function OperatorHoursRow({ accent, isExpanded, maxHours, onToggle, row }) {
                     }`}
                 >
                     {otSharePct > 0 ? `${fmtFloat(otSharePct, 0)}%` : '—'}
-                </span>
-                <span
-                    className={`font-mono tabular-nums w-20 text-right shrink-0 font-semibold ${
-                        row.otCost > 0 ? 'text-text-primary' : 'text-text-tertiary'
-                    }`}
-                >
-                    {row.otCost > 0 ? fmtMoney(row.otCost) : '—'}
                 </span>
                 <span className="font-mono tabular-nums w-14 text-right shrink-0 text-text-tertiary hidden md:inline">
                     {row.ptoHours > 0 ? fmtHours(row.ptoHours) : '—'}

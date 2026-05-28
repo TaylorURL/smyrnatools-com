@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
+import ReactDOM from 'react-dom'
 
 import { useAccentColor } from '../../hooks/useAccentColor'
 
@@ -12,7 +13,8 @@ function VersionPopup({ version, onClick }) {
     const accentColor = useAccentColor()
     if (!version) return null
     const interactive = typeof onClick === 'function'
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+    return ReactDOM.createPortal(
         <button
             type="button"
             onClick={interactive ? onClick : undefined}
@@ -34,7 +36,8 @@ function VersionPopup({ version, onClick }) {
             {interactive && (
                 <i className="fas fa-clock-rotate-left text-[10px] text-text-tertiary" aria-hidden="true" />
             )}
-        </button>
+        </button>,
+        document.body
     )
 }
 

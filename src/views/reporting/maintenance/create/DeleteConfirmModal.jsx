@@ -1,10 +1,12 @@
 import React from 'react'
+import ReactDOM from 'react-dom'
 
 import { SECTION_LABEL_CLASS } from '../../../../app/constants/maintenanceCreateConstants'
 import { SubtleButton } from './atoms'
 
 export function DeleteConfirmModal({ onCancel, onConfirm, saving }) {
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+    return ReactDOM.createPortal(
         <div
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/65 animate-fade-in-fast"
             onClick={onCancel}
@@ -42,6 +44,7 @@ export function DeleteConfirmModal({ onCancel, onConfirm, saving }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }

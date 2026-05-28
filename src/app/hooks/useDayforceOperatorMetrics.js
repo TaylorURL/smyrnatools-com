@@ -33,6 +33,33 @@ import { buildOperatorIndex, matchOperator, toDateString } from '../../utils/Day
  *  to surface a different cut. */
 export const DEFAULT_OPERATOR_POSITIONS = ['Mixer Operator', 'Tractor Operator']
 
+/** PostgREST returns at most 1000 rows per request by default — a hard
+ *  cap that silently truncated this hook's year-spanning queries (Quarter
+ *  totals exceeded Year totals because each window's 1000-row sample
+ *  happened to land on different shifts). `fetchAllRows` walks the table
+ *  in 1000-row pages until a short page lands, then concatenates. The
+ *  caller passes a `buildQuery` factory so each page applies fresh
+ *  `.range()` bounds while preserving every other filter / select / order
+ *  the query already had. The shape mirrors a single PostgREST response
+ *  (`{ data, error }`) so the load handler can keep its existing error
+ *  routing. */
+const SUPABASE_PAGE_SIZE = 1000
+
+async function fetchAllRows(buildQuery) {
+    const collected = []
+    let offset = 0
+    while (true) {
+        const { data, error } = await buildQuery().range(offset, offset + SUPABASE_PAGE_SIZE - 1)
+        if (error) return { data: collected, error }
+        const page = Array.isArray(data) ? data : []
+        if (page.length === 0) break
+        collected.push(...page)
+        if (page.length < SUPABASE_PAGE_SIZE) break
+        offset += SUPABASE_PAGE_SIZE
+    }
+    return { data: collected, error: null }
+}
+
 export default function useDayforceOperatorMetrics({
     dateRange,
     operators: operatorsProp,
@@ -98,23 +125,43 @@ export default function useDayforceOperatorMetrics({
             setIsLoading(true)
             setLoadError(null)
             try {
-                let shiftsQuery = Database.from('dayforce_shifts').select(
-                    'dayforce_shift_id, dayforce_employee_id, employee_badge, dayforce_org_id, ' +
-                        'shift_date, scheduled_in_at, scheduled_out_at, scheduled_hours, ' +
-                        'actual_in_at, actual_out_at, actual_hours, actual_in_punch_at, actual_out_punch_at, ' +
-                        'exception_code, exception_text, pay_code, is_pto, pto_hours, hourly_rate_snapshot'
-                )
-                if (startDateString) shiftsQuery = shiftsQuery.gte('shift_date', startDateString)
-                if (endDateString) shiftsQuery = shiftsQuery.lte('shift_date', endDateString)
-
+                /* Year-spanning ranges blow past PostgREST's 1000-row
+                 * default (≈47 operators × 250 working days ≈ 11,750
+                 * shifts/year), so we page through `.range()` until the
+                 * server stops returning a full page. The shift_date
+                 * order keeps pagination deterministic — without an
+                 * explicit order PostgREST may return different rows on
+                 * the same window on different calls. Same treatment for
+                 * employees + org_units even though they're typically
+                 * under the cap; cheap insurance against a future row
+                 * count overflow that would otherwise silently truncate. */
                 const [shiftsRes, employeesRes, orgUnitsRes] = await Promise.all([
-                    shiftsQuery,
-                    Database.from('dayforce_employees').select(
-                        'dayforce_employee_id, employee_badge, display_name, first_name, last_name, ' +
-                            'nickname, hourly_rate, annual_salary, hours_per_week, home_dayforce_org_id, is_active'
+                    fetchAllRows(() => {
+                        let q = Database.from('dayforce_shifts')
+                            .select(
+                                'dayforce_shift_id, dayforce_employee_id, employee_badge, dayforce_org_id, ' +
+                                    'shift_date, scheduled_in_at, scheduled_out_at, scheduled_hours, ' +
+                                    'actual_in_at, actual_out_at, actual_hours, actual_in_punch_at, actual_out_punch_at, ' +
+                                    'exception_code, exception_text, pay_code, is_pto, pto_hours, hourly_rate_snapshot'
+                            )
+                            .order('shift_date', { ascending: true })
+                            .order('dayforce_employee_id', { ascending: true })
+                        if (startDateString) q = q.gte('shift_date', startDateString)
+                        if (endDateString) q = q.lte('shift_date', endDateString)
+                        return q
+                    }),
+                    fetchAllRows(() =>
+                        Database.from('dayforce_employees')
+                            .select(
+                                'dayforce_employee_id, employee_badge, display_name, first_name, last_name, ' +
+                                    'nickname, hourly_rate, annual_salary, hours_per_week, home_dayforce_org_id, is_active'
+                            )
+                            .order('dayforce_employee_id', { ascending: true })
                     ),
-                    Database.from('dayforce_org_units').select(
-                        'dayforce_org_id, display_code, display_name, plant_code, org_type'
+                    fetchAllRows(() =>
+                        Database.from('dayforce_org_units')
+                            .select('dayforce_org_id, display_code, display_name, plant_code, org_type')
+                            .order('dayforce_org_id', { ascending: true })
                     )
                 ])
 

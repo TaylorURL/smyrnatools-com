@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo, useState } from 'react'
+import ReactDOM from 'react-dom'
 
 import { formatFullAddress, formatOrderAddress } from '../../../utils/AddressUtility'
 
@@ -80,7 +81,9 @@ export default function JobMapModal({ onClose, order, plantAddress, plantCode, p
         }
     }, [onClose])
 
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+
+    return ReactDOM.createPortal(
         <div
             role="dialog"
             aria-modal="true"
@@ -192,6 +195,7 @@ export default function JobMapModal({ onClose, order, plantAddress, plantCode, p
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }

@@ -1,6 +1,8 @@
 import L from 'leaflet'
 import { useEffect } from 'react'
 
+import { DIRECT_LOAD_COLOR } from '../../views/tools/plan/flow-map/flowMapShared'
+
 /** Dotted "loaded direct" job → home-plant lines.
  *
  *  For every assignment that loads direct to a specific job (`forOrderId`
@@ -52,7 +54,7 @@ export function useDirectLoadLines({
             }
             const line = L.polyline(coords, {
                 className: 'pf-direct-load-line',
-                color: '#64748b',
+                color: DIRECT_LOAD_COLOR,
                 dashArray: '2 6',
                 interactive: false,
                 lineCap: 'round',

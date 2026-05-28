@@ -2,6 +2,7 @@
 import React, { useMemo } from 'react'
 
 import { minutesToTime, timeToMinutes } from '../../../../../utils/PlanUtility'
+import { SELECTED_FILL_COLOR } from '../../../../../views/tools/plan/flow-map/flowMapShared'
 import { MilitaryTimeInput } from '../../../common/MilitaryTimeInput'
 
 const SCRUB_MIN_MINUTES = 0
@@ -28,12 +29,13 @@ const HOUR_LABEL_TICKS = [0, 6, 12, 18, 24]
  * through the same `onChange(minutes)` so dragging, typing, or autoplay
  * advance the cycle identically.
  *
- * Visual layout (left to right): play button → big time read-out → slider
- * with hour ticks + waypoint icons → activity pill. The slider track is
- * painted by `--scrub-progress` (a CSS custom property updated inline) so
- * the filled portion lerps with the autoplay tick instead of snapping.
+ * Visual treatment is intentionally aligned with `DashboardView` / the
+ * Operations header chrome — solid `bg-bg-primary`, flat 1px border, small
+ * radius, no backdrop blur, no lifted shadows, no gradient/pulse glow on
+ * the play button. The dock keeps the corner-flush position so the
+ * Leaflet attribution stays covered by the scrubber's footprint.
  */
-export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onChange, onPlayToggle, viewTime }) {
+export function PlanFlowTimeScrubber({ hasActivity, isPlaying, onChange, onPlayToggle, viewTime }) {
     const displayValue = Number.isFinite(viewTime) ? viewTime : 0
     const clockLabel = minutesToTime(displayValue)
     const [hourPart, minutePart] = clockLabel.split(':')
@@ -60,58 +62,32 @@ export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onCh
 
     return (
         <div
-            className="pf-scrubber pointer-events-auto flex items-center gap-3 px-3 py-2.5 rounded-tl-xl border-l border-t border-border-light backdrop-blur-md"
-            style={{
-                background: 'rgba(255, 255, 255, 0.92)',
-                boxShadow: '0 -8px 24px -10px rgba(15, 23, 42, 0.18)',
-                minWidth: 480
-            }}
+            className="pf-scrubber pointer-events-auto flex items-center gap-3 px-3 py-2 rounded-tl-md bg-bg-primary border-l border-t border-border-light shadow-card"
+            style={{ minWidth: 440 }}
         >
             {onPlayToggle && (
                 <button
                     type="button"
                     onClick={onPlayToggle}
-                    className="pf-scrubber-play group relative shrink-0 border-none cursor-pointer flex items-center justify-center rounded-full transition-transform active:scale-90"
-                    style={{
-                        background: isPlaying ? accentColor : 'var(--bg-secondary)',
-                        boxShadow: isPlaying
-                            ? `0 0 0 4px ${accentColor}26, 0 4px 12px ${accentColor}55`
-                            : '0 2px 6px rgba(15, 23, 42, 0.12)',
-                        color: isPlaying ? '#fff' : 'var(--text-secondary)',
-                        height: 36,
-                        width: 36
-                    }}
+                    className={`shrink-0 w-8 h-8 rounded-full inline-flex items-center justify-center border cursor-pointer transition-[background-color,border-color,color,transform] duration-150 ease-out motion-reduce:transition-none active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary ${isPlaying ? 'border-transparent text-white' : 'border-border-light bg-bg-secondary text-text-primary hover:bg-bg-hover'}`}
+                    style={isPlaying ? { background: SELECTED_FILL_COLOR } : undefined}
                     title={isPlaying ? 'Pause cycle' : 'Cycle through the day'}
                     aria-label={isPlaying ? 'Pause cycle' : 'Play cycle'}
                 >
-                    {isPlaying && (
-                        <span
-                            className="pf-scrubber-pulse pointer-events-none absolute inset-0 rounded-full"
-                            style={{ background: accentColor }}
-                            aria-hidden="true"
-                        />
-                    )}
                     <i
-                        className={`fas ${isPlaying ? 'fa-pause' : 'fa-play'} text-[13px] relative`}
-                        style={{ marginLeft: isPlaying ? 0 : 2 }}
+                        aria-hidden="true"
+                        className={`fas ${isPlaying ? 'fa-pause' : 'fa-play'} text-[11px]`}
+                        style={isPlaying ? undefined : { marginLeft: 1 }}
                     />
                 </button>
             )}
 
-            <div className="pf-scrubber-clock shrink-0 flex items-baseline gap-0.5 select-none">
-                <span
-                    className="font-bold tabular-nums tracking-tight text-text-primary"
-                    style={{ fontFamily: "'Exo 2', system-ui, sans-serif", fontSize: 22, lineHeight: 1 }}
-                >
+            <div className="shrink-0 flex items-baseline gap-0.5 select-none relative">
+                <span className="font-mono font-bold tabular-nums text-[15px] leading-none text-text-primary">
                     {hourPart}
                 </span>
-                <span className="text-text-tertiary font-bold" style={{ fontSize: 18, lineHeight: 1 }}>
-                    :
-                </span>
-                <span
-                    className="font-bold tabular-nums tracking-tight text-text-primary"
-                    style={{ fontFamily: "'Exo 2', system-ui, sans-serif", fontSize: 22, lineHeight: 1 }}
-                >
+                <span className="font-mono font-bold text-[13px] leading-none text-text-tertiary">:</span>
+                <span className="font-mono font-bold tabular-nums text-[15px] leading-none text-text-primary">
                     {minutePart}
                 </span>
                 <MilitaryTimeInput
@@ -124,12 +100,15 @@ export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onCh
             </div>
 
             <div className="flex-1 flex flex-col min-w-0 gap-1">
-                <div className="relative h-6">
+                <div className="relative h-5">
                     <div
-                        className="pf-scrubber-track absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full"
-                        style={{
-                            background: `linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${progressPercent}%, var(--bg-tertiary) ${progressPercent}%, var(--bg-tertiary) 100%)`
-                        }}
+                        className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-bg-tertiary"
+                        aria-hidden="true"
+                    />
+                    <div
+                        className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full"
+                        style={{ background: SELECTED_FILL_COLOR, width: `${progressPercent}%` }}
+                        aria-hidden="true"
                     />
                     {WAYPOINTS.map((wp) => {
                         const left = ((wp.hour * 60) / SCRUB_MAX_MINUTES) * 100
@@ -137,15 +116,11 @@ export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onCh
                         return (
                             <span
                                 key={wp.hour}
-                                className={`absolute top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-colors ${reached ? 'text-text-primary' : 'text-text-tertiary'}`}
-                                style={{
-                                    fontSize: 9,
-                                    left: `${left}%`,
-                                    opacity: reached ? 1 : 0.55
-                                }}
+                                className={`absolute top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-[9px] transition-colors duration-150 ${reached ? 'text-text-primary opacity-90' : 'text-text-tertiary opacity-55'}`}
+                                style={{ left: `${left}%` }}
                                 title={wp.label}
                             >
-                                <i className={`fas ${wp.icon}`} />
+                                <i aria-hidden="true" className={`fas ${wp.icon}`} />
                             </span>
                         )
                     })}
@@ -157,11 +132,11 @@ export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onCh
                         value={displayValue}
                         onChange={handleSlide}
                         className="pf-scrubber-input absolute inset-0 w-full h-full m-0 p-0 cursor-grab active:cursor-grabbing"
-                        style={{ accentColor }}
+                        style={{ accentColor: SELECTED_FILL_COLOR }}
                         title={`Viewing ${clockLabel}`}
                     />
                 </div>
-                <div className="relative h-3 select-none">
+                <div className="relative h-2.5 select-none">
                     {HOUR_LABEL_TICKS.map((h) => {
                         const left = h === 24 ? 100 : ((h * 60) / SCRUB_MAX_MINUTES) * 100
                         const label =
@@ -181,45 +156,22 @@ export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onCh
 
             {activityLabel && (
                 <span
-                    className={`pf-scrubber-activity hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold whitespace-nowrap shrink-0 transition-colors ${activityActive ? 'text-text-primary' : 'text-text-tertiary'}`}
-                    style={{
-                        background: activityActive ? 'rgba(22, 163, 74, 0.12)' : 'var(--bg-secondary)'
-                    }}
+                    className={`hidden sm:inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[10.5px] font-semibold whitespace-nowrap shrink-0 border transition-colors duration-150 ${activityActive ? 'border-border-light bg-bg-secondary text-text-primary' : 'border-border-light bg-bg-secondary text-text-tertiary'}`}
                 >
-                    {activityActive ? (
-                        <span
-                            className="pf-scrubber-activity-dot inline-block w-1.5 h-1.5 rounded-full"
-                            style={{ background: '#16a34a' }}
-                            aria-hidden="true"
-                        />
-                    ) : (
-                        <i className="fas fa-moon text-[9px]" aria-hidden="true" />
-                    )}
+                    <span
+                        aria-hidden="true"
+                        className="inline-block w-1.5 h-1.5 rounded-sm"
+                        style={{ background: activityActive ? '#16a34a' : 'var(--text-tertiary)' }}
+                    />
                     {activityLabel}
                 </span>
             )}
 
+            {/* Slider thumb cross-browser styling — Tailwind can't reach
+             *  `::-webkit-slider-thumb` / `::-moz-range-thumb`, so a tiny
+             *  scoped style block stays. Matches the Dashboard input
+             *  treatment: small circle, accent border, bg-primary fill. */}
             <style>{`
-                html.dark .pf-scrubber {
-                    background: rgba(15, 23, 42, 0.92) !important;
-                }
-                .pf-scrubber-pulse {
-                    animation: pf-scrubber-pulse 1.6s ease-in-out infinite;
-                    opacity: 0;
-                }
-                @keyframes pf-scrubber-pulse {
-                    0%   { transform: scale(1); opacity: 0.35; }
-                    70%  { transform: scale(1.6); opacity: 0; }
-                    100% { transform: scale(1.6); opacity: 0; }
-                }
-                .pf-scrubber-activity-dot {
-                    animation: pf-scrubber-activity-dot 1.4s ease-in-out infinite;
-                    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.6);
-                }
-                @keyframes pf-scrubber-activity-dot {
-                    0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.6); }
-                    50%      { box-shadow: 0 0 0 5px rgba(22, 163, 74, 0); }
-                }
                 .pf-scrubber-input {
                     -webkit-appearance: none;
                     appearance: none;
@@ -234,33 +186,33 @@ export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onCh
                 .pf-scrubber-input::-webkit-slider-thumb {
                     -webkit-appearance: none;
                     appearance: none;
-                    width: 16px; height: 16px;
+                    width: 12px; height: 12px;
                     border-radius: 50%;
                     background: var(--bg-primary);
-                    border: 2px solid var(--accent, currentColor);
-                    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+                    border: 2px solid #1e293b;
+                    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
                     cursor: grab;
                     margin-top: 0;
                     transition: transform 120ms ease;
                 }
                 .pf-scrubber-input::-webkit-slider-thumb:hover {
-                    transform: scale(1.18);
+                    transform: scale(1.15);
                 }
                 .pf-scrubber-input:active::-webkit-slider-thumb {
                     cursor: grabbing;
-                    transform: scale(1.25);
+                    transform: scale(1.2);
                 }
                 .pf-scrubber-input::-moz-range-thumb {
-                    width: 16px; height: 16px;
+                    width: 12px; height: 12px;
                     border-radius: 50%;
                     background: var(--bg-primary);
                     border: 2px solid currentColor;
-                    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+                    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
                     cursor: grab;
                     transition: transform 120ms ease;
                 }
                 .pf-scrubber-input::-moz-range-thumb:hover {
-                    transform: scale(1.18);
+                    transform: scale(1.15);
                 }
             `}</style>
         </div>

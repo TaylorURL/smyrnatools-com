@@ -1,16 +1,19 @@
-import React from 'react'
+import React, { useMemo } from 'react'
+
+import { useOperatorClockStatusContext } from '../../context/OperatorClockStatusContext'
 
 const SKELETON_ROW_LABELS = [
-    'Fleet total',
+    'Asset Total',
     'Active',
     'Spare',
-    'In shop',
+    'In Shop',
     'Stationary',
     'Allocation',
     'Verified',
     'Operators',
-    'Open alerts',
-    'Open issues'
+    'Clocked In',
+    'Open Alerts',
+    'Open Issues'
 ]
 
 const ASIDE_CLASS = 'hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-y-auto w-60 max-h-screen'
@@ -25,6 +28,15 @@ const ASIDE_CLASS = 'hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-
  * doesn't disappear during the dashboard's bootstrap.
  */
 export function DashboardAtAGlance({ alertCount, displayStats, loading = false, openIssues }) {
+    const { statusByBadge } = useOperatorClockStatusContext()
+    const clockedInCount = useMemo(() => {
+        let count = 0
+        statusByBadge.forEach((record) => {
+            if (record.isClockedIn) count += 1
+        })
+        return count
+    }, [statusByBadge])
+
     if (loading) {
         return (
             <aside className={ASIDE_CLASS} aria-busy="true" aria-label="Loading dashboard snapshot">
@@ -75,16 +87,17 @@ export function DashboardAtAGlance({ alertCount, displayStats, loading = false, 
     })
 
     const rows = [
-        { label: 'Fleet total', value: (stats.fleetTotal || 0).toLocaleString() },
+        { label: 'Asset Total', value: (stats.fleetTotal || 0).toLocaleString() },
         { label: 'Active', value: active.toLocaleString() },
         { label: 'Spare', value: spare.toLocaleString() },
-        { label: 'In shop', value: inShop.toLocaleString() },
+        { label: 'In Shop', value: inShop.toLocaleString() },
         { label: 'Stationary', value: stationary.toLocaleString() },
         { label: 'Allocation', value: `${allocation}%` },
         { label: 'Verified', value: `${verified}%` },
         { label: 'Operators', value: (ops.active || 0).toLocaleString() },
-        { label: 'Open alerts', value: (alertCount || 0).toString() },
-        { label: 'Open issues', value: (openIssues || 0).toString() }
+        { label: 'Clocked In', value: clockedInCount.toLocaleString() },
+        { label: 'Open Alerts', value: (alertCount || 0).toString() },
+        { label: 'Open Issues', value: (openIssues || 0).toString() }
     ]
 
     return (

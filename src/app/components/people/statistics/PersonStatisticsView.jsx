@@ -104,6 +104,21 @@ function PersonStatisticsView({ kind, title }) {
         [safeActiveSection, sections]
     )
 
+    /* Reset scroll on every section change. The actual scroll surface lives
+     * on the Navigation chrome (`<main data-content-scroll>` in TopBar /
+     * TwoLevel / Mobile variants), not inside this view, so we use the same
+     * `[data-content-scroll]` selector App.jsx uses for view-level resets.
+     * Hits every marked scroll container (Navigation wrapper + this view's
+     * own inner container) so the user lands at the top of the new page
+     * regardless of which layout is active. */
+    useEffect(() => {
+        if (typeof document === 'undefined') return
+        document.querySelectorAll('[data-content-scroll]').forEach((el) => {
+            if (typeof el?.scrollTo === 'function') el.scrollTo({ top: 0 })
+            else if (el) el.scrollTop = 0
+        })
+    }, [safeActiveSection])
+
     if (isLoading && items.length === 0) {
         return (
             <div className="flex-1 min-h-0 overflow-y-auto animate-fade-in-fast">

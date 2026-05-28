@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import ReactDOM from 'react-dom'
 
 import MessageService from '../../../services/MessageService'
 import UserUtility from '../../../utils/UserUtility'
@@ -77,7 +78,9 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
         color: 'var(--text-primary)'
     }
 
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+
+    return ReactDOM.createPortal(
         <div
             className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)] animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
             onClick={(e) => {
@@ -302,6 +305,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }

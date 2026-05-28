@@ -1,52 +1,83 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
+import ReactDOM from 'react-dom'
 
 import { ListService } from '../../../services/ListService'
-import {
-    BULK_ACTION_COLORS,
-    BULK_STATUS_OPTIONS,
-    getBulkButtonStyle,
-    STATUS_COLORS
-} from '../../constants/listViewConstants'
+import { BULK_STATUS_OPTIONS, STATUS_COLORS } from '../../constants/listViewConstants'
 
-const actionButtonClass = (isMobile) =>
-    `flex items-center border-none cursor-pointer font-semibold outline-none transition-all duration-200 ${
-        isMobile
-            ? 'flex-1 flex-col gap-1 py-2 rounded-lg text-[11px] min-h-[52px] justify-center'
-            : 'gap-2 px-4 py-2 rounded text-sm'
-    }`
+const TONE_CONFIG = {
+    complete: { bg: 'rgba(22,163,74,0.14)', hoverBg: 'rgba(22,163,74,0.24)', textClass: 'text-status-active' },
+    delete: { bg: 'rgba(220,38,38,0.14)', hoverBg: 'rgba(220,38,38,0.24)', textClass: 'text-status-danger' },
+    neutral: { bg: 'rgba(59,130,246,0.14)', hoverBg: 'rgba(59,130,246,0.24)', textClass: 'text-status-shop' },
+    secondary: {
+        bg: undefined,
+        hoverBg: undefined,
+        textClass: 'text-text-secondary bg-bg-secondary hover:bg-bg-tertiary'
+    }
+}
 
-const dropdownItemClass = (isMobile) =>
-    `flex items-center w-full rounded font-medium cursor-pointer transition-all duration-100 border-none ${
-        isMobile ? 'gap-3 px-3 py-3 text-sm' : 'gap-2.5 px-3 py-2 text-xs'
-    } bg-transparent text-text-primary`
-
-const setHoverBg = (color) => (e) => (e.currentTarget.style.background = color)
-
-const setActionHover = (type, hovered) => (e) => {
-    e.currentTarget.style.background = hovered ? BULK_ACTION_COLORS[type].hover : BULK_ACTION_COLORS[type].bg
+function ActionButton({ ariaProps, children, icon, isMobile, onClick, tone = 'neutral' }) {
+    const base = isMobile
+        ? 'flex-1 flex-col gap-0.5 py-2.5 rounded-lg text-[11px] min-h-[52px] justify-center'
+        : 'gap-2 px-3.5 py-2 rounded-md text-[13px]'
+    const cfg = TONE_CONFIG[tone] || TONE_CONFIG.neutral
+    const inlineStyle = cfg.bg ? { background: cfg.bg } : undefined
+    return (
+        <button
+            onClick={onClick}
+            type="button"
+            className={`flex items-center font-semibold border-none outline-none cursor-pointer transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-accent ${base} ${cfg.textClass}`}
+            style={inlineStyle}
+            onMouseEnter={cfg.hoverBg ? (e) => (e.currentTarget.style.background = cfg.hoverBg) : undefined}
+            onMouseLeave={cfg.bg ? (e) => (e.currentTarget.style.background = cfg.bg) : undefined}
+            {...ariaProps}
+        >
+            <i className={`fas ${icon} ${isMobile ? 'text-base' : ''}`} aria-hidden="true" />
+            <span>{children}</span>
+        </button>
+    )
 }
 
 function BulkDropdownPanel({ children, isMobile, minWidth }) {
     return (
         <div
             role="menu"
-            className={`absolute bottom-full mb-2 z-50 rounded shadow-lg overflow-hidden animate-filter-fade ${
-                isMobile ? 'left-1/2 -translate-x-1/2 w-[min(220px,90vw)]' : 'left-0'
+            className={`absolute bottom-full mb-2 z-50 rounded-lg shadow-[0_12px_32px_rgba(0,0,0,0.18)] overflow-hidden animate-filter-fade ${
+                isMobile ? 'left-1/2 -translate-x-1/2 w-[min(240px,90vw)]' : 'left-0'
             } bg-bg-primary border border-border-light`}
             style={isMobile ? undefined : { minWidth }}
         >
-            <div className="p-1.5">{children}</div>
+            <div className="p-1">{children}</div>
         </div>
+    )
+}
+
+function MenuItem({ children, icon, iconBg, iconColor, isMobile, onClick }) {
+    return (
+        <button
+            type="button"
+            role="menuitem"
+            onClick={onClick}
+            className={`flex w-full items-center rounded font-medium border-none bg-transparent text-text-primary transition-colors duration-100 hover:bg-bg-secondary cursor-pointer ${
+                isMobile ? 'gap-3 px-3 py-2.5 text-[13px]' : 'gap-2.5 px-2.5 py-2 text-[12.5px]'
+            }`}
+        >
+            <span
+                className="flex h-5 w-5 items-center justify-center rounded-md text-[10px]"
+                style={{ background: iconBg, color: iconColor }}
+            >
+                <i className={`fas ${icon}`} aria-hidden="true" />
+            </span>
+            {children}
+        </button>
     )
 }
 
 /**
  * Floating multi-select action bar (desktop: bottom-center; mobile: bottom
- * sheet). Exposes complete / set-status / set-priority / delete / cancel
- * actions. Status + priority dropdowns are managed locally via the refs and
- * open/close booleans passed in from the parent so click-outside detection
- * still works.
+ * sheet with safe-area inset). Springs in from below with an ease-out curve
+ * and scales subtly on press to feel responsive. The status + priority
+ * dropdowns lift above their triggers and clamp to the viewport edges.
  */
 export default function ListBulkActionsBar({
     accentColor,
@@ -66,164 +97,129 @@ export default function ListBulkActionsBar({
 }) {
     if (!selectedCount) return null
 
-    return (
+    const containerClass = isMobile
+        ? 'bottom-0 inset-x-0 flex flex-col border-t border-border-light shadow-[0_-12px_32px_rgba(0,0,0,0.18)] pb-[env(safe-area-inset-bottom)]'
+        : 'bottom-6 left-1/2 -translate-x-1/2 flex items-center flex-nowrap gap-3 justify-start px-4 py-2.5 border border-border-light rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.22)]'
+
+    if (typeof document === 'undefined' || !document.body) return null
+
+    return ReactDOM.createPortal(
         <div
-            className={`fixed z-[1000] ${
-                isMobile
-                    ? 'bottom-0 inset-x-0 flex flex-col border-t border-border-light shadow-[0_-8px_24px_rgba(0,0,0,0.15)] pb-[env(safe-area-inset-bottom)]'
-                    : 'bottom-8 left-1/2 -translate-x-1/2 flex items-center flex-nowrap gap-4 justify-start px-6 py-4 border border-border-light rounded shadow-[0_8px_24px_rgba(0,0,0,0.15)]'
-            } bg-bg-primary`}
+            role="region"
+            aria-label={`${selectedCount} task${selectedCount === 1 ? '' : 's'} selected`}
+            className={`fixed z-[1000] bg-bg-primary animate-slide-up motion-reduce:animate-none ${containerClass}`}
         >
             {isMobile && (
                 <div
-                    className="text-xs font-bold text-center py-1.5 border-b border-border-light"
+                    className="border-b border-border-light py-1.5 text-center text-[12px] font-bold"
                     style={{ color: accentColor }}
                 >
                     {selectedCount} selected
                 </div>
             )}
             {!isMobile && (
-                <div className="text-[0.9375rem] font-bold shrink-0" style={{ color: accentColor }}>
+                <div className="shrink-0 text-[13.5px] font-bold" style={{ color: accentColor }}>
                     {selectedCount} selected
                 </div>
             )}
-            <div className={`flex ${isMobile ? 'w-full px-1 py-1.5 gap-1' : 'gap-2'}`}>
-                <button
+            <div className={`flex ${isMobile ? 'w-full gap-1.5 px-1.5 py-2' : 'gap-1.5'}`}>
+                <ActionButton
+                    icon="fa-check"
+                    isMobile={isMobile}
                     onClick={onBulkComplete}
-                    className={actionButtonClass(isMobile)}
-                    style={getBulkButtonStyle('complete')}
-                    onMouseEnter={setActionHover('complete', true)}
-                    onMouseLeave={setActionHover('complete', false)}
-                    aria-label="Complete"
+                    tone="complete"
+                    ariaProps={{ 'aria-label': 'Mark selected as complete' }}
                 >
-                    <i className={`fas fa-check ${isMobile ? 'text-base' : ''}`} />
-                    <span>Complete</span>
-                </button>
+                    Complete
+                </ActionButton>
                 <div className={`relative ${isMobile ? 'flex-1 flex' : ''}`} ref={bulkStatusRef}>
-                    <button
-                        type="button"
+                    <ActionButton
+                        icon="fa-layer-group"
+                        isMobile={isMobile}
                         onClick={onToggleStatus}
-                        className={actionButtonClass(isMobile)}
-                        style={getBulkButtonStyle('neutral')}
-                        onMouseEnter={setActionHover('neutral', true)}
-                        onMouseLeave={setActionHover('neutral', false)}
-                        aria-label="Status"
-                        aria-haspopup="menu"
-                        aria-expanded={bulkStatusOpen}
+                        tone="neutral"
+                        ariaProps={{
+                            'aria-expanded': bulkStatusOpen,
+                            'aria-haspopup': 'menu',
+                            'aria-label': 'Set status for selected tasks'
+                        }}
                     >
-                        <i className={`fas fa-layer-group ${isMobile ? 'text-base' : ''}`} />
-                        <span className={isMobile ? '' : 'flex items-center gap-2'}>
-                            Status
-                            {!isMobile && (
-                                <i
-                                    className={`fas fa-chevron-down text-[8px] opacity-60 transition-transform duration-150 ${
-                                        bulkStatusOpen ? 'rotate-180' : ''
-                                    }`}
-                                />
-                            )}
-                        </span>
-                    </button>
+                        Status
+                    </ActionButton>
                     {bulkStatusOpen && (
                         <BulkDropdownPanel isMobile={isMobile} minWidth={180}>
                             {BULK_STATUS_OPTIONS.map((opt) => {
                                 const color = STATUS_COLORS[opt.value] || STATUS_COLORS.pending
                                 return (
-                                    <button
+                                    <MenuItem
                                         key={opt.value}
-                                        type="button"
-                                        role="menuitem"
+                                        icon={ListService.getStatusIcon(opt.value)}
+                                        iconBg={color.bg}
+                                        iconColor={color.text}
+                                        isMobile={isMobile}
                                         onClick={() => onBulkUpdateStatus(opt.value)}
-                                        className={dropdownItemClass(isMobile)}
-                                        onMouseEnter={setHoverBg('var(--bg-secondary)')}
-                                        onMouseLeave={setHoverBg('transparent')}
                                     >
-                                        <span
-                                            className="flex items-center justify-center h-5 w-5 rounded-md text-[9px]"
-                                            style={{ background: color.bg, color: color.text }}
-                                        >
-                                            <i className={`fas ${ListService.getStatusIcon(opt.value)}`} />
-                                        </span>
                                         {opt.label}
-                                    </button>
+                                    </MenuItem>
                                 )
                             })}
                         </BulkDropdownPanel>
                     )}
                 </div>
                 <div className={`relative ${isMobile ? 'flex-1 flex' : ''}`} ref={bulkPriorityRef}>
-                    <button
-                        type="button"
+                    <ActionButton
+                        icon="fa-flag"
+                        isMobile={isMobile}
                         onClick={onTogglePriority}
-                        className={actionButtonClass(isMobile)}
-                        style={getBulkButtonStyle('neutral')}
-                        onMouseEnter={setActionHover('neutral', true)}
-                        onMouseLeave={setActionHover('neutral', false)}
-                        aria-label="Priority"
-                        aria-haspopup="menu"
-                        aria-expanded={bulkPriorityOpen}
+                        tone="neutral"
+                        ariaProps={{
+                            'aria-expanded': bulkPriorityOpen,
+                            'aria-haspopup': 'menu',
+                            'aria-label': 'Set priority for selected tasks'
+                        }}
                     >
-                        <i className={`fas fa-flag ${isMobile ? 'text-base' : ''}`} />
-                        <span className={isMobile ? '' : 'flex items-center gap-2'}>
-                            Priority
-                            {!isMobile && (
-                                <i
-                                    className={`fas fa-chevron-down text-[8px] opacity-60 transition-transform duration-150 ${
-                                        bulkPriorityOpen ? 'rotate-180' : ''
-                                    }`}
-                                />
-                            )}
-                        </span>
-                    </button>
+                        Priority
+                    </ActionButton>
                     {bulkPriorityOpen && (
                         <BulkDropdownPanel isMobile={isMobile} minWidth={170}>
                             {ListService.getPriorityOptions().map((opt) => {
                                 const pc = ListService.getPriorityConfig(opt.value)
                                 return (
-                                    <button
+                                    <MenuItem
                                         key={opt.value}
-                                        type="button"
-                                        role="menuitem"
+                                        icon={pc.icon}
+                                        iconBg={pc.bg}
+                                        iconColor={pc.color}
+                                        isMobile={isMobile}
                                         onClick={() => onBulkUpdatePriority(opt.value)}
-                                        className={dropdownItemClass(isMobile)}
-                                        onMouseEnter={setHoverBg('var(--bg-secondary)')}
-                                        onMouseLeave={setHoverBg('transparent')}
                                     >
-                                        <span
-                                            className="flex items-center justify-center h-5 w-5 rounded-md text-[9px]"
-                                            style={{ background: pc.bg, color: pc.color }}
-                                        >
-                                            <i className={`fas ${pc.icon}`} />
-                                        </span>
                                         {opt.label}
-                                    </button>
+                                    </MenuItem>
                                 )
                             })}
                         </BulkDropdownPanel>
                     )}
                 </div>
-                <button
+                <ActionButton
+                    icon="fa-trash"
+                    isMobile={isMobile}
                     onClick={onBulkDelete}
-                    className={actionButtonClass(isMobile)}
-                    style={getBulkButtonStyle('delete')}
-                    onMouseEnter={setActionHover('delete', true)}
-                    onMouseLeave={setActionHover('delete', false)}
-                    aria-label="Delete"
+                    tone="delete"
+                    ariaProps={{ 'aria-label': 'Delete selected tasks' }}
                 >
-                    <i className={`fas fa-trash ${isMobile ? 'text-base' : ''}`} />
-                    <span>Delete</span>
-                </button>
-                <button
+                    Delete
+                </ActionButton>
+                <ActionButton
+                    icon="fa-xmark"
+                    isMobile={isMobile}
                     onClick={onCancel}
-                    className={actionButtonClass(isMobile)}
-                    style={getBulkButtonStyle('cancel')}
-                    onMouseEnter={setActionHover('cancel', true)}
-                    onMouseLeave={setActionHover('cancel', false)}
-                    aria-label="Cancel"
+                    tone="secondary"
+                    ariaProps={{ 'aria-label': 'Clear selection' }}
                 >
-                    <i className={`fas fa-times ${isMobile ? 'text-base' : ''}`} />
-                    <span>Cancel</span>
-                </button>
+                    Cancel
+                </ActionButton>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import ReactDOM from 'react-dom'
 
 import { MaintenanceLogService } from '../../../services/MaintenanceLogService'
 import {
@@ -55,7 +56,9 @@ export function MaintenanceServiceModal({ isOpen, onClose, onSaved, equipment, s
         }
     }
 
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+
+    return ReactDOM.createPortal(
         <div
             className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)] z-[110] animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
             onClick={onClose}
@@ -188,6 +191,7 @@ export function MaintenanceServiceModal({ isOpen, onClose, onSaved, equipment, s
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }

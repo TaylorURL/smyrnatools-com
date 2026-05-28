@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
-import React from 'react'
+import React, { useMemo } from 'react'
 
+import { canonicalNameKey } from '../../../../../../utils/OperatorNameLookupUtility'
 import {
     fmtFloat,
     fmtInt,
@@ -8,6 +9,8 @@ import {
     fmtYards,
     parseIsoLocal
 } from '../../../../../../utils/PlanStatisticsFormatUtility'
+import useDayforceOperatorMetrics from '../../../../../hooks/useDayforceOperatorMetrics'
+import useOperatorYardageByDay from '../../../../../hooks/useOperatorYardageByDay'
 import { Panel } from '../../../../ui/Panel'
 import { EmptySection, isEmptyAfterLoad, RefreshingHint } from './planStatsShared'
 
@@ -150,6 +153,7 @@ const formatDayLabel = (iso) => {
  *  one. Reads as a launchpad: the period story up top, what stood out, what
  *  needs attention, and quick jumps into the deep-dive pages. */
 export function PlanStatisticsOverviewPage({
+    availablePlantCodes,
     currentDays,
     currentSummary,
     knownPlantSummary,
@@ -158,9 +162,58 @@ export function PlanStatisticsOverviewPage({
     plantNameByCode,
     range,
     satisfactionAggregate,
-    satisfactionLoading
+    satisfactionLoading,
+    selectedPlant
 }) {
     const isEmpty = isEmptyAfterLoad(loading, currentDays)
+
+    /* Fleet productivity — pulled in here so the headline metric and the
+     * top-stats grid show Hours + YPH alongside the dispatch yardage
+     * totals. Mounts only when Overview is active (this component is
+     * conditionally rendered by PlanStatisticsView), so the Dayforce +
+     * dispatch yardage fetches don't fire on every other Stats sub-page.
+     *
+     * YPH math mirrors the Efficiency tab exactly: totalYards / totalHours
+     * across the Dayforce-matched operator roster, with yards scoped to
+     * the selected plant when one is filtered (so a plant-scoped Overview
+     * doesn't pad YPH with cross-plant pours). */
+    const dayforceMetrics = useDayforceOperatorMetrics({
+        dateRange: range,
+        plantCodes: availablePlantCodes,
+        selectedPlant
+    })
+    const yardageMetrics = useOperatorYardageByDay({ dateRange: range })
+    const fleet = useMemo(() => {
+        const perOperator = dayforceMetrics?.perOperator || []
+        const yardageByOperator = yardageMetrics?.yardageByOperator || new Map()
+        const yardageByOperatorByPlant = yardageMetrics?.yardageByOperatorByPlant || new Map()
+        const yardsFor = selectedPlant
+            ? (canon) => {
+                  if (!canon) return 0
+                  const bucket = yardageByOperatorByPlant.get(canon)
+                  return bucket ? bucket[String(selectedPlant)] || 0 : 0
+              }
+            : (canon) => (canon ? yardageByOperator.get(canon) || 0 : 0)
+        let totalActualHours = 0
+        let totalYards = 0
+        for (const op of perOperator) {
+            const canon = canonicalNameKey(op.name)
+            totalActualHours += op.actualHours || 0
+            totalYards += yardsFor(canon)
+        }
+        return {
+            fleetYph: totalActualHours > 0 ? totalYards / totalActualHours : 0,
+            operatorCount: perOperator.length,
+            totalActualHours,
+            totalYards
+        }
+    }, [
+        dayforceMetrics?.perOperator,
+        yardageMetrics?.yardageByOperator,
+        yardageMetrics?.yardageByOperatorByPlant,
+        selectedPlant
+    ])
+    const fleetLoading = dayforceMetrics?.isLoading || yardageMetrics?.isLoading
 
     if (loading && currentDays.length === 0) {
         return (
@@ -202,6 +255,16 @@ export function PlanStatisticsOverviewPage({
     const shiftSpanLabel =
         currentSummary.avgShiftSpanHours != null ? `${fmtFloat(currentSummary.avgShiftSpanHours)} h avg` : '—'
 
+    /* Fleet productivity strings for the headline / grid. Yph stays the
+     * full precision the Efficiency tab uses (two decimals — anything
+     * less than 0.01 separation reads as the same number on a dashboard). */
+    const fleetYphLabel = fleet.totalActualHours > 0 ? fmtFloat(fleet.fleetYph, 2) : '—'
+    const fleetHoursLabel = fleet.totalActualHours > 0 ? `${fmtInt(Math.round(fleet.totalActualHours))} h` : '—'
+    const fleetYphHint =
+        fleet.totalActualHours > 0
+            ? `${fmtYards(fleet.totalYards)} ÷ ${fmtInt(Math.round(fleet.totalActualHours))} h`
+            : null
+
     return (
         <div className="flex flex-col gap-4">
             {/* 1. Period story — single high-density narrative card. */}
@@ -217,9 +280,18 @@ export function PlanStatisticsOverviewPage({
                         <span className="text-[11.5px] uppercase tracking-wider text-text-tertiary">
                             yd³ poured · {daysWithProduction} day{daysWithProduction === 1 ? '' : 's'} · {activeCount}{' '}
                             active plant{activeCount === 1 ? '' : 's'}
+                            {fleet.totalActualHours > 0 && (
+                                <>
+                                    {' · '}
+                                    <span className="text-text-secondary">
+                                        {fleetYphLabel}
+                                        <span className="text-text-tertiary"> YPH</span>
+                                    </span>
+                                </>
+                            )}
                         </span>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[12px]">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[12px]">
                         <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
                             <span className="text-[10px] uppercase tracking-wider text-text-tertiary">Avg / day</span>
                             <span className="font-mono tabular-nums font-semibold text-text-primary">
@@ -245,6 +317,31 @@ export function PlanStatisticsOverviewPage({
                             <span className="font-mono tabular-nums font-semibold text-text-primary">
                                 {shiftSpanLabel}
                             </span>
+                        </div>
+                        <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
+                            <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                                Actual hours
+                            </span>
+                            <span className="font-mono tabular-nums font-semibold text-text-primary">
+                                {fleetLoading && fleet.totalActualHours === 0 ? '…' : fleetHoursLabel}
+                            </span>
+                            {fleet.operatorCount > 0 && (
+                                <span className="text-[10px] text-text-tertiary tabular-nums mt-0.5">
+                                    {fmtInt(fleet.operatorCount)} operator
+                                    {fleet.operatorCount === 1 ? '' : 's'}
+                                </span>
+                            )}
+                        </div>
+                        <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
+                            <span className="text-[10px] uppercase tracking-wider text-text-tertiary">Fleet YPH</span>
+                            <span className="font-mono tabular-nums font-semibold text-text-primary">
+                                {fleetLoading && fleet.totalActualHours === 0 ? '…' : fleetYphLabel}
+                            </span>
+                            {fleetYphHint && (
+                                <span className="text-[10px] text-text-tertiary tabular-nums mt-0.5 truncate">
+                                    {fleetYphHint}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>

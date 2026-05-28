@@ -1,4 +1,5 @@
 import React from 'react'
+import ReactDOM from 'react-dom'
 /** Checklist items the user must acknowledge before report submission. */
 const CONFIRMATION_ITEMS = [
     'Total hours only includes hours from operators and not from plant managers, loader operators or any other roles.'
@@ -8,7 +9,8 @@ function ConfirmationModal({ confirmationChecks, setConfirmationChecks, onCancel
     const updateCheck = (index, checked) =>
         setConfirmationChecks(confirmationChecks.map((c, i) => (i === index ? checked : c)))
     const allChecked = confirmationChecks.every(Boolean)
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+    return ReactDOM.createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4 animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none">
             <div className="bg-bg-primary rounded-2xl p-5 sm:p-8 max-w-md w-full shadow-2xl animate-[popIn_220ms_cubic-bezier(0.23,1,0.32,1)_both] motion-reduce:animate-none">
                 <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-3 sm:mb-4">Confirm Submission</h2>
@@ -46,7 +48,8 @@ function ConfirmationModal({ confirmationChecks, setConfirmationChecks, onCancel
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 export default ConfirmationModal

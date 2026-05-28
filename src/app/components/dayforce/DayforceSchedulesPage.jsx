@@ -13,7 +13,7 @@ import { DayforceFilters } from './DayforceFilters'
 import { LoadingSkeleton } from './schedules/LoadingSkeleton'
 import { filterExceptionText } from './schedules/scheduleFlags'
 import { fmtHours } from './schedules/scheduleFormatters'
-import { WeekTable } from './schedules/WeekTable'
+import { WeekCarousel } from './schedules/WeekCarousel'
 
 /**
  * Schedules sub-page — weekly timesheet grid. Per-(operator × day) shifts
@@ -139,25 +139,13 @@ export function DayforceSchedulesPage({ accentColor, dateRange, plantCodes, sele
                     />
                 </Panel>
             ) : (
-                /* One WeekTable per Mon–Sat week in the selected range —
-                 * stacked vertically so the date range in the page header
-                 * is the single source of truth. The historical week-by-
-                 * week carousel was removed because it duplicated what the
-                 * top-bar period selector already does. `weekTables` is
-                 * sorted newest-first so the most recent week renders on
-                 * top. */
-                weekTables.map((week) => (
-                    <WeekTable
-                        key={week.weekLabel}
-                        accent={accent}
-                        days={week.days}
-                        operatorRows={week.operatorRows}
-                        totalsByDay={week.totalsByDay}
-                        weekLabel={week.weekLabel}
-                        weekTotal={week.weekTotal}
-                        weekYardageTotal={week.weekYardageTotal}
-                    />
-                ))
+                /* Week-by-week carousel — newest week first. Click the
+                 * arrows, click a dot to jump to a specific week, or use
+                 * ←/→. Multi-week period selections (Month / Quarter /
+                 * Year) used to render every week stacked vertically; the
+                 * carousel keeps the page short enough that the summary
+                 * tiles + filters above stay visible while paging. */
+                <WeekCarousel accent={accent} weekTables={weekTables} />
             )}
         </div>
     )

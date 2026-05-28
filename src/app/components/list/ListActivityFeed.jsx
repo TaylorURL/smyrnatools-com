@@ -9,14 +9,14 @@ function ActivitySkeleton({ count, isMobile }) {
             {[...Array(count)].map((_, index) => (
                 <div
                     key={index}
-                    className={`flex border-b border-border-light ${isMobile ? 'gap-3 px-4 py-3' : 'gap-4 px-6 py-4'}`}
+                    className={`flex border-b border-border-light last:border-b-0 ${isMobile ? 'gap-3 px-4 py-3' : 'gap-4 px-6 py-4'}`}
                 >
                     <div
-                        className={`rounded-full bg-slate-200 animate-pulse shrink-0 ${isMobile ? 'h-7 w-7' : 'h-8 w-8'}`}
+                        className={`rounded-full bg-bg-tertiary animate-pulse-slow shrink-0 motion-reduce:animate-none ${isMobile ? 'h-7 w-7' : 'h-8 w-8'}`}
                     />
                     <div className="flex flex-1 flex-col gap-2">
-                        <div className="h-4 w-3/4 rounded bg-slate-200 animate-pulse" />
-                        <div className="h-3 w-1/3 rounded bg-slate-100 animate-pulse" />
+                        <div className="h-4 w-3/4 rounded bg-bg-tertiary animate-pulse-slow motion-reduce:animate-none" />
+                        <div className="h-3 w-1/3 rounded bg-bg-tertiary animate-pulse-slow motion-reduce:animate-none" />
                     </div>
                 </div>
             ))}

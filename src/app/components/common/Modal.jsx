@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import ReactDOM from 'react-dom'
 
 /**
  * Reusable modal dialog with header, backdrop-close, ESC handling, body scroll lock, and scrollable content area.
@@ -26,7 +27,9 @@ export default function Modal({ children, onClose, title, titleIcon, footer, max
         }
     }, [onClose])
 
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+
+    return ReactDOM.createPortal(
         <div
             className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-8 bg-black/40 backdrop-blur-sm animate-fade-in-fast motion-reduce:animate-none"
             onClick={onClose}
@@ -59,7 +62,8 @@ export default function Modal({ children, onClose, title, titleIcon, footer, max
                     </div>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 

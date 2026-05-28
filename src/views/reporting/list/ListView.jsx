@@ -23,14 +23,35 @@ import { useListRegion } from '../../../app/hooks/useListRegion'
 import { ListService } from '../../../services/ListService'
 import ListAddView from './ListAddView'
 
+const PREFS_STORAGE_KEY = 'smyrnatools.listView.preferences'
+const DEFAULT_PREFS = { groupBy: 'priority', layout: 'list' }
+
+function readStoredPrefs() {
+    if (typeof window === 'undefined') return DEFAULT_PREFS
+    try {
+        const raw = window.localStorage.getItem(PREFS_STORAGE_KEY)
+        if (!raw) return DEFAULT_PREFS
+        const parsed = JSON.parse(raw)
+        return {
+            groupBy: ['priority', 'status', 'date', 'role'].includes(parsed.groupBy)
+                ? parsed.groupBy
+                : DEFAULT_PREFS.groupBy,
+            layout: ['list', 'board', 'activity'].includes(parsed.layout) ? parsed.layout : DEFAULT_PREFS.layout
+        }
+    } catch {
+        return DEFAULT_PREFS
+    }
+}
+
 /**
- * Task list view with multiple grouping modes (by priority, status, date, or
- * role) plus an activity timeline. Supports region-scoped plant filtering,
- * bulk selection with complete / set-status / set-priority / delete actions,
- * Cmd+K (focus search) / Cmd+N (add task) shortcuts, and a sticky filter bar.
+ * Task list view — the primary "tasks/to-do" surface. Combines an inline
+ * quick-add input, a consolidated filter bar (layout · group · filters),
+ * and the appropriate body render (grouped rows, kanban board, or activity
+ * feed). Optimistic mutations from ListService land in the cache and emit
+ * `list-items-changed`, which `useListData` listens for to re-render.
  *
  * @param {string} [title] - Page heading (defaults to "Tasks List").
- * @param {Function} onSelectItem - Callback when a task row is clicked.
+ * @param {Function} onSelectItem - Called when a row is clicked to open the detail view.
  * @param {Function} [onStatusFilterChange] - Optional external callback for status filter sync.
  */
 function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) {
@@ -39,8 +60,6 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
     const isMobile = useIsMobile()
     const headerRef = useRef(null)
     const searchInputRef = useRef(null)
-    const statusDropdownRef = useRef(null)
-    const roleDropdownRef = useRef(null)
     const bulkStatusRef = useRef(null)
     const bulkPriorityRef = useRef(null)
 
@@ -49,13 +68,20 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
     const [selectedPlant, setSelectedPlant] = useState('')
     const [statusFilter, setStatusFilter] = useState('')
     const [roleFilter, setRoleFilter] = useState('')
-    const [viewMode, setViewMode] = useState('priority')
-    const [layout, setLayout] = useState('list')
+    const initialPrefs = useMemo(() => readStoredPrefs(), [])
+    const [groupBy, setGroupBy] = useState(initialPrefs.groupBy)
+    const [layout, setLayout] = useState(initialPrefs.layout)
     const [showAddSheet, setShowAddSheet] = useState(false)
-    const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
-    const [roleDropdownOpen, setRoleDropdownOpen] = useState(false)
+    const [addSheetSeed, setAddSheetSeed] = useState('')
     const [bulkStatusOpen, setBulkStatusOpen] = useState(false)
     const [bulkPriorityOpen, setBulkPriorityOpen] = useState(false)
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        try {
+            window.localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify({ groupBy, layout }))
+        } catch {}
+    }, [groupBy, layout])
 
     const { isLoading: itemsLoading, plants, reload } = useListData()
     const { regionPlantCodes, regionPlants, regionReady } = useListRegion({
@@ -63,13 +89,8 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
         selectedPlant,
         setSelectedPlant
     })
-    /* Keep the skeleton up until BOTH the items and the region scope
-     * have resolved. Without the region gate the filtered list briefly
-     * leaks tasks from the previous region on first paint / region
-     * swap — `regionPlantCodes` starts as `null`, so the `filteredItems`
-     * memo skips the region filter and renders the unfiltered set
-     * until the fetch lands. */
     const isLoading = itemsLoading || !regionReady
+
     const {
         bulkToggleCompletion,
         bulkUpdatePriority,
@@ -120,16 +141,17 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
     )
 
     const { groupedByDate, groupedByPriority, groupedByRole, groupedByStatus } = useListGroups(roleFilteredItems)
-    const { activityFeed, activityLoading, activityProfiles } = useListActivityFeed(viewMode)
+    const activeViewMode = layout === 'activity' ? 'activity' : groupBy
+    const { activityFeed, activityLoading, activityProfiles } = useListActivityFeed(activeViewMode)
 
     const groupedItems =
-        viewMode === 'date'
+        groupBy === 'date'
             ? groupedByDate
-            : viewMode === 'status'
+            : groupBy === 'status'
               ? groupedByStatus
-              : viewMode === 'priority'
-                ? groupedByPriority
-                : groupedByRole
+              : groupBy === 'role'
+                ? groupedByRole
+                : groupedByPriority
 
     const summaryStats = useMemo(
         () => ({
@@ -139,7 +161,14 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
         [roleFilteredItems, groupedByDate]
     )
 
-    const openAddSheet = useCallback(() => setShowAddSheet(true), [])
+    const openAddSheet = useCallback(() => {
+        setAddSheetSeed('')
+        setShowAddSheet(true)
+    }, [])
+    const openAddSheetWithSeed = useCallback((seed) => {
+        setAddSheetSeed(seed || '')
+        setShowAddSheet(true)
+    }, [])
     useListKeyboardShortcuts({ openAddSheet, searchInputRef })
 
     useEffect(() => {
@@ -154,8 +183,6 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
 
     useEffect(() => {
         const handleClickOutside = (e) => {
-            if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target)) setStatusDropdownOpen(false)
-            if (roleDropdownRef.current && !roleDropdownRef.current.contains(e.target)) setRoleDropdownOpen(false)
             if (bulkStatusRef.current && !bulkStatusRef.current.contains(e.target)) setBulkStatusOpen(false)
             if (bulkPriorityRef.current && !bulkPriorityRef.current.contains(e.target)) setBulkPriorityOpen(false)
         }
@@ -185,7 +212,6 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                 setStatusFilter(mapped)
                 onStatusFilterChange?.(mapped)
             }
-            setStatusDropdownOpen(false)
         },
         [onStatusFilterChange]
     )
@@ -198,17 +224,6 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
     const handleRoleFilterChange = useCallback((value) => {
         const mapped = mapRoleValue(value)
         if (mapped) setRoleFilter(mapped)
-        setRoleDropdownOpen(false)
-    }, [])
-
-    const toggleStatusDropdown = useCallback(() => {
-        setStatusDropdownOpen((p) => !p)
-        setRoleDropdownOpen(false)
-    }, [])
-
-    const toggleRoleDropdown = useCallback(() => {
-        setRoleDropdownOpen((p) => !p)
-        setStatusDropdownOpen(false)
     }, [])
 
     const toggleBulkStatus = useCallback(() => {
@@ -246,6 +261,34 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
           }))
         : visiblePlants.map((p) => ({ plantCode: p.plant_code, plantName: p.plant_name }))
 
+    const quickAddPlants = useMemo(() => {
+        if (regionPlants.length) {
+            return regionPlants.map((p) => ({
+                plantCode: p.plantCode || p.plant_code,
+                plantName: p.plantName || p.plant_name
+            }))
+        }
+        return visiblePlants.map((p) => ({ plantCode: p.plant_code, plantName: p.plant_name }))
+    }, [regionPlants, visiblePlants])
+
+    const quickAddDefaultPlant = useMemo(() => {
+        if (selectedPlant && !selectedPlant.startsWith('DISTRICT:')) return selectedPlant
+        if (quickAddPlants.length === 1) return quickAddPlants[0].plantCode
+        return ''
+    }, [selectedPlant, quickAddPlants])
+
+    const isActivity = layout === 'activity'
+    const isBoard = layout === 'board'
+
+    const quickAddProps = isActivity
+        ? null
+        : {
+              accentColor,
+              defaultPlantCode: quickAddDefaultPlant,
+              onOpenAdvanced: openAddSheetWithSeed,
+              plants: quickAddPlants
+          }
+
     return (
         <div className="global-dashboard-container dashboard-container global-flush-top flush-top list-view bg-bg-secondary min-h-full relative w-full">
             <TopSection
@@ -281,38 +324,34 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                         onClearRoleFilter={() => setRoleFilter('')}
                         onClearStatusFilter={clearStatusFilter}
                         onLayoutChange={setLayout}
-                        onRoleDropdownToggle={toggleRoleDropdown}
                         onRoleFilterChange={handleRoleFilterChange}
-                        onStatusDropdownToggle={toggleStatusDropdown}
                         onStatusFilterChange={handleStatusFilterChange}
-                        onViewModeChange={setViewMode}
-                        roleDropdownOpen={roleDropdownOpen}
-                        roleDropdownRef={roleDropdownRef}
+                        onViewModeChange={setGroupBy}
+                        quickAddProps={quickAddProps}
                         roleFilter={roleFilter}
-                        statusDropdownOpen={statusDropdownOpen}
-                        statusDropdownRef={statusDropdownRef}
                         statusFilter={statusFilter}
                         summaryStats={summaryStats}
-                        viewMode={viewMode}
+                        viewMode={groupBy}
                     />
                 }
             />
             <div className="relative">
                 <div
                     className={`content-area overscroll-contain [-webkit-overflow-scrolling:touch] ${
-                        isMobile ? 'p-4 pb-8' : 'px-8 pt-6 pb-8'
+                        isMobile ? 'p-3 pb-8' : 'px-8 pt-5 pb-8'
                     }`}
                 >
                     {isLoading ? (
                         <TaskListSkeleton />
-                    ) : filteredItems.length === 0 ? (
+                    ) : filteredItems.length === 0 && !isActivity ? (
                         <ListEmptyState
                             accentColor={accentColor}
                             hasSearchOrPlant={!!(searchText || selectedPlant)}
                             onAddClick={openAddSheet}
+                            onReset={showReset ? resetFilters : undefined}
                             statusFilter={statusFilter}
                         />
-                    ) : layout === 'cards' ? (
+                    ) : isBoard ? (
                         <ListCardsBoard
                             accentColor={accentColor}
                             groupedByStatus={groupedByStatus}
@@ -322,7 +361,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                             selectedIds={selectedIds}
                             statusFilter={statusFilter}
                         />
-                    ) : viewMode === 'activity' ? (
+                    ) : isActivity ? (
                         <ListActivityFeed
                             accentColor={accentColor}
                             activityFeed={activityFeed}
@@ -360,7 +399,16 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                 onToggleStatus={toggleBulkStatus}
                 selectedCount={selectedIds.size}
             />
-            {showAddSheet && <ListAddView onClose={() => setShowAddSheet(false)} onItemAdded={reload} />}
+            {showAddSheet && (
+                <ListAddView
+                    initialDescription={addSheetSeed}
+                    onClose={() => {
+                        setShowAddSheet(false)
+                        setAddSheetSeed('')
+                    }}
+                    onItemAdded={reload}
+                />
+            )}
             <ConfirmDialog
                 isOpen={showDeleteConfirm}
                 onConfirm={confirmBulkDelete}

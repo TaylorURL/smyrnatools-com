@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
+import ReactDOM from 'react-dom'
 
 import SmyrnaLogo from '../../../assets/images/SmyrnaLogo.png'
 import { useAuth } from '../../context/AuthContext'
@@ -18,7 +19,8 @@ function TerminatedOverlay() {
             window.location.href = '/'
         } catch {}
     }
-    return (
+    if (typeof document === 'undefined' || !document.body) return null
+    return ReactDOM.createPortal(
         <div
             role="dialog"
             aria-modal="true"
@@ -46,7 +48,8 @@ function TerminatedOverlay() {
                     Sign Out
                 </button>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 export default TerminatedOverlay

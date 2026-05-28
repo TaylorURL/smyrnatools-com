@@ -118,8 +118,22 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                     ) : (
                         <div role="list">
                             {onlineUsers.map((user) => {
+                                /* Source data occasionally repeats the same role on a user
+                                 * — usually from a join hitting both a role assignment row
+                                 * and the role's name string with mismatched casing. Dedupe
+                                 * case-insensitively here so the badge row reads once-per-
+                                 * role, keeping the first encountered casing for display. */
+                                const uniqueRoles = []
+                                const seenRoleKeys = new Set()
+                                for (const role of user.roles || []) {
+                                    if (!role) continue
+                                    const key = String(role).trim().toLowerCase()
+                                    if (!key || seenRoleKeys.has(key)) continue
+                                    seenRoleKeys.add(key)
+                                    uniqueRoles.push(role)
+                                }
                                 const roleColor =
-                                    (user.roles?.[0] && roleColorMap[user.roles[0].toLowerCase()]) ?? '#64748b'
+                                    (uniqueRoles[0] && roleColorMap[uniqueRoles[0].toLowerCase()]) ?? '#64748b'
                                 return (
                                     <div
                                         key={user.id}
@@ -147,26 +161,29 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                                                         </span>
                                                     )}
                                                 </span>
-                                                <div className="mt-0.5 flex items-center gap-1.5">
-                                                    {user.roles?.length > 0 && (
-                                                        <Badge
-                                                            variant="custom"
-                                                            bg={roleColor}
-                                                            fg="#ffffff"
-                                                            size="xs"
-                                                            weight="semibold"
-                                                            className="force-white-text"
-                                                        >
-                                                            {user.roles[0]}
-                                                        </Badge>
-                                                    )}
-                                                    {user.regionCode && (
-                                                        <span className="text-[10.5px] text-text-secondary">
-                                                            {regionNames[user.regionCode] || user.regionCode}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="mt-1 flex items-center gap-1.5 text-[10px] text-text-tertiary">
+                                                {uniqueRoles.length > 0 && (
+                                                    <div className="mt-1 flex flex-wrap items-center gap-1">
+                                                        {uniqueRoles.map((role) => (
+                                                            <Badge
+                                                                key={role.toLowerCase()}
+                                                                variant="custom"
+                                                                bg={roleColorMap[role.toLowerCase()] ?? roleColor}
+                                                                fg="#ffffff"
+                                                                size="xs"
+                                                                weight="semibold"
+                                                                className="force-white-text"
+                                                            >
+                                                                {role}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {user.regionCode && (
+                                                    <div className="mt-1 text-[10.5px] text-text-secondary truncate">
+                                                        {regionNames[user.regionCode] || user.regionCode}
+                                                    </div>
+                                                )}
+                                                <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-text-tertiary">
                                                     <span className="flex items-center gap-1">
                                                         {(user.activeDevices || ['desktop']).map((d) => (
                                                             <i

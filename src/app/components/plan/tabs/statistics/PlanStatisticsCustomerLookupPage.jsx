@@ -126,25 +126,19 @@ export default function PlanStatisticsCustomerLookupPage({
                         className="w-full rounded pl-9 pr-3 py-2 text-[13px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary disabled:opacity-60 transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)] [&::-webkit-search-cancel-button]:hidden"
                     />
                 </div>
-                <div className="relative">
-                    <select
-                        value={sortKey}
-                        onChange={(e) => setSortKey(e.target.value)}
-                        disabled={isLoading}
-                        className="appearance-none rounded pl-2.5 pr-8 py-2 text-[12px] outline-none cursor-pointer bg-bg-primary border border-border-light text-text-primary disabled:opacity-60 transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
-                        aria-label="Sort customers"
-                    >
-                        {SORTS.map((opt) => (
-                            <option key={opt.key} value={opt.key}>
-                                {opt.label}
-                            </option>
-                        ))}
-                    </select>
-                    <i
-                        aria-hidden="true"
-                        className="fas fa-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] pointer-events-none text-text-tertiary"
-                    />
-                </div>
+                <select
+                    value={sortKey}
+                    onChange={(e) => setSortKey(e.target.value)}
+                    disabled={isLoading}
+                    className="appearance-none bg-no-repeat bg-[right_0.5rem_center] bg-[length:0.875rem_0.875rem] bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20fill=%22none%22%20viewBox=%220%200%2024%2024%22%20stroke=%22currentColor%22%3E%3Cpath%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%20stroke-width=%222%22%20d=%22M19%209l-7%207-7-7%22/%3E%3C/svg%3E')] [color-scheme:light] dark:[color-scheme:dark] rounded pl-2.5 pr-7 py-2 text-[12px] outline-none cursor-pointer bg-bg-primary border border-border-light text-text-primary disabled:opacity-60 transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
+                    aria-label="Sort customers"
+                >
+                    {SORTS.map((opt) => (
+                        <option key={opt.key} value={opt.key}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </select>
             </div>
 
             {/* Filter row + count */}

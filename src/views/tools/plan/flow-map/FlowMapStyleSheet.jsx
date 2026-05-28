@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { LEAVE_OFF_COLOR, NEEDS_HELP_COLOR } from './flowMapShared'
+import { JOB_PIN_COLOR, LEAVE_OFF_COLOR, NEEDS_HELP_COLOR, PICKING_COLOR, ROUTE_IDLE_COLOR } from './flowMapShared'
 
 /** Encapsulates the entire inline `<style>` block for the Planner map
  *  surface — plant pins, route flow animations, job pins, arrow markers,
@@ -18,7 +18,7 @@ export function FlowMapStyleSheet() {
                 align-items: center; justify-content: center;
                 font-family: 'Exo 2', system-ui, sans-serif;
                 cursor: pointer;
-                transition: transform 0.12s ease;
+                transition: transform 0.16s cubic-bezier(0.23, 1, 0.32, 1);
             }
             .pf-plant-pin:hover { transform: scale(1.05); }
             .pf-plant-code { font-weight: 800; line-height: 1; letter-spacing: 0.02em; }
@@ -36,7 +36,29 @@ export function FlowMapStyleSheet() {
                 border: 2px solid var(--bg-primary);
             }
             .pf-needs { background: ${NEEDS_HELP_COLOR}; }
-            .pf-leave { background: ${LEAVE_OFF_COLOR}; }
+            /* Leave-off popup chip — sits at the pin's top-right corner
+             * as a small teal callout reading "−N" (count of operators
+             * who can be left off today). Lives outside the ring chain
+             * so a plant in good standing doesn't get a misleading
+             * status ring just because it has slack. */
+            .pf-plant-leave-popup {
+                position: absolute;
+                top: -8px; right: -10px;
+                min-width: 22px; height: 18px;
+                padding: 0 5px;
+                border-radius: 4px;
+                background: ${LEAVE_OFF_COLOR};
+                color: #fff;
+                font-family: 'Exo 2', system-ui, sans-serif;
+                font-size: 10px; font-weight: 800; line-height: 14px;
+                text-align: center;
+                border: 2px solid var(--bg-primary);
+                box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+                font-variant-numeric: tabular-nums;
+                white-space: nowrap;
+                pointer-events: auto;
+                cursor: help;
+            }
             .leaflet-container { background: var(--bg-tertiary); }
             .leaflet-control-attribution {
                 background: rgba(255, 255, 255, 0.85) !important;
@@ -50,41 +72,31 @@ export function FlowMapStyleSheet() {
             html.dark .leaflet-control-attribution a {
                 color: #93c5fd !important;
             }
-            /* Help-route lines — the colored base itself flows toward
-             * the destination via a long-dash stroke-dashoffset
-             * animation, with a faster white dashed overlay on top
-             * for high-frequency texture. Two layers of motion at
-             * different rates read as a continuous river of traffic
-             * rather than a static line with a marching overlay. */
+            /* Help-route lines — the colored base flows toward the
+             * destination via a long-dash stroke-dashoffset animation,
+             * with a faster dashed overlay on top for high-frequency
+             * texture. Two layers at different rates read as a
+             * continuous river of traffic instead of a static line
+             * with a marching overlay. The brightness-breathing on the
+             * overlay was removed — steady flow reads as calmer and
+             * more professional. */
             .help-route-base {
                 stroke-linecap: round;
-                filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.55));
+                filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.35));
             }
             .help-route-base-active {
-                animation: help-route-base-flow 1.4s linear infinite;
+                animation: help-route-base-flow 1.6s linear infinite;
             }
             .help-route-flow {
-                animation: help-route-flow 0.9s linear infinite,
-                           help-route-flow-breath 1.8s ease-in-out infinite;
-                filter: drop-shadow(0 0 10px rgba(255, 255, 255, 1))
-                        drop-shadow(0 0 18px rgba(186, 230, 253, 0.7));
-            }
-            /* Subtle brightness breathing on the overlay so an active
-             * route has its own internal rhythm on top of the linear
-             * dash flow — reads as "the road has a pulse" instead of
-             * a perfectly mechanical dashed line. */
-            @keyframes help-route-flow-breath {
-                0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.85))
-                                   drop-shadow(0 0 14px rgba(186, 230, 253, 0.55)); }
-                50%      { filter: drop-shadow(0 0 14px rgba(255, 255, 255, 1))
-                                   drop-shadow(0 0 22px rgba(186, 230, 253, 0.85)); }
+                animation: help-route-flow 1s linear infinite;
+                filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.7));
             }
             /* Static variant — same look minus the animation. Used by
              * routes whose operators are pouring at the destination or
              * outside their trip window. */
             .help-route-flow-static {
                 stroke-linecap: round;
-                filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.45));
+                filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
             }
             @keyframes help-route-base-flow {
                 to { stroke-dashoffset: -66; }
@@ -93,44 +105,38 @@ export function FlowMapStyleSheet() {
                 to { stroke-dashoffset: -32; }
             }
             html.dark .help-route-base {
-                filter: drop-shadow(0 0 5px rgba(15, 23, 42, 0.85));
+                filter: drop-shadow(0 0 3px rgba(15, 23, 42, 0.85));
             }
             html.dark .help-route-flow {
-                filter: drop-shadow(0 0 10px rgba(255, 255, 255, 1))
-                        drop-shadow(0 0 18px rgba(186, 230, 253, 0.7));
+                filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
             }
             html.dark .help-route-flow-static {
-                filter: drop-shadow(0 0 6px rgba(186, 230, 253, 0.55));
+                filter: drop-shadow(0 0 3px rgba(186, 230, 253, 0.45));
             }
             /* Job pin — shows up at a job site only while operators
-             * are actually on-site there. Amber to match the in-transit
-             * route color, hard-hat glyph to read as "active pour". */
+             * are actually on-site there. Amber to match "active pour".
+             * Single animation now: a concentric expanding ring (no
+             * stacked box-shadow pulse, no vertical bob) — calmer and
+             * still clearly reads as "active work happening here". */
             .plan-flow-job-marker { background: transparent !important; border: none !important; }
             .pf-job-pin {
                 position: relative;
                 width: 28px; height: 28px;
                 border-radius: 50%;
-                background: #f59e0b;
+                background: ${JOB_PIN_COLOR};
                 color: #fff;
                 display: flex; align-items: center; justify-content: center;
-                box-shadow: 0 0 0 2px var(--bg-primary), 0 2px 6px rgba(0,0,0,0.35);
+                box-shadow: 0 0 0 2px var(--bg-primary), 0 2px 6px rgba(0, 0, 0, 0.3);
                 font-size: 12px;
-                animation: pf-job-pin-pulse 1.6s ease-in-out infinite,
-                           pf-job-pin-bob 2.4s ease-in-out infinite;
             }
-            /* Second concentric ring out of phase with the box-shadow
-             * pulse so the pin reads as a continuous "wave" outward
-             * rather than a single beat. Lives as a pseudo-element so
-             * it stays pinned to the marker geometry through Leaflet
-             * pans without needing extra DOM. */
             .pf-job-pin::after {
                 content: '';
                 position: absolute;
-                inset: -8px;
+                inset: -6px;
                 border-radius: 50%;
-                border: 2px solid rgba(245, 158, 11, 0.85);
+                border: 2px solid ${JOB_PIN_COLOR};
                 opacity: 0;
-                animation: pf-job-pin-ring 1.6s ease-in-out infinite 0.8s;
+                animation: pf-job-pin-ring 2s ease-out infinite;
                 pointer-events: none;
             }
             .pf-job-count {
@@ -140,26 +146,32 @@ export function FlowMapStyleSheet() {
                 border-radius: 8px;
                 background: var(--bg-primary);
                 color: var(--text-primary);
-                border: 1.5px solid #f59e0b;
+                border: 1.5px solid ${JOB_PIN_COLOR};
                 font-family: 'Exo 2', system-ui, sans-serif;
                 font-size: 10px; font-weight: 800; line-height: 13px;
                 text-align: center;
                 z-index: 1;
             }
-            @keyframes pf-job-pin-pulse {
-                0%, 100% { box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 0 rgba(245, 158, 11, 0.55); }
-                50%      { box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 6px rgba(245, 158, 11, 0); }
+            /* Inactive job pin — drivers have either left or haven't
+             * arrived yet. Same shape, same hat icon, but switched to
+             * the idle-slate color and a softer opacity so the pin
+             * reads as "context: this job site exists today" without
+             * pulling focus from active pours. Matches the slate-600
+             * idle polyline treatment. */
+            .pf-job-pin-inactive {
+                background: ${ROUTE_IDLE_COLOR} !important;
+                opacity: 0.7;
+            }
+            .pf-job-pin-inactive::after {
+                display: none;
+            }
+            .pf-job-pin-inactive .pf-job-count {
+                border-color: ${ROUTE_IDLE_COLOR};
+                color: var(--text-secondary);
             }
             @keyframes pf-job-pin-ring {
-                0%   { opacity: 0.7; transform: scale(0.85); }
-                100% { opacity: 0;   transform: scale(1.6);  }
-            }
-            /* Subtle vertical bob so the active pour pin reads as
-             * "alive" against a stationary basemap — concrete is
-             * flowing, work is happening here. */
-            @keyframes pf-job-pin-bob {
-                0%, 100% { transform: translateY(0); }
-                50%      { transform: translateY(-2px); }
+                0%   { opacity: 0.65; transform: scale(0.9); }
+                100% { opacity: 0;    transform: scale(1.5); }
             }
             /* Direct-load line — thin dotted slate edge connecting
              * a geocoded job location to the plant the order is
@@ -173,14 +185,10 @@ export function FlowMapStyleSheet() {
             }
             /* Direction arrows that walk the route while operators
              * are in transit. Color is set inline so the same icon
-             * component renders green for outbound and orange for
+             * component renders emerald for outbound and orange for
              * the return. The marker container carries a transform
              * transition so per-tick lat/lng updates lerp smoothly
-             * between frames instead of snapping (the React autoplay
-             * tick runs at ~240ms; without the transition the arrow
-             * visibly hops between positions). The inner glyph
-             * carries its own transition for the rotation + color +
-             * visibility changes. */
+             * between frames instead of snapping. */
             .plan-flow-arrow-marker {
                 background: transparent !important;
                 border: none !important;
@@ -188,9 +196,6 @@ export function FlowMapStyleSheet() {
                 transition: transform 240ms linear;
                 will-change: transform;
             }
-            /* Suppress the marker transform transition during a map
-             * pan or zoom — otherwise every arrow lags a frame
-             * behind the basemap as the projection reflows. */
             body.pf-map-moving .plan-flow-arrow-marker {
                 transition: none;
             }
@@ -202,59 +207,28 @@ export function FlowMapStyleSheet() {
                 transform-origin: 50% 50%;
                 will-change: transform, opacity;
             }
-            /* Pulsing colored halo so each driver has a glowing
-             * presence on the map; the halo inherits the truck's
-             * route color via currentColor (radial gradient is
-             * driven by the inline color on .pf-route-arrow). */
+            /* Soft colored halo behind each truck — slower and gentler
+             * than before so it reads as presence, not panic. Inherits
+             * the route color via currentColor. */
             .pf-truck-halo {
                 position: absolute;
                 inset: -3px;
                 border-radius: 50%;
                 background: radial-gradient(circle, currentColor 0%, transparent 65%);
-                opacity: 0.55;
-                animation: pf-truck-halo 1.3s ease-in-out infinite;
+                opacity: 0.45;
+                animation: pf-truck-halo 2s ease-in-out infinite;
                 pointer-events: none;
             }
             @keyframes pf-truck-halo {
-                0%, 100% { opacity: 0.25; transform: scale(0.82); }
-                50%      { opacity: 0.65; transform: scale(1.18); }
+                0%, 100% { opacity: 0.25; transform: scale(0.88); }
+                50%      { opacity: 0.55; transform: scale(1.12); }
             }
-            /* The truck glyph itself — drop-shadow gives it a slight
-             * lift off the map so it doesn't fight with the polyline
-             * underneath. font-size matches the 28x28 icon box. */
             .pf-truck-glyph {
                 position: relative;
                 font-size: 16px;
                 line-height: 1;
                 filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.55));
                 z-index: 1;
-            }
-            /* Headlight sits on the right edge of the un-rotated
-             * icon. Because the marker is rotated by (bearing - 90),
-             * "right" after rotation is the truck's leading edge —
-             * the headlight always ends up at the front of the cab
-             * regardless of bearing. */
-            .pf-truck-headlight {
-                position: absolute;
-                right: 1px;
-                top: 50%;
-                width: 5px; height: 5px;
-                border-radius: 50%;
-                background: #fffbeb;
-                box-shadow: 0 0 6px 2px rgba(254, 240, 138, 0.9),
-                            0 0 12px 4px rgba(254, 240, 138, 0.35);
-                transform: translateY(-50%);
-                animation: pf-truck-headlight 1.4s ease-in-out infinite;
-                pointer-events: none;
-                z-index: 2;
-            }
-            @keyframes pf-truck-headlight {
-                0%, 100% { opacity: 0.55; }
-                50%      { opacity: 1;    }
-            }
-            html.dark .pf-truck-headlight {
-                box-shadow: 0 0 8px 3px rgba(254, 240, 138, 0.95),
-                            0 0 16px 6px rgba(254, 240, 138, 0.45);
             }
             /* Soft mount-in for the entire Planner shell so the first
              * paint of the map + chrome feels like a single staged
@@ -278,29 +252,48 @@ export function FlowMapStyleSheet() {
             }
             .pf-tool-pill-picking {
                 animation: pf-tool-pill-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both,
-                           pf-picking-glow 1.4s ease-in-out infinite 220ms;
+                           pf-picking-glow 2s ease-in-out infinite 220ms;
             }
             @keyframes pf-picking-glow {
-                0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
-                50%      { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.18); }
+                0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+                50%      { box-shadow: 0 0 0 6px rgba(34, 211, 238, 0.22); }
             }
             /* Selected plant pin — soft halo pulse so the dispatcher
              * keeps track of which plant is focused while the rest of
-             * the map animates. Only applies when the parent marker
-             * carries the .pf-plant-pin-selected class. */
+             * the map animates. Slower + softer than before so it
+             * doesn't compete with route motion. */
             .pf-plant-pin-selected::after {
                 content: '';
                 position: absolute;
                 inset: -8px;
                 border-radius: 50%;
-                border: 2px solid currentColor;
-                opacity: 0.55;
-                animation: pf-plant-halo 1.8s ease-in-out infinite;
+                border: 2px solid ${PICKING_COLOR};
+                opacity: 0.4;
+                animation: pf-plant-halo 2.4s ease-in-out infinite;
                 pointer-events: none;
             }
             @keyframes pf-plant-halo {
-                0%, 100% { transform: scale(1);     opacity: 0.55; }
-                50%      { transform: scale(1.18);  opacity: 0;    }
+                0%, 100% { transform: scale(1);     opacity: 0.4; }
+                50%      { transform: scale(1.18);  opacity: 0;   }
+            }
+            /* Respect prefers-reduced-motion — kill the looping flows,
+             * halos, and pulses; transitions on hover/interaction are
+             * left alone since they're triggered by the user, not the
+             * autoplay cycle. */
+            @media (prefers-reduced-motion: reduce) {
+                .help-route-base-active,
+                .help-route-flow,
+                .pf-job-pin::after,
+                .pf-truck-halo,
+                .pf-tool-pill-picking,
+                .pf-plant-pin-selected::after,
+                .pf-flow-shell,
+                .pf-tool-pill {
+                    animation: none !important;
+                }
+                .help-route-flow {
+                    opacity: 0.85;
+                }
             }
         `}</style>
     )

@@ -78,17 +78,11 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
             onBack={handleBackClick}
             headerActions={
                 <>
-                    <button
-                        className="flex items-center gap-2 rounded border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
-                        onClick={() => setShowComments(true)}
-                    >
+                    <button className="global-button-secondary" onClick={() => setShowComments(true)}>
                         <i className="fas fa-comments"></i>
                         <span>Comments</span>
                     </button>
-                    <button
-                        className="flex items-center gap-2 rounded border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
-                        onClick={() => setShowHistory(true)}
-                    >
+                    <button className="global-button-secondary" onClick={() => setShowHistory(true)}>
                         <i className="fas fa-history"></i>
                         <span>History</span>
                     </button>
@@ -111,7 +105,7 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
                     {canEditOperator ? (
                         <>
                             <button
-                                className="flex flex-1 items-center justify-center gap-2 rounded border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
+                                className="global-button-secondary flex-1 justify-center"
                                 onClick={handleSave}
                                 disabled={isSaving || !canEditOperator}
                             >
@@ -120,7 +114,7 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
                             </button>
                             {canDeleteOperator && (
                                 <button
-                                    className="flex flex-1 items-center justify-center gap-2 rounded border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
+                                    className="global-button-secondary flex-1 justify-center"
                                     onClick={() => setShowDeleteConfirmation(true)}
                                     disabled={isSaving || !canEditOperator}
                                 >
@@ -130,8 +124,8 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
                             )}
                         </>
                     ) : (
-                        <div className="flex items-center gap-2 text-text-secondary text-sm font-medium">
-                            <i className="fas fa-lock"></i>
+                        <div className="flex items-center gap-1.5 text-text-secondary text-[12px] font-medium">
+                            <i className="fas fa-lock text-[11px]"></i>
                             <span>View-Only Mode</span>
                         </div>
                     )}

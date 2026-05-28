@@ -2,6 +2,7 @@ import L from 'leaflet'
 import { useEffect, useState } from 'react'
 
 import { getCachedRoute, getDrivingRoute } from '../../utils/RoutingUtility'
+import { DRAFT_ROUTE_COLOR } from '../../views/tools/plan/flow-map/flowMapShared'
 
 /** Resolve coords for the in-progress draft route.
  *
@@ -52,9 +53,11 @@ function useDraftRouteCoords({ draft, geocodedPlants, panelMode }) {
 
 /** Render the draft polyline.
  *
- *  One bright amber polyline that always sits above the committed routes
- *  so the user can see exactly what they're building. Cleared the moment
- *  the editor closes or either endpoint is unset. */
+ *  One bright indigo polyline that always sits above the committed routes
+ *  so the user can see exactly what they're building. The color is part
+ *  of the map's interaction-blue family (`DRAFT_ROUTE_COLOR`) and stays
+ *  distinct from the warm route-phase colors. Cleared the moment the
+ *  editor closes or either endpoint is unset. */
 export function useDraftRoute({ draft, draftPolylineRef, geocodedPlants, panelMode, routeLayerRef }) {
     const draftRouteCoords = useDraftRouteCoords({ draft, geocodedPlants, panelMode })
 
@@ -68,7 +71,7 @@ export function useDraftRoute({ draft, draftPolylineRef, geocodedPlants, panelMo
         if (!draftRouteCoords) return undefined
         const baseStyle = {
             className: 'help-route-base',
-            color: '#f59e0b',
+            color: DRAFT_ROUTE_COLOR,
             opacity: 0.92,
             weight: 6
         }
