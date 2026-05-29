@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026.22.24] - 2026-05-29
+
+- Fixed the Planner (Operations → Flow) regularly resetting routes and Saturday
+  operator counts "for no reason." The schedule auto-sync (`useScheduleSync`)
+  rewrites the whole `plans` row on every client every ~30s as fresh
+  `dispatch_data` lands, and `usePlanRealtimeSync` applied those incoming rows
+  wholesale — so each routine schedule save broadcast by any collaborator or
+  tab clobbered another's in-progress routes (`assignments`) and Saturday
+  overrides (`plant_production._meta`).
+- The realtime apply now uses the `plans` table's REPLICA IDENTITY FULL
+  `payload.old` to diff which fields actually changed and applies only those: a
+  schedule-only save (no change to `assignments`/`_meta`) is ignored, while
+  genuine route/override edits still propagate. It keeps the local
+  machine-synced schedule and takes a peer's `_meta` only when it changed, and
+  short-circuits the whole apply while the local user has an unsaved edit in
+  flight (`dirtyRef`) so a broadcast can't revert mid-edit work. The schedule
+  still saves every 30s, so the daily-plan email and adjacent-day views stay
+  current.
+
 ## [2026.22.23] - 2026-05-29
 
 - Promoted the Operations "Call List" tab into a dedicated Customer Relations

@@ -345,6 +345,7 @@ export function usePlanData(planDate) {
     // Realtime: sync plan changes from other users
     usePlanRealtimeSync({
         assignments,
+        dirtyRef,
         isLoading,
         lastSyncedSnapshotRef,
         notes,
