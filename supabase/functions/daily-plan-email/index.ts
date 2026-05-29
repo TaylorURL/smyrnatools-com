@@ -170,7 +170,6 @@ interface DmDebug {
     regionIds?: string[]
     regionPlantCodes?: string[]
     dispatcherUserIds?: string[]
-    generalManagerUserIds?: string[]
 }
 
 function createAdminClient(): any {
@@ -206,8 +205,6 @@ function isFiniteString(value: unknown): value is string {
  *     `regions_plants.districts` (jsonb[]).
  *   • **CC (Dispatcher / Dispatch Manager)** — same lookup, scoped by
  *     `regions_plants.region_id` instead of districts.
- *   • **CC (General Manager)** — same lookup, scoped regionally like
- *     dispatchers. A GM covers every plant in their region.
  *
  * If a user shows up in both lists (rare — a DM also attached as a
  * named manager) the CC classification wins so they're CC'd rather
@@ -241,8 +238,7 @@ async function resolvePlantRecipients(
         dmUserIds: [],
         regionIds: [],
         regionPlantCodes: [],
-        dispatcherUserIds: [],
-        generalManagerUserIds: []
+        dispatcherUserIds: []
     }
 
     /* 2. Pull the regions_plants table once. We use it twice below:
@@ -317,21 +313,18 @@ async function resolvePlantRecipients(
         debug.regionPlantCodes = regionPlantCodes
     }
 
-    /* 3. Look up DM + Dispatcher / Dispatch Manager + General Manager
-     *    candidates in a single roles fetch, then narrow each set with
-     *    the correct plant scope. DMs scope to the district coverage
-     *    set; dispatchers and general managers scope to the region
-     *    coverage set. */
+    /* 3. Look up DM + Dispatcher / Dispatch Manager candidates in a single
+     *    roles fetch, then narrow each set with the correct plant scope.
+     *    DMs scope to the district coverage set; dispatchers scope to the
+     *    region coverage set. */
     let dmUserIds: string[] = []
     let dispatcherUserIds: string[] = []
-    let generalManagerUserIds: string[] = []
     const needsDmLookup = dmPlantCodes.length > 0
     const needsRegionLookup = regionPlantCodes.length > 0
     if (needsDmLookup || needsRegionLookup) {
         const { data: roleRows } = await supabase.from('users_roles').select('id, name')
         const dmRoleIds: string[] = []
         const dispatcherRoleIds: string[] = []
-        const generalManagerRoleIds: string[] = []
         ;(roleRows || []).forEach((r: { id: string; name?: string }) => {
             const name = (r?.name || '').trim()
             if (/district manager/i.test(name)) {
@@ -345,17 +338,10 @@ async function resolvePlantRecipients(
              * tight). */
             if (/^dispatch(er|\s*manager)\s*$/i.test(name)) {
                 dispatcherRoleIds.push(r.id)
-                return
-            }
-            /* "General Manager" — scoped to the target plant's region.
-             * Anchored regex so adjacent labels (e.g. "Assistant General
-             * Manager") don't get pulled in by accident. */
-            if (/^general\s*manager$/i.test(name)) {
-                generalManagerRoleIds.push(r.id)
             }
         })
 
-        const allRoleIds = Array.from(new Set([...dmRoleIds, ...dispatcherRoleIds, ...generalManagerRoleIds]))
+        const allRoleIds = Array.from(new Set([...dmRoleIds, ...dispatcherRoleIds]))
         if (allRoleIds.length > 0) {
             const { data: perms } = await supabase
                 .from('users_permissions')
@@ -363,18 +349,13 @@ async function resolvePlantRecipients(
                 .in('role_id', allRoleIds)
             const dmRoleSet = new Set(dmRoleIds)
             const dispatcherRoleSet = new Set(dispatcherRoleIds)
-            const generalManagerRoleSet = new Set(generalManagerRoleIds)
             const dmCandidateSet = new Set<string>()
             const dispatcherCandidateSet = new Set<string>()
-            const generalManagerCandidateSet = new Set<string>()
             ;(perms || []).forEach((p: { user_id: string; role_id: string }) => {
                 if (dmRoleSet.has(p.role_id)) dmCandidateSet.add(p.user_id)
                 if (dispatcherRoleSet.has(p.role_id)) dispatcherCandidateSet.add(p.user_id)
-                if (generalManagerRoleSet.has(p.role_id)) generalManagerCandidateSet.add(p.user_id)
             })
-            const allCandidateIds = Array.from(
-                new Set([...dmCandidateSet, ...dispatcherCandidateSet, ...generalManagerCandidateSet])
-            )
+            const allCandidateIds = Array.from(new Set([...dmCandidateSet, ...dispatcherCandidateSet]))
             if (allCandidateIds.length > 0) {
                 const { data: profilesScoped } = await supabase
                     .from('users_profiles')
@@ -389,26 +370,22 @@ async function resolvePlantRecipients(
                     }
                     if (needsRegionLookup && regionCoverage.has(p.plant_code)) {
                         if (dispatcherCandidateSet.has(p.id)) dispatcherUserIds.push(p.id)
-                        if (generalManagerCandidateSet.has(p.id)) generalManagerUserIds.push(p.id)
                     }
                 })
             }
         }
         dmUserIds = Array.from(new Set(dmUserIds))
         dispatcherUserIds = Array.from(new Set(dispatcherUserIds))
-        generalManagerUserIds = Array.from(new Set(generalManagerUserIds))
         debug.dmUserIds = dmUserIds
         debug.dispatcherUserIds = dispatcherUserIds
-        debug.generalManagerUserIds = generalManagerUserIds
     }
 
     /* 4. Fetch profile + email rows for every recipient candidate (PMs
      *    via manager_user_ids, DMs via the district join, dispatchers /
-     *    dispatch managers and general managers via the region join),
-     *    then split into TO and CC. All three coverage roles land in
-     *    CC; PMs land in TO unless the same user also has a CC
-     *    classification, in which case CC wins. */
-    const ccCandidateIds = Array.from(new Set([...dmUserIds, ...dispatcherUserIds, ...generalManagerUserIds]))
+     *    dispatch managers via the region join), then split into TO and
+     *    CC. Both coverage roles land in CC; PMs land in TO unless the
+     *    same user also has a CC classification, in which case CC wins. */
+    const ccCandidateIds = Array.from(new Set([...dmUserIds, ...dispatcherUserIds]))
     const allIds = Array.from(new Set([...managerIds, ...ccCandidateIds]))
     if (allIds.length === 0) return { to: [], cc: [], debug }
 
@@ -440,12 +417,11 @@ async function resolvePlantRecipients(
         return { email, name }
     }
 
-    /* CC order: general managers first, then district managers, then
-     * dispatchers / dispatch managers — keeps the most senior coverage
-     * layer at the top of the recipient list when the dispatcher
-     * reviews who's on it. Email clients usually preserve this order.
-     * Dedup is via the ccEmails set so a user holding more than one
-     * classification appears exactly once. */
+    /* CC order: district managers first, then dispatchers / dispatch
+     * managers — keeps the most senior coverage layer at the top of the
+     * recipient list when the dispatcher reviews who's on it. Email
+     * clients usually preserve this order. Dedup is via the ccEmails set
+     * so a user holding more than one classification appears exactly once. */
     const cc: Recipient[] = []
     const ccEmails = new Set<string>()
     const pushCc = (id: string) => {
@@ -455,7 +431,6 @@ async function resolvePlantRecipients(
         ccEmails.add(r.email)
         cc.push(r)
     }
-    generalManagerUserIds.forEach(pushCc)
     dmUserIds.forEach(pushCc)
     dispatcherUserIds.forEach(pushCc)
 

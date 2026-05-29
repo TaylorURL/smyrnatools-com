@@ -22,7 +22,8 @@ describe('CrmRoleUtility', () => {
         expect(canEditCrm(null)).toBe(false)
         expect(canEditCrm(undefined)).toBe(false)
     })
-    it('detects crm.pins via canDropPin', () => {
+    it('grants canDropPin to anyone with CRM access (plan.view) or an explicit crm.pins node', () => {
+        expect(canDropPin(['plan.view'])).toBe(true)
         expect(canDropPin(['crm.view', 'crm.pins'])).toBe(true)
         expect(canDropPin(['crm.view'])).toBe(false)
         expect(canDropPin([])).toBe(false)

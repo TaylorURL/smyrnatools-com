@@ -1,5 +1,21 @@
 # Changelog
 
+## [2026.22.25] - 2026-05-29
+
+- The mobile "Drop a pin" CRM button now appears for anyone with CRM access. It
+  was gated on a separate `crm.pins` permission node that was never granted to
+  any role, so the button — and the whole drop-pin → voice/typed note → CRM Pins
+  flow — was hidden from everyone. `canDropPin` in `src/utils/CrmRoleUtility.js`
+  now grants it on `plan.view` (the same permission that makes the CRM visible),
+  keeping an explicit `crm.pins` grant as an optional override. It remains
+  mobile-only by design.
+- Removed the General Manager from the daily plan email CC. The
+  `daily-plan-email` edge function's `resolvePlantRecipients` no longer looks up
+  or CCs General Managers on either the 4 PM send or the 5 PM corrections pass —
+  CC is now District Managers + Dispatchers / Dispatch Managers, and TO stays the
+  plant's Plant Managers. (The edge function was already redeployed; this commits
+  the matching source.)
+
 ## [2026.22.24] - 2026-05-29
 
 - Fixed the Planner (Operations → Flow) regularly resetting routes and Saturday
