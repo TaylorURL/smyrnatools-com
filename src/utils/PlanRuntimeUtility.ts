@@ -1,8 +1,10 @@
 import {
     buildAssignmentDriverTimes,
+    buildSuppressedReturnIndexes,
     getEffectiveBase,
     isExcludedOrder,
     PLAN_META_KEY,
+    resolveReturnTravelMinutes,
     timeToMinutes,
     TRUCK_ON_SITE_MINUTES
 } from './PlanUtility'
@@ -50,6 +52,11 @@ interface HelpTransfer {
     plantCode: string
     time: number
 }
+
+/** Travel-time lookup between two plants; returns a non-finite value when the
+ *  pair is unknown. Passed into the help-transfer builder so the home plant is
+ *  credited only after the crew's drive home. */
+export type GetTravelMinutes = (fromPlant?: string, toPlant?: string) => number | null | undefined
 
 interface PlantStat {
     code?: string
@@ -133,24 +140,49 @@ export const flattenPlanOrders = (
     return out
 }
 
-/** Build the `helpTransfers` payload used by every pool-simulation entry
- *  point (`computePlantPoolTimeline`, `computePullUpRows`, etc). Each
- *  driver in an inter-plant assignment contributes a -1 at the source
- *  plant and a +1 at the destination at arrival time, plus a return leg
- *  if the leave time is known. */
-export const buildHelpTransfers = (assignments: Assignment[] | null | undefined): HelpTransfer[] => {
+/** Build the `helpTransfers` payload (from raw planner assignments) used by
+ *  every pool-simulation entry point (`computePlantPoolTimeline`,
+ *  `computePullUpRows`, etc). Each driver in an inter-plant assignment
+ *  contributes a -1 at the source plant and a +1 at the destination at
+ *  arrival time, plus a return leg if the leave time is known.
+ *
+ *  The return leg debits the destination when the crew leaves it, but credits
+ *  the home plant only after the drive home (`leave + return-travel`) — so the
+ *  home plant doesn't appear to regain operators while they're still on the
+ *  road. Pass `getTravelTime` to enable this; without it the drive is treated
+ *  as 0 (home credited at leave time).
+ *
+ *  Distinct from `PlanScheduleHelp.buildHelpTransfers`, which derives the same
+ *  payload from already-bucketed help ROWS (for the Schedule tab's rendered
+ *  help-row UI). Both feed the pool simulation and share
+ *  `resolveReturnTravelMinutes` so the home plant is credited at the same
+ *  moment across the Schedule, Flow, and Dashboard pools. */
+export const buildAssignmentHelpTransfers = (
+    assignments: Assignment[] | null | undefined,
+    getTravelTime?: GetTravelMinutes
+): HelpTransfer[] => {
     const out: HelpTransfer[] = []
-    ;(assignments || []).forEach((assignment) => {
+    const suppressedReturnIndexes = buildSuppressedReturnIndexes(assignments)
+    ;(assignments || []).forEach((assignment, index) => {
         if (!assignment?.fromPlant || !assignment?.toPlant) return
         if (assignment.fromPlant === assignment.toPlant) return
         const home = assignment.returnPlant || assignment.fromPlant
+        const suppressReturn = suppressedReturnIndexes.has(index)
+        const returnTravelMin = resolveReturnTravelMinutes(
+            getTravelTime,
+            assignment.fromPlant,
+            assignment.toPlant,
+            home
+        )
         buildAssignmentDriverTimes(assignment).forEach((dt) => {
             if (!Number.isFinite(dt.arriveMin)) return
             out.push({ delta: -1, plantCode: assignment.fromPlant!, time: dt.arriveMin! })
             out.push({ delta: 1, plantCode: assignment.toPlant!, time: dt.arriveMin! })
-            if (Number.isFinite(dt.leaveMin) && dt.leaveMin! > dt.arriveMin!) {
+            // Skip the return leg when this crew continues onward via a
+            // direct-load — its return credits the home plant on its own.
+            if (!suppressReturn && Number.isFinite(dt.leaveMin) && dt.leaveMin! > dt.arriveMin!) {
                 out.push({ delta: -1, plantCode: assignment.toPlant!, time: dt.leaveMin! })
-                out.push({ delta: 1, plantCode: home!, time: dt.leaveMin! })
+                out.push({ delta: 1, plantCode: home!, time: dt.leaveMin! + returnTravelMin })
             }
         })
     })

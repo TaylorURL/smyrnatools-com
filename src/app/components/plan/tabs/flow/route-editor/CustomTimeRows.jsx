@@ -2,14 +2,21 @@
 import React from 'react'
 
 import { MilitaryTimeInput } from '../../../../common/MilitaryTimeInput'
+import { RequiredMark } from './FormPrimitives'
 
 export function CustomTimeRows({ draft, driverCount, onUpdate }) {
     return (
         <div className="flex flex-col gap-1">
             <div className="grid grid-cols-[28px_1fr_1fr] gap-2 text-[10.5px] font-semibold uppercase tracking-wider text-text-tertiary px-1">
                 <span>#</span>
-                <span>Arrive</span>
-                <span>Leave</span>
+                <span>
+                    Arrive
+                    <RequiredMark />
+                </span>
+                <span>
+                    Leave
+                    <RequiredMark />
+                </span>
             </div>
             {Array.from({ length: driverCount }, (_, index) => {
                 const rowTimes = draft.customTimes?.[index] || {}

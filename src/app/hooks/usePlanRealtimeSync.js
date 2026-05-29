@@ -26,6 +26,7 @@ export function usePlanRealtimeSync({
     isLoading,
     lastSyncedSnapshotRef,
     notes,
+    onResync,
     planDate,
     plantProduction,
     setAssignments,
@@ -41,6 +42,8 @@ export function usePlanRealtimeSync({
     notesRef.current = notes
     const plantProductionRef = useRef(plantProduction)
     plantProductionRef.current = plantProduction
+    const onResyncRef = useRef(onResync)
+    onResyncRef.current = onResync
 
     useRealtimeSubscription({
         enabled: !isLoading,
@@ -87,6 +90,13 @@ export function usePlanRealtimeSync({
             },
             [lastSyncedSnapshotRef, setAssignments, setNotes, setPlantProduction, setSyncStatus]
         ),
+        onStatus: useCallback((status, info) => {
+            /* A re-subscribe means the socket dropped and rejoined. Realtime
+             * doesn't replay events missed during the gap, so pull the
+             * authoritative plan to catch up. The first SUBSCRIBED (initial
+             * mount) is skipped — usePlanData already loaded fresh data. */
+            if (status === 'SUBSCRIBED' && info?.isResubscribe) onResyncRef.current?.()
+        }, []),
         table: 'plans'
     })
 }

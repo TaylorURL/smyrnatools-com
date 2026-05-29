@@ -12,6 +12,7 @@ export const ICONS = {
     Archive: 'fa-archive',
     Assets: 'fa-truck',
     Calculators: 'fa-calculator',
+    CRM: 'fa-address-book',
     Dashboard: 'fa-tachometer-alt',
     'Heavy Equipment': 'fa-snowplow',
     List: 'fa-list',
@@ -47,6 +48,7 @@ export const MENU_ITEMS = [
     { id: 'Managers', permission: 'managers.view', text: 'Managers' },
     { id: 'Reports', permission: 'reports.view', text: 'Reports' },
     { id: 'List', permission: 'list.view', text: 'List' },
+    { id: 'CRM', permission: 'plan.view', text: 'Customer Relations' },
     { id: 'Plan', permission: 'plan.view', text: 'Operations' },
     { id: 'Plants', permission: 'plants.view', text: 'Plants' },
     { id: 'Regions', permission: 'regions.view', text: 'Regions' },
@@ -63,7 +65,7 @@ export const PEOPLE_ITEMS = ['Operators', 'Managers']
 /** Navigation item IDs grouped under the "Reporting" dropdown. */
 export const REPORTING_ITEMS = ['Reports', 'List', 'Maintenance', 'NRMCA']
 /** Navigation item IDs grouped under the "Tools" dropdown. */
-export const TOOLS_ITEMS = ['Plan', 'Calculators']
+export const TOOLS_ITEMS = ['Plan', 'CRM', 'Calculators']
 /** Navigation item IDs grouped under the "Admin" category (two-level mode). */
 export const ADMIN_ITEMS = ['Plants', 'Regions', 'Roles']
 

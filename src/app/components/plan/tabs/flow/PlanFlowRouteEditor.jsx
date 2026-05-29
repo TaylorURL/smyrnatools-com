@@ -1,7 +1,12 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
-import { addMinutesToTime, minutesToTime, timeToMinutes } from '../../../../../utils/PlanUtility'
+import {
+    addMinutesToTime,
+    isAssignmentTimingComplete,
+    minutesToTime,
+    timeToMinutes
+} from '../../../../../utils/PlanUtility'
 import { CustomTimeRows } from './route-editor/CustomTimeRows'
 import { CountStepperInput, LabeledField } from './route-editor/FormPrimitives'
 import { RouteSummary } from './route-editor/RouteSummary'
@@ -37,6 +42,7 @@ export function PlanFlowRouteEditor({
     const returnTime = leaveMinutes != null && travel != null ? minutesToTime(leaveMinutes + travel) : null
     const driverCount = Math.max(1, parseInt(draft.driverCount, 10) || 1)
     const isCustom = draft.timeMode === TIME_MODE_CUSTOM
+    const timingComplete = isAssignmentTimingComplete(draft)
     const driverCountInputValue = draft.driverCount === '' || draft.driverCount == null ? '' : String(draft.driverCount)
 
     const destinationOptions = useMemo(() => {
@@ -286,6 +292,12 @@ export function PlanFlowRouteEditor({
 
             <SummaryRow clockIn={clockIn} returnTime={returnTime} travel={travel} />
 
+            {draft.toPlant && !timingComplete && (
+                <p className="text-[11.5px] leading-snug text-text-tertiary" role="status">
+                    Add an arrival and leave time for {isCustom ? 'every operator' : 'this route'} before sending help.
+                </p>
+            )}
+
             <div className="flex gap-2 pt-1">
                 {onDelete && (
                     <button
@@ -303,8 +315,8 @@ export function PlanFlowRouteEditor({
                 </button>
                 <button
                     onClick={onSubmit}
-                    disabled={!draft.toPlant}
-                    className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold text-white border-none cursor-pointer disabled:opacity-50 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
+                    disabled={!draft.toPlant || !timingComplete}
+                    className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold text-white border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                     style={{ background: accentColor }}
                 >
                     <i className="fas fa-check mr-1" /> {mode === 'edit' ? 'Save changes' : 'Create route'}

@@ -4,7 +4,7 @@ import Badge from '../../../app/components/common/Badge'
 import PlanDashboardActivityFeed from '../../../app/components/plan/tabs/dashboard/PlanDashboardActivityFeed'
 import { PlanDashboardAtAGlance } from '../../../app/components/plan/tabs/dashboard/PlanDashboardAtAGlance'
 import PlanDashboardClockInBoard from '../../../app/components/plan/tabs/dashboard/PlanDashboardClockInBoard'
-import { PlanInsightsList } from '../../../app/components/plan/tabs/dashboard/PlanDashboardLists'
+import { PlanInsightsList, PlanIssuesBanner } from '../../../app/components/plan/tabs/dashboard/PlanDashboardLists'
 import { PlanChecklistRow, PlanFlowSummary } from '../../../app/components/plan/tabs/dashboard/PlanDashboardYourScope'
 import PlanNotesSection from '../../../app/components/plan/tabs/dashboard/PlanNotesSection'
 import { Panel as SharedPanel, Stat as SharedStat } from '../../../app/components/ui/Panel'
@@ -121,8 +121,8 @@ function PlanDashboardView({
     const plantsWithYardage = useMemo(() => countPlantsWithYardage(plantProduction), [plantProduction])
 
     const jobCoverage = useMemo(
-        () => computeDashboardJobCoverage({ assignments, planDate, plantProduction, stats }),
-        [plantProduction, stats, assignments, planDate]
+        () => computeDashboardJobCoverage({ assignments, getTravelTime, planDate, plantProduction, stats }),
+        [plantProduction, stats, assignments, planDate, getTravelTime]
     )
     const totalOperatorsFleet = useMemo(
         () => Object.values(mixerCountsByPlant || {}).reduce((sum, count) => sum + (count || 0), 0),
@@ -213,7 +213,6 @@ function PlanDashboardView({
         ? `Receiving ${inboundOps} operator${inboundOps === 1 ? '' : 's'} from ${new Set(myInbound.map((a) => a.fromPlant)).size} plant${myInbound.length === 1 ? '' : 's'}`
         : `No inbound activity to your ${scopeNoun} today`
 
-    const hasInsights = planInsights.warnings.length + planInsights.suggestions.length > 0
     const jumpTo = useCallback((id) => scrollSectionIntoView(scrollContainerRef, id), [])
 
     const senderCount = new Set((assignments || []).filter((a) => a.fromPlant).map((a) => a.fromPlant)).size
@@ -233,6 +232,7 @@ function PlanDashboardView({
                 />
 
                 <div className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
+                    <PlanIssuesBanner warnings={planInsights.warnings} />
                     <section id="overview" className="scroll-mt-4">
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 rounded overflow-hidden border border-border-light">
                             <SharedStat
@@ -449,9 +449,7 @@ function PlanDashboardView({
                         />
                     </Card>
 
-                    {hasInsights && (
-                        <PlanInsightsList warnings={planInsights.warnings} suggestions={planInsights.suggestions} />
-                    )}
+                    {planInsights.suggestions.length > 0 && <PlanInsightsList suggestions={planInsights.suggestions} />}
 
                     <div className="h-8" />
                 </div>

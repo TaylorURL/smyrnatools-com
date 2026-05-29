@@ -127,6 +127,13 @@ function OperatorsView({
     }, [initialSearch])
 
     useEffect(() => {
+        // Embedded mode (e.g. opened from a dashboard alert) intentionally
+        // disables filter persistence — the alert supplies its own intent via
+        // `initialStatusFilter` and friends. Restoring the saved plant/status/
+        // position here would clobber that and surface the wrong subset, so
+        // skip it. Mirrors the `embedded ? '' : …` guards on the initial state
+        // and `useAssetFilters`, which never re-applies saved filters at all.
+        if (embedded) return
         if (preferences.operatorFilters) {
             setSearchText(preferences.operatorFilters.searchText || '')
             setSelectedPlant(preferences.operatorFilters.selectedPlant || '')
@@ -134,7 +141,7 @@ function OperatorsView({
             setPositionFilter(preferences.operatorFilters.positionFilter || '')
             setViewMode(preferences.operatorFilters.viewMode || preferences.defaultViewMode || 'grid')
         }
-    }, [preferences.operatorFilters, preferences.defaultViewMode])
+    }, [embedded, preferences.operatorFilters, preferences.defaultViewMode])
 
     useEffect(() => {
         if (initialStatusFilter !== undefined) setStatusFilter(initialStatusFilter)

@@ -1,5 +1,7 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { UserService } from '../../../services/UserService'
+import { canDropPin } from '../../../utils/CrmRoleUtility'
 import {
     ADMIN_ITEMS,
     ASSET_ITEMS,
@@ -21,6 +23,7 @@ import {
     useMobileDrawerOutsideClose,
     useTwoLevelUnderline
 } from '../../hooks/useNavigationLayout'
+import { DropPinModal } from '../crm/DropPinModal'
 import NavigationMobile from './navigation/NavigationMobile'
 import NavigationTopBar from './navigation/NavigationTopBar'
 import NavigationTwoLevel from './navigation/NavigationTwoLevel'
@@ -55,6 +58,11 @@ export default function Navigation({ selectedView, onSelectView, children, userN
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [openDropdown, setOpenDropdown] = useState(null)
 
+    // Drop-a-pin state
+    const [userPermissions, setUserPermissions] = useState([])
+    const [dropPinLocation, setDropPinLocation] = useState(null)
+    const [dropPinModalOpen, setDropPinModalOpen] = useState(false)
+
     const isMobile = useIsMobile()
     const isTablet = useIsTablet()
     const accentColor = useAccentColor()
@@ -62,6 +70,42 @@ export default function Navigation({ selectedView, onSelectView, children, userN
 
     const regionType = preferences.selectedRegion?.type
     const regionCode = preferences.selectedRegion?.code
+
+    /** Fetch full permissions for the drop-pin gate (mobile only). */
+    useEffect(() => {
+        if (!userId || !isMobile) return undefined
+        let cancelled = false
+        UserService.getUserPermissions(userId)
+            .then((perms) => {
+                if (!cancelled) setUserPermissions(Array.isArray(perms) ? perms : [])
+            })
+            .catch(() => {
+                if (!cancelled) setUserPermissions([])
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [userId, isMobile])
+
+    /** Capture GPS coords then open the pin modal. */
+    const handleDropPin = useCallback(() => {
+        if (typeof navigator === 'undefined' || !navigator.geolocation) {
+            setDropPinLocation(null)
+            setDropPinModalOpen(true)
+            return
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setDropPinLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+                setDropPinModalOpen(true)
+            },
+            () => {
+                setDropPinLocation(null)
+                setDropPinModalOpen(true)
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        )
+    }, [])
 
     const messagesHook = useSharedMessages()
     const combinedCount = messagesHook.unreadCount || 0
@@ -167,6 +211,8 @@ export default function Navigation({ selectedView, onSelectView, children, userN
         setShowOnlineUsers(true)
     }
 
+    const showDropPin = isMobile && canDropPin(userPermissions)
+
     const modals = (
         <>
             {showNotifications && (
@@ -195,6 +241,17 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                     anchorRect={onlineUsersAnchor}
                 />
             )}
+            {dropPinModalOpen && (
+                <DropPinModal
+                    accentColor={accentColor}
+                    location={dropPinLocation}
+                    onClose={() => {
+                        setDropPinModalOpen(false)
+                        setDropPinLocation(null)
+                    }}
+                    onSaved={() => {}}
+                />
+            )}
         </>
     )
 
@@ -213,6 +270,8 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                     groupFlags={groupFlags}
                     selectedView={selectedView}
                     handleMenuClick={handleMenuClick}
+                    showDropPin={showDropPin}
+                    onDropPin={handleDropPin}
                 >
                     {children}
                 </NavigationMobile>

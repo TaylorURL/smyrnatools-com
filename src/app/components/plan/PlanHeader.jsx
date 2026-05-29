@@ -7,10 +7,10 @@ import { PlanTabSwitcher } from './PlanTabSwitcher'
 
 /** Tabs where the global single-day date stepper would conflict with
  *  tab-owned controls (Statistics has its own range picker) or simply
- *  isn't meaningful (Call List + Settings don't operate on a plan date).
+ *  isn't meaningful (Settings doesn't operate on a plan date).
  *  On those tabs we either replace the stepper with the tab's own
  *  controls portal (Statistics) or render nothing at all. */
-const TABS_WITHOUT_DATE_NAV = new Set(['call-list', 'settings'])
+const TABS_WITHOUT_DATE_NAV = new Set(['settings'])
 
 /**
  * Slim sticky header shared by every Plan tab. Composes:

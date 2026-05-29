@@ -18,6 +18,7 @@ import { usePlanScheduleAdjacentTotals } from '../../../app/hooks/usePlanSchedul
 import { usePlanScheduleData } from '../../../app/hooks/usePlanScheduleData'
 import { usePlanScheduleFilterSetters } from '../../../app/hooks/usePlanScheduleFilterSetters'
 import { usePlanScheduleMaximize } from '../../../app/hooks/usePlanScheduleMaximize'
+import { usePlanScheduleSnapshotPrediction } from '../../../app/hooks/usePlanScheduleSnapshotPrediction'
 import { ScheduleSnapshotService } from '../../../services/ScheduleSnapshotService'
 import { buildOrderCoveragePayload, computeScheduleHeadlineMetrics } from '../../../utils/PlanScheduleUtility'
 
@@ -216,37 +217,36 @@ function PlanScheduleView({
         }
     }, [compareMode, isViewingToday, isPastDay])
 
+    /** Memoized active filter scope. Shared by both snapshot-based readouts —
+     *  the compare baseline and the past-day predicted satisfaction — so they
+     *  react to the toolbar without rebuilding the object every render and stay
+     *  apples-to-apples with the live stat strip. */
+    const scheduleFilterScope = useMemo(
+        () => ({ minYards, plantFilterSet, productFilter, query, showCancelled, showTest, sortKey, statusFilter }),
+        [minYards, plantFilterSet, productFilter, query, showCancelled, showTest, sortKey, statusFilter]
+    )
+
     /** Schedule headline metrics computed off the snapshot's plant
      *  production, run through the SAME filter pipeline the live stats
      *  use so the strip's `-20%` reads as an apples-to-apples delta and
      *  not "snapshot saw 50 orders, live filtered down to 12, somehow -76%." */
     const compareBaseline = useMemo(() => {
         if (!compareMode || !compareSnapshot?.plant_production) return null
-        return computeScheduleHeadlineMetrics(
-            compareSnapshot.plant_production,
-            {
-                minYards,
-                plantFilterSet,
-                productFilter,
-                query,
-                showCancelled,
-                showTest,
-                statusFilter
-            },
-            isViewingToday
-        )
-    }, [
-        compareMode,
-        compareSnapshot,
-        minYards,
-        plantFilterSet,
-        productFilter,
-        query,
-        showCancelled,
-        showTest,
-        statusFilter,
-        isViewingToday
-    ])
+        return computeScheduleHeadlineMetrics(compareSnapshot.plant_production, scheduleFilterScope, isViewingToday)
+    }, [compareMode, compareSnapshot, scheduleFilterScope, isViewingToday])
+
+    /** On past days the live schedule has drifted from what was finalized, so
+     *  the "predicted" stat is recomputed from the 5:30 PM snapshot — the
+     *  forecast as it stood when the schedule locked. Null on today / future
+     *  days, where `usePlanScheduleData` owns the live forecast instead. */
+    const snapshotPredictedSatisfaction = usePlanScheduleSnapshotPrediction({
+        assignments,
+        filters: scheduleFilterScope,
+        getTravelTime,
+        isPastDay,
+        planDate,
+        stats
+    })
 
     const clearAllFilters = () => {
         setQuery('')
@@ -311,7 +311,7 @@ function PlanScheduleView({
                                     hasActiveFilters={hasActiveFilters}
                                     latestTime={latestTime}
                                     liveOrdersCount={liveOrders.length}
-                                    predictedSatisfaction={predictedSatisfaction}
+                                    predictedSatisfaction={predictedSatisfaction ?? snapshotPredictedSatisfaction}
                                     previousBusinessDayLabel={previousBusinessDayLabel}
                                     previousBusinessDayYardage={previousBusinessDayYardage}
                                     totalTrucks={totalTrucks}

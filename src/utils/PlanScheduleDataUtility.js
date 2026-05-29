@@ -3,8 +3,18 @@
  * isolation. Anything that touches React state belongs in the hook. */
 
 import { formatOrderAddress } from './AddressUtility'
-import { clean, compareOrders, extractCityFromFullAddress, getOrderStatus, sumField } from './PlanScheduleUtility'
 import {
+    buildHelpRows,
+    buildHelpTransfers,
+    clean,
+    compareOrders,
+    extractCityFromFullAddress,
+    getOrderStatus,
+    predictScheduleSatisfaction,
+    sumField
+} from './PlanScheduleUtility'
+import {
+    computePlantPoolTimeline,
     formatMinutesClock,
     getCalculatedTruckCount,
     getEffectiveBase,
@@ -328,4 +338,72 @@ export function keyForOrder(order) {
  *  doesn't need to import sumField directly. */
 export function sumLiveYards(liveOrders) {
     return sumField(liveOrders, 'yardage')
+}
+
+/**
+ * Forecast customer satisfaction from a FINALIZED schedule blob — the 5:30 PM
+ * `end_of_day` snapshot's `plant_production` — instead of the live, still-
+ * changing schedule. Mirrors the future-day pipeline in `usePlanScheduleData`
+ * (base pool from the plant fleet, help transfers from the day's assignments,
+ * travel falling back to each order's frozen `toJobTime`) and runs the very
+ * same `predictScheduleSatisfaction`, so a past day can surface "what we
+ * forecast when the schedule was locked" beside its actual ticket-based score.
+ *
+ * Travel never uses live Google minutes here — those don't apply to a day
+ * that's already happened — so the pool simulation reads each order's own
+ * dispatch `toJobTime` / `toPlantTime`, exactly as they stood at 5:30 PM.
+ *
+ * Returns the standard satisfaction envelope tagged `isSnapshot: true`, or
+ * null when the blob is empty or yields no scoreable orders.
+ *
+ * @param {Record<string, any>} plantProduction snapshot `plant_production` blob
+ * @param {object} context
+ * @param {Array} [context.assignments] current (frozen) planner help assignments
+ * @param {object} [context.filters] active schedule filters — keeps the forecast apples-to-apples with the strip
+ * @param {Function} [context.getTravelTime] `(fromPlant, toPlant) => minutes` for help-row clock-ins
+ * @param {string} context.planDate `YYYY-MM-DD` of the schedule day (drives the Saturday pool multiplier)
+ * @param {Array} [context.stats] per-plant insight rows feeding the base pool
+ */
+export function predictSatisfactionFromPlanProduction(
+    plantProduction,
+    { assignments = [], filters = {}, getTravelTime, planDate, stats = [] } = {}
+) {
+    if (!plantProduction || typeof plantProduction !== 'object') return null
+    const allOrders = flattenPlantOrders(plantProduction)
+    if (allOrders.length === 0) return null
+
+    // Undefined overrides → the pool + prediction helpers fall back to each
+    // order's own frozen dispatch travel rather than any live measurement.
+    const getTravelOverrides = () => undefined
+
+    const initialPoolByCode = buildInitialPoolByCode(buildBaseByPlant(stats, plantProduction, planDate))
+    const helpTransfers = buildHelpTransfers(buildHelpRows(assignments, plantProduction, getTravelTime))
+    const poolTimeline = computePlantPoolTimeline(allOrders, initialPoolByCode, getTravelOverrides, helpTransfers)
+
+    const {
+        minYards = '',
+        plantFilterSet = new Set(),
+        productFilter = 'all',
+        query = '',
+        showCancelled = false,
+        showTest = false,
+        sortKey,
+        statusFilter = 'all'
+    } = filters
+    const liveOrders = selectLiveOrders(
+        filterAndSortOrders(allOrders, {
+            isViewingToday: false,
+            minYards,
+            plantFilterSet,
+            productFilter,
+            query,
+            showCancelled,
+            showTest,
+            sortKey,
+            statusFilter
+        })
+    )
+
+    const result = predictScheduleSatisfaction({ getTravelOverrides, keyForOrder, liveOrders, poolTimeline })
+    return result ? { ...result, isSnapshot: true } : null
 }

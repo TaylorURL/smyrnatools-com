@@ -2,13 +2,20 @@
 import React from 'react'
 
 import { MilitaryTimeInput } from '../../../../common/MilitaryTimeInput'
-import { LabeledField } from './FormPrimitives'
+import { LabeledField, RequiredMark } from './FormPrimitives'
 
 export function StaggerFields({ accentColor, draft, setDraft }) {
     return (
         <>
             <div className="grid grid-cols-2 gap-2">
-                <LabeledField label="Arrival time">
+                <LabeledField
+                    label={
+                        <>
+                            Arrival time
+                            <RequiredMark />
+                        </>
+                    }
+                >
                     <MilitaryTimeInput
                         extraClass="w-full"
                         onChange={(next) => setDraft({ ...draft, time: next })}
@@ -18,7 +25,9 @@ export function StaggerFields({ accentColor, draft, setDraft }) {
                 <LabeledField
                     label={
                         <>
-                            Leave time <span className="text-text-tertiary normal-case font-normal">· return</span>
+                            Leave time
+                            <RequiredMark />{' '}
+                            <span className="text-text-tertiary normal-case font-normal">· return</span>
                         </>
                     }
                 >

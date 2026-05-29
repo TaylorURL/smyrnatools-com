@@ -19,7 +19,6 @@ import { usePlanLookups } from '../../../app/hooks/usePlanLookups'
 import { usePlanPresence } from '../../../app/hooks/usePlanPresence'
 import { usePlanUserContext } from '../../../app/hooks/usePlanUserContext'
 import { PLAN_META_KEY } from '../../../utils/PlanUtility'
-import CallListView from './CallListView'
 import PlanDashboardView from './PlanDashboardView'
 import PlanDemandView from './PlanDemandView'
 import PlanFlowMapView from './PlanFlowMapView'
@@ -392,14 +391,6 @@ function OperationsViewImpl({ accentColor, isDark }) {
                                     mixerCountsByPlant={mixerCountsByPlant}
                                     planColocationMap={plantColocationMap}
                                     planDate={planDate}
-                                    plantNameByCode={plantNameByCode}
-                                />
-                            )}
-
-                            {effectiveViewMode === 'call-list' && (
-                                <CallListView
-                                    accentColor={accentColor}
-                                    planColocationMap={plantColocationMap}
                                     plantNameByCode={plantNameByCode}
                                 />
                             )}

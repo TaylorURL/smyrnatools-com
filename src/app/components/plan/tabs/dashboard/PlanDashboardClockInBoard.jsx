@@ -3,6 +3,7 @@ import React, { useMemo } from 'react'
 
 import {
     buildAssignmentDriverTimes,
+    computeClockInAdherence,
     computeClockInRows,
     formatMinutesClock,
     getEffectiveBase,
@@ -12,6 +13,7 @@ import {
     PRE_TRIP_MINUTES
 } from '../../../../../utils/PlanUtility'
 import useActiveOperatorsByPlant from '../../../../hooks/useActiveOperatorsByPlant'
+import useOperatorScheduledClockIns from '../../../../hooks/useOperatorScheduledClockIns'
 import useOperatorWeeklyHours from '../../../../hooks/useOperatorWeeklyHours'
 import Badge from '../../../common/Badge'
 
@@ -21,6 +23,44 @@ import Badge from '../../../common/Badge'
 const CLOCK_IN_POSITIONS = new Set(['Mixer Operator'])
 
 const fmtWeeklyHours = (hours) => `${(Math.round(hours * 10) / 10).toFixed(1)}h`
+
+/** Audit tolerance: a scheduled clock-in within this many minutes of the
+ *  generated suggestion still counts as "followed". */
+const ADHERENCE_TOLERANCE_MIN = 15
+
+/** Compliance color ramp — green when managers mostly follow the suggestion,
+ *  amber when it's drifting, red when it's largely ignored. Uses the shared
+ *  status tokens so it reads correctly in dark / light / gray themes. */
+const adherenceColorClass = (pct) =>
+    pct >= 0.8
+        ? 'text-[color:var(--status-success)]'
+        : pct >= 0.5
+          ? 'text-[color:var(--status-warning)]'
+          : 'text-[color:var(--status-danger)]'
+
+/** Multi-line tooltip breaking an adherence result down for the audit: how many
+ *  clock-ins landed on the suggestion, the average early/late skew, and any
+ *  over/under-staffing versus the suggested headcount. */
+const adherenceTooltip = (adherence) => {
+    const lines = [
+        `${adherence.onTime} of ${adherence.recommended} suggested clock-ins scheduled within ${ADHERENCE_TOLERANCE_MIN} min`
+    ]
+    if (adherence.signedAvgMin > 0)
+        lines.push(`Scheduled ${adherence.signedAvgMin} min later than suggested on average`)
+    else if (adherence.signedAvgMin < 0)
+        lines.push(`Scheduled ${-adherence.signedAvgMin} min earlier than suggested on average`)
+    else if (adherence.signedAvgMin === 0) lines.push('On the suggested times on average')
+    if (adherence.scheduled !== adherence.recommended) {
+        const diff = Math.abs(adherence.scheduled - adherence.recommended)
+        const noun = `operator${diff === 1 ? '' : 's'}`
+        lines.push(
+            adherence.scheduled < adherence.recommended
+                ? `Scheduled ${diff} fewer ${noun} than the suggestion`
+                : `Scheduled ${diff} more ${noun} than the suggestion`
+        )
+    }
+    return lines.join('\n')
+}
 
 /** Flatten `plantProduction` into a single orders list filtered to the
  *  scope plants — the shape `computeClockInRows` expects. */
@@ -106,6 +146,7 @@ const buildPlantBreakdowns = ({
     plantCodes,
     plantNameByCode,
     plantProduction,
+    scheduledClockInsByPlant,
     workedByOperator
 }) => {
     return plantCodes
@@ -129,6 +170,17 @@ const buildPlantBreakdowns = ({
                 .sort((a, b) => a.time - b.time)
 
             const needed = combined.length
+
+            /* Audit: how closely the manager's Dayforce schedule follows the
+             * clock-in times generated above. Compares the suggested times to
+             * the scheduled times by position (sorted), so it scores whether
+             * the right number of operators were scheduled at the right times.
+             * Null when no schedule has been built / synced for the day. */
+            const adherence = computeClockInAdherence(
+                combined.map((entry) => entry.time),
+                scheduledClockInsByPlant?.get(code),
+                ADHERENCE_TOLERANCE_MIN
+            )
 
             /* Roster ordered by fewest hours worked so far this week: the
              * operators most "owed" work fill the clock-in slots first, and
@@ -169,6 +221,7 @@ const buildPlantBreakdowns = ({
             const earliestMinutes = combined[0]?.time ?? null
             const outboundCount = outboundSlots.length
             return {
+                adherence,
                 base,
                 code,
                 earliestClockIn: earliestMinutes != null ? formatMinutesClock(earliestMinutes) : null,
@@ -221,6 +274,7 @@ function OutboundDestinationTag({ outbound }) {
  *  tag so the manager spots operators leaving the yard. */
 function ClockInPlantCard({ accentColor, breakdown }) {
     const {
+        adherence,
         base,
         code,
         earliestClockIn,
@@ -273,6 +327,26 @@ function ClockInPlantCard({ accentColor, breakdown }) {
                 <KeyStat label="Operators needed" value={`${needed}/${base}`} />
                 <KeyStat label="Leave off" value={leaveOffCount} />
             </div>
+            {adherence && (
+                <div
+                    className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border-light"
+                    title={adherenceTooltip(adherence)}
+                >
+                    <span className="text-[9.5px] uppercase tracking-wider text-text-tertiary">
+                        Followed suggested clock-ins
+                    </span>
+                    <span className="flex items-baseline gap-1.5 min-w-0">
+                        <span
+                            className={`text-[14px] font-bold font-mono font-heading tabular-nums ${adherenceColorClass(adherence.adherencePct)}`}
+                        >
+                            {Math.round(adherence.adherencePct * 100)}%
+                        </span>
+                        <span className="text-[10.5px] truncate text-text-tertiary">
+                            {adherence.onTime}/{adherence.recommended} within {ADHERENCE_TOLERANCE_MIN}m
+                        </span>
+                    </span>
+                </div>
+            )}
             <div className="px-3 py-2 flex flex-col gap-1">
                 {needed === 0 ? (
                     <div className="text-[11.5px] italic text-center py-2 text-text-tertiary">
@@ -356,7 +430,7 @@ function ClockInPlantCard({ accentColor, breakdown }) {
  * another plant) appear in the same roster with a destination tag so the
  * manager spots them at a glance.
  */
-export default function PlanDashboardClockInBoard({
+function PlanDashboardClockInBoard({
     accentColor,
     assignments,
     getTravelTime,
@@ -376,6 +450,10 @@ export default function PlanDashboardClockInBoard({
      * fallback. */
     const { matchedOperatorIds, workedByOperator } = useOperatorWeeklyHours({ planDate, plantCodes: scopePlantCodes })
     const { operatorsByPlant } = useActiveOperatorsByPlant()
+
+    /* Manager-built Dayforce schedule for the plan date, used to audit how
+     * closely each plant followed the clock-in times generated below. */
+    const { scheduledClockInsByPlant } = useOperatorScheduledClockIns({ planDate, plantCodes: scopePlantCodes })
 
     const orders = useMemo(() => flattenOrders(plantProduction, plantSet), [plantProduction, plantSet])
 
@@ -456,6 +534,7 @@ export default function PlanDashboardClockInBoard({
                 plantCodes: scopePlantCodes || [],
                 plantNameByCode,
                 plantProduction,
+                scheduledClockInsByPlant,
                 workedByOperator
             }),
         [
@@ -467,9 +546,25 @@ export default function PlanDashboardClockInBoard({
             scopePlantCodes,
             plantNameByCode,
             plantProduction,
+            scheduledClockInsByPlant,
             workedByOperator
         ]
     )
+
+    /* Scope-wide audit roll-up — pooled across every plant card so the panel
+     * header answers "are managers following the generated clock-ins?" at a
+     * glance. Pools the raw on-time / suggested counts (not an average of
+     * percentages) so larger plants weigh proportionally. */
+    const overallAdherence = useMemo(() => {
+        let onTime = 0
+        let recommended = 0
+        for (const breakdown of breakdowns) {
+            if (!breakdown.adherence) continue
+            onTime += breakdown.adherence.onTime
+            recommended += breakdown.adherence.recommended
+        }
+        return recommended > 0 ? { onTime, pct: onTime / recommended, recommended } : null
+    }, [breakdowns])
 
     if (breakdowns.length === 0) return null
 
@@ -480,6 +575,19 @@ export default function PlanDashboardClockInBoard({
             <div className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 text-text-secondary">
                 <i className="fas fa-user-clock text-[10px]" />
                 Operator clock-ins · who to leave off
+                {overallAdherence && (
+                    <span
+                        className="ml-auto flex items-baseline gap-1.5 normal-case tracking-normal"
+                        title={`${overallAdherence.onTime} of ${overallAdherence.recommended} generated clock-ins scheduled within ${ADHERENCE_TOLERANCE_MIN} min across this scope`}
+                    >
+                        <span
+                            className={`font-mono font-bold tabular-nums ${adherenceColorClass(overallAdherence.pct)}`}
+                        >
+                            {Math.round(overallAdherence.pct * 100)}%
+                        </span>
+                        <span className="font-normal text-[10px] text-text-tertiary">followed suggestion</span>
+                    </span>
+                )}
             </div>
             <div className={gridClass}>
                 {breakdowns.map((breakdown) => (
@@ -496,3 +604,10 @@ export default function PlanDashboardClockInBoard({
         </div>
     )
 }
+
+/* Memoized: typing in the dashboard Notes field re-renders OperationsView and
+ * this whole subtree on every keystroke. This board's props don't change while
+ * typing notes, so memoizing it skips the (heavy) re-render entirely and keeps
+ * the controlled Notes textarea responsive. Depends on `getTravelTime` and
+ * `stats` being referentially stable (see usePlanData / usePlanInsights). */
+export default React.memo(PlanDashboardClockInBoard)

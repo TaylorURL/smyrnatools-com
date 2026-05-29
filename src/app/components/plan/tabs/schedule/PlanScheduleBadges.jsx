@@ -130,38 +130,6 @@ export function ServiceBadge({ service }) {
     return null
 }
 
-/** Tier → Badge config for the Customer Satisfaction pill. `great` uses the
- *  solid variant to stand out as the celebratory state; everything else uses
- *  soft tints so the chip never overwhelms the surrounding row. */
-const SATISFACTION_TIER_CONFIG = {
-    good: { label: 'Good', tone: 'success', variant: 'soft' },
-    great: { label: 'Excellent', tone: 'success', variant: 'solid' },
-    ok: { label: 'Watch', tone: 'warning', variant: 'soft' },
-    poor: { label: 'Action needed', tone: 'danger', variant: 'soft' }
-}
-
-/** Color-coded "Customer Satisfaction" pill — green ≥ 90%, amber ≥ 75%,
- *  orange ≥ 60%, red below. Mirrors the `YardageDeltaBadge` look. */
-export function SatisfactionBadge({ score }) {
-    if (!Number.isFinite(score)) return null
-    const pct = Math.round(score * 100)
-    const tier = pct >= 90 ? 'great' : pct >= 75 ? 'good' : pct >= 60 ? 'ok' : 'poor'
-    const { label, tone, variant } = SATISFACTION_TIER_CONFIG[tier]
-    return (
-        <Badge
-            tone={tone}
-            variant={variant}
-            size="md"
-            shape="pill"
-            uppercase={false}
-            icon="face-smile"
-            title={`${label} · weighted blend of pour pace, on-time start, and yardage completion across the day's tickets`}
-        >
-            {label}
-        </Badge>
-    )
-}
-
 /** +/- percentage pill shown next to the Yardage KPI value. Green when up
  *  day-over-day, red when down, gray at zero. */
 export function YardageDeltaBadge({ comparisonLabel, comparisonYardage, pct }) {

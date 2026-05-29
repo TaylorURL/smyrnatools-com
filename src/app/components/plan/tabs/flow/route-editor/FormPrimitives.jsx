@@ -18,6 +18,17 @@ export function SectionLabel({ children, className = '' }) {
     )
 }
 
+/** Required-field asterisk. Visual cue only — the requirement is also
+ *  enforced (gated save) and announced via the editor's status message, so
+ *  the mark itself is hidden from screen readers to avoid "star" noise. */
+export function RequiredMark() {
+    return (
+        <span aria-hidden="true" className="text-status-danger ml-0.5">
+            *
+        </span>
+    )
+}
+
 /**
  * Numeric stepper used for operator counts. `type="text"` keeps native
  * arrow-key stepping and scroll-wheel mutation off the input so the user

@@ -354,6 +354,50 @@ export const computeClockInRows = (orders, baseByPlant, getTravelOverrides) => {
 }
 
 /**
+ * Audit how closely a manager's scheduled clock-ins follow the clock-in times
+ * this board generated. Pure and name-agnostic: both lists are sorted ascending
+ * and paired by position (earliest recommended ↔ earliest scheduled, and so on),
+ * so it measures whether the right COUNT of operators were scheduled at the
+ * right TIMES — not who fills which slot.
+ *
+ * `toleranceMin` is the +/- window that still counts as "on the suggestion".
+ * The gap is `scheduled − recommended`, so a positive `signedAvgMin` means the
+ * manager tends to schedule operators LATER than suggested.
+ *
+ * Adherence is `onTime / recommended`, so an under-staffed schedule (fewer
+ * scheduled clock-ins than suggested) is penalised — the unmatched slots count
+ * as misses. Returns null when there's nothing to audit: no suggested clock-ins,
+ * or no schedule has been built / synced for the day yet.
+ */
+export const computeClockInAdherence = (recommendedMinutes, scheduledMinutes, toleranceMin = 15) => {
+    const recommended = (recommendedMinutes || []).filter((m) => Number.isFinite(m)).sort((a, b) => a - b)
+    const scheduled = (scheduledMinutes || []).filter((m) => Number.isFinite(m)).sort((a, b) => a - b)
+    if (recommended.length === 0 || scheduled.length === 0) return null
+    let onTime = 0
+    let paired = 0
+    let absSum = 0
+    let signedSum = 0
+    for (let i = 0; i < recommended.length; i++) {
+        const scheduledMin = scheduled[i]
+        if (!Number.isFinite(scheduledMin)) continue
+        const delta = scheduledMin - recommended[i]
+        paired += 1
+        absSum += Math.abs(delta)
+        signedSum += delta
+        if (Math.abs(delta) <= toleranceMin) onTime += 1
+    }
+    return {
+        adherencePct: onTime / recommended.length,
+        avgAbsMin: paired > 0 ? Math.round(absSum / paired) : null,
+        onTime,
+        paired,
+        recommended: recommended.length,
+        scheduled: scheduled.length,
+        signedAvgMin: paired > 0 ? Math.round(signedSum / paired) : null
+    }
+}
+
+/**
  * Determine when operators can be safely sent home during the day.
  *
  * For each plant, compute the "min future pool" at every event boundary. Once

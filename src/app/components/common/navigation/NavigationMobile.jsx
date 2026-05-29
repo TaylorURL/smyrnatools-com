@@ -34,7 +34,9 @@ export default function NavigationMobile({
     standaloneItems,
     groupFlags,
     selectedView,
-    handleMenuClick
+    handleMenuClick,
+    showDropPin = false,
+    onDropPin = null
 }) {
     const headerStyle = buildHeaderStyle(accentColor)
     const dashboardItem = standaloneItems.find((i) => i.id === 'Dashboard')
@@ -114,19 +116,32 @@ export default function NavigationMobile({
                 className="sticky top-0 z-[100] flex items-center justify-between border-b border-white/10 px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
             >
                 <img className="h-[34px]" src={SrmLogo} alt="Logo" draggable={false} />
-                <button
-                    type="button"
-                    aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-                    aria-expanded={mobileMenuOpen}
-                    aria-controls="mobile-nav-drawer"
-                    className={`inline-flex h-10 w-10 items-center justify-center rounded-[10px] border-none text-white cursor-pointer active:scale-[0.94] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${mobileMenuOpen ? 'bg-white/[0.2]' : 'bg-white/[0.1] hover:bg-white/[0.16]'}`}
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                >
-                    <i
-                        className={`fas fa-${mobileMenuOpen ? 'times' : 'bars'} transition-transform duration-150 motion-reduce:transition-none`}
-                        aria-hidden="true"
-                    />
-                </button>
+                <div className="flex items-center gap-2">
+                    {showDropPin && onDropPin && (
+                        <button
+                            type="button"
+                            aria-label="Drop a pin at current location"
+                            onClick={onDropPin}
+                            className="inline-flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-[10px] border-none bg-white/[0.15] px-3 text-white cursor-pointer active:scale-[0.94] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 hover:bg-white/[0.22]"
+                        >
+                            <i className="fas fa-map-pin text-[13px]" aria-hidden="true" />
+                            <span className="text-[12px] font-semibold">Drop a pin</span>
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                        aria-expanded={mobileMenuOpen}
+                        aria-controls="mobile-nav-drawer"
+                        className={`inline-flex h-10 w-10 items-center justify-center rounded-[10px] border-none text-white cursor-pointer active:scale-[0.94] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${mobileMenuOpen ? 'bg-white/[0.2]' : 'bg-white/[0.1] hover:bg-white/[0.16]'}`}
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    >
+                        <i
+                            className={`fas fa-${mobileMenuOpen ? 'times' : 'bars'} transition-transform duration-150 motion-reduce:transition-none`}
+                            aria-hidden="true"
+                        />
+                    </button>
+                </div>
             </div>
             {drawer && canPortal && ReactDOM.createPortal(drawer, document.body)}
             <div className="relative flex-1 overflow-x-hidden overflow-y-auto" data-content-scroll>

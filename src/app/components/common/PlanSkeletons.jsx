@@ -264,10 +264,10 @@ export function StatisticsSkeleton() {
     )
 }
 
-/** One placeholder card matching the live `CallListCustomerCardRow` shape —
+/** One placeholder card matching the live customer card row shape —
  *  name + last-pour line on the left, dormancy badge top-right, then a
  *  phone/contact row and a pour-days / call-status row. */
-const CallListCardSkeleton = () => (
+const CrmCardSkeleton = () => (
     <div className="rounded-md p-3 flex flex-col gap-2 border bg-bg-primary border-border-light">
         <div className="flex items-baseline justify-between gap-3">
             <div className="flex-1 min-w-0 flex flex-col gap-1">
@@ -287,12 +287,12 @@ const CallListCardSkeleton = () => (
     </div>
 )
 
-/** Call List tab loading skeleton. Mirrors the live page exactly: header
+/** CRM tab loading skeleton. Mirrors the live page exactly: header
  *  row with title + description + Refresh button, mobile-only section
  *  tabs strip, and a sidebar (md+) next to the filter strip + 3-column
  *  card grid. The previous skeleton showed a 4-stat strip and a 2-column
  *  list/detail layout that the page hasn't used for a while. */
-export function CallListSkeleton() {
+export function CrmSkeleton() {
     return (
         <div className="flex-1 min-h-0 overflow-y-auto">
             <div className="px-3 sm:px-4 md:px-6 py-4 flex flex-col gap-4">
@@ -335,7 +335,7 @@ export function CallListSkeleton() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                             {Array.from({ length: 9 }).map((_, i) => (
-                                <CallListCardSkeleton key={i} />
+                                <CrmCardSkeleton key={i} />
                             ))}
                         </div>
                     </div>
@@ -356,7 +356,7 @@ export function PlanTabSkeleton({ mode }) {
         case 'statistics':
             return <StatisticsSkeleton />
         case 'call-list':
-            return <CallListSkeleton />
+            return <CrmSkeleton />
         case 'dashboard':
         default:
             return <DashboardSkeleton />

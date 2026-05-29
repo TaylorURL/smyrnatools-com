@@ -1,7 +1,13 @@
 // Plan Schedule — cross-plant help rows (assignments → bucketed driver
 // movements) and the matching pool-timeline `(plant, time, delta)` events.
 
-import { BUFFER_MINUTES, buildAssignmentDriverTimes, PRE_TRIP_MINUTES } from './PlanUtility'
+import {
+    BUFFER_MINUTES,
+    buildAssignmentDriverTimes,
+    buildSuppressedReturnIndexes,
+    PRE_TRIP_MINUTES,
+    resolveReturnTravelMinutes
+} from './PlanUtility'
 
 /** 30-minute bucket size for help rows. A staggered crew arriving over an
  *  hour reads as two rows ("5 between 08:00–08:30, 5 between 08:30–09:00")
@@ -23,6 +29,7 @@ export const HELP_BUCKET_MIN = 30
  */
 export const buildHelpRows = (assignments, plantProduction, getTravelTime) => {
     const grouped = new Map()
+    const suppressedReturnIndexes = buildSuppressedReturnIndexes(assignments)
     const bump = (key, seed, time, clockInTime = null) => {
         const existing = grouped.get(key)
         if (existing) {
@@ -64,18 +71,9 @@ export const buildHelpRows = (assignments, plantProduction, getTravelTime) => {
         // in the copyable plan brief — keeps the two sources aligned.
         const travelMin = typeof getTravelTime === 'function' ? getTravelTime(a.fromPlant, a.toPlant) : null
         const clockInOffsetMin = Number.isFinite(travelMin) ? travelMin + PRE_TRIP_MINUTES + BUFFER_MINUTES : null
-        // Return-leg travel from the destination plant back to the operator's
-        // home plant. Without this, the help-return event credits the home
-        // plant the moment the driver leaves the destination — too early,
-        // since they're still on the road. The fallback to the outbound
-        // travel time covers the common case where return travel isn't
-        // measured separately (most plant-pair travel tables are symmetric).
-        const returnTravelMin = typeof getTravelTime === 'function' ? getTravelTime(a.toPlant, returnPlant) : null
-        const returnTravelEffective = Number.isFinite(returnTravelMin)
-            ? returnTravelMin
-            : Number.isFinite(travelMin)
-              ? travelMin
-              : 0
+        // Return-leg drive home — credit the home plant only once the crew is
+        // physically back, not when they leave the destination.
+        const returnTravelEffective = resolveReturnTravelMinutes(getTravelTime, a.fromPlant, a.toPlant, returnPlant)
         const driverTimes = buildAssignmentDriverTimes(a)
         driverTimes.forEach((dt) => {
             if (Number.isFinite(dt.arriveMin)) {
@@ -99,7 +97,10 @@ export const buildHelpRows = (assignments, plantProduction, getTravelTime) => {
                     clockInMin
                 )
             }
-            if (Number.isFinite(dt.leaveMin) && dt.leaveMin > dt.arriveMin) {
+            // Skip the return row when this crew continues onward via a
+            // direct-load — its return credits the home plant on its own,
+            // so emitting one here double-credits home (the reported bug).
+            if (!suppressedReturnIndexes.has(idx) && Number.isFinite(dt.leaveMin) && dt.leaveMin > dt.arriveMin) {
                 // `arriveHomeMin` is when the driver actually rolls back into
                 // the home yard — `leaveMin` + return-leg drive. This is the
                 // moment the home plant's pool should regain the operator;

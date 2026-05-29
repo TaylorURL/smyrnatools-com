@@ -10,6 +10,10 @@ import { usePlanPlants } from './usePlanPlants'
 import { usePlanRealtimeSync } from './usePlanRealtimeSync'
 import { useScheduleSync } from './useScheduleSync'
 
+/** Min gap between wake/reconnect re-syncs so focus + visibilitychange (which
+ *  fire together on tab return) coalesce into a single refetch. */
+const PLAN_RESYNC_THROTTLE_MS = 1500
+
 export function usePlanData(planDate) {
     const { preferences } = usePreferences()
     const selectedRegionCode = preferences?.selectedRegion?.code || null
@@ -65,8 +69,13 @@ export function usePlanData(planDate) {
         selectedRegionCode,
         userId
     })
+    const isLoadingRef = useRef(isLoading)
+    isLoadingRef.current = isLoading
 
-    const getTravelTime = (from, to) => travelTimes[`${from}->${to}`] ?? null
+    /* Stable reference so consumers that memoize on `getTravelTime` (e.g. the
+     * dashboard clock-in board) aren't forced to recompute/re-render on every
+     * unrelated OperationsView render such as typing in the Notes field. */
+    const getTravelTime = useCallback((from, to) => travelTimes[`${from}->${to}`] ?? null, [travelTimes])
 
     // One-time bootstrap: user, permissions, travel-time cache. We only fetch
     // travel times once we have a session — otherwise the edge function 401s
@@ -166,6 +175,46 @@ export function usePlanData(planDate) {
             cancelled = true
         }
     }, [planDate, isLoading, planLoadAttempt])
+
+    /* Re-pull the authoritative plan from the server to recover from a
+     * realtime gap. A backgrounded tab's socket is suspended by the browser
+     * and silently misses every edit made while it was hidden — and realtime
+     * never replays missed events. Without this, a returning tab keeps its
+     * stale snapshot and the next local edit autosaves it over everyone
+     * else's newer work. Re-running the load effect re-fetches, re-seeds the
+     * sync snapshot, and re-arms autosave from a clean baseline.
+     *
+     * Guarded so it can NEVER discard work:
+     *   - dirtyRef: a pending unsaved local edit must flush first.
+     *   - loadedForDateRef: only resync from a settled, loaded state.
+     *   - isLoading: skip while plants / region are still loading. */
+    const lastResyncAtMsRef = useRef(0)
+    const requestResync = useCallback(() => {
+        if (isLoadingRef.current || dirtyRef.current || loadedForDateRef.current == null) return
+        const now = Date.now()
+        if (now - lastResyncAtMsRef.current < PLAN_RESYNC_THROTTLE_MS) return
+        lastResyncAtMsRef.current = now
+        retryPlanLoad()
+    }, [retryPlanLoad])
+
+    /* Wake / reconnect triggers. visibilitychange is the dominant one (tab
+     * backgrounded long enough for the browser to suspend the realtime
+     * socket); focus covers desktop app-switching; online covers a dropped-
+     * then-restored network. All routed through the guarded requestResync. */
+    useEffect(() => {
+        if (!planDate) return undefined
+        const onVisible = () => {
+            if (typeof document !== 'undefined' && document.visibilityState === 'visible') requestResync()
+        }
+        document.addEventListener('visibilitychange', onVisible)
+        window.addEventListener('focus', requestResync)
+        window.addEventListener('online', requestResync)
+        return () => {
+            document.removeEventListener('visibilitychange', onVisible)
+            window.removeEventListener('focus', requestResync)
+            window.removeEventListener('online', requestResync)
+        }
+    }, [planDate, requestResync])
 
     // Fetch adjacent days for timeline view
     const adjacentFetchRef = useRef(0)
@@ -299,6 +348,7 @@ export function usePlanData(planDate) {
         isLoading,
         lastSyncedSnapshotRef,
         notes,
+        onResync: requestResync,
         planDate,
         plantProduction,
         setAssignments,

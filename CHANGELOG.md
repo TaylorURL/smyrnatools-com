@@ -1,5 +1,50 @@
 # Changelog
 
+## [2026.22.23] - 2026-05-29
+
+- Promoted the Operations "Call List" tab into a dedicated Customer Relations
+  CRM under Tools. `CallListView` was removed from `OperationsView` and replaced
+  by a top-level `src/views/tools/crm/CrmView.jsx` with its own tab switcher
+  (`CrmTabSwitcher`) and section side-menu (`CrmSidebar`): Work (Overview,
+  Outreach, Follow-ups), Customers (Accounts, Pipeline, Map), Pins, Insights
+  (Activity, Team Monitor), and a manage-gated Settings. The "Customer Relations"
+  nav item sorts after Operations / before Calculators and shares Operations'
+  `plan.view` visibility.
+- Renamed the service/util layer to the CRM vocabulary — `CallListService →
+  CrmRosterService`, `CallListUtility → CrmRosterUtility`, `CallListContactsUtility
+  → CrmContactsUtility` — and added `src/services/CrmService.js` (accounts,
+  interactions, contacts, follow-ups, opportunities, pins, geocoding, bulk
+  sales-rep assignment, my-desk) over the shared `call-list-service` edge
+  function (path kept for stability).
+- Account-driven roster: customers are real `crm_accounts` rows (dispatch
+  customers + manually-added prospects) with a typed-interaction log, editable
+  contacts, follow-ups, and a light acquisition pipeline (prospect → won) that
+  auto-seeds via a derived+materialized scheme (dormant → reactivation, positive
+  interaction → deal, first order → won).
+- Rebuilt the account record (`AccountDetailBody`) as a flat, Panel-framed
+  two-column CRM surface matching DashboardView — left-rail profile/contacts,
+  right-column log composer + history + opportunities + service history. The
+  back button sits top-left; the pipeline slide-over drawer keeps a top-right
+  close. Prospects gain an Archive action (marks the account `lost` and drops it
+  from the active directory) behind a confirm dialog.
+- Region command Overview (`CrmMyDeskPage`) plus a persistent, full-width KPI
+  strip (`CrmKpiStrip`: Accounts / Customers / Prospects / Dormant / Open Opps /
+  Follow-ups / Activity 7d) lifted to the view level so it spans above the
+  section nav like the Plan Statistics page and loads once per CRM session.
+- Every CRM table (`CrmTable`) now sorts by clicking the column header (asc →
+  desc → clear) with `aria-sort` + caret indicators, and offers List/Cards views
+  (List default). The Accounts table shows each account number beneath the
+  customer name.
+- Drop-a-pin field tool — mobile nav button + geolocation + speech-to-text note
+  modal — surfaced on a CRM Pins tab and the Map, plus a US Census geocoding
+  backfill runnable in batches from CRM Settings.
+- CRM permission nodes (`crm.view` / `crm.edit` / `crm.manage`) via
+  `src/utils/CrmRoleUtility.js`, with Team Monitor + Settings gated to managers.
+- Plan-side: extracted schedule assignment helpers (`src/utils/plan/planAssignment.ts`,
+  `planChains.ts`, `planPool.ts`) with unit tests, added
+  `usePlanScheduleSnapshotPrediction`, and tightened `usePlanData` /
+  `PlanScheduleView` realtime sync.
+
 ## [2026.22.22] - 2026-05-28
 
 - Operator scheduling by weekly hours on the Plan Dashboard clock-in board.

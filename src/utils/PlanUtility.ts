@@ -64,7 +64,9 @@ export {
     buildAssignmentDriverTimes,
     createEmptyAssignment,
     ensureUniqueIds,
-    nextAssignmentId
+    isAssignmentTimingComplete,
+    nextAssignmentId,
+    resolveReturnTravelMinutes
 } from './plan/planAssignment'
 export {
     adjustPoolForDate,
@@ -81,6 +83,7 @@ export {
     setSaturdayOverride
 } from './plan/planAvailability'
 export { plantBadgeColor } from './plan/planBadges'
+export { buildSuppressedReturnIndexes } from './plan/planChains'
 export {
     BAD_LATE_MIN,
     classifyServiceTier,
@@ -109,6 +112,7 @@ export {
     trucksToHitBigPourGoal
 } from './plan/planOrder'
 export {
+    computeClockInAdherence,
     computeClockInRows,
     computePlantPoolTimeline,
     computePlantPoolTimelines,

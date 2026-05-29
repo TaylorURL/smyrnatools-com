@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
 
 import { flattenPlantOrders } from '../../utils/PlanFlowUtility'
+import { buildAssignmentHelpTransfers } from '../../utils/PlanRuntimeUtility'
 import {
     buildAssignmentDriverTimes,
+    buildSuppressedReturnIndexes,
     computePlantPoolTimeline,
     computePlantPoolTimelines,
     getEffectiveBase,
@@ -55,23 +57,10 @@ export function usePlanFlowMetrics({ assignments, getTravelTime, planDate, plant
         return out
     }, [stats, plantProduction, planDate])
 
-    const helpTransfers = useMemo(() => {
-        const out = []
-        ;(assignments || []).forEach((assignment) => {
-            if (!assignment?.fromPlant || !assignment?.toPlant || assignment.fromPlant === assignment.toPlant) return
-            const home = assignment.returnPlant || assignment.fromPlant
-            buildAssignmentDriverTimes(assignment).forEach((driverTime) => {
-                if (!Number.isFinite(driverTime.arriveMin)) return
-                out.push({ delta: -1, plantCode: assignment.fromPlant, time: driverTime.arriveMin })
-                out.push({ delta: 1, plantCode: assignment.toPlant, time: driverTime.arriveMin })
-                if (Number.isFinite(driverTime.leaveMin) && driverTime.leaveMin > driverTime.arriveMin) {
-                    out.push({ delta: -1, plantCode: assignment.toPlant, time: driverTime.leaveMin })
-                    out.push({ delta: 1, plantCode: home, time: driverTime.leaveMin })
-                }
-            })
-        })
-        return out
-    }, [assignments])
+    const helpTransfers = useMemo(
+        () => buildAssignmentHelpTransfers(assignments, getTravelTime),
+        [assignments, getTravelTime]
+    )
 
     const poolTimeline = useMemo(
         () => computePlantPoolTimeline(flatOrders, initialPoolByCode, null, helpTransfers),
@@ -167,9 +156,11 @@ export function usePlanFlowMetrics({ assignments, getTravelTime, planDate, plant
         ;(stats || []).forEach((stat) => {
             if (stat?.code) out[stat.code] = Number.isFinite(stat.base) ? stat.base : 0
         })
-        ;(assignments || []).forEach((assignment) => {
+        const suppressedReturnIndexes = buildSuppressedReturnIndexes(assignments)
+        ;(assignments || []).forEach((assignment, index) => {
             if (!assignment?.fromPlant || !assignment?.toPlant || assignment.fromPlant === assignment.toPlant) return
             const home = assignment.returnPlant || assignment.fromPlant
+            const suppressReturn = suppressedReturnIndexes.has(index)
             const lookedUpTravel =
                 typeof getTravelTime === 'function' ? getTravelTime(assignment.fromPlant, assignment.toPlant) : null
             const travel = Number.isFinite(lookedUpTravel) ? lookedUpTravel : DEFAULT_TRAVEL_MINUTES
@@ -187,6 +178,25 @@ export function usePlanFlowMetrics({ assignments, getTravelTime, planDate, plant
                 const returnedHome = returnArrival != null && viewTime >= returnArrival
 
                 if (!leftSource) return
+                /* Chained help: this crew continues onward via a direct-load
+                 * instead of driving home. Two consequences:
+                 *  - They stay subtracted from the source all day; the onward
+                 *    route credits the home plant on its own return. Closing
+                 *    the round trip here is what double-counted the home plant.
+                 *  - The destination credit must persist past THIS leg's own
+                 *    `leaveMin`. That leave time is a phantom — the crew left
+                 *    the pass-through plant via the onward route (which debits
+                 *    that plant at its own departure), not by driving home from
+                 *    here. Expiring the +1 at the phantom leave while the
+                 *    onward −1 lives on is what dropped the pass-through plant
+                 *    below its base in the afternoon. */
+                if (suppressReturn) {
+                    out[assignment.fromPlant] = (out[assignment.fromPlant] ?? 0) - 1
+                    if (arrivedAtDest) {
+                        out[assignment.toPlant] = (out[assignment.toPlant] ?? 0) + 1
+                    }
+                    return
+                }
                 // Operator subtracts from the source plant as soon as
                 // they leave for pre-trip — they're gone, just not yet
                 // at the destination.

@@ -20,13 +20,18 @@ export function usePlanInsights({
     travelTimes: _travelTimes,
     shiftSpanHours: _shiftSpanOverride
 }) {
-    const getStats = () => {
-        // `stat.base` is the day-adjusted working count, not the roster:
-        // Sundays read 0, Saturdays read either the per-plant override or
-        // floor(roster / 2), every other day reads the roster as-is. This
-        // way the pin headcount, side panel `eff`, and downstream pool
-        // math all share a single source of truth for "how many ops do we
-        // actually have today".
+    // `stat.base` is the day-adjusted working count, not the roster:
+    // Sundays read 0, Saturdays read either the per-plant override or
+    // floor(roster / 2), every other day reads the roster as-is. This
+    // way the pin headcount, side panel `eff`, and downstream pool
+    // math all share a single source of truth for "how many ops do we
+    // actually have today".
+    //
+    // Memoized so the array keeps a stable reference across unrelated
+    // OperationsView re-renders (e.g. Notes typing). Without this, every
+    // keystroke handed the clock-in board a fresh `stats` array, defeating
+    // its memoization and forcing a full re-render on each character.
+    const stats = useMemo(() => {
         const statsMap = Object.fromEntries(
             plants.map((p) => {
                 const rawRoster = mixerCountsByPlant[p.plant_code] || 0
@@ -48,9 +53,7 @@ export function usePlanInsights({
             .filter((x) => x.rawBase > 0 || x.send > 0 || x.recv > 0)
             .map((x) => ({ ...x, eff: x.base - x.send + x.recv }))
             .sort((a, b) => a.code.localeCompare(b.code))
-    }
-
-    const stats = getStats()
+    }, [assignments, mixerCountsByPlant, planDate, plantProduction, plants])
     const totalOps = assignments.reduce((sum, a) => sum + (parseInt(a.driverCount) || 0), 0)
     const validAssignmentCount = assignments.filter((a) => a.fromPlant && a.toPlant).length
 

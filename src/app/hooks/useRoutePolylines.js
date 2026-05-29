@@ -1,7 +1,7 @@
 import L from 'leaflet'
 import { useEffect } from 'react'
 
-import { buildAssignmentDriverTimes } from '../../utils/PlanUtility'
+import { buildAssignmentDriverTimes, buildSuppressedReturnIndexes } from '../../utils/PlanUtility'
 import { classifyAssignmentActivity } from '../../views/tools/plan/flow-map/flowMapActivity'
 import { makeArrowIcon, makeLegStyles, updateArrow } from '../../views/tools/plan/flow-map/flowMapIcons'
 import { pointAlongPath, resolveDriverLegAnchor } from '../../views/tools/plan/flow-map/flowMapPath'
@@ -49,6 +49,12 @@ export function useRoutePolylines({
             wanted.set(key, { a, idx })
         })
 
+        /* Indices whose return leg is redundant because an onward
+         * direct-load carries the whole crew home from this route's
+         * destination (e.g. 408→401 help + 401→job→408 direct-load would
+         * otherwise animate 401→408 twice). */
+        const suppressedReturnIndexes = buildSuppressedReturnIndexes(assignments)
+
         Object.keys(polylinesByEdgeRef.current).forEach((k) => {
             if (!wanted.has(k)) {
                 layer.removeLayer(polylinesByEdgeRef.current[k].group)
@@ -60,6 +66,7 @@ export function useRoutePolylines({
             const from = plantsByCode.get(a.fromPlant)
             const to = plantsByCode.get(a.toPlant)
             if (!from || !to) return
+            const suppressReturn = suppressedReturnIndexes.has(idx)
             const cachedJob = jobRoutesByIdx[idx]
             const useJobRoute =
                 cachedJob &&
@@ -80,7 +87,7 @@ export function useRoutePolylines({
             // way." OSRM A→B and B→A typically share the same physical
             // roads; the small reality gaps (one-way streets) aren't
             // worth a second round-trip per route.
-            const backCoords = useJobRoute ? cachedJob.backCoords : [...fallbackCoords].reverse()
+            const backCoords = suppressReturn ? [] : useJobRoute ? cachedJob.backCoords : [...fallbackCoords].reverse()
 
             const isInvolved = selectedCode === a.fromPlant || selectedCode === a.toPlant
             // Outbound leg drives the transit-window timing; return drive
@@ -158,22 +165,24 @@ export function useRoutePolylines({
             const outAnchors = drivers.map((driver) =>
                 resolveDriverLegAnchor({ coords: outCoords, driver, leg: 'outbound', travel: travelHint, viewTime })
             )
-            const backAnchors = drivers.map((driver) =>
-                resolveDriverLegAnchor({
-                    coords: backCoords,
-                    directLoadHoldMin,
-                    driver,
-                    leg: 'returning',
-                    returnStaggerMin,
-                    travel: returnTravelHint,
-                    viewTime
-                })
-            )
+            const backAnchors = suppressReturn
+                ? []
+                : drivers.map((driver) =>
+                      resolveDriverLegAnchor({
+                          coords: backCoords,
+                          directLoadHoldMin,
+                          driver,
+                          leg: 'returning',
+                          returnStaggerMin,
+                          travel: returnTravelHint,
+                          viewTime
+                      })
+                  )
 
-            const syncArrows = (group, existingArrows, anchors, fallbackAnchor, color) => {
+            const syncArrows = (group, existingArrows, anchors, fallbackAnchor, color, targetCount = driverCount) => {
                 const arrows = Array.isArray(existingArrows) ? [...existingArrows] : []
-                // Trim arrows beyond the current driver count.
-                while (arrows.length > driverCount) {
+                // Trim arrows beyond the target count (0 tears a leg down).
+                while (arrows.length > targetCount) {
                     const stale = arrows.pop()
                     if (stale && group) group.removeLayer(stale)
                 }
@@ -186,7 +195,7 @@ export function useRoutePolylines({
                  * midpoint — the marker is hidden (opacity 0) and will
                  * snap to the start of the leg on activation without
                  * sliding across the map. */
-                while (arrows.length < driverCount) {
+                while (arrows.length < targetCount) {
                     const idx = arrows.length
                     const driverAnchor = anchors[idx]
                     const seed = driverAnchor || fallbackAnchor
@@ -265,7 +274,8 @@ export function useRoutePolylines({
                     existing.backArrows,
                     backAnchors,
                     arrowFallbackBack,
-                    ROUTE_RETURN_COLOR
+                    ROUTE_RETURN_COLOR,
+                    suppressReturn ? 0 : driverCount
                 )
             } else {
                 const group = L.layerGroup()
@@ -281,7 +291,14 @@ export function useRoutePolylines({
                 backFlow.addTo(group)
                 group.addTo(layer)
                 const outArrows = syncArrows(group, [], outAnchors, arrowFallback, ROUTE_OUTBOUND_COLOR)
-                const backArrows = syncArrows(group, [], backAnchors, arrowFallbackBack, ROUTE_RETURN_COLOR)
+                const backArrows = syncArrows(
+                    group,
+                    [],
+                    backAnchors,
+                    arrowFallbackBack,
+                    ROUTE_RETURN_COLOR,
+                    suppressReturn ? 0 : driverCount
+                )
                 polylinesByEdgeRef.current[key] = {
                     backArrows,
                     backBase,

@@ -2,7 +2,7 @@
 import React from 'react'
 
 import Badge from '../../../common/Badge'
-import { SatisfactionBadge, YardageDeltaBadge } from './PlanScheduleBadges'
+import { YardageDeltaBadge } from './PlanScheduleBadges'
 import PlanScheduleStat from './PlanScheduleStat'
 
 /** Format a percent delta with leading sign, one decimal, and a `%` suffix.
@@ -99,6 +99,45 @@ export default function PlanScheduleStatStrip({
 }) {
     const inCompare = !!compareBaseline
 
+    const hasActual = customerSatisfaction && customerSatisfaction.samples > 0
+    const hasPrediction = predictedSatisfaction && predictedSatisfaction.samples > 0
+    /* The strip carries ONE satisfaction stat, never two. On past days the
+     * actual card absorbs the forecast and reads "actual / predicted"; the
+     * standalone predicted card is only for days that have a forecast but no
+     * actuals yet — future days, or a past day with no ticket data. */
+    const showPredictedAlone = hasPrediction && !hasActual
+
+    /* Inline caption for the satisfaction stat — the descriptive line that now
+     * sits next to the value (the quality / live / predicted badges moved to
+     * their own row beneath, where they can wrap instead of getting clipped). */
+    const actualSatisfactionCaption = (() => {
+        if (!hasActual) return ''
+        if (hasPrediction) {
+            return predictedSatisfaction.isSnapshot ? 'actual / predicted at 5:30 PM' : 'actual / predicted'
+        }
+        const parts = [
+            `${customerSatisfaction.goodService} good service`,
+            `${customerSatisfaction.badService} bad service`
+        ]
+        if (customerSatisfaction.isLive && customerSatisfaction.inProgress > 0) {
+            parts.push(`${customerSatisfaction.inProgress} in progress`)
+        }
+        return parts.join(' · ')
+    })()
+    const predictedSatisfactionCaption = (() => {
+        if (!showPredictedAlone) return ''
+        const truckLabel = predictedSatisfaction.trucksShort === 1 ? 'truck' : 'trucks'
+        const base =
+            predictedSatisfaction.badService === 0
+                ? `${predictedSatisfaction.goodService} on pace · no shortages forecast`
+                : [
+                      `${predictedSatisfaction.goodService} on pace`,
+                      `${predictedSatisfaction.badService} needs help`,
+                      `${predictedSatisfaction.trucksShort} ${truckLabel} short`
+                  ].join(' · ')
+        return predictedSatisfaction.isSnapshot ? `${base} · as of 5:30 PM` : base
+    })()
+
     return (
         <div
             className="rounded-xl flex flex-wrap bg-bg-primary border border-border-light"
@@ -187,72 +226,20 @@ export default function PlanScheduleStatStrip({
                 label="Window"
                 value={earliestTime && latestTime ? `${earliestTime}–${latestTime}` : '—'}
             />
-            {customerSatisfaction && customerSatisfaction.samples > 0 && (
+            {hasActual && (
                 <PlanScheduleStat
-                    badge={
-                        <span className="inline-flex items-center gap-1.5">
-                            {customerSatisfaction.isLive && (
-                                <Badge
-                                    dot
-                                    pulse
-                                    shape="pill"
-                                    size="xs"
-                                    title="Live — score updates as orders complete throughout the day"
-                                    tone="danger"
-                                >
-                                    LIVE
-                                </Badge>
-                            )}
-                            <SatisfactionBadge score={customerSatisfaction.score} />
-                        </span>
-                    }
-                    hint={(() => {
-                        // Sentence-case hints to match every other stat in the
-                        // strip ("this week (Mon–Sat)", "truck loads",
-                        // "cancelled excluded", …). The label above the value
-                        // is the only place that displays uppercase, and it
-                        // does so via CSS `text-transform: uppercase`, not
-                        // by hardcoding caps in the source string.
-                        const parts = [
-                            `${customerSatisfaction.goodService} good service`,
-                            `${customerSatisfaction.badService} bad service`
-                        ]
-                        if (customerSatisfaction.isLive && customerSatisfaction.inProgress > 0) {
-                            parts.push(`${customerSatisfaction.inProgress} in progress`)
-                        }
-                        return parts.join(' · ')
-                    })()}
+                    hint={actualSatisfactionCaption}
                     label={customerSatisfaction.isLive ? 'Customer satisfaction · so far' : 'Customer satisfaction'}
-                    value={`${Math.round(customerSatisfaction.score * 100)}%`}
+                    value={
+                        hasPrediction
+                            ? `${Math.round(customerSatisfaction.score * 100)}% / ${Math.round(predictedSatisfaction.score * 100)}%`
+                            : `${Math.round(customerSatisfaction.score * 100)}%`
+                    }
                 />
             )}
-            {predictedSatisfaction && predictedSatisfaction.samples > 0 && (
+            {showPredictedAlone && (
                 <PlanScheduleStat
-                    badge={
-                        <span className="inline-flex items-center gap-1.5">
-                            <Badge
-                                icon="wand-magic-sparkles"
-                                shape="pill"
-                                size="xs"
-                                title="Forecast — based on which orders the pool simulation flags as NEEDS HELP"
-                                tone="info"
-                            >
-                                PREDICTED
-                            </Badge>
-                            <SatisfactionBadge score={predictedSatisfaction.score} />
-                        </span>
-                    }
-                    hint={(() => {
-                        if (predictedSatisfaction.badService === 0) {
-                            return `${predictedSatisfaction.goodService} on pace · no shortages forecast`
-                        }
-                        const truckLabel = predictedSatisfaction.trucksShort === 1 ? 'truck' : 'trucks'
-                        return [
-                            `${predictedSatisfaction.goodService} on pace`,
-                            `${predictedSatisfaction.badService} needs help`,
-                            `${predictedSatisfaction.trucksShort} ${truckLabel} short`
-                        ].join(' · ')
-                    })()}
+                    hint={predictedSatisfactionCaption}
                     label="Customer satisfaction · predicted"
                     value={`${Math.round(predictedSatisfaction.score * 100)}%`}
                 />

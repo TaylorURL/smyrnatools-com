@@ -1,4 +1,9 @@
-import { buildHelpTransfers, buildInitialPoolByCode, flattenPlanOrders } from './PlanRuntimeUtility'
+import {
+    buildAssignmentHelpTransfers,
+    buildInitialPoolByCode,
+    flattenPlanOrders,
+    type GetTravelMinutes
+} from './PlanRuntimeUtility'
 import {
     computePlantPoolTimeline,
     computePullUpRows,
@@ -80,6 +85,7 @@ interface DashboardParams {
     stats: PlantStat[] | null | undefined
     assignments: Assignment[] | null | undefined
     planDate: string | null | undefined
+    getTravelTime?: GetTravelMinutes
 }
 
 /** Sum a plant production block's REAL yardage. Re-derives from each
@@ -161,13 +167,14 @@ const buildPoolSimulationInputs = ({
     plantProduction,
     stats,
     assignments,
-    planDate
+    planDate,
+    getTravelTime
 }: DashboardParams): PoolSimInputs | null => {
     const flatOrders = flattenPlanOrders(plantProduction)
     if (flatOrders.length === 0) return null
     return {
         flatOrders,
-        helpTransfers: buildHelpTransfers(assignments),
+        helpTransfers: buildAssignmentHelpTransfers(assignments, getTravelTime),
         initialPoolByCode: buildInitialPoolByCode(stats, plantProduction, planDate)
     }
 }
@@ -181,9 +188,10 @@ export const computeDashboardJobCoverage = ({
     plantProduction,
     stats,
     assignments,
-    planDate
+    planDate,
+    getTravelTime
 }: DashboardParams): JobCoverageResult | null => {
-    const inputs = buildPoolSimulationInputs({ assignments, planDate, plantProduction, stats })
+    const inputs = buildPoolSimulationInputs({ assignments, getTravelTime, planDate, plantProduction, stats })
     if (!inputs) return null
     const byOrder = computePlantPoolTimeline(inputs.flatOrders, inputs.initialPoolByCode, null, inputs.helpTransfers)
     let totalJobs = 0
@@ -209,8 +217,14 @@ export const computeDashboardJobCoverage = ({
  * Pull-up recommendations — later orders that could be moved into earlier
  * surplus windows so the dispatch day compacts instead of trucks idling.
  */
-export const computeDashboardPullUpRows = ({ plantProduction, stats, assignments, planDate }: DashboardParams) => {
-    const inputs = buildPoolSimulationInputs({ assignments, planDate, plantProduction, stats })
+export const computeDashboardPullUpRows = ({
+    plantProduction,
+    stats,
+    assignments,
+    planDate,
+    getTravelTime
+}: DashboardParams) => {
+    const inputs = buildPoolSimulationInputs({ assignments, getTravelTime, planDate, plantProduction, stats })
     if (!inputs) return []
     const rows = computePullUpRows(inputs.flatOrders, inputs.initialPoolByCode, null, inputs.helpTransfers)
     return rows.sort((a, b) => b.originalStartMin - a.originalStartMin)
@@ -220,8 +234,14 @@ export const computeDashboardPullUpRows = ({ plantProduction, stats, assignments
  * Open-window recommendations — idle-truck windows where a plant could
  * absorb a new pour without disrupting today's plan.
  */
-export const computeDashboardSuggestedSlots = ({ plantProduction, stats, assignments, planDate }: DashboardParams) => {
-    const inputs = buildPoolSimulationInputs({ assignments, planDate, plantProduction, stats })
+export const computeDashboardSuggestedSlots = ({
+    plantProduction,
+    stats,
+    assignments,
+    planDate,
+    getTravelTime
+}: DashboardParams) => {
+    const inputs = buildPoolSimulationInputs({ assignments, getTravelTime, planDate, plantProduction, stats })
     if (!inputs) return []
     return computeSuggestedSlots(inputs.flatOrders, inputs.initialPoolByCode, null, inputs.helpTransfers)
 }

@@ -42,6 +42,40 @@ export const buildAssignmentDriverTimes = (assignment) => {
     return result
 }
 
+/**
+ * True when an assignment supplies a finite arrival AND leave time for every
+ * operator it sends — across both stagger and custom modes. Sending help
+ * requires both ends of each operator's trip: without them the pool
+ * simulation and flow view can't place the operator on the timeline, so the
+ * route editor blocks the save.
+ */
+export const isAssignmentTimingComplete = (assignment) => {
+    const driverTimes = buildAssignmentDriverTimes(assignment)
+    if (driverTimes.length === 0) return false
+    return driverTimes.every((dt) => Number.isFinite(dt.arriveMin) && Number.isFinite(dt.leaveMin))
+}
+
+/**
+ * Minutes for a help crew's drive home: the destination→home leg when the
+ * travel table knows it, otherwise the outbound home→destination leg (travel
+ * tables are usually symmetric), otherwise 0.
+ *
+ * Shared by every help-transfer builder so the home plant is credited back at
+ * the same moment across the Schedule, Flow, and Dashboard pools — they used
+ * to compute this inline and drifted (Flow/Dashboard credited the home plant
+ * the instant the crew left the destination, ignoring the drive home).
+ *
+ * `getTravelTime(fromPlant, toPlant)` returns minutes between plants, or any
+ * non-finite value when unknown.
+ */
+export const resolveReturnTravelMinutes = (getTravelTime, fromPlant, toPlant, returnPlant) => {
+    if (typeof getTravelTime !== 'function') return 0
+    const returnLeg = getTravelTime(toPlant, returnPlant)
+    if (Number.isFinite(returnLeg)) return returnLeg
+    const outboundLeg = getTravelTime(fromPlant, toPlant)
+    return Number.isFinite(outboundLeg) ? outboundLeg : 0
+}
+
 let assignmentIdCounter = Date.now()
 export const nextAssignmentId = () => ++assignmentIdCounter
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { createEmptyAssignment } from '../../utils/PlanUtility'
+import { createEmptyAssignment, isAssignmentTimingComplete } from '../../utils/PlanUtility'
 import { useConfirm } from '../context/ConfirmContext'
 
 const PANEL_MODE_OVERVIEW = 'overview'
@@ -86,6 +86,9 @@ export function usePlanFlowEditor({ assignments, setAssignments }) {
 
     const submitEditor = () => {
         if (!draft?.fromPlant || !draft?.toPlant) return
+        // Help can't be sent without an arrival and leave time for every
+        // operator — the editor disables the save, this guards other entry paths.
+        if (!isAssignmentTimingComplete(draft)) return
         const payload = {
             customTimes: draft.timeMode === 'custom' ? draft.customTimes || [] : [],
             driverCount: Math.max(0, parseInt(draft.driverCount, 10) || 0),
