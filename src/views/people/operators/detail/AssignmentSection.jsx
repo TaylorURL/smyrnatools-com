@@ -1,5 +1,5 @@
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
-import { INPUT_CLASS, SELECT_CLASS } from '../../../../app/constants/operatorDetailConstants'
+import { DETAIL_SELECT_CLS } from '../../../../app/constants/detailFormClasses'
 
 /**
  * Assignment section: status / pending start date / assigned plant button
@@ -21,7 +21,7 @@ function AssignmentSection({
     return (
         <DetailViewSection.Section id="assignment" title="Assignment" icon="fas fa-building">
             <DetailViewSection.Card title="Assignment Information" icon="fas fa-map-marker-alt">
-                <div className="flex flex-col gap-1.5">
+                <div className="form-group">
                     <label>Status</label>
                     <select
                         value={status}
@@ -30,7 +30,7 @@ function AssignmentSection({
                             setStatus(value)
                             if (value === 'Active') setAssignedTrainer('')
                         }}
-                        className={SELECT_CLASS}
+                        className={DETAIL_SELECT_CLS}
                         disabled={!canEditOperator}
                     >
                         <option value="Active">Active</option>
@@ -42,21 +42,21 @@ function AssignmentSection({
                     </select>
                 </div>
                 {status === 'Pending Start' && (
-                    <div className="flex flex-col gap-1.5">
+                    <div className="form-group">
                         <label>Pending Start Date</label>
                         <input
                             type="date"
                             value={pendingStartDate || ''}
                             onChange={(e) => setPendingStartDate(e.target.value)}
-                            className={`${INPUT_CLASS} [color-scheme:light] dark:[color-scheme:dark]`}
+                            className="form-control [color-scheme:light] dark:[color-scheme:dark]"
                             disabled={!canEditOperator}
                         />
                     </div>
                 )}
-                <div className="flex flex-col gap-1.5">
+                <div className="form-group">
                     <label>Assigned Plant</label>
                     <button
-                        className={`${INPUT_CLASS} text-left ${canEditOperator ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                        className={`operator-select-button form-control text-left ${!canEditOperator ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                         onClick={() => setShowPlantModal(true)}
                         type="button"
                         disabled={!canEditOperator}
@@ -64,12 +64,12 @@ function AssignmentSection({
                         <span className="block overflow-hidden text-ellipsis">{plantDisplayText}</span>
                     </button>
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="form-group">
                     <label>Position</label>
                     <select
                         value={position}
                         onChange={(e) => setPosition(e.target.value)}
-                        className={SELECT_CLASS}
+                        className={DETAIL_SELECT_CLS}
                         disabled={!canEditOperator}
                     >
                         <option value="">Select Position</option>

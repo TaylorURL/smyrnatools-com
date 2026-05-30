@@ -33,14 +33,14 @@ export default function ManagerSecuritySection({
                         </p>
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-1.5">
+                    <div className="form-group">
                         <label>New Password</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => onPasswordChange(e.target.value)}
                             placeholder="Enter new password"
-                            className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                            className="form-control"
                             autoFocus
                         />
                         <p className="text-text-secondary text-[13px] mt-2 mb-3">

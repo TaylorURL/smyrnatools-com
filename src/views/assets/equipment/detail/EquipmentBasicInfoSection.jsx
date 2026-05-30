@@ -1,6 +1,7 @@
 import React from 'react'
 
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
+import { DETAIL_SELECT_CLS } from '../../../../app/constants/detailFormClasses'
 import { EQUIPMENT_TYPE_OPTIONS, STATUS_OPTIONS } from './equipmentTypeOptions'
 
 /**
@@ -47,7 +48,7 @@ export default function EquipmentBasicInfoSection({
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
                         disabled={!canEditEquipment}
-                        className="form-control"
+                        className={DETAIL_SELECT_CLS}
                     >
                         <option value="">Select Status</option>
                         {STATUS_OPTIONS.map((option) => (
@@ -74,7 +75,7 @@ export default function EquipmentBasicInfoSection({
                         value={equipmentType}
                         onChange={(e) => setEquipmentType(e.target.value)}
                         disabled={!canEditEquipment}
-                        className="form-control"
+                        className={DETAIL_SELECT_CLS}
                     >
                         <option value="">Select Type</option>
                         {EQUIPMENT_TYPE_OPTIONS.map((option) => (

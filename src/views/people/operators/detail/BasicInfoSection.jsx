@@ -1,6 +1,6 @@
 import StarRating from '../../../../app/components/common/StarRating'
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
-import { INPUT_CLASS, RATING_LABELS } from '../../../../app/constants/operatorDetailConstants'
+import { RATING_LABELS } from '../../../../app/constants/operatorDetailConstants'
 import GrammarUtility from '../../../../utils/GrammarUtility'
 
 /**
@@ -23,33 +23,33 @@ function BasicInfoSection({
     return (
         <DetailViewSection.Section id="basic" title="Basic Information" icon="fas fa-user">
             <DetailViewSection.Card title="Personal Details" icon="fas fa-id-card">
-                <div className="flex flex-col gap-1.5">
+                <div className="form-group">
                     <label>Employee ID</label>
                     <input
                         type="text"
                         value={smyrnaId}
                         onChange={(e) => setSmyrnaId(e.target.value)}
-                        className={INPUT_CLASS}
+                        className="form-control"
                         disabled={!canEditOperator}
                     />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="form-group">
                     <label>Name</label>
                     <input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className={INPUT_CLASS}
+                        className="form-control"
                         disabled={!canEditOperator}
                     />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="form-group">
                     <label>Phone</label>
                     <input
                         type="tel"
                         value={GrammarUtility.formatPhone(phone)}
                         onChange={(e) => setPhone(e.target.value)}
-                        className={INPUT_CLASS}
+                        className="form-control"
                         placeholder="(555) 555-5555"
                         disabled={!canEditOperator}
                     />

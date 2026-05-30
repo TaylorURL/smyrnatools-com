@@ -18,8 +18,8 @@ export default function ManagerDetailFooterActions({
     const showSave = !isReadOnly && canEditManager
     if (!showSave && !canDeleteManager) {
         return (
-            <div className="flex items-center gap-2 text-text-secondary text-sm font-medium">
-                <i className="fas fa-lock"></i>
+            <div className="flex items-center gap-1.5 text-text-secondary text-[12px] font-medium">
+                <i className="fas fa-lock text-[11px]"></i>
                 <span>View-Only Mode</span>
             </div>
         )

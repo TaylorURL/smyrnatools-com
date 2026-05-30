@@ -19,33 +19,33 @@ export default function ManagerBasicInfoCard({
     const readOnly = isReadOnly || !canEditManager
     return (
         <DetailViewSection.Card title="Basic Information" icon="fas fa-id-card">
-            <div className="flex flex-col gap-1.5">
+            <div className="form-group">
                 <label>First Name</label>
                 <input
                     type="text"
                     value={firstName}
                     onChange={(e) => onFirstNameChange(e.target.value)}
-                    className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                    className="form-control"
                     readOnly={readOnly}
                 />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="form-group">
                 <label>Last Name</label>
                 <input
                     type="text"
                     value={lastName}
                     onChange={(e) => onLastNameChange(e.target.value)}
-                    className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                    className="form-control"
                     readOnly={readOnly}
                 />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="form-group">
                 <label>Email</label>
                 <input
                     type="email"
                     value={email}
                     onChange={(e) => onEmailChange(e.target.value)}
-                    className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                    className="form-control"
                     readOnly={readOnly}
                 />
             </div>

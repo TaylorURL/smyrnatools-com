@@ -1,5 +1,5 @@
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
-import { SELECT_CLASS } from '../../../../app/constants/operatorDetailConstants'
+import { DETAIL_SELECT_CLS } from '../../../../app/constants/detailFormClasses'
 
 /**
  * Training section: trainer-status selector and (when status is Training or
@@ -17,11 +17,11 @@ function TrainingSection({
     return (
         <DetailViewSection.Section id="training" title="Training" icon="fas fa-graduation-cap">
             <DetailViewSection.Card title="Training Details" icon="fas fa-chalkboard-teacher">
-                <div className="flex flex-col gap-1.5">
+                <div className="form-group">
                     <label>Trainer Status</label>
                     <select
                         id="trainer-status"
-                        className={SELECT_CLASS}
+                        className={DETAIL_SELECT_CLS}
                         value={isTrainer ? 'true' : 'false'}
                         onChange={(e) => {
                             const isTrainerValue = e.target.value === 'true'
@@ -37,12 +37,12 @@ function TrainingSection({
                     </select>
                 </div>
                 {(status === 'Training' || status === 'Pending Start') && (
-                    <div className="flex flex-col gap-1.5">
+                    <div className="form-group">
                         <label>Assigned Trainer</label>
                         <select
                             value={assignedTrainer}
                             onChange={(e) => setAssignedTrainer(e.target.value)}
-                            className={SELECT_CLASS}
+                            className={DETAIL_SELECT_CLS}
                             disabled={isTrainer || !canEditOperator}
                         >
                             <option value="">None</option>

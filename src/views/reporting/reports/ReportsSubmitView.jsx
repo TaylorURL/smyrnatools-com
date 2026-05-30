@@ -312,15 +312,26 @@ function ReportsSubmitView({
             rowsInitializedRef.current = false
             return
         }
-        fetchOperatorsAndMixers(form.plant).then((result) => {
-            if (!readOnly && !initialData?.rows?.length && !form.rows?.length && !rowsInitializedRef.current) {
-                initializeRows(result.activeOperators, result.mixers)
-                rowsInitializedRef.current = true
-            }
-            if (form.rows?.length > 0) {
-                rowsInitializedRef.current = true
-            }
-        })
+        fetchOperatorsAndMixers(form.plant)
+            .then((result) => {
+                if (!readOnly && !initialData?.rows?.length && !form.rows?.length && !rowsInitializedRef.current) {
+                    initializeRows(result.activeOperators, result.mixers)
+                    rowsInitializedRef.current = true
+                }
+                if (form.rows?.length > 0) {
+                    rowsInitializedRef.current = true
+                }
+            })
+            .catch((err) => {
+                // A failed operator/mixer fetch must NOT become an unhandled
+                // rejection — that surfaces as the app's runtime-error overlay
+                // and bounces the plant manager out of the report on entry.
+                // Report it and leave the form in its (empty) state so they can
+                // retry by reselecting the plant.
+                ErrorReporterUtility.reportError(err instanceof Error ? err : new Error(String(err)), {
+                    context: 'Loading operators/mixers for the Plant Efficiency report'
+                })
+            })
     }, [report.name, form.plant, readOnly, initialData, clearRows, fetchOperatorsAndMixers, initializeRows, form.rows])
     const renderFormSection = () => {
         if (report.name === 'plant_production')

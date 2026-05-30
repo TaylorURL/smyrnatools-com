@@ -1,5 +1,35 @@
 # Changelog
 
+## [2026.22.26] - 2026-05-30
+
+- Fixed plant managers getting "kicked out" of the Weekly Plant Efficiency
+  report on entry. The `plant_production` effect in `ReportsSubmitView` called
+  `fetchOperatorsAndMixers(plant)` with no rejection handler, so a failed
+  operator/mixer load became an unhandled promise rejection that tripped the
+  app's runtime-error overlay and bounced them out. It now has a `.catch` that
+  reports via `ErrorReporterUtility` and leaves the form in its empty state so
+  they can retry by reselecting the plant.
+- Added a top info panel to the report stating plainly what it measures: the
+  tracked metric is clock-in (Start Time) → first load (1st Load). Ticket time
+  is explicitly not the metric, to stop the recurring confusion behind "the
+  start times are wrong" reports.
+- Redesigned the report's fill-out surface (`PlantProductionForm`) into a
+  two-column layout — operator cards on the left, a new operator roster side
+  menu on the right. Each operator card now surfaces the clock-in → first-load
+  gap as a chip (the tracked efficiency metric) plus a
+  Ready / Needs-attention / Manual-override status pill, and the per-row Exclude
+  control was retoned from solid rose to a subtle danger-on-hover treatment.
+- New `PlantProductionOperatorRoster` side menu centralizes who is on the
+  report and why anyone is off: every active operator with an include/exclude
+  checkbox and truck number, an inline exclusion-reason field when excluded, and
+  an amber marker flagging an excluded operator with no reason yet.
+- Consolidated detail-view form controls onto a shared `DETAIL_SELECT_CLS`
+  constant (`src/app/constants/detailFormClasses.js`), adopted across the
+  tractor, equipment, trailer, operator, and manager detail sections in place of
+  duplicated inline class strings (and removed the stale `INPUT_CLASS` /
+  `SELECT_CLASS` from `operatorDetailConstants.js`) so every detail-page form
+  control shares one look.
+
 ## [2026.22.25] - 2026-05-29
 
 - The mobile "Drop a pin" CRM button now appears for anyone with CRM access. It

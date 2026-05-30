@@ -109,6 +109,29 @@ const computeRowStatus = (row, dayforcePunch, ticketAgg) => {
     return 'complete'
 }
 
+/** Minutes from clock-in to first load — the tracked efficiency metric.
+ *  Returns null when either time is missing, or when the first load reads
+ *  before the clock-in (bad data we don't surface a negative gap for). */
+const minutesToFirstLoad = (startTime, firstLoad) => {
+    const toMinutes = (value) => {
+        const match = /^(\d{1,2}):(\d{2})/.exec(String(value || ''))
+        return match ? Number(match[1]) * 60 + Number(match[2]) : null
+    }
+    const start = toMinutes(startTime)
+    const first = toMinutes(firstLoad)
+    if (start == null || first == null) return null
+    const diff = first - start
+    return diff >= 0 ? diff : null
+}
+
+/** "1h 12m" / "12m" from a minute count. */
+const formatGap = (minutes) => {
+    if (minutes == null) return null
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
+}
+
 const PlantProductionOperatorCard = ({
     accentColor,
     dayforcePunch,
@@ -124,6 +147,10 @@ const PlantProductionOperatorCard = ({
 }) => {
     const truckNumber = useMemo(() => ReportUtility.getTruckNumberForOperator(row, mixers) ?? '', [row, mixers])
     const status = useMemo(() => computeRowStatus(row, dayforcePunch, ticketAgg), [row, dayforcePunch, ticketAgg])
+    const gapLabel = useMemo(
+        () => formatGap(minutesToFirstLoad(row.start_time, row.first_load)),
+        [row.start_time, row.first_load]
+    )
     const overrides = row._overrides || {}
 
     return (
@@ -149,6 +176,19 @@ const PlantProductionOperatorCard = ({
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
+                    {gapLabel && (
+                        <span
+                            className="inline-flex items-center gap-1 rounded-full border border-border-light bg-bg-secondary px-2 py-0.5 text-[10.5px] font-semibold tabular-nums text-text-secondary"
+                            title="Clock-in to first load — the tracked efficiency metric"
+                        >
+                            <i
+                                className="fas fa-stopwatch text-[9px]"
+                                style={{ color: accentColor }}
+                                aria-hidden="true"
+                            />
+                            {gapLabel}
+                        </span>
+                    )}
                     <Badge
                         tone={STATUS_TO_TONE[status]}
                         variant="outline"
@@ -164,7 +204,7 @@ const PlantProductionOperatorCard = ({
                         <button
                             type="button"
                             onClick={onExclude}
-                            className="inline-flex items-center gap-1 rounded px-2 py-1 min-h-[32px] text-[10px] font-semibold cursor-pointer border bg-rose-600 border-rose-700 text-white hover:bg-rose-700"
+                            className="inline-flex items-center gap-1 rounded-md px-2 py-1 min-h-[32px] text-[10px] font-semibold cursor-pointer border border-border-light bg-bg-secondary text-text-tertiary hover:border-status-danger/40 hover:text-status-danger hover:bg-status-danger/5 active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                             title="Exclude this operator from the report"
                         >
                             <i className="fas fa-user-minus text-[8.5px]" />

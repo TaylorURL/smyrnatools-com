@@ -1,15 +1,10 @@
 import React from 'react'
 
 import { TractorService } from '../../../services/TractorService'
+import { DETAIL_SELECT_CLS } from '../../constants/detailFormClasses'
 import { TRACTOR_FREIGHT_TYPES, TRACTOR_STATUSES_FORCING_UNASSIGN } from '../../constants/tractorDetailConstants'
 import DetailViewSection from '../sections/DetailViewSection'
 import TractorOperatorAssignmentField from './TractorOperatorAssignmentField'
-
-// Canonical chevron-bearing select treatment for the tractor basic-info card.
-// Mirrors the surrounding `form-control` size while using a `currentColor`
-// chevron so the affordance follows `text-text-primary` across themes.
-const SELECT_CLS =
-    "w-full appearance-none cursor-pointer rounded border border-border-light bg-bg-secondary text-text-primary text-[0.8125rem] px-2.5 py-[0.4375rem] pr-9 bg-no-repeat bg-[right_0.75rem_center] bg-[length:1rem_1rem] transition-colors duration-150 hover:border-border-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:border-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed [color-scheme:light] dark:[color-scheme:dark] bg-[url(\"data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20fill='none'%20viewBox='0%200%2024%2024'%20stroke='currentColor'%3E%3Cpath%20stroke-linecap='round'%20stroke-linejoin='round'%20stroke-width='2'%20d='M19%209l-7%207-7-7'%3E%3C/path%3E%3C/svg%3E\")]"
 
 /**
  * "Basic Information" tab on the tractor detail view: identification,
@@ -91,7 +86,7 @@ function TractorBasicInfoSection({
                         value={status}
                         onChange={handleStatusChange}
                         disabled={!canEditTractor}
-                        className={SELECT_CLS}
+                        className={DETAIL_SELECT_CLS}
                     >
                         <option value="">Select Status</option>
                         <option value="Active" disabled={!assignedOperator}>
@@ -108,7 +103,7 @@ function TractorBasicInfoSection({
                         value={freight}
                         onChange={(e) => setFreight(e.target.value)}
                         disabled={!canEditTractor}
-                        className={SELECT_CLS}
+                        className={DETAIL_SELECT_CLS}
                     >
                         <option value="">Select Freight</option>
                         {TRACTOR_FREIGHT_TYPES.map((type) => (
