@@ -1,7 +1,7 @@
 /** Menu items visible only for Office-type regions. */
 export const OFFICE_VISIBLE_ITEMS = ['Reports', 'Dashboard', 'Managers', 'Plants', 'Regions']
 /** Items hidden for Aggregate-type regions. */
-export const AGGREGATE_HIDDEN_ITEMS = ['Mixers', 'Plants', 'Regions', 'Calculators', 'Maintenance']
+export const AGGREGATE_HIDDEN_ITEMS = ['Mixers', 'Plants', 'Regions', 'Maintenance']
 /** Items hidden by default for standard regions. */
 export const DEFAULT_HIDDEN_ITEMS = ['Plants', 'Regions']
 /** Items exclusively available to Office regions. */
@@ -15,7 +15,6 @@ export const IT_ACCESS_ROLE_NAME = 'IT Access'
 export const ICONS = {
     Archive: 'fa-archive',
     Assets: 'fa-truck',
-    Calculators: 'fa-calculator',
     CRM: 'fa-address-book',
     Dashboard: 'fa-tachometer-alt',
     'Heavy Equipment': 'fa-snowplow',
@@ -57,7 +56,6 @@ export const MENU_ITEMS = [
     { id: 'Plants', permission: 'plants.view', text: 'Plants' },
     { id: 'Regions', permission: 'regions.view', text: 'Regions' },
     { id: 'Roles', permission: 'roles.view', text: 'Roles' },
-    { id: 'Calculators', permission: 'calculator.view', text: 'Calculators' },
     { id: 'Maintenance', permission: 'maintenance.view', text: 'Maintenance' },
     { id: 'NRMCA', permission: 'nrmca.view', text: 'Calibrations & Certifications' }
 ]
@@ -69,7 +67,7 @@ export const PEOPLE_ITEMS = ['Operators', 'Managers']
 /** Navigation item IDs grouped under the "Reporting" dropdown. */
 export const REPORTING_ITEMS = ['Reports', 'List', 'Maintenance', 'NRMCA']
 /** Navigation item IDs grouped under the "Tools" dropdown. */
-export const TOOLS_ITEMS = ['Plan', 'CRM', 'Calculators']
+export const TOOLS_ITEMS = ['Plan', 'CRM']
 /** Navigation item IDs grouped under the "Admin" category (two-level mode). */
 export const ADMIN_ITEMS = ['Plants', 'Regions', 'Roles']
 

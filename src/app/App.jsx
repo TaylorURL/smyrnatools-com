@@ -36,7 +36,6 @@ const lazyWithRetry = (importer) =>
         })
     )
 const AppInstallPromptModal = lazyWithRetry(() => import('./components/common/AppInstallPromptModal'))
-const CalculatorView = lazyWithRetry(() => import('../views/tools/calculator/CalculatorView'))
 const DashboardView = lazyWithRetry(() => import('../views/common/dashboard/DashboardView'))
 const DocumentsView = lazyWithRetry(() => import('../views/tools/documents/DocumentsView'))
 const EquipmentsView = lazyWithRetry(() => import('../views/assets/equipment/EquipmentsView'))
@@ -297,8 +296,6 @@ function AppContent() {
                 return <ListView title="Archived Items" showArchived />
             case 'Reports':
                 return <ReportsView />
-            case 'Calculators':
-                return <CalculatorView />
             case 'Maintenance':
                 return <MaintenanceView />
             case 'NRMCA':

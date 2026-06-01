@@ -1,5 +1,18 @@
 # Changelog
 
+## [2026.22.28] - 2026-05-31
+
+- Removed the Calculators tool from the app. Deleted the entire
+  `src/views/tools/calculator/` view tree — `CalculatorView`, `CalculatorShell`,
+  and the nine calculator types (Volume, Slump Adjustment, Air Content, Required
+  Strength, Water/Cement, Yardage Per Hour, Proportions, Curing Schedule, Set
+  Time) — plus the `CalculatorMath` utility (and its test) and
+  `calculatorConstants`. Stripped every reference: the lazy import and
+  `case 'Calculators'` route in `src/app/App.jsx`; the `Calculators` entry in
+  `MENU_ITEMS`, `TOOLS_ITEMS`, `ICONS`, and `AGGREGATE_HIDDEN_ITEMS`
+  (`src/app/constants/navigationConstants.js`); and the start-page option in
+  `myAccountConstants.js`. Also dropped the Calculators section from the README.
+
 ## [2026.22.27] - 2026-05-31
 
 - Restricted the Customer Relations item in the primary navigation to users

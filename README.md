@@ -11,7 +11,7 @@
 <p align="center">
   <img src="https://github.com/bradley-t-t/smyrnatools-com/actions/workflows/ci.yml/badge.svg?branch=core" alt="CI Status" />
   <img src="https://github.com/bradley-t-t/smyrnatools-com/actions/workflows/test.yml/badge.svg?branch=core" alt="Test Status" />
-  <img src="https://img.shields.io/badge/v2026.22.27-release-c12033" alt="Version" />
+  <img src="https://img.shields.io/badge/v2026.22.28-release-c12033" alt="Version" />
   <img src="https://img.shields.io/badge/React-19.1-61DAFB?logo=react&logoColor=white" alt="React" />
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind" />
@@ -188,18 +188,6 @@ Dispatch planning suite organised as a tab-switched workspace:
 
 ---
 
-## Calculators
-
-Five concrete industry-specific calculation tools:
-
-- **Proportions Calculator** — calculates mix component proportions
-- **Set Time Calculator** — estimates concrete set times based on input parameters
-- **Slump Adjustment Calculator** — determines adjustments needed to reach target slump values
-- **Water Cement Ratio Calculator** — computes water-to-cement ratios for mix design
-- **Yardage Per Hour Calculator** — calculates production rate in cubic yards per hour
-
----
-
 ## Messaging
 
 An in-app messaging system built around conversation-based messaging between users. Supports unread count tracking with
@@ -349,7 +337,7 @@ standalone app on iOS with translucent status bar.
 
 | Metric                | Value                                              |
 |-----------------------|----------------------------------------------------|
-| **Current Version**   | 2026.22.27                                         |
+| **Current Version**   | 2026.22.28                                         |
 | **Views**             | 86 view files across 23 page modules               |
 | **Services**          | 30 service classes                                 |
 | **Custom Hooks**      | 99 specialized hooks                               |
