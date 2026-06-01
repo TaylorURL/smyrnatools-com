@@ -33,3 +33,4 @@ public/changelog.txt
 .bot/
 skills-lock.json
 badge-designs.html
+src/data/releases.json
