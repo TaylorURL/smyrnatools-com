@@ -6,6 +6,10 @@ export const AGGREGATE_HIDDEN_ITEMS = ['Mixers', 'Plants', 'Regions', 'Calculato
 export const DEFAULT_HIDDEN_ITEMS = ['Plants', 'Regions']
 /** Items exclusively available to Office regions. */
 export const OFFICE_ONLY_ITEMS = ['Roles']
+/** Items visible only to users holding the IT Access role, regardless of permission. */
+export const IT_ACCESS_ONLY_ITEMS = ['CRM']
+/** Role name that grants access to IT-restricted navigation items. */
+export const IT_ACCESS_ROLE_NAME = 'IT Access'
 
 /** FontAwesome icon class mapping for each navigation item ID. */
 export const ICONS = {

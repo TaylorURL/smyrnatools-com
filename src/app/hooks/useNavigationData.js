@@ -5,6 +5,8 @@ import { UserService } from '../../services/UserService'
 import {
     AGGREGATE_HIDDEN_ITEMS,
     DEFAULT_HIDDEN_ITEMS,
+    IT_ACCESS_ONLY_ITEMS,
+    IT_ACCESS_ROLE_NAME,
     MENU_ITEMS,
     OFFICE_ONLY_ITEMS,
     OFFICE_VISIBLE_ITEMS
@@ -67,8 +69,16 @@ export function useVisibleMenuItems(userId, regionType, regionCode) {
         async function filterItems() {
             if (!userId) return setVisibleMenuItems([])
             try {
-                const permissions = await UserService.getUserPermissions(userId)
-                let filtered = MENU_ITEMS.filter((item) => permissions.includes(item.permission))
+                const [permissions, userRoles] = await Promise.all([
+                    UserService.getUserPermissions(userId),
+                    UserService.getUserRoles(userId)
+                ])
+                const hasITAccess = userRoles.some((role) => role.name === IT_ACCESS_ROLE_NAME)
+                let filtered = MENU_ITEMS.filter(
+                    (item) =>
+                        permissions.includes(item.permission) &&
+                        (hasITAccess || !IT_ACCESS_ONLY_ITEMS.includes(item.id))
+                )
                 if (regionType === 'Office') {
                     filtered = filtered.filter(
                         (item) => OFFICE_VISIBLE_ITEMS.includes(item.id) || OFFICE_ONLY_ITEMS.includes(item.id)

@@ -1,5 +1,17 @@
 # Changelog
 
+## [2026.22.27] - 2026-05-31
+
+- Restricted the Customer Relations item in the primary navigation to users
+  holding the IT Access role. `useVisibleMenuItems`
+  (`src/app/hooks/useNavigationData.js`) now loads the signed-in user's roles
+  alongside their permissions and drops the `CRM` entry from the menu for anyone
+  without IT Access, so it no longer appears in the Tools dropdown on the
+  desktop, mobile, or two-level navigation. The gate is config-driven via two
+  new constants in `src/app/constants/navigationConstants.js` —
+  `IT_ACCESS_ONLY_ITEMS` and `IT_ACCESS_ROLE_NAME` — following the existing
+  `OFFICE_ONLY_ITEMS` pattern.
+
 ## [2026.22.26] - 2026-05-30
 
 - Fixed plant managers getting "kicked out" of the Weekly Plant Efficiency
