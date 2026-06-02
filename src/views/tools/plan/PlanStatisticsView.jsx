@@ -3,9 +3,6 @@ import { createPortal } from 'react-dom'
 
 import { StatisticsSkeleton } from '../../../app/components/common/PlanSkeletons'
 import TabFadeIn from '../../../app/components/common/TabFadeIn'
-import DayforceEfficiencyPage from '../../../app/components/dayforce/DayforceEfficiencyPage'
-import DayforceHoursPage from '../../../app/components/dayforce/DayforceHoursPage'
-import DayforceSchedulesPage from '../../../app/components/dayforce/DayforceSchedulesPage'
 import { PlanStatisticsControls } from '../../../app/components/plan/tabs/statistics/PlanStatisticsControls'
 import PlanStatisticsCustomerLookupPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsCustomerLookupPage'
 import PlanStatisticsHelpCrossLoadingPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsHelpCrossLoadingPage'
@@ -196,9 +193,8 @@ function PlanStatisticsView({
     /* Reset scroll on every section change — sister Asset / Person
      * Statistics views ship the same effect. Hits every marked
      * `[data-content-scroll]` container (Navigation chrome + this view's
-     * inner scroller) so swapping between Workforce tabs (Hours,
-     * Schedules, Efficiency) or any other section always lands the user
-     * at the top of the new page. */
+     * inner scroller) so the user always lands at the top of the new
+     * page when swapping sections. */
     useEffect(() => {
         if (typeof document === 'undefined') return
         document.querySelectorAll('[data-content-scroll]').forEach((el) => {
@@ -312,36 +308,6 @@ function PlanStatisticsView({
                     flatOrders={flatOrders}
                     loading={loading || satisfactionLoading}
                     plantNameByCode={plantNameByCode}
-                />
-            )
-        }
-        if (activeSection === 'hours') {
-            return (
-                <DayforceHoursPage
-                    accentColor={accentColor}
-                    dateRange={range.current}
-                    plantCodes={availablePlantCodes}
-                    selectedPlant={selectedPlant}
-                />
-            )
-        }
-        if (activeSection === 'schedules') {
-            return (
-                <DayforceSchedulesPage
-                    accentColor={accentColor}
-                    dateRange={range.current}
-                    plantCodes={availablePlantCodes}
-                    selectedPlant={selectedPlant}
-                />
-            )
-        }
-        if (activeSection === 'efficiency') {
-            return (
-                <DayforceEfficiencyPage
-                    accentColor={accentColor}
-                    dateRange={range.current}
-                    plantCodes={availablePlantCodes}
-                    selectedPlant={selectedPlant}
                 />
             )
         }

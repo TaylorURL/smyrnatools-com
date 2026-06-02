@@ -66,25 +66,6 @@ export const PLAN_STATS_SECTIONS = [
         icon: 'fa-shuffle',
         id: 'movesCancels',
         label: 'Moves & Cancels'
-    },
-    {
-        description: 'Scheduled vs actual hours from Dayforce, plant rollups, weekly trend, and exception counts.',
-        icon: 'fa-clock',
-        id: 'hours',
-        label: 'Hours'
-    },
-    {
-        description: 'Per-shift schedule from Dayforce — scheduled vs actual clock in/out per operator per day.',
-        icon: 'fa-calendar-days',
-        id: 'schedules',
-        label: 'Schedules'
-    },
-    {
-        description:
-            'Yards-per-hour by operator and plant — who is converting clocked hours into yardage and where the data gaps are.',
-        icon: 'fa-gauge-high',
-        id: 'efficiency',
-        label: 'Efficiency'
     }
 ]
 
@@ -116,13 +97,6 @@ export const PLAN_STATS_GROUPS = [
         kind: 'group',
         label: 'Customer Experience',
         sectionIds: ['service', 'customerLookup', 'ticketLookup', 'kickers', 'movesCancels']
-    },
-    {
-        icon: 'fa-user-clock',
-        id: 'workforce',
-        kind: 'group',
-        label: 'Workforce',
-        sectionIds: ['hours', 'schedules', 'efficiency']
     }
 ]
 
