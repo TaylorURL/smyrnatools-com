@@ -4,6 +4,7 @@ import { PlanService } from '../../services/PlanService'
 import { UserService } from '../../services/UserService'
 import { chicagoTodayDate, hasMeaningfulAssignments, PLAN_AUTOSAVE_RACE_WINDOW_MS } from '../../utils/PlanDataUtility'
 import { AUTOSAVE_DELAY_MS, createEmptyAssignment, ensureUniqueIds, getOffsetDate } from '../../utils/PlanUtility'
+import { PLAN_META_KEY } from '../constants/planConstants'
 import { usePreferences } from '../context/PreferencesContext'
 import { useDetailOrders } from './useDetailOrders'
 import { usePlanPlants } from './usePlanPlants'
@@ -13,6 +14,36 @@ import { useScheduleSync } from './useScheduleSync'
 /** Min gap between wake/reconnect re-syncs so focus + visibilitychange (which
  *  fire together on tab return) coalesce into a single refetch. */
 const PLAN_RESYNC_THROTTLE_MS = 1500
+
+/**
+ * True when the only difference between `currentSnap` and `prevSnap` is the
+ * non-`_meta` portion of `plantProduction` — i.e. the change came from
+ * `useScheduleSync` refreshing dispatch data and no user-authored field
+ * (assignments, notes, `_meta`) is different.
+ *
+ * Why this matters: every dispatcher tab independently pulls `dispatch_data`
+ * every ~10s. When they save that refresh back to `plans`, the upsert carries
+ * the client's LOCAL view of `_meta` — which can be stale relative to a peer's
+ * just-committed Saturday-count or missing-operator edit that hasn't been
+ * broadcast yet. The receiver then applies that stale `_meta` via the
+ * field-level realtime diff and the peer's edit silently reverts. By skipping
+ * the autosave when only the machine-synced dispatch data changed, we keep the
+ * client's local plantProduction current without racing peers' `_meta` edits.
+ */
+function snapshotDiffIsMachineOnly(currentSnap, prevSnap) {
+    if (!prevSnap) return false
+    try {
+        const c = JSON.parse(currentSnap)
+        const p = JSON.parse(prevSnap)
+        if (c.notes !== p.notes) return false
+        if (JSON.stringify(c.assignments) !== JSON.stringify(p.assignments)) return false
+        const cMeta = c.plantProduction?.[PLAN_META_KEY] ?? null
+        const pMeta = p.plantProduction?.[PLAN_META_KEY] ?? null
+        return JSON.stringify(cMeta) === JSON.stringify(pMeta)
+    } catch {
+        return false
+    }
+}
 
 export function usePlanData(planDate) {
     const { preferences } = usePreferences()
@@ -258,6 +289,20 @@ export function usePlanData(planDate) {
         if (loadedForDateRef.current !== planDate || !autosaveEnabledRef.current) return
         const snapshot = JSON.stringify({ assignments, notes, plantProduction })
         if (snapshot === lastSyncedSnapshotRef.current) return
+        /* The only diff is the machine-synced dispatch data — stamp the new
+         * snapshot and skip the save. Writing every client's local view of
+         * dispatch refreshes is what lets a stale `_meta` from one tab clobber
+         * another tab's freshly-saved Saturday / missing-operator edit. Every
+         * client recomputes dispatch data independently, so there's no
+         * correctness loss from not racing peers to persist it; the next
+         * user-authored edit on any client (assignments / notes / `_meta`)
+         * still flushes the latest dispatch data along with it. */
+        if (snapshotDiffIsMachineOnly(snapshot, lastSyncedSnapshotRef.current)) {
+            lastSyncedSnapshotRef.current = snapshot
+            dirtyRef.current = false
+            setSyncStatus('saved')
+            return
+        }
         /* Diagnostic tripwire for the intermittent "DB row got wiped"
          * report. If we're about to autosave a state where every
          * assignment is empty (no fromPlant / toPlant / forOrderId) AND
