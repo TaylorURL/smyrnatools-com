@@ -1175,7 +1175,13 @@ function buildServerPayloads(
         helpIn.sort(byArrive)
         helpOut.sort(byArrive)
 
-        if (orders.length === 0 && helpIn.length === 0 && helpOut.length === 0) continue
+        /* Previously this `continue` skipped any plant whose schedule was
+         * empty. The daily plan email is now expected to ship every weekday
+         * (and Saturday) regardless of whether dispatch data has populated
+         * for the target date, so even a plant with no orders + no help
+         * still emits a payload — the email template renders an "No orders
+         * scheduled for this plant today." block in that case and the plant
+         * manager at least knows the system reached them at the usual time. */
 
         /* Clock-in roster — port of `PlanDashboardClockInBoard`. Effective
          * base = active mixer operator count, day-adjusted (half on
@@ -1537,7 +1543,30 @@ async function handleCronSend(req: Request, headers: any): Promise<Response> {
         .eq('plan_date', planDate)
         .maybeSingle()
     if (planErr) return errorResponse(planErr.message || 'Plan lookup failed', headers, 500)
-    if (!planRow) return jsonResponse({ dryRun, planDate, reason: 'no-plan', skipped: true }, headers)
+
+    /* If no dispatcher has touched tomorrow's plan yet, fall back to the live
+     * dispatch_data for the target date so the email still has the latest
+     * schedule. If that's empty too, synthesize an empty plan — the cron
+     * always ships at its window; an empty schedule produces "no orders
+     * scheduled" emails rather than silently skipping the daily send. */
+    let baseProduction: Record<string, any> = planRow?.plant_production || {}
+    const baseProductionPlantCount = Object.keys(baseProduction).filter((c) => c && c !== PLAN_META_KEY_INTERNAL).length
+    if (!planRow || baseProductionPlantCount === 0) {
+        try {
+            const live = await fetchLivePlantProduction(supabase, planDate)
+            if (live && Object.keys(live).length > 0) baseProduction = live
+        } catch {
+            /* Live dispatch fetch is best-effort here — if it fails we still
+             * proceed with whatever baseProduction we have (possibly empty)
+             * and the configured-plants fallback below catches the email so
+             * nothing is silently dropped. */
+        }
+    }
+    const effectivePlanRow = {
+        assignments: Array.isArray(planRow?.assignments) ? planRow.assignments : [],
+        notes: typeof planRow?.notes === 'string' ? planRow.notes : '',
+        plant_production: baseProduction
+    }
 
     const [plantNameByCode, activeMixerBaseByPlant, travelMinutesByPair, scheduleData] = await Promise.all([
         fetchPlantNameMap(supabase),
@@ -1545,8 +1574,8 @@ async function handleCronSend(req: Request, headers: any): Promise<Response> {
         fetchTravelMinutesByPair(supabase),
         fetchOperatorScheduleData(supabase, planDate)
     ])
-    const plants = buildServerPayloads(
-        planRow,
+    let plants = buildServerPayloads(
+        effectivePlanRow,
         plantNameByCode,
         planDate,
         activeMixerBaseByPlant,
@@ -1555,8 +1584,26 @@ async function handleCronSend(req: Request, headers: any): Promise<Response> {
         scheduleData.workedHoursByOperatorId,
         scheduleData.matchedOperatorIds
     )
+    /* Final safety net — if the plan row was missing, dispatch_data was
+     * empty, AND there were no plants to iterate at all, fall back to every
+     * configured plant so each one still gets an empty-schedule email at the
+     * usual send time. resolveAllPlants below skips any plant without a
+     * resolved plant manager via `plant.skip`, so non-operational plants
+     * don't generate stray emails. */
     if (plants.length === 0) {
-        return jsonResponse({ dryRun, planDate, reason: 'no-plants-with-content', skipped: true }, headers)
+        plants = Object.keys(plantNameByCode)
+            .filter((code) => code && code !== PLAN_META_KEY_INTERNAL)
+            .sort()
+            .map((code) => ({
+                code,
+                helpIn: [],
+                helpOut: [],
+                kpi: { customerCount: 0, firstStart: '', lastStart: '', loadCount: 0, orderCount: 0, yardage: 0 },
+                name: plantNameByCode[code] || '',
+                notes: '',
+                orders: [],
+                roster: []
+            }))
     }
 
     const resolved = await resolveAllPlants(supabase, planDate, plants)
