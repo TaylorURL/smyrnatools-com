@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Database } from '../../services/DatabaseService'
 import { ReportService } from '../../services/ReportService'
@@ -69,7 +69,14 @@ export function useSubmitData({ report, initialData, user, managerEditUser }) {
         }
         fetchMaintenanceItems()
     }, [report.weekIso])
-    const fetchOperatorsAndMixers = async (plantCode) => {
+    /* Stable reference — consumers pass this into useEffect deps arrays, so a
+     * fresh function on every render would re-fire those effects on every
+     * keystroke and (with the matching setState calls below) drive a render
+     * loop that the root ErrorBoundary then catches as "Something went wrong",
+     * which surfaces as plant managers being "kicked out of the report" when
+     * they try to type. Memoize once — `ReportService` is a module singleton
+     * and the setState refs from useState are guaranteed stable. */
+    const fetchOperatorsAndMixers = useCallback(async (plantCode) => {
         if (!plantCode) {
             setOperatorOptions([])
             setMixers([])
@@ -79,7 +86,7 @@ export function useSubmitData({ report, initialData, user, managerEditUser }) {
         setOperatorOptions(result.operatorOptions)
         setMixers(result.mixers)
         return result
-    }
+    }, [])
     const fetchHoursReceived = async (plantCode, weekIso) => {
         if (report.name !== 'plant_manager' || !weekIso || !plantCode) {
             setHoursReceivedFromOtherPlants(0)

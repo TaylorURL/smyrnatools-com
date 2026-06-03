@@ -54,6 +54,17 @@ import { buildDailyPlanEmail } from '../../../scripts/emails/daily-plan-email.js
 const TEST_MODE = false
 const TEST_REDIRECT_EMAIL = 'tbtaylor@smyrnareadymix.com'
 
+/* Always-CC list — appended to every plant's resolved CC after the role-based
+ * lookup (District Managers + Dispatchers / Dispatch Managers). These are
+ * stakeholders outside the role table who still need a copy of every daily
+ * plan email. Dedup against the role-resolved CCs is handled in
+ * resolvePlantRecipients, so a user holding one of the CC roles AND appearing
+ * here will appear exactly once. */
+const STATIC_CC_RECIPIENTS: Recipient[] = [
+    { email: 'jeremy.bey@hollingsheadcement.com' },
+    { email: 'nicolas.delacruz@smyrnareadymix.com' }
+]
+
 /* Cron schedule windows. pg_cron fires at both 21:00 UTC (CDT) and 22:00
  * UTC (CST) for the weekday 4 PM run, plus 16:00 UTC (CDT) and 17:00 UTC
  * (CST) for the Saturday 11 AM run. The edge function self-checks Chicago
@@ -441,6 +452,18 @@ async function resolvePlantRecipients(
             const r = toBuild(id)
             if (r) to.push(r)
         })
+
+    /* Append the always-CC list last so the role-based recipients keep their
+     * priority ordering at the top of the CC line. Dedup against the
+     * role-resolved CC emails AND the TO list so a static recipient who also
+     * happens to hold a CC role — or who's listed as a plant manager —
+     * appears exactly once. */
+    const toEmails = new Set(to.map((r) => r.email))
+    STATIC_CC_RECIPIENTS.forEach((r) => {
+        if (!r.email || ccEmails.has(r.email) || toEmails.has(r.email)) return
+        ccEmails.add(r.email)
+        cc.push(r)
+    })
 
     return { to, cc, debug }
 }

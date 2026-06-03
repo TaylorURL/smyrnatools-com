@@ -305,6 +305,20 @@ function ReportsSubmitView({
         }
         setExporting(false)
     }
+    /* Refs the operators/mixers effect reads — keeping `form.rows` and
+     * `initialData` OUT of the deps array is what stops a render loop on
+     * every keystroke. `fetchOperatorsAndMixers` calls `setOperatorOptions` /
+     * `setMixers`, which trigger a re-render of this component, which would
+     * recompute `form.rows` (new reference) and re-fire the effect if it
+     * depended on it — react would eventually throw "Maximum update depth
+     * exceeded" and the root ErrorBoundary would catch it, kicking the plant
+     * manager out of the report. The effect only really needs to re-run when
+     * `report.name` or `form.plant` changes; everything else is read through
+     * refs at fire time. */
+    const formRowsLengthRef = useRef(0)
+    formRowsLengthRef.current = form.rows?.length || 0
+    const initialDataRowsLengthRef = useRef(0)
+    initialDataRowsLengthRef.current = initialData?.rows?.length || 0
     useEffect(() => {
         if (report.name !== 'plant_production') return
         if (!form.plant) {
@@ -314,11 +328,16 @@ function ReportsSubmitView({
         }
         fetchOperatorsAndMixers(form.plant)
             .then((result) => {
-                if (!readOnly && !initialData?.rows?.length && !form.rows?.length && !rowsInitializedRef.current) {
+                if (
+                    !readOnly &&
+                    !initialDataRowsLengthRef.current &&
+                    !formRowsLengthRef.current &&
+                    !rowsInitializedRef.current
+                ) {
                     initializeRows(result.activeOperators, result.mixers)
                     rowsInitializedRef.current = true
                 }
-                if (form.rows?.length > 0) {
+                if (formRowsLengthRef.current > 0) {
                     rowsInitializedRef.current = true
                 }
             })
@@ -332,7 +351,7 @@ function ReportsSubmitView({
                     context: 'Loading operators/mixers for the Plant Efficiency report'
                 })
             })
-    }, [report.name, form.plant, readOnly, initialData, clearRows, fetchOperatorsAndMixers, initializeRows, form.rows])
+    }, [report.name, form.plant, readOnly, clearRows, fetchOperatorsAndMixers, initializeRows])
     const renderFormSection = () => {
         if (report.name === 'plant_production')
             return (
