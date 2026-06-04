@@ -139,8 +139,14 @@ export default function PlanScheduleStatStrip({
     })()
 
     return (
+        /* Mobile: horizontal snap scroller — swipe through the masthead like
+         * the Stocks app. Desktop: original `flex-wrap` row. The hidden
+         * scrollbar utilities ([&::-webkit-scrollbar]:hidden +
+         * scrollbar-width:none) keep the strip visually quiet on mobile while
+         * the snap-mandatory + snap-start on each cell make swipes land
+         * cleanly on a stat boundary instead of mid-cell. */
         <div
-            className="rounded-xl flex flex-wrap bg-bg-primary border border-border-light"
+            className="rounded-xl flex md:flex-wrap overflow-x-auto md:overflow-visible snap-x md:snap-none snap-mandatory bg-bg-primary border border-border-light [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
             style={{ boxShadow: 'var(--shadow-sm)' }}
         >
             <PlanScheduleStat

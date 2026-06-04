@@ -107,9 +107,12 @@ export default function PlanScheduleOrderCard({
                     </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-nowrap min-w-0">
+                    {/* Customer name takes its own row on small phones (basis-full)
+                     * so the badges underneath can breathe; on >=sm the original
+                     * single-line layout reappears with the name truncating. */}
+                    <div className="flex items-start gap-2 flex-wrap min-w-0">
                         <div
-                            className="text-[15px] font-bold leading-tight text-text-primary font-heading flex-1 min-w-0 truncate"
+                            className="text-[15px] font-bold leading-tight text-text-primary font-heading basis-full sm:basis-0 sm:flex-1 min-w-0 truncate"
                             style={{ textDecoration: isCancelled ? 'line-through' : 'none' }}
                             title={clean(order.customer)}
                         >
@@ -278,7 +281,7 @@ export default function PlanScheduleOrderCard({
                             e.stopPropagation()
                             onViewTickets(order)
                         }}
-                        className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-border-light bg-bg-secondary px-3 text-[12px] font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
+                        className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-border-light bg-bg-secondary px-4 text-[13px] font-semibold text-text-primary cursor-pointer hover:bg-bg-tertiary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                     >
                         <i className="fas fa-ticket text-[11px] text-text-tertiary" />
                         Tickets

@@ -62,13 +62,15 @@ export default function PlanScheduleTitleRow({
                     <button
                         type="button"
                         onClick={onToggleFilters}
-                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        aria-expanded={filtersOpen}
+                        aria-label={filtersOpen ? 'Hide filters' : 'Show filters'}
+                        className="min-h-[44px] px-3.5 rounded-lg text-[13px] font-semibold border-none cursor-pointer flex items-center gap-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{
                             background: filtersOpen || activeFilterCount > 0 ? accentColor : 'var(--bg-secondary)',
                             color: filtersOpen || activeFilterCount > 0 ? '#fff' : 'var(--text-secondary)'
                         }}
                     >
-                        <i className={`fas fa-filter text-[10px]`} />
+                        <i className={`fas fa-filter text-[11px]`} />
                         Filters
                         {activeFilterCount > 0 && (
                             <Badge
@@ -118,10 +120,10 @@ export default function PlanScheduleTitleRow({
                     <button
                         type="button"
                         onClick={onSwitchToPlanner}
-                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        className="min-h-[44px] md:min-h-0 md:py-2 px-3.5 rounded-lg text-[13px] md:text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{ background: accentColor }}
                     >
-                        <i className="fas fa-project-diagram text-[10px]" /> Planner
+                        <i className="fas fa-project-diagram text-[11px] md:text-[10px]" /> Planner
                     </button>
                 )}
             </div>
