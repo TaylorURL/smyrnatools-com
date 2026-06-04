@@ -416,6 +416,28 @@ class DispatchDataServiceImpl {
         const { updatedAt } = await post('fetch-last-updated-at', { date: dateStr }, { updatedAt: null })
         return updatedAt ? new Date(updatedAt) : null
     }
+
+    /**
+     * Pre-vs-post-cutoff service-quality aggregate covering every order +
+     * ticket in `dispatch_data`. Server-side does the iteration and returns
+     * `{ before: {totalOrders, badOrders, score, firstDate, lastDate},
+     *   after: {...}, cutoff, badLatenessMin }`. `score` is null when the
+     * window has no scoreable orders. Used by `useServiceImprovement` on
+     * the Statistics > Overview and Statistics > Service pages.
+     *
+     * @param {string} [cutoff] ISO date (`YYYY-MM-DD`) — orders on or after
+     *   this date land in the `after` bucket. Defaults server-side to
+     *   `2026-05-01`.
+     */
+    async fetchServiceImprovement(cutoff) {
+        const body = cutoff && ISO_DATE.test(cutoff) ? { cutoff } : {}
+        return post('service-improvement', body, {
+            after: { badOrders: 0, score: null, totalOrders: 0 },
+            badLatenessMin: 30,
+            before: { badOrders: 0, score: null, totalOrders: 0 },
+            cutoff: '2026-05-01'
+        })
+    }
 }
 
 export const DispatchDataService = new DispatchDataServiceImpl()

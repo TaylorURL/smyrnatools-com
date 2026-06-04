@@ -7,6 +7,7 @@ import PlanDashboardClockInBoard from '../../../app/components/plan/tabs/dashboa
 import { PlanInsightsList, PlanIssuesBanner } from '../../../app/components/plan/tabs/dashboard/PlanDashboardLists'
 import { PlanChecklistRow, PlanFlowSummary } from '../../../app/components/plan/tabs/dashboard/PlanDashboardYourScope'
 import PlanNotesSection from '../../../app/components/plan/tabs/dashboard/PlanNotesSection'
+import ServiceImprovementCard from '../../../app/components/plan/tabs/statistics/ServiceImprovementCard'
 import { Panel as SharedPanel, Stat as SharedStat } from '../../../app/components/ui/Panel'
 import {
     computeDashboardJobCoverage,
@@ -233,6 +234,7 @@ function PlanDashboardView({
 
                 <div className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
                     <PlanIssuesBanner warnings={planInsights.warnings} />
+                    <ServiceImprovementCard />
                     <section id="overview" className="scroll-mt-4">
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 rounded overflow-hidden border border-border-light">
                             <SharedStat

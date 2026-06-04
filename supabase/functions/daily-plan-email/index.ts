@@ -1207,36 +1207,14 @@ function buildServerPayloads(
         const localRows = computeClockInRowsInternal(flattenedOrders, localBaseByPlant)
         const roster = buildPlantRosterInternal(plantCode, effectiveBase, localRows, outboundRows)
 
-        /* Name and rank the roster: the plant's mixer operators sorted by
-         * fewest hours worked this week zip onto the slots in order. The
-         * roster is already brought-in-first then leave-off, so the lowest-
-         * hours operators fill the clock-in slots and the highest-hours land
-         * on the leave-off tail — keeping the crew's weekly hours even.
-         * Operators with no Dayforce match are flagged `unmatched` (hours
-         * unknown, NOT a real zero) and sink to the bottom so a name mismatch
-         * never wrongly schedules them first. Falls back to numbered slots
-         * when operator data is missing. */
-        const rankedOperators = (mixerOperatorsByPlant[plantCode] || [])
-            .map((operator) => {
-                const worked = workedHoursByOperatorId[operator.employeeId]
-                const isMatched = worked != null || matchedOperatorIds.has(operator.employeeId)
-                return {
-                    hours: worked != null ? worked : isMatched ? 0 : null,
-                    name: operator.name || operator.badge || '',
-                    unmatched: !isMatched
-                }
-            })
-            .sort((a, b) => {
-                if (a.unmatched !== b.unmatched) return a.unmatched ? 1 : -1
-                return (a.hours ?? 0) - (b.hours ?? 0) || a.name.localeCompare(b.name)
-            })
-        roster.forEach((slot, index) => {
-            const assigned = rankedOperators[index]
-            if (!assigned) return
-            slot.operatorName = assigned.name
-            slot.operatorHours = assigned.hours
-            slot.operatorUnmatched = assigned.unmatched
-        })
+        /* Roster slots are numbered only — the Dayforce-backed name + weekly
+         * hours ranking was retired with the dashboard board change. Each slot
+         * carries only its index, clock-in time, outbound destination, and
+         * leave-off flag; the email template renders them as "Operator 1",
+         * "Operator 2", etc. The fetched `mixerOperatorsByPlant` /
+         * `workedHoursByOperatorId` / `matchedOperatorIds` are intentionally
+         * unused here so a future re-introduction of named slots can plug
+         * back into the same pipeline without re-fetching Dayforce data. */
 
         out.push({
             code: plantCode,

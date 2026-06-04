@@ -4,6 +4,7 @@ import PlantDropdownModal from '../../../app/components/common/PlantDropdownModa
 import DashboardAlertsPanel from '../../../app/components/dashboard/DashboardAlertsPanel'
 import { DashboardAtAGlance } from '../../../app/components/dashboard/DashboardAtAGlance'
 import DashboardHeader from '../../../app/components/dashboard/DashboardHeader'
+import ServiceImprovementCard from '../../../app/components/plan/tabs/statistics/ServiceImprovementCard'
 import DashboardPeopleSection from '../../../app/components/dashboard/DashboardPeopleSection'
 import DashboardPodcastPanel from '../../../app/components/dashboard/DashboardPodcastPanel'
 import DashboardSkeleton from '../../../app/components/dashboard/DashboardSkeleton'
@@ -290,6 +291,7 @@ export default function DashboardView() {
                                     setEmbeddedViewProps={setEmbeddedViewProps}
                                     setEmbeddedViewSearch={setEmbeddedViewSearch}
                                 />
+                                <ServiceImprovementCard />
                                 <FleetOverviewSection
                                     accentColor={accentColor}
                                     displayStats={displayStats}

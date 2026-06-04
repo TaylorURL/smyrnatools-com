@@ -11,6 +11,7 @@ import {
 } from '../../../../../../utils/PlanStatisticsFormatUtility'
 import useDayforceOperatorMetrics from '../../../../../hooks/useDayforceOperatorMetrics'
 import useOperatorYardageByDay from '../../../../../hooks/useOperatorYardageByDay'
+import ServiceImprovementCard from '../ServiceImprovementCard'
 import { Panel } from '../../../../ui/Panel'
 import { EmptySection, isEmptyAfterLoad, RefreshingHint } from './planStatsShared'
 
@@ -346,6 +347,12 @@ export function PlanStatisticsOverviewPage({
                     </div>
                 </div>
             </Panel>
+
+            {/* 1b. Service improvement since 2026-05-01 — pre vs post
+                 milestone comparison. Centralised via `useServiceImprovement`
+                 so the same aggregate also renders at the top of the Service
+                 page; the second mount reuses the in-flight promise. */}
+            <ServiceImprovementCard />
 
             {/* 2. Two-up: what stood out · how customers felt. */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -156,6 +156,57 @@ async function handleFetchDetailByDateRange(admin: any, body: any, headers: any)
     }
 }
 
+/**
+ * Service-improvement summary — single Postgres round-trip via the
+ * `service_improvement_summary` RPC (see the SQL block delivered with
+ * v2026.23.8 for the function body). All aggregation runs server-side
+ * on `dispatch_orders` + `dispatch_tickets` so a full-history scan is
+ * effectively free at the edge layer.
+ *
+ * An order is classified "bad" when its first loaded ticket landed more
+ * than `bad_lateness_min` (default 30) minutes after the scheduled start —
+ * mirroring `BAD_LATE_MIN` from `src/utils/plan/planCustomerSat.ts`. The
+ * slow-pace dimension is intentionally excluded to keep the SQL tractable;
+ * lateness is the dominant `isBad` driver in the per-order classifier.
+ */
+async function handleServiceImprovement(admin: any, body: any, headers: any): Promise<Response> {
+    const cutoff =
+        typeof body?.cutoff === 'string' && ISO_DATE.test(body.cutoff) ? body.cutoff : '2026-05-01'
+    const badLatenessMin = Number.isFinite(body?.badLatenessMin)
+        ? Math.max(0, Math.floor(body.badLatenessMin))
+        : 30
+    const { data, error } = await admin.rpc('service_improvement_summary', {
+        cutoff_date: cutoff,
+        bad_lateness_min: badLatenessMin
+    })
+    if (error) return errorResponse(error.message || 'Query failed', headers, 500)
+
+    type Window = { totalOrders: number; badOrders: number }
+    const before: Window = { badOrders: 0, totalOrders: 0 }
+    const after: Window = { badOrders: 0, totalOrders: 0 }
+    for (const row of data ?? []) {
+        const total = Number(row?.total_orders) || 0
+        const bad = Number(row?.bad_orders) || 0
+        if (row?.bucket === 'before') {
+            before.totalOrders = total
+            before.badOrders = bad
+        } else if (row?.bucket === 'after') {
+            after.totalOrders = total
+            after.badOrders = bad
+        }
+    }
+    const score = (w: Window) => (w.totalOrders > 0 ? (w.totalOrders - w.badOrders) / w.totalOrders : null)
+    return jsonResponse(
+        {
+            after: { badOrders: after.badOrders, score: score(after), totalOrders: after.totalOrders },
+            badLatenessMin,
+            before: { badOrders: before.badOrders, score: score(before), totalOrders: before.totalOrders },
+            cutoff
+        },
+        headers
+    )
+}
+
 async function handleFetchLastUpdatedAt(admin: any, body: any, headers: any): Promise<Response> {
     const date = body?.date
     if (!date || !ISO_DATE.test(date)) return jsonResponse({ updatedAt: null }, headers)
@@ -193,6 +244,8 @@ Deno.serve(async (req) => {
                 return await handleFetchDetailByDateRange(admin, body, headers)
             case 'fetch-last-updated-at':
                 return await handleFetchLastUpdatedAt(admin, body, headers)
+            case 'service-improvement':
+                return await handleServiceImprovement(admin, body, headers)
             default:
                 return errorResponse('Unknown endpoint', headers, 404)
         }

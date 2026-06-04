@@ -12,6 +12,7 @@ import OutcomesBreakdown from './service/OutcomesBreakdown'
 import PlantScorecardTable from './service/PlantScorecardTable'
 import WeekdayChart from './service/WeekdayChart'
 import WorstOrdersTable from './service/WorstOrdersTable'
+import ServiceImprovementCard from './ServiceImprovementCard'
 import ServiceTierBreakdown from './ServiceTierBreakdown'
 
 /**
@@ -44,6 +45,10 @@ export default function PlanStatisticsServicePage({
 
     return (
         <div className="flex flex-col gap-4">
+            {/* Pre-vs-post 2026-05-01 milestone comparison. Centralised via
+                `useServiceImprovement` so the Overview page mounts the same
+                aggregate — the second mount reuses the in-flight promise. */}
+            <ServiceImprovementCard />
             <Panel
                 title="Customer experience"
                 right={isLoading ? <RefreshingHint when /> : null}

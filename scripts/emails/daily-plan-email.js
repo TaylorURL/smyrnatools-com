@@ -294,17 +294,9 @@ function renderRoster({ roster }) {
             const flagToneName = isLeaveOff ? 'neutral' : op.isOutbound ? 'info' : 'warning'
             const flagTag = op.flag ? renderBadgeHtml({ label: op.flag, tone: flagToneName }) : ''
             const notesCell = [destinationTag, flagTag].filter(Boolean).join(' &nbsp;')
-            const slotNumber = op.index
-                ? String(op.index)
-                : (op.operatorName || op.name || '—').slice(0, 1).toUpperCase()
-            const slotName = op.operatorName || (op.index ? `Slot ${op.index}` : op.name || '—')
-            const hoursLabel =
-                typeof op.operatorHours === 'number' ? `${(Math.round(op.operatorHours * 10) / 10).toFixed(1)}h` : ''
-            const metaLabel = op.operatorUnmatched
-                ? `<span style="color:#b45309;font-weight:400;font-size:11px;margin-left:6px;vertical-align:middle;">not on Dayforce</span>`
-                : hoursLabel
-                  ? `<span style="color:${INK_FAINT};font-weight:400;font-size:11px;margin-left:6px;vertical-align:middle;">${hoursLabel}</span>`
-                  : ''
+            const slotNumber = op.index ? String(op.index) : '—'
+            const slotName = op.index ? `Operator ${op.index}` : '—'
+            const metaLabel = ''
             return `
 <tr>
     <td style="${baseCell}width:200px;">
@@ -328,10 +320,7 @@ function renderRoster({ roster }) {
         </tr>
     </thead>
     <tbody>${rows}</tbody>
-</table>
-<p style="margin:10px 2px 0;font-size:10.5px;line-height:1.5;color:${INK_FAINT};">
-    Operator hours rely on each driver&rsquo;s name matching across Dayforce, Tools, and Jonel. If a name differs between systems, their hours won&rsquo;t link up and the data shown here will be wrong.
-</p>`
+</table>`
 }
 
 /** "What changed since 4 PM" callout used by the 5 PM corrections email.
