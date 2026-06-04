@@ -29,15 +29,17 @@ export default function PlanScheduleGroupedCards({
     plantNameByCode
 }) {
     return (
-        <div className="flex flex-col gap-4">
+        /* Tighter group + card spacing on mobile so a long schedule scrolls in
+         * fewer screens. Desktop keeps the original gap-4 / gap-2 rhythm. */
+        <div className="flex flex-col gap-3 md:gap-4">
             {groupedByPlant.map(({ code, orders }) => {
                 /* Per-plant 14h anchor — only THIS plant's first job /
                  * first outbound help. Looked up once per group so every
                  * card in the group shares the same scalar. */
                 const groupFirstLoadOutMin = firstLoadOutByPlant?.get(code) ?? null
                 return (
-                    <div key={code} className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2 px-1 text-[13px]">
+                    <div key={code} className="flex flex-col gap-1.5 md:gap-2">
+                        <div className="flex items-center gap-2 px-1 text-[12px] md:text-[13px]">
                             <button
                                 type="button"
                                 onClick={() => onPickPlant(code)}
@@ -50,12 +52,11 @@ export default function PlanScheduleGroupedCards({
                             >
                                 <PlantBadge code={code} fallback={accentColor} name={plantNameByCode?.[code]} />
                             </button>
-                            <span className="text-text-tertiary">
-                                {orders.length} order{orders.length === 1 ? '' : 's'} ·{' '}
-                                {sumField(orders, 'yardage').toLocaleString()} yd
+                            <span className="text-text-tertiary tabular-nums">
+                                {orders.length} · {sumField(orders, 'yardage').toLocaleString()} yd
                             </span>
                         </div>
-                        <div className="grid gap-2 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid gap-1.5 md:gap-2 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
                             {orders.map((o, idx) => (
                                 <PlanScheduleOrderCard
                                     key={`${code}-${o.orderId || idx}`}
