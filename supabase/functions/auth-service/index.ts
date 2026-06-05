@@ -94,7 +94,7 @@ const ELEVATED_WEIGHT_THRESHOLD = 75
  * tried to use the app. The hardcoded recipient is the owner — override via
  * `GUEST_LOGIN_NOTIFY_EMAIL` env var if it needs to change without a redeploy.
  * Fire-and-forget — a notification failure must never block sign-in. */
-const GUEST_LOGIN_NOTIFY_DEFAULT = 'trentbtaylor@icloud.com'
+const GUEST_LOGIN_NOTIFY_DEFAULT = 'trenton@taylorurl.com'
 const GUEST_ROLE_NAME = 'Guest'
 
 function buildGuestLoginHtml(args: {
