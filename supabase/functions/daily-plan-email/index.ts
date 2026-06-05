@@ -1546,21 +1546,24 @@ async function handleCronSend(req: Request, headers: any): Promise<Response> {
         plant_production: baseProduction
     }
 
-    const [plantNameByCode, activeMixerBaseByPlant, travelMinutesByPair, scheduleData] = await Promise.all([
+    const [plantNameByCode, activeMixerBaseByPlant, travelMinutesByPair] = await Promise.all([
         fetchPlantNameMap(supabase),
         fetchActiveMixerBaseByPlant(supabase),
-        fetchTravelMinutesByPair(supabase),
-        fetchOperatorScheduleData(supabase, planDate)
+        fetchTravelMinutesByPair(supabase)
     ])
+    /* Operator-roster naming + weekly-hours ranking was retired in v2026.23.8 —
+     * the email template just renders "Operator 1", "Operator 2", etc. The
+     * Dayforce fetch chain (`fetchOperatorScheduleData` → `dayforce_shifts`
+     * + `dayforce_employees`) is no longer called here, both because its
+     * output isn't used and because a failure mode on empty-schedule days
+     * (e.g. dayforce_shifts empty for that date) used to take the whole cron
+     * down with a 500 response — silently skipping the 4 PM send. */
     let plants = buildServerPayloads(
         effectivePlanRow,
         plantNameByCode,
         planDate,
         activeMixerBaseByPlant,
-        travelMinutesByPair,
-        scheduleData.mixerOperatorsByPlant,
-        scheduleData.workedHoursByOperatorId,
-        scheduleData.matchedOperatorIds
+        travelMinutesByPair
     )
     /* Final safety net — if the plan row was missing, dispatch_data was
      * empty, AND there were no plants to iterate at all, fall back to every
@@ -1899,22 +1902,20 @@ async function handleCronSendCorrections(req: Request, headers: any): Promise<Re
         plant_production: synthesizedProduction
     }
 
-    const [plantNameByCode, activeMixerBaseByPlant, travelMinutesByPair, scheduleData] = await Promise.all([
+    const [plantNameByCode, activeMixerBaseByPlant, travelMinutesByPair] = await Promise.all([
         fetchPlantNameMap(supabase),
         fetchActiveMixerBaseByPlant(supabase),
-        fetchTravelMinutesByPair(supabase),
-        fetchOperatorScheduleData(supabase, planDate)
+        fetchTravelMinutesByPair(supabase)
     ])
 
+    /* Dayforce roster fetch was dropped along with the named-slot ranking —
+     * see the matching block in `handleCronSend`. */
     const allPayloads = buildServerPayloads(
         synthesizedPlanRow,
         plantNameByCode,
         planDate,
         activeMixerBaseByPlant,
-        travelMinutesByPair,
-        scheduleData.mixerOperatorsByPlant,
-        scheduleData.workedHoursByOperatorId,
-        scheduleData.matchedOperatorIds
+        travelMinutesByPair
     )
 
     const payloadsWithCorrections: PlantInput[] = allPayloads
