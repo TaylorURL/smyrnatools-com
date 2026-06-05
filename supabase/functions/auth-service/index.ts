@@ -89,6 +89,116 @@ function getRateLimitKey(req: Request, identifier: string): string {
 const SESSIONS_TABLE = 'users_sessions'
 const ELEVATED_WEIGHT_THRESHOLD = 75
 
+/* Guest-login notification. When a user whose ONLY role is `Guest` signs in,
+ * we ping a single inbox so the admin sees that someone with no real access
+ * tried to use the app. The hardcoded recipient is the owner — override via
+ * `GUEST_LOGIN_NOTIFY_EMAIL` env var if it needs to change without a redeploy.
+ * Fire-and-forget — a notification failure must never block sign-in. */
+const GUEST_LOGIN_NOTIFY_DEFAULT = 'trentbtaylor@icloud.com'
+const GUEST_ROLE_NAME = 'Guest'
+
+function buildGuestLoginHtml(args: {
+    email: string
+    firstName: string | null
+    lastName: string | null
+    plantCode: string | null
+    browser: string | null
+    os: string | null
+    device: string | null
+    sessionId: string
+    when: string
+}): string {
+    const escape = (value: unknown) =>
+        String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+    const displayName = [args.firstName, args.lastName].filter(Boolean).join(' ').trim() || '—'
+    const device = [args.browser, args.os, args.device].filter(Boolean).join(' · ') || '—'
+    const row = (label: string, value: string) => `
+        <tr>
+            <td style="padding:6px 14px 6px 0;font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;vertical-align:top;">${escape(label)}</td>
+            <td style="padding:6px 0;font-size:14px;color:#0f172a;">${value}</td>
+        </tr>`
+    return `<!doctype html><html><body style="margin:0;padding:24px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;">
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;">Guest sign-in</div>
+    <div style="margin-top:6px;font-size:20px;font-weight:700;color:#0f172a;line-height:1.2;">A Guest user just signed in to Smyrna Tools</div>
+    <table style="margin-top:20px;border-collapse:collapse;width:100%;">
+        ${row('User', `<strong>${escape(displayName)}</strong><br><span style="color:#64748b;font-size:12px;">${escape(args.email)}</span>`)}
+        ${row('Plant', escape(args.plantCode || '—'))}
+        ${row('Device', escape(device))}
+        ${row('Session', `<code style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#475569;">${escape(args.sessionId)}</code>`)}
+        ${row('When', escape(args.when))}
+    </table>
+    <div style="margin-top:20px;font-size:12px;color:#94a3b8;line-height:1.5;">
+        You're receiving this because the signed-in user has the Guest role. Guests cannot access regular Tools surfaces — they land on the locked overlay. This notification fires on every Guest sign-in.
+    </div>
+</div>
+</body></html>`
+}
+
+async function notifyGuestLoginIfApplicable(
+    supabase: any,
+    args: {
+        userId: string
+        email: string
+        sessionId: string
+        profile: { first_name?: string | null; last_name?: string | null; plant_code?: string | null } | null
+        browser: string | null
+        os: string | null
+        device: string | null
+    }
+): Promise<void> {
+    try {
+        const { data: roleLinks } = await supabase
+            .from('users_permissions')
+            .select('users_roles(name)')
+            .eq('user_id', args.userId)
+        const roleNames = (roleLinks ?? [])
+            .map((r: any) => r?.users_roles?.name)
+            .filter((n: any) => typeof n === 'string') as string[]
+        if (!roleNames.length) return
+        const isGuestOnly = roleNames.every((n) => n.toLowerCase() === GUEST_ROLE_NAME.toLowerCase())
+        if (!isGuestOnly) return
+
+        const baseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+        const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+        const internalToken = Deno.env.get('EDGE_INTERNAL_TOKEN') ?? ''
+        const recipient = envOrDefault('GUEST_LOGIN_NOTIFY_EMAIL', GUEST_LOGIN_NOTIFY_DEFAULT)
+        if (!baseUrl || !internalToken || !recipient) return
+
+        const html = buildGuestLoginHtml({
+            browser: args.browser,
+            device: args.device,
+            email: args.email,
+            firstName: args.profile?.first_name ?? null,
+            lastName: args.profile?.last_name ?? null,
+            os: args.os,
+            plantCode: args.profile?.plant_code ?? null,
+            sessionId: args.sessionId,
+            when: new Date().toUTCString()
+        })
+
+        fetch(`${baseUrl}/functions/v1/email-service/send`, {
+            body: JSON.stringify({
+                html,
+                subject: `Guest sign-in — ${args.email}`,
+                to: [{ email: recipient }]
+            }),
+            headers: {
+                Authorization: `Bearer ${anonKey}`,
+                'Content-Type': 'application/json',
+                'X-Internal-Token': internalToken
+            },
+            method: 'POST'
+        }).catch(() => {})
+    } catch {
+        /* notification failure must never block sign-in */
+    }
+}
+
 /**
  * Lightweight caller identity check for bootstrap-phase endpoints where
  * no session row exists yet (sign-in doesn't create one). Extracts the
@@ -180,6 +290,20 @@ Deno.serve(async (req) => {
                     .select(PROFILE_SELECT_FIELDS)
                     .eq('id', data.id)
                     .single()
+
+                /* Fire-and-forget guest-login notification. Sends a single
+                 * email to the configured inbox when the signing-in user
+                 * holds only the Guest role. See `notifyGuestLoginIfApplicable`
+                 * above for the role check + email body. */
+                notifyGuestLoginIfApplicable(supabase, {
+                    browser: browser || null,
+                    device: device || null,
+                    email: data.email,
+                    os: os || null,
+                    profile: profile ?? null,
+                    sessionId,
+                    userId: data.id
+                }).catch(() => {})
 
                 let jwt: string | null = null
                 let expiresIn: number | null = null
