@@ -56,6 +56,18 @@ const allReportTypes = [
     }),
     createReportType({
         assignment: ['reports.assigned.plant_production'],
+        /* The Weekly Plant Efficiency Report (`plant_production`) is retired.
+         * Operator clock-in → first-load timing now flows automatically from
+         * the dispatch tickets + Dayforce punches feeding the Plan tab, so
+         * the manual weekly form added no signal the system didn't already
+         * have. `disabled: true` keeps the type registered in
+         * `reportTypeMap` so historical reports already in the DB still
+         * render through the review pipeline, but `reportTypes` (the
+         * exported array used by the submission UI) filters it out so it no
+         * longer appears in the Tools menu / weekly cards / review queue.
+         * Permission nodes were removed from every role via a one-off SQL
+         * delivered alongside the v2026.23.10 release. */
+        disabled: true,
         fields: [
             {
                 label: 'Production Rows',
