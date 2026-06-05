@@ -21,7 +21,7 @@ const REASON_CONFIG = {
 }
 
 const DEFAULT_REASON = {
-    message: 'You must contact your district manager for them to approve your sign-up.',
+    message: 'You do not have access.',
     title: 'Access Pending'
 }
 
