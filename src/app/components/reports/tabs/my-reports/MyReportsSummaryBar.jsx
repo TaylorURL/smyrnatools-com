@@ -1,42 +1,16 @@
+/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import Badge from '../../../common/Badge'
 import DeadlineFuse from '../../DeadlineFuse'
 
-/** A single stat cell — mirrors OperationsView's RegionTotalCell layout (icon box +
- *  uppercase label + mono value) so the two surfaces share a visual rhythm. */
-function SummaryCell({ accent, color, hint, icon, label, value, warning }) {
-    const accentTint = `${accent}14`
-    return (
-        <div
-            className="rounded-lg px-3 py-1.5 flex items-center gap-2.5 shrink-0"
-            style={{
-                background: warning ? `${color || '#dc2626'}12` : 'var(--bg-primary)',
-                border: `1px solid ${warning ? `${color || '#dc2626'}66` : 'var(--border-light)'}`
-            }}
-        >
-            <div
-                className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
-                style={{
-                    background: warning ? color || '#dc2626' : accentTint,
-                    color: warning ? '#fff' : 'var(--text-primary)'
-                }}
-            >
-                <i className={`fas ${icon} text-[11px]`} />
-            </div>
-            <div className="flex flex-col leading-tight">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-text-secondary">{label}</span>
-                <span className="text-[14px] font-bold font-mono tabular-nums font-heading text-text-primary">
-                    {value}
-                </span>
-                {hint && <span className="text-[10px] text-text-secondary">{hint}</span>}
-            </div>
-        </div>
-    )
-}
-
-/** Compact summary metrics shown above the My Reports week ribbon — mirrors
- *  the OperationsView region-totals strip so the two surfaces feel related. */
+/**
+ * Headline strip above the My Reports week ribbon. One dominant element —
+ * the big mono "submitted / total" fraction — flanked by a thin progress
+ * bar and a one-line summary of what's still out. The deadline fuse sits
+ * on the right, demoted from its previous "third equal-weight chunk" role
+ * to a contextual aside. Replaces the previous strip of three rounded
+ * icon-boxes that read as a generic AI-templated stat cluster.
+ */
 export default function MyReportsSummaryBar({
     accent,
     cutoffLabel,
@@ -56,77 +30,76 @@ export default function MyReportsSummaryBar({
     const allDone = totalAssigned > 0 && pending === 0
     const urgent = !isFuture && !isPast && daysLeft <= 1 && pending > 0
     const fuseMode = isPast ? 'past' : isFuture ? 'future' : 'current'
+
+    const summaryParts = []
+    if (totalAssigned === 0) summaryParts.push('No assigned reports')
+    else if (allDone) summaryParts.push('All in')
+    else {
+        if (pending > 0) summaryParts.push(`${pending} pending`)
+        if (overdueCarryover > 0) summaryParts.push(`${overdueCarryover} overdue from prior weeks`)
+    }
+
     return (
         <div
-            className="shrink-0 flex items-center gap-2 overflow-x-auto px-3 py-2 rounded-lg border"
-            style={{
-                background: urgent ? 'linear-gradient(90deg, #fee2e240, #fef3c740)' : 'var(--bg-primary)',
-                borderColor: urgent ? '#fbbf24' : 'var(--border-light)'
-            }}
+            className="rounded-lg border bg-bg-primary border-border-light"
+            style={urgent ? { borderColor: 'color-mix(in srgb, var(--status-danger) 45%, transparent)' } : undefined}
         >
-            <span className="text-[9px] font-semibold uppercase tracking-wider shrink-0 mr-1 text-text-secondary">
-                {weekLabel}
-                {weekRange ? ` · ${weekRange}` : ''}
-            </span>
+            <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-5 px-4 py-3">
+                <div className="flex items-baseline gap-3 min-w-0">
+                    <div className="flex flex-col leading-tight">
+                        <span className="text-[9.5px] font-bold uppercase tracking-[.08em] text-text-tertiary">
+                            {weekLabel}
+                            {weekRange ? ` · ${weekRange}` : ''}
+                        </span>
+                        <span className="font-heading font-bold leading-none tabular-nums tracking-tight text-text-primary text-[26px] md:text-[28px] mt-0.5">
+                            {totalAssigned > 0 ? `${submitted}/${totalAssigned}` : '—'}
+                            <span className="ml-1 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+                                submitted
+                            </span>
+                        </span>
+                    </div>
+                    {completionPct != null && (
+                        <span className="hidden sm:inline-flex items-baseline gap-1 font-mono tabular-nums text-[13px] font-semibold text-text-secondary">
+                            {completionPct}
+                            <span className="text-[10px] text-text-tertiary">%</span>
+                        </span>
+                    )}
+                </div>
 
-            <SummaryCell
-                accent={accent}
-                icon="fa-circle-check"
-                label="Submitted"
-                value={totalAssigned > 0 ? `${submitted}/${totalAssigned}` : '—'}
-                hint={completionPct != null ? `${completionPct}% complete` : undefined}
-            />
+                <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                    {totalAssigned > 0 && (
+                        <div
+                            className="h-1.5 w-full rounded-full overflow-hidden"
+                            style={{ background: 'var(--bg-tertiary)' }}
+                            role="progressbar"
+                            aria-valuenow={completionPct ?? 0}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                        >
+                            <span
+                                className="block h-full rounded-full transition-[width] duration-300 ease-out motion-reduce:transition-none"
+                                style={{
+                                    background: allDone ? 'var(--status-success)' : accent,
+                                    width: `${completionPct ?? 0}%`
+                                }}
+                            />
+                        </div>
+                    )}
+                    <span className="text-[12px] text-text-secondary truncate">
+                        {summaryParts.join(' · ')}
+                    </span>
+                </div>
 
-            <SummaryCell
-                accent={accent}
-                color="#dc2626"
-                icon="fa-hourglass-half"
-                label="Pending"
-                value={pending > 0 ? String(pending) : '—'}
-                hint={pending > 0 ? 'still due' : totalAssigned > 0 ? 'all in' : undefined}
-                warning={urgent}
-            />
-
-            {overdueCarryover > 0 && (
-                <SummaryCell
-                    accent={accent}
-                    color="#dc2626"
-                    icon="fa-triangle-exclamation"
-                    label="Overdue"
-                    value={String(overdueCarryover)}
-                    hint="prior weeks"
-                    warning
-                />
-            )}
-
-            {allDone && !isPast && (
-                <Badge
-                    tone="success"
-                    size="lg"
-                    shape="rounded-md"
-                    weight="semibold"
-                    icon="circle-check"
-                    uppercase={false}
-                    className="shrink-0"
-                >
-                    All caught up
-                </Badge>
-            )}
-
-            {/* Deadline indicator — pulled in from the old standalone
-             *  DeadlineFuse card and rendered inline on the right. We
-             *  give it `flex-1` so the day-pill row stretches across the
-             *  empty space at the end of the bar instead of sitting in a
-             *  tight cluster next to the stats. */}
-            <div className="flex-1 min-w-[260px] hidden sm:flex">
-                <DeadlineFuse
-                    caption={fuseCaption}
-                    cutoffLabel={cutoffLabel}
-                    daysLeft={daysLeft}
-                    embedded
-                    mode={fuseMode}
-                    todayIndex={todayIndex}
-                />
+                <div className="hidden md:flex min-w-[260px] shrink-0">
+                    <DeadlineFuse
+                        caption={fuseCaption}
+                        cutoffLabel={cutoffLabel}
+                        daysLeft={daysLeft}
+                        embedded
+                        mode={fuseMode}
+                        todayIndex={todayIndex}
+                    />
+                </div>
             </div>
         </div>
     )

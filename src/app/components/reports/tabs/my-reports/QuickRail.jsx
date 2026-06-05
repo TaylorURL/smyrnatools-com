@@ -3,37 +3,34 @@ import React from 'react'
 const ONE_OFFS = [
     {
         icon: 'fa-flask',
-        iconBg: 'bg-violet-600',
         key: 'qc_strength',
         sub: 'Concrete cylinder strength & samples',
-        title: 'QC Strength Report'
+        title: 'QC Strength'
     },
     {
         icon: 'fa-vial',
-        iconBg: 'bg-rose-600',
         key: 'third_party_lab',
         sub: 'Report issues with lab results',
-        title: 'Third-Party Lab Report'
+        title: 'Third-Party Lab'
     },
     {
         icon: 'fa-truck',
-        iconBg: 'bg-red-500',
         key: 'lost_load',
         sub: 'Report lost or spilled loads',
-        title: 'Lost Load Report'
+        title: 'Lost Load'
     }
 ]
 
 const RECENT_ICON = {
-    lost_load: { color: 'text-text-primary', icon: 'fa-truck' },
-    qc_strength: { color: 'text-text-primary', icon: 'fa-flask' },
-    third_party_lab: { color: 'text-text-primary', icon: 'fa-vial' }
+    lost_load: 'fa-truck',
+    qc_strength: 'fa-flask',
+    third_party_lab: 'fa-vial'
 }
 
 /**
- * Docked side rail with shortcut buttons for the three one-off reports
- * (QC Strength, Third-Party Lab, Lost Load) plus a compact "Recent" strip
- * showing the three most recent submissions.
+ * Docked side rail for one-off reports + a compact "Recent" strip. Icons
+ * are neutral glyphs (no per-shortcut colored tile) so the rail doesn't
+ * compete with the main column's status stripes for attention.
  */
 function QuickRail({
     hasQCStrengthPermission,
@@ -56,55 +53,59 @@ function QuickRail({
     const visible = ONE_OFFS.filter((o) => availability[o.key])
     if (visible.length === 0 && recentItems.length === 0) return null
     return (
-        <aside className="rounded-lg p-4 border bg-bg-primary border-border-light">
+        <aside className="rounded-lg border bg-bg-primary border-border-light overflow-hidden">
             {visible.length > 0 && (
-                <>
-                    <div className="flex items-center gap-2 mb-3">
-                        <i className="fas fa-bolt text-[13px] text-text-primary" />
-                        <span className="font-bold text-[14px] text-text-primary font-heading">One-off reports</span>
-                        <span className="ml-auto text-[11px] text-text-secondary">Submit anytime</span>
+                <div className="px-3 pt-3 pb-2">
+                    <div className="flex items-baseline justify-between mb-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[.08em] text-text-tertiary font-heading">
+                            One-off reports
+                        </span>
+                        <span className="text-[10px] text-text-tertiary">Submit anytime</span>
                     </div>
-                    <div className="flex flex-col gap-2">
-                        {visible.map((o) => (
+                    <div className="flex flex-col">
+                        {visible.map((o, idx) => (
                             <button
                                 key={o.key}
                                 type="button"
                                 onClick={() => handlers[o.key]?.()}
-                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left w-full transition-colors border-none cursor-pointer hover:opacity-90 bg-bg-tertiary text-text-primary"
+                                className={`flex items-center gap-3 px-2 py-2.5 text-left w-full border-none cursor-pointer bg-transparent hover:bg-bg-secondary active:scale-[0.99] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none ${idx > 0 ? 'border-t border-border-light' : ''}`}
                             >
-                                <div
-                                    className={`w-7 h-7 rounded-md ${o.iconBg} text-white flex items-center justify-center shrink-0`}
-                                >
-                                    <i className={`fas ${o.icon} text-[11px]`} />
-                                </div>
+                                <i
+                                    className={`fas ${o.icon} text-[14px] w-4 text-center text-text-secondary`}
+                                    aria-hidden="true"
+                                />
                                 <div className="flex-1 min-w-0">
                                     <div className="font-semibold text-[12.5px] truncate text-text-primary">
                                         {o.title}
                                     </div>
-                                    <div className="text-[10.5px] truncate text-text-secondary">{o.sub}</div>
+                                    <div className="text-[10.5px] truncate text-text-tertiary">{o.sub}</div>
                                 </div>
-                                <i className="fas fa-plus text-[11px] text-text-primary" />
+                                <i className="fas fa-plus text-[10px] text-text-tertiary" aria-hidden="true" />
                             </button>
                         ))}
                     </div>
-                </>
+                </div>
             )}
             {recentItems.length > 0 && (
-                <div className="mt-3.5 px-3 py-2.5 rounded-lg bg-bg-tertiary">
-                    <div className="text-[11px] font-semibold mb-1.5 text-text-secondary">Recent</div>
-                    {recentItems.slice(0, 3).map((r, idx) => {
-                        const cfg = RECENT_ICON[r.kind] || { color: 'text-text-primary', icon: 'fa-file-alt' }
-                        return (
-                            <div
-                                key={r.id || idx}
-                                className="flex items-center gap-2 py-1.5 border-t first:border-t-0 text-[11.5px] border-border-light text-text-primary"
-                            >
-                                <i className={`fas ${cfg.icon} ${cfg.color} w-3.5 text-[11px]`} />
-                                <span className="flex-1 truncate">{r.title}</span>
-                                <span className="text-[10px] shrink-0 text-text-secondary">{r.when}</span>
-                            </div>
-                        )
-                    })}
+                <div
+                    className={`px-3 py-2.5 ${visible.length > 0 ? 'border-t border-border-light bg-bg-secondary' : ''}`}
+                >
+                    <div className="text-[10px] font-bold uppercase tracking-[.08em] text-text-tertiary mb-1.5 font-heading">
+                        Recent
+                    </div>
+                    {recentItems.slice(0, 3).map((r, idx) => (
+                        <div
+                            key={r.id || idx}
+                            className={`flex items-center gap-2 py-1.5 text-[11.5px] text-text-secondary ${idx > 0 ? 'border-t border-border-light' : ''}`}
+                        >
+                            <i
+                                className={`fas ${RECENT_ICON[r.kind] || 'fa-file-alt'} w-3.5 text-[11px] text-text-tertiary`}
+                                aria-hidden="true"
+                            />
+                            <span className="flex-1 truncate text-text-primary">{r.title}</span>
+                            <span className="text-[10px] shrink-0 text-text-tertiary tabular-nums">{r.when}</span>
+                        </div>
+                    ))}
                 </div>
             )}
         </aside>
