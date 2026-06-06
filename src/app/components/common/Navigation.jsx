@@ -7,11 +7,9 @@ import {
     ASSET_ITEMS,
     CATEGORIES,
     PEOPLE_ITEMS,
-    PRIDE_USER_EMAIL,
     REPORTING_ITEMS,
     TOOLS_ITEMS
 } from '../../constants/navigationConstants'
-import { useAuth } from '../../context/AuthContext'
 import { useSharedMessages } from '../../context/MessagesContext'
 import { usePreferences } from '../../context/PreferencesContext'
 import { useAccentColor } from '../../hooks/useAccentColor'
@@ -69,8 +67,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
     const isTablet = useIsTablet()
     const accentColor = useAccentColor()
     const { registerElement: registerMagnetic } = useMagneticHover()
-    const { user } = useAuth()
-    const isPrideUser = user?.email?.toLowerCase() === PRIDE_USER_EMAIL
 
     const regionType = preferences.selectedRegion?.type
     const regionCode = preferences.selectedRegion?.code
@@ -264,7 +260,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
             <>
                 <NavigationMobile
                     accentColor={accentColor}
-                    isPrideUser={isPrideUser}
                     mobileMenuOpen={mobileMenuOpen}
                     setMobileMenuOpen={setMobileMenuOpen}
                     regionCode={regionCode}
@@ -290,7 +285,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
             <>
                 <NavigationTwoLevel
                     accentColor={accentColor}
-                    isPrideUser={isPrideUser}
                     visibleMenuItems={visibleMenuItems}
                     visibleCategories={visibleCategories}
                     secondaryItems={secondaryItems}
@@ -321,7 +315,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
         <>
             <NavigationTopBar
                 accentColor={accentColor}
-                isPrideUser={isPrideUser}
                 isTablet={isTablet}
                 visibleMenuItems={visibleMenuItems}
                 standaloneItems={standaloneItems}
