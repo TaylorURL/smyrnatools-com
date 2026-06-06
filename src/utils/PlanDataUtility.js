@@ -1,3 +1,5 @@
+import { PLAN_META_KEY } from '../app/constants/planConstants'
+
 /* Time zone the planner treats as authoritative for "today" comparisons.
  * Aligned with `usePlanDate`, which also formats Chicago dates so the
  * `YYYY-MM-DD` strings compared with `<` produce sane day-boundary
@@ -37,4 +39,36 @@ export function chicagoTodayDate() {
  *  definition of "this plan has live routes". */
 export function hasMeaningfulAssignments(list) {
     return Array.isArray(list) && list.some((a) => a?.fromPlant || a?.toPlant || a?.forOrderId)
+}
+
+/**
+ * Resolves the `plantProduction` to commit when (re)loading a saved `plans`
+ * row, given whether the dispatch schedule sync has ALREADY applied
+ * authoritative order rows for the current date.
+ *
+ * `plantProduction` has two writers: `useScheduleSync` — authoritative; it
+ * pulls fresh `dispatch_data` and replaces the per-plant order rows — and the
+ * plan load / resync, whose source is the saved row. The saved row's order
+ * rows are only a CACHE and can be stale: a job since rescheduled to another
+ * day still sits in the blob. When that load lands after a dispatch sync it
+ * would otherwise clobber the live orders with those phantoms (symptom:
+ * schedule loads correct, then moved orders reappear a few seconds later).
+ *
+ *   - Dispatch has NOT synced yet (initial render before the first sync, OR a
+ *     past date `dispatch_data` no longer covers) → use the full saved blob so
+ *     the schedule still renders from the snapshot.
+ *   - Dispatch HAS synced → keep the live dispatch orders and apply only the
+ *     saved `_meta` (user-authored Saturday counts / special jobs), which the
+ *     dispatch sync intentionally never owns.
+ */
+export function reconcileLoadedProduction(loadedProduction, currentProduction, dispatchAlreadySynced) {
+    const loaded = loadedProduction && typeof loadedProduction === 'object' ? loadedProduction : {}
+    if (!dispatchAlreadySynced) return loaded
+    const current = currentProduction && typeof currentProduction === 'object' ? currentProduction : {}
+    const savedMeta = loaded[PLAN_META_KEY]
+    if (savedMeta === undefined) {
+        const { [PLAN_META_KEY]: _removed, ...ordersOnly } = current
+        return ordersOnly
+    }
+    return { ...current, [PLAN_META_KEY]: savedMeta }
 }

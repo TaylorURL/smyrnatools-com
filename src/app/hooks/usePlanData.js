@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { PlanService } from '../../services/PlanService'
 import { UserService } from '../../services/UserService'
-import { chicagoTodayDate, hasMeaningfulAssignments, PLAN_AUTOSAVE_RACE_WINDOW_MS } from '../../utils/PlanDataUtility'
+import {
+    chicagoTodayDate,
+    hasMeaningfulAssignments,
+    PLAN_AUTOSAVE_RACE_WINDOW_MS,
+    reconcileLoadedProduction
+} from '../../utils/PlanDataUtility'
 import { AUTOSAVE_DELAY_MS, createEmptyAssignment, ensureUniqueIds, getOffsetDate } from '../../utils/PlanUtility'
 import { PLAN_META_KEY } from '../constants/planConstants'
 import { usePreferences } from '../context/PreferencesContext'
@@ -53,6 +58,15 @@ export function usePlanData(planDate) {
     const [userId, setUserId] = useState(null)
     const [canEdit, setCanEdit] = useState(true)
     const [plantProduction, setPlantProduction] = useState({})
+    /* Synchronous mirror of plantProduction so async callbacks (the plan-load
+     * reconciliation) read the live value instead of a stale closure. */
+    const plantProductionRef = useRef(plantProduction)
+    plantProductionRef.current = plantProduction
+    /* True once useScheduleSync has applied authoritative dispatch orders for
+     * the current date. While true, a (re)load of the saved plans row must not
+     * overwrite those live orders with the row's cached (possibly stale) ones —
+     * it applies only the saved _meta. Reset to false on every date change. */
+    const dispatchOrdersAppliedRef = useRef(false)
     const [adjacentPlans, setAdjacentPlans] = useState({})
     const [adjacentProduction, setAdjacentProduction] = useState({})
     /** Surfaces a transient plan-load failure to the UI. Stays null on
@@ -133,6 +147,15 @@ export function usePlanData(planDate) {
         bootstrap()
     }, [refreshTravelTimes])
 
+    /* Clear the dispatch-ownership flag whenever the date changes — the new
+     * date's orders haven't been synced yet. Deliberately keyed on planDate
+     * only (NOT planLoadAttempt) so a mid-session resync keeps honoring the
+     * already-synced live orders instead of reloading the saved cache over
+     * them. */
+    useEffect(() => {
+        dispatchOrdersAppliedRef.current = false
+    }, [planDate])
+
     // Load plan for selected date
     const loadedForDateRef = useRef(null)
     const autosaveEnabledRef = useRef(false)
@@ -170,15 +193,27 @@ export function usePlanData(planDate) {
                 })
                 setAssignments(loadedAssignments)
                 setNotes(loadedNotes)
-                setPlantProduction(loadedProduction)
-                /* Seed the snapshot with the server's current state so the
-                 * first autosave effect fire (caused by setState above) is
-                 * a no-op — otherwise we'd immediately write the same data
-                 * we just read, racing every collaborator's open. */
+                /* Don't let the saved row's cached order rows clobber orders the
+                 * dispatch sync has already applied for this date — those are
+                 * authoritative (fresh dispatch_data) and the cache can hold a
+                 * job since moved to another day. Once dispatch has synced, keep
+                 * its live orders and take only the saved _meta; before that (or
+                 * for past dates dispatch_data no longer covers) use the full
+                 * saved blob. */
+                const reconciledProduction = reconcileLoadedProduction(
+                    loadedProduction,
+                    plantProductionRef.current,
+                    dispatchOrdersAppliedRef.current
+                )
+                setPlantProduction(reconciledProduction)
+                /* Seed the snapshot with the exact state we just committed so the
+                 * first autosave effect fire (caused by setState above) is a
+                 * no-op — otherwise we'd immediately write the same data we just
+                 * read, racing every collaborator's open. */
                 lastSyncedSnapshotRef.current = JSON.stringify({
                     assignments: loadedAssignments,
                     notes: loadedNotes,
-                    plantProduction: loadedProduction
+                    plantProduction: reconciledProduction
                 })
                 loadedForDateRef.current = planDate
                 loadedAtMsRef.current = Date.now()
@@ -407,6 +442,15 @@ export function usePlanData(planDate) {
     // a fresh upload lands. Replaces the old manual "Import Production" upload
     // — dispatcher's workstation auto-uploads today + 7 days of schedule HTML
     // so production data is always current.
+    /* Wrap the dispatch sync's setter so we record that authoritative orders
+     * have landed for this date. useScheduleSync only calls this once
+     * dispatch_data actually has rows (it bails on an empty fetch), so a past
+     * date with no dispatch data never flips the flag and keeps rendering from
+     * the saved snapshot. */
+    const applyDispatchProduction = useCallback((updater) => {
+        dispatchOrdersAppliedRef.current = true
+        setPlantProduction(updater)
+    }, [])
     const {
         fileUpdatedAt: scheduleFileUpdatedAt,
         isSyncing: isSchedulesSyncing,
@@ -416,7 +460,7 @@ export function usePlanData(planDate) {
         enabled: !isLoading && plants.length > 0,
         planDate,
         plants,
-        setPlantProduction
+        setPlantProduction: applyDispatchProduction
     })
 
     // Detail (ticket-level) orders are fetched once at this level so every
