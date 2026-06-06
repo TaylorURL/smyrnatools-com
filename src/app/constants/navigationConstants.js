@@ -95,14 +95,40 @@ export const getCategoryForView = (viewId) => {
 /** Widths used to render the loading-skeleton pills inside the nav header. */
 export const NAV_SKELETON_WIDTHS = [72, 56, 52, 64, 48]
 
-/** Background style shared across all desktop/mobile header bars. */
-export const buildHeaderStyle = (accentColor) => ({
-    backgroundColor: accentColor,
-    backgroundImage: `
-        linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
-        radial-gradient(circle at center, rgba(255,255,255,0.06) 0%, transparent 50%)
-    `,
-    backgroundPosition: '0 0, 0 0, 0 0',
-    backgroundSize: '20px 20px, 20px 20px, 40px 40px'
-})
+/** Email of the user who receives the Pride Month rainbow nav surface. */
+export const PRIDE_USER_EMAIL = 'dgroves@smyrnareadymix.com'
+
+/** Six-stripe Pride flag gradient used for the Pride Month nav surface. */
+const PRIDE_FLAG_GRADIENT =
+    'linear-gradient(90deg, #e40303 0%, #ff8c00 20%, #ffed00 40%, #008026 60%, #004dff 80%, #750787 100%)'
+
+/** Background style shared across all desktop/mobile header bars. When
+ *  `prideMode` is true the accent fill is replaced by a horizontal Pride flag
+ *  gradient with a subtle dark wash on top to preserve white-text legibility
+ *  on the lighter yellow/green stripes, while the grid texture is kept at
+ *  reduced opacity so the surface still reads as the same nav header. */
+export const buildHeaderStyle = (accentColor, prideMode = false) => {
+    if (prideMode) {
+        return {
+            backgroundColor: '#750787',
+            backgroundImage: `
+                linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.18)),
+                linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
+                ${PRIDE_FLAG_GRADIENT}
+            `,
+            backgroundPosition: '0 0, 0 0, 0 0, 0 0',
+            backgroundSize: 'auto, 20px 20px, 20px 20px, 100% 100%'
+        }
+    }
+    return {
+        backgroundColor: accentColor,
+        backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
+            radial-gradient(circle at center, rgba(255,255,255,0.06) 0%, transparent 50%)
+        `,
+        backgroundPosition: '0 0, 0 0, 0 0',
+        backgroundSize: '20px 20px, 20px 20px, 40px 40px'
+    }
+}

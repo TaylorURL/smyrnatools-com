@@ -25,6 +25,7 @@ const SECTIONS = [
 export default function NavigationMobile({
     children,
     accentColor,
+    isPrideUser = false,
     mobileMenuOpen,
     setMobileMenuOpen,
     regionCode,
@@ -38,7 +39,7 @@ export default function NavigationMobile({
     showDropPin = false,
     onDropPin = null
 }) {
-    const headerStyle = buildHeaderStyle(accentColor)
+    const headerStyle = buildHeaderStyle(accentColor, isPrideUser)
     const dashboardItem = standaloneItems.find((i) => i.id === 'Dashboard')
     const canPortal = typeof document !== 'undefined' && !!document.body
     const drawer = mobileMenuOpen ? (

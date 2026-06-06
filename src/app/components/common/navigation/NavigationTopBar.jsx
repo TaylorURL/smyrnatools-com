@@ -110,6 +110,7 @@ const DROPDOWN_CONFIGS = [
 export default function NavigationTopBar({
     children,
     accentColor,
+    isPrideUser = false,
     isTablet,
     visibleMenuItems,
     standaloneItems,
@@ -129,7 +130,7 @@ export default function NavigationTopBar({
     userName,
     registerMagnetic
 }) {
-    const headerStyle = buildHeaderStyle(accentColor)
+    const headerStyle = buildHeaderStyle(accentColor, isPrideUser)
     const dashboardItem = standaloneItems.find((i) => i.id === 'Dashboard')
     const headerHeight = isTablet ? 'h-14' : 'h-[68px]'
     const headerPadding = isTablet ? 'px-3' : 'px-6'

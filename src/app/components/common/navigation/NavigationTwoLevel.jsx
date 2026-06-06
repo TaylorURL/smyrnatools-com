@@ -27,6 +27,7 @@ const secondaryTabClasses = (isActive) => {
 export default function NavigationTwoLevel({
     children,
     accentColor,
+    isPrideUser = false,
     visibleMenuItems,
     visibleCategories,
     secondaryItems,
@@ -46,7 +47,7 @@ export default function NavigationTwoLevel({
     secondaryNavRef,
     underlineRef
 }) {
-    const headerStyle = buildHeaderStyle(accentColor)
+    const headerStyle = buildHeaderStyle(accentColor, isPrideUser)
     return (
         <div className="flex h-screen w-full flex-col overflow-hidden">
             <header
