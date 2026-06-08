@@ -10,7 +10,6 @@ import SrmLogo from '../../../assets/images/srm-logo.svg'
 import { Database } from '../../../services/DatabaseService'
 import ValidationUtility from '../../../utils/ValidationUtility'
 
-const ChangelogView = lazy(() => import('./ChangelogView'))
 const PasswordRecoveryView = lazy(() => import('./PasswordRecoveryView'))
 const VideoBackground = lazy(() => import('../../../app/components/common/VideoBackground'))
 /** Static gradient placeholder shown while the video background lazy-loads. */
@@ -76,8 +75,8 @@ const getLabelClasses = (isFocused, hasValue) =>
     `absolute left-0 pointer-events-none font-medium transition-[top,font-size,color] duration-150 ease-out motion-reduce:transition-none ${isFocused || hasValue ? 'top-0 text-[0.7rem]' : 'top-4 text-[0.9rem]'} ${isFocused ? 'text-[#1e3a5f]' : 'text-slate-400'}`
 /**
  * Full-screen login/signup view with a lazy-loaded video background,
- * animated fleet stats, password strength indicator, and links to
- * password recovery and the changelog. Creates a browser session
+ * animated fleet stats, password strength indicator, and a link to
+ * password recovery. Creates a browser session
  * record in the database on successful authentication.
  */
 function LoginView() {
@@ -95,7 +94,6 @@ function LoginView() {
     const { signIn, signUp, loading, error } = useAuth()
     const timeoutRef = useRef(null)
     const [showRecovery, setShowRecovery] = useState(false)
-    const [showChangelog, setShowChangelog] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [focusedField, setFocusedField] = useState(null)
     const [animatedStats, setAnimatedStats] = useState({ assets: 0, operators: 0, plants: 0 })
@@ -255,21 +253,6 @@ function LoginView() {
     const togglePassword = useCallback(() => setShowPassword((prev) => !prev), [])
     const openRecovery = useCallback(() => setShowRecovery(true), [])
     const closeRecovery = useCallback(() => setShowRecovery(false), [])
-    const openChangelog = useCallback(() => setShowChangelog(true), [])
-    const closeChangelog = useCallback(() => setShowChangelog(false), [])
-    if (showChangelog) {
-        return (
-            <Suspense
-                fallback={
-                    <div className="flex items-center justify-center h-screen bg-white">
-                        <i className="fas fa-spinner fa-spin text-text-primary text-2xl" />
-                    </div>
-                }
-            >
-                <ChangelogView onBack={closeChangelog} />
-            </Suspense>
-        )
-    }
     if (showRecovery) {
         return (
             <Suspense
@@ -292,7 +275,7 @@ function LoginView() {
             ) : (
                 <VideoFallback />
             )}
-            <VersionPopup version={version} onClick={openChangelog} />
+            <VersionPopup version={version} />
             <div className="flex items-stretch h-screen relative w-full z-10">
                 {/* Hero panel — hidden on mobile, shown on lg+ */}
                 <div className="hidden lg:flex flex-1 items-center justify-center relative p-12">

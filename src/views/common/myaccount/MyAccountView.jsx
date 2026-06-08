@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import VersionPopup from '../../../app/components/common/VersionPopup'
 import AccountAtAGlance from '../../../app/components/myaccount/AccountAtAGlance'
@@ -25,8 +25,6 @@ import { UserService } from '../../../services/UserService'
 import APIUtility from '../../../utils/APIUtility'
 import { CacheUtility } from '../../../utils/CacheUtility'
 import DashboardUtility from '../../../utils/DashboardUtility'
-
-const ChangelogView = lazy(() => import('../login/ChangelogView'))
 
 /**
  * Top-level user account view — profile, security, preferences, notifications.
@@ -77,7 +75,6 @@ function MyAccountView({ onSelectView, userId }) {
     const [confirmPassword, setConfirmPassword] = useState('')
     const [passwordError, setPasswordError] = useState('')
     const [activeTab, setActiveTab] = useState('profile')
-    const [showChangelog, setShowChangelog] = useState(false)
     const [cacheClearing, setCacheClearing] = useState(false)
 
     useEffect(() => {
@@ -230,23 +227,6 @@ function MyAccountView({ onSelectView, userId }) {
 
     if (loading) return <AccountSkeleton />
 
-    if (showChangelog) {
-        return (
-            <Suspense
-                fallback={
-                    <div className="flex h-screen items-center justify-center bg-bg-secondary">
-                        <i
-                            className="fas fa-spinner fa-spin text-2xl text-accent motion-reduce:animate-none"
-                            aria-label="Loading changelog"
-                        />
-                    </div>
-                }
-            >
-                <ChangelogView onBack={() => setShowChangelog(false)} />
-            </Suspense>
-        )
-    }
-
     const messageIsError = message.includes('Error')
 
     return (
@@ -385,7 +365,7 @@ function MyAccountView({ onSelectView, userId }) {
                 </div>
             </div>
 
-            <VersionPopup version={version} onClick={() => setShowChangelog(true)} />
+            <VersionPopup version={version} />
 
             {showPasswordModal && (
                 <PasswordModal

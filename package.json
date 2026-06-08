@@ -1,6 +1,6 @@
 {
   "name": "smyrnatools",
-  "version": "2026.23.18",
+  "version": "2026.23.19",
   "private": true,
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
@@ -21,9 +21,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "prestart": "node scripts/generate-releases.js",
     "start": "vite",
-    "prebuild": "node scripts/generate-releases.js",
     "build": "cross-env NODE_ENV=production vite build --mode production",
     "preview": "vite preview",
     "analyze": "cross-env ANALYZE=true vite build",
