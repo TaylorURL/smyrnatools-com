@@ -11,20 +11,20 @@ import {
     HEADER_BAND_HEIGHT,
     HEADER_META_HEIGHT,
     HELPER_BLOCK_HEIGHT,
+    hexToRgb,
     LABEL_BLOCK_HEIGHT,
     MARGIN_BOTTOM,
     MARGIN_X,
     NUMBER_HEIGHT,
     PAGE_HEIGHT,
     PAGE_WIDTH,
+    sanitizeFilenamePart,
     SELECT_HEIGHT,
     SIGNATURE_HEIGHT,
     TEXT_FONT_SIZE,
     TEXT_HEIGHT,
     TEXTAREA_HEIGHT,
     TITLE_FONT_SIZE,
-    hexToRgb,
-    sanitizeFilenamePart,
     titleCase
 } from './MaintenancePdfFormConstants'
 import {
@@ -77,7 +77,7 @@ function drawHeader(doc, meta, accentRgb) {
     setText(doc, [255, 255, 255])
     const subtitle = [
         meta.frequency && `${meta.frequency.toUpperCase()} INSPECTION`,
-        'PRINT — COMPLETE BY HAND — SCAN — UPLOAD'
+        'PRINT — COMPLETE BY HAND — FILE AT YOUR PLANT'
     ]
         .filter(Boolean)
         .join('   ·   ')
@@ -373,7 +373,7 @@ export function buildMaintenanceFormPdf(form, options = {}) {
     doc.setFontSize(9.5)
     setText(doc, COLORS.helper)
     doc.text(
-        'Complete every required field by hand, then scan the finished sheet and upload it for review.',
+        'Complete every required field by hand, then keep the finished sheet on file at your plant.',
         MARGIN_X,
         cursorY,
         { maxWidth: COLUMN_WIDTH }
@@ -383,15 +383,15 @@ export function buildMaintenanceFormPdf(form, options = {}) {
 
     const headerFields = buildHeaderFields()
 
-    // Submission info section — plant / date / submitter — always rendered
+    // Completion info section — plant / date / signer — always rendered
     // so the worker can identify the sheet even if the template is empty.
-    cursorY = drawSectionHeading(doc, 'Submission Info', MARGIN_X, cursorY, accentRgb)
+    cursorY = drawSectionHeading(doc, 'Completion Info', MARGIN_X, cursorY, accentRgb)
     headerFields.forEach((field) => {
         const needed = estimateFieldHeight(field)
         if (cursorY + needed > usableBottom) {
             doc.addPage()
             cursorY = drawHeader(doc, meta, accentRgb)
-            cursorY = drawSectionHeading(doc, 'Submission Info (continued)', MARGIN_X, cursorY, accentRgb)
+            cursorY = drawSectionHeading(doc, 'Completion Info (continued)', MARGIN_X, cursorY, accentRgb)
         }
         cursorY = renderField(doc, field, MARGIN_X, cursorY)
     })

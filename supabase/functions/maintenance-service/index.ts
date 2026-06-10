@@ -4,12 +4,12 @@ import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_
 // @ts-ignore
 import { requireAuthenticated } from '../_shared/requireSession.ts'
 
+// Form template CRUD for the download-only Maintenance library. The legacy
+// submission / review / equipment-log endpoints were retired when the client
+// pipeline was removed; historical rows remain in their tables untouched.
 const FORMS_TABLE = 'maintenance_forms'
 const FIELDS_TABLE = 'maintenance_form_fields'
-const SUBMISSIONS_TABLE = 'maintenance_submissions'
-const RESPONSES_TABLE = 'maintenance_submission_responses'
-const LOG_EQUIPMENT_TABLE = 'maintenance_log_equipment'
-const LOG_ENTRIES_TABLE = 'maintenance_log_entries'
+const FORM_WITH_FIELDS_SELECT = '*, maintenance_form_fields(*)'
 
 function createSupabaseClient() {
     return createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', {
@@ -45,21 +45,6 @@ function buildFieldRows(fields: any[], formId: string): any[] {
     }))
 }
 
-function buildResponseRows(responses: any[], submissionId: string): any[] {
-    const timestamp = nowISO()
-    return responses.map((r: any) => ({
-        checklist_comments: r.checklist_comments || null,
-        checklist_images: r.checklist_images || null,
-        checklist_values: r.checklist_values || null,
-        created_at: timestamp,
-        field_id: r.field_id,
-        image_url: r.image_url || null,
-        response_value: r.response_value || null,
-        submission_id: submissionId,
-        updated_at: timestamp
-    }))
-}
-
 Deno.serve(async (req) => {
     const origin = req.headers.get('origin')
     if (req.method === 'OPTIONS') return handleOptions(origin)
@@ -74,7 +59,6 @@ Deno.serve(async (req) => {
         const supabase = createSupabaseClient()
 
         switch (endpoint) {
-            // ── Form mutations ─────────────────────────────────────
             case 'create-form': {
                 const body = await parseBody(req)
                 const userId = body?.userId
@@ -101,7 +85,7 @@ Deno.serve(async (req) => {
                 }
                 const { data: fullForm } = await supabase
                     .from(FORMS_TABLE)
-                    .select('*, maintenance_form_fields(*)')
+                    .select(FORM_WITH_FIELDS_SELECT)
                     .eq('id', form.id)
                     .single()
                 return jsonResponse({ data: fullForm, success: true }, headers)
@@ -127,7 +111,7 @@ Deno.serve(async (req) => {
                 }
                 const { data: fullForm } = await supabase
                     .from(FORMS_TABLE)
-                    .select('*, maintenance_form_fields(*)')
+                    .select(FORM_WITH_FIELDS_SELECT)
                     .eq('id', formId)
                     .single()
                 return jsonResponse({ data: fullForm, success: true }, headers)
@@ -142,249 +126,6 @@ Deno.serve(async (req) => {
                     .eq('id', formId)
                 if (error) return errorResponse('Failed to delete form', headers, 400)
                 return jsonResponse({ success: true }, headers)
-            }
-
-            // ── Submission mutations ───────────────────────────────
-            case 'submit-form': {
-                const body = await parseBody(req)
-                const { formId, dueDate, responses, plantCode, userId, scannedPdfUrl, notes } = body
-                if (!formId || !dueDate || !userId)
-                    return errorResponse('Form ID, due date, and user ID are required', headers, 400)
-                // Clean up existing draft
-                const { data: existingDraft } = await supabase
-                    .from(SUBMISSIONS_TABLE)
-                    .select('id')
-                    .eq('form_id', formId)
-                    .eq('due_date', dueDate)
-                    .eq('submitted_by', userId)
-                    .eq('status', 'draft')
-                    .maybeSingle()
-                if (existingDraft) {
-                    await supabase.from(RESPONSES_TABLE).delete().eq('submission_id', existingDraft.id)
-                    await supabase.from(SUBMISSIONS_TABLE).delete().eq('id', existingDraft.id)
-                }
-                const timestamp = nowISO()
-                const submissionRow: Record<string, any> = {
-                    created_at: timestamp,
-                    due_date: dueDate,
-                    form_id: formId,
-                    plant_code: plantCode || null,
-                    status: 'submitted',
-                    submitted_at: timestamp,
-                    submitted_by: userId,
-                    updated_at: timestamp
-                }
-                // Optional scanned-PDF workflow: store the URL on the submission
-                // and stash any submitter notes in the existing review_notes
-                // column prefixed with "Submitter:" so reviewers can see them.
-                if (typeof scannedPdfUrl === 'string' && scannedPdfUrl) submissionRow.scanned_pdf_url = scannedPdfUrl
-                if (typeof notes === 'string' && notes.trim()) submissionRow.submitter_notes = notes.trim()
-                const { data: submission, error: subError } = await supabase
-                    .from(SUBMISSIONS_TABLE)
-                    .insert(submissionRow)
-                    .select()
-                    .single()
-                if (subError) return errorResponse('Failed to create submission', headers, 400)
-                if (responses?.length) {
-                    const { error: respError } = await supabase
-                        .from(RESPONSES_TABLE)
-                        .insert(buildResponseRows(responses, submission.id))
-                    if (respError) return errorResponse('Failed to insert responses', headers, 400)
-                }
-                return jsonResponse({ data: submission, success: true }, headers)
-            }
-            case 'update-submission': {
-                const body = await parseBody(req)
-                const { submissionId, responses, userId } = body
-                if (!submissionId || !userId)
-                    return errorResponse('Submission ID and user ID are required', headers, 400)
-                const { error: updateError } = await supabase
-                    .from(SUBMISSIONS_TABLE)
-                    .update({ updated_at: nowISO() })
-                    .eq('id', submissionId)
-                    .eq('submitted_by', userId)
-                if (updateError) return errorResponse('Failed to update submission', headers, 400)
-                await supabase.from(RESPONSES_TABLE).delete().eq('submission_id', submissionId)
-                if (responses?.length) {
-                    const { error: respError } = await supabase
-                        .from(RESPONSES_TABLE)
-                        .insert(buildResponseRows(responses, submissionId))
-                    if (respError) return errorResponse('Failed to insert responses', headers, 400)
-                }
-                return jsonResponse({ success: true }, headers)
-            }
-            case 'save-draft': {
-                const body = await parseBody(req)
-                const { formId, dueDate, responses, plantCode, userId, existingSubmissionId } = body
-                if (!formId || !dueDate || !userId)
-                    return errorResponse('Form ID, due date, and user ID are required', headers, 400)
-                let submissionId = existingSubmissionId || null
-                if (!submissionId) {
-                    const { data: existing } = await supabase
-                        .from(SUBMISSIONS_TABLE)
-                        .select('id')
-                        .eq('form_id', formId)
-                        .eq('due_date', dueDate)
-                        .eq('submitted_by', userId)
-                        .eq('status', 'draft')
-                        .maybeSingle()
-                    submissionId = existing?.id ?? null
-                }
-                if (submissionId) {
-                    const { error: updateError } = await supabase
-                        .from(SUBMISSIONS_TABLE)
-                        .update({ updated_at: nowISO() })
-                        .eq('id', submissionId)
-                    if (updateError) return errorResponse('Failed to update draft', headers, 400)
-                    await supabase.from(RESPONSES_TABLE).delete().eq('submission_id', submissionId)
-                } else {
-                    const timestamp = nowISO()
-                    const { data: submission, error: subError } = await supabase
-                        .from(SUBMISSIONS_TABLE)
-                        .insert({
-                            created_at: timestamp,
-                            due_date: dueDate,
-                            form_id: formId,
-                            plant_code: plantCode || null,
-                            status: 'draft',
-                            submitted_by: userId,
-                            updated_at: timestamp
-                        })
-                        .select()
-                        .single()
-                    if (subError) return errorResponse('Failed to create draft', headers, 400)
-                    submissionId = submission.id
-                }
-                if (responses?.length) {
-                    const { error: respError } = await supabase
-                        .from(RESPONSES_TABLE)
-                        .insert(buildResponseRows(responses, submissionId))
-                    if (respError) return errorResponse('Failed to insert responses', headers, 400)
-                }
-                return jsonResponse({ submissionId, success: true }, headers)
-            }
-            case 'delete-submission': {
-                const body = await parseBody(req)
-                const submissionId = body?.submissionId
-                if (!submissionId) return errorResponse('submissionId is required', headers, 400)
-                const { data: existing, error: fetchErr } = await supabase
-                    .from(SUBMISSIONS_TABLE)
-                    .select('submitted_by')
-                    .eq('id', submissionId)
-                    .maybeSingle()
-                if (fetchErr || !existing) return errorResponse('Submission not found', headers, 404)
-                if (existing.submitted_by !== auth) {
-                    // Allow elevated callers (weight > 75) to delete others' submissions.
-                    const adminClient = createClient(
-                        Deno.env.get('SUPABASE_URL') ?? '',
-                        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-                    )
-                    const { data: perms } = await adminClient
-                        .from('users_permissions')
-                        .select('users_roles(weight)')
-                        .eq('user_id', auth)
-                    const isElevated = perms?.some((p: any) => (p.users_roles?.weight ?? 0) > 75)
-                    if (!isElevated)
-                        return errorResponse('Forbidden: you can only delete your own submissions', headers, 403)
-                }
-                const { error: respErr } = await supabase
-                    .from(RESPONSES_TABLE)
-                    .delete()
-                    .eq('submission_id', submissionId)
-                if (respErr) return errorResponse('Failed to delete responses', headers, 500)
-                const { error: subErr } = await supabase
-                    .from(SUBMISSIONS_TABLE)
-                    .delete()
-                    .eq('id', submissionId)
-                if (subErr) return errorResponse('Failed to delete submission', headers, 500)
-                return jsonResponse({ success: true }, headers)
-            }
-            case 'review-submission': {
-                const body = await parseBody(req)
-                const { submissionId, status, notes, userId } = body
-                if (!submissionId || !status || !userId)
-                    return errorResponse('Submission ID, status, and user ID are required', headers, 400)
-                const now = nowISO()
-                const { data, error } = await supabase
-                    .from(SUBMISSIONS_TABLE)
-                    .update({
-                        review_notes: notes || '',
-                        reviewed_at: now,
-                        reviewed_by: userId,
-                        status,
-                        updated_at: now
-                    })
-                    .eq('id', submissionId)
-                    .select()
-                    .single()
-                if (error) return errorResponse('Failed to review submission', headers, 400)
-                return jsonResponse({ data, success: true }, headers)
-            }
-
-            // ── Maintenance log equipment mutations ────────────────
-            case 'create-equipment': {
-                const body = await parseBody(req)
-                const { equipment, userId } = body
-                if (!userId) return errorResponse('User ID is required', headers, 400)
-                const { data, error } = await supabase
-                    .from(LOG_EQUIPMENT_TABLE)
-                    .insert({ ...equipment, created_by: userId })
-                    .select()
-                    .single()
-                if (error) return errorResponse('Failed to create equipment', headers, 400)
-                return jsonResponse({ data, success: true }, headers)
-            }
-            case 'delete-equipment': {
-                const body = await parseBody(req)
-                const id = body?.id
-                if (!id) return errorResponse('Equipment ID is required', headers, 400)
-                const { error: entriesError } = await supabase.from(LOG_ENTRIES_TABLE).delete().eq('equipment_id', id)
-                if (entriesError) return errorResponse('Failed to delete entries', headers, 400)
-                const { error } = await supabase.from(LOG_EQUIPMENT_TABLE).delete().eq('id', id)
-                if (error) return errorResponse('Failed to delete equipment', headers, 400)
-                return jsonResponse({ success: true }, headers)
-            }
-            case 'update-equipment': {
-                const body = await parseBody(req)
-                const { id, updates } = body
-                if (!id) return errorResponse('Equipment ID is required', headers, 400)
-                const { data, error } = await supabase
-                    .from(LOG_EQUIPMENT_TABLE)
-                    .update({ ...updates, updated_at: nowISO() })
-                    .eq('id', id)
-                    .select()
-                    .single()
-                if (error) return errorResponse('Failed to update equipment', headers, 400)
-                return jsonResponse({ data, success: true }, headers)
-            }
-            case 'create-entry': {
-                const body = await parseBody(req)
-                const { entry, userId, userName } = body
-                if (!userId) return errorResponse('User ID is required', headers, 400)
-                const { data, error } = await supabase
-                    .from(LOG_ENTRIES_TABLE)
-                    .insert({
-                        ...entry,
-                        performed_by: userId,
-                        performed_by_name: entry?.performed_by_name || userName || `User ${userId.slice(0, 8)}`
-                    })
-                    .select()
-                    .single()
-                if (error) return errorResponse('Failed to create entry', headers, 400)
-                return jsonResponse({ data, success: true }, headers)
-            }
-            case 'update-entry': {
-                const body = await parseBody(req)
-                const { id, updates } = body
-                if (!id) return errorResponse('Entry ID is required', headers, 400)
-                const { data, error } = await supabase
-                    .from(LOG_ENTRIES_TABLE)
-                    .update({ ...updates, updated_at: nowISO() })
-                    .eq('id', id)
-                    .select()
-                    .single()
-                if (error) return errorResponse('Failed to update entry', headers, 400)
-                return jsonResponse({ data, success: true }, headers)
             }
 
             default:

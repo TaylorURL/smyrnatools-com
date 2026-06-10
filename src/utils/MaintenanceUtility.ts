@@ -4,10 +4,6 @@
  * have been removed — their dynamic-form consumer surface was retired.
  */
 
-type FrequencyKey = 'biweekly' | 'daily' | 'monthly' | 'quarterly' | 'weekly' | 'yearly'
-
-type FieldType = 'checklist' | 'long_answer' | 'notes' | 'short_answer'
-
 export function formatMaintenanceDate(dateStr: string | null | undefined): string {
     if (!dateStr) return ''
     const date = new Date(dateStr)
@@ -15,15 +11,6 @@ export function formatMaintenanceDate(dateStr: string | null | undefined): strin
         day: 'numeric',
         month: 'short',
         year: 'numeric'
-    })
-}
-export function formatMaintenanceDateShort(dateStr: string | null | undefined): string {
-    if (!dateStr) return ''
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'short',
-        weekday: 'short'
     })
 }
 export function formatFrequency(frequency: string, value: number = 1): string {

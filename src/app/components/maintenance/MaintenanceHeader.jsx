@@ -66,7 +66,6 @@ function RegionScopeChip({ regionLabel }) {
  * Slim sticky header shared by every Maintenance tab.
  */
 export function MaintenanceHeader({
-    accentColor,
     activeTab,
     isMobile,
     isSyncing,
@@ -96,13 +95,7 @@ export function MaintenanceHeader({
                     />
                 )}
             </div>
-            <MaintenanceTabSwitcher
-                accentColor={accentColor}
-                activeTab={activeTab}
-                isMobile={isMobile}
-                onChange={onChangeTab}
-                tabs={tabs}
-            />
+            <MaintenanceTabSwitcher activeTab={activeTab} isMobile={isMobile} onChange={onChangeTab} tabs={tabs} />
         </div>
     )
 }

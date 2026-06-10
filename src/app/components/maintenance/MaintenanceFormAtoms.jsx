@@ -3,19 +3,17 @@ import React from 'react'
 
 import { isDarkLikeTheme } from '../../constants/themeConstants'
 import { usePreferences } from '../../context/PreferencesContext'
-import Badge from '../common/Badge'
 
-/* Plan-tab inspired atoms shared by every Maintenance form surface — kept in
- * one place so the badge / chip / icon language stays in lockstep across the
- * combined Log workflow, the Manage Forms list, and any future modal flows.
+/* Plan-tab inspired atoms shared by the Maintenance form surfaces — kept in
+ * one place so the icon / row / empty-state language stays in lockstep across
+ * the download library, the Manage Forms list, and any future modal flows.
  *
  * Theme-awareness: each tinted swatch carries a separate `darkBg` / `darkFg`
- * so the badges stay readable in dark mode (the original solid pastels were
+ * so the icons stay readable in dark mode (the original solid pastels were
  * over-bright on dark surfaces). The components subscribe to preferences
  * directly so call sites don't have to prop-drill `isDark`. */
 
-/** Canonical status palette — light + dark variants. Retained for the
- *  non-badge consumers (`ItemIcon`) that still need direct tint access. */
+/** Canonical status palette — light + dark variants, consumed by `ItemIcon`. */
 const STATUS_PALETTE = {
     approved: { bg: '#dcfce7', darkBg: 'rgba(34,197,94,0.18)', darkFg: '#4ade80', fg: '#166534' },
     completed: { bg: '#dcfce7', darkBg: 'rgba(34,197,94,0.18)', darkFg: '#4ade80', fg: '#166534' },
@@ -41,16 +39,6 @@ const ICON_BY_STATUS = {
     submitted: 'fa-clock'
 }
 
-/** Maps a maintenance status string to the unified Badge tone palette. */
-const STATUS_TO_TONE = {
-    approved: 'success',
-    completed: 'success',
-    overdue: 'danger',
-    pending: 'warning',
-    rejected: 'danger',
-    submitted: 'info'
-}
-
 /** Resolve a tint pair against the user's current theme. */
 function useTint(palette) {
     const { preferences } = usePreferences()
@@ -61,27 +49,7 @@ function useTint(palette) {
     }
 }
 
-/** Compact status badge — delegates to the unified Badge with a maintenance
- *  status → tone mapping. */
-export function StatusBadge({ status }) {
-    return (
-        <Badge tone={STATUS_TO_TONE[status] || 'neutral'} size="xs" weight="bold">
-            {status}
-        </Badge>
-    )
-}
-
-/** Plant code chip — consistent blue tint across every list / table. */
-export function PlantChip({ code }) {
-    if (!code) return <span className="text-text-tertiary">—</span>
-    return (
-        <Badge tone="info" size="xs" weight="bold" className="font-mono tabular-nums">
-            {code}
-        </Badge>
-    )
-}
-
-/** Square status icon — used as the row leader in the combined log list. */
+/** Square status icon — used as the row leader in `FormTable` rows. */
 export function ItemIcon({ status }) {
     const icon = ICON_BY_STATUS[status] || ICON_BY_STATUS.pending
     const tint = useTint(STATUS_PALETTE[status] || FALLBACK_TINT)
@@ -125,8 +93,7 @@ export function EmptyState({ icon, title, message, children }) {
 /**
  * Row-style table — renders a list of rows with: status icon, title (first
  * column or the column flagged `highlight`), middle metadata pills, and an
- * optional trailing column for status/action. Used by the combined Log
- * sections and the Manage Forms list.
+ * optional trailing column for status/action. Used by the Manage Forms list.
  */
 export function FormTable({ columns, emptyChildren, emptyIcon, emptyMessage, emptyTitle, onRowClick, rows }) {
     if (!rows || rows.length === 0) {
