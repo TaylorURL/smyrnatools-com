@@ -2,120 +2,74 @@
 import React, { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
 import VersionPopup from '../../../app/components/common/VersionPopup'
-import { SESSION_STORAGE_KEYS } from '../../../app/constants/authConstants'
-import { useAuth } from '../../../app/context/AuthContext'
-import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { useVersion } from '../../../app/hooks/useVersion'
 import SrmLogo from '../../../assets/images/srm-logo.svg'
 import { Database } from '../../../services/DatabaseService'
-import ValidationUtility from '../../../utils/ValidationUtility'
+import LoginForm from './LoginForm'
+import PortalDestinationCard from './PortalDestinationCard'
 
-const PasswordRecoveryView = lazy(() => import('./PasswordRecoveryView'))
 const VideoBackground = lazy(() => import('../../../app/components/common/VideoBackground'))
+
 /** Static gradient placeholder shown while the video background lazy-loads. */
 const VideoFallback = memo(function VideoFallback() {
-    return <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#0a1929] to-[#1e3a5f]" />
-})
-/** Animated fleet/plant/operator stat counters shown on the login hero panel. */
-const StatsDisplay = memo(function StatsDisplay({ stats }) {
     return (
-        <div className="flex justify-center gap-10 border-t border-white/15 pt-8 w-full">
-            <div className="text-center">
-                <div className="text-white text-3xl font-bold">{stats.assets > 0 ? stats.assets : '-'}</div>
-                <div className="text-white/50 text-xs mt-1">Fleet Assets</div>
-            </div>
-            <div className="text-center">
-                <div className="text-white text-3xl font-bold">{stats.plants > 0 ? stats.plants : '-'}</div>
-                <div className="text-white/50 text-xs mt-1">Plants</div>
-            </div>
-            <div className="text-center">
-                <div className="text-white text-3xl font-bold">{stats.operators > 0 ? stats.operators : '-'}</div>
-                <div className="text-white/50 text-xs mt-1">Operators</div>
-            </div>
+        <div
+            className="absolute inset-0 z-0"
+            style={{ background: 'linear-gradient(135deg, #0a1929 0%, #1e3a5f 100%)' }}
+        />
+    )
+})
+
+/** Compact, theme-consistent fleet stats strip rendered under the hero copy. */
+const PortalStatsRow = memo(function PortalStatsRow({ stats }) {
+    const items = [
+        { label: 'Fleet Assets', value: stats.assets },
+        { label: 'Plants', value: stats.plants },
+        { label: 'Operators', value: stats.operators }
+    ]
+    return (
+        <div className="mt-8 inline-flex items-stretch gap-3 rounded-2xl border border-white/15 bg-white/[0.04] px-5 py-3 backdrop-blur-md">
+            {items.map((item, idx) => (
+                <React.Fragment key={item.label}>
+                    {idx > 0 && <span className="my-1 w-px self-stretch bg-white/15" aria-hidden="true" />}
+                    <div className="flex flex-col items-center justify-center px-3 tabular-nums">
+                        <span className="font-heading text-xl font-bold leading-none text-white">
+                            {item.value > 0 ? item.value : '—'}
+                        </span>
+                        <span className="mt-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white/55">
+                            {item.label}
+                        </span>
+                    </div>
+                </React.Fragment>
+            ))}
         </div>
     )
 })
-/** Horizontal bar that fills to 33/66/100% based on Weak/Medium/Strong password strength. */
-const PasswordStrengthBar = memo(function PasswordStrengthBar({ strength }) {
-    if (!strength.value) return null
-    const widthMap = { Medium: '66%', Strong: '100%', Weak: '33%' }
-    return (
-        <div className="mb-6">
-            <div className="flex items-center gap-2">
-                <div className="flex-1 h-[3px] rounded-sm bg-slate-200">
-                    <div
-                        className="h-full rounded-sm transition-[width] duration-300"
-                        style={{
-                            background: strength.color,
-                            width: widthMap[strength.value] || '0%'
-                        }}
-                    />
-                </div>
-                <span className="text-[0.7rem] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {strength.value}
-                </span>
-            </div>
-        </div>
-    )
-})
-/** Constant-time string comparison to prevent timing attacks on password matching. */
-const constantTimeEqual = (a, b) => {
-    if (a.length !== b.length) return false
-    let mismatch = 0
-    for (let i = 0; i < a.length; i++) {
-        mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
-    }
-    return mismatch === 0
-}
-/** Returns Tailwind classes for floating-label inputs. */
-const getInputClasses = (isFocused) =>
-    `w-full bg-white border-0 rounded-none text-slate-800 text-base outline-none pt-4 pb-3 border-b-2 transition-colors duration-150 ease-out motion-reduce:transition-none placeholder-transparent autofill:shadow-[inset_0_0_0px_1000px_white] autofill:[-webkit-text-fill-color:theme(colors.slate.800)] ${isFocused ? 'border-[#1e3a5f]' : 'border-slate-200 hover:border-slate-300'}`
-/** Returns Tailwind classes for floating labels above inputs. */
-const getLabelClasses = (isFocused, hasValue) =>
-    `absolute left-0 pointer-events-none font-medium transition-[top,font-size,color] duration-150 ease-out motion-reduce:transition-none ${isFocused || hasValue ? 'top-0 text-[0.7rem]' : 'top-4 text-[0.9rem]'} ${isFocused ? 'text-[#1e3a5f]' : 'text-slate-400'}`
+
+const READY_MIX_URL = 'https://smyrnareadymix.com'
+const SAMSARA_URL = 'https://samsara.com'
+
 /**
- * Full-screen login/signup view with a lazy-loaded video background,
- * animated fleet stats, password strength indicator, and a link to
- * password recovery. Creates a browser session
- * record in the database on successful authentication.
+ * Public entry portal for Smyrna. Routes visitors to three destinations:
+ *  1. Smyrna Ready Mix — the company's corporate site (external)
+ *  2. Samsara — fleet & telematics platform (external)
+ *  3. Smyrna Tools — the in-app authentication flow (preserved verbatim)
+ *
+ * Visually composes the cinematic ambient video background and the navy
+ * brand identity from the legacy login screen into a portal hero + three
+ * uniform destination tiles + an always-visible sign-in panel.
  */
 function LoginView() {
     const version = useVersion()
-    const isMobile = useIsMobile()
-    const [isSignUp, setIsSignUp] = useState(false)
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [confirmPassword, setConfirmPassword] = useState('')
-    const [firstName, setFirstName] = useState('')
-    const [lastName, setLastName] = useState('')
-    const [errorMessage, setErrorMessage] = useState('')
-    const [successMessage, setSuccessMessage] = useState('')
-    const [passwordStrength, setPasswordStrength] = useState({ color: '', value: '' })
-    const { signIn, signUp, loading, error } = useAuth()
-    const timeoutRef = useRef(null)
-    const [showRecovery, setShowRecovery] = useState(false)
-    const [showPassword, setShowPassword] = useState(false)
-    const [focusedField, setFocusedField] = useState(null)
     const [animatedStats, setAnimatedStats] = useState({ assets: 0, operators: 0, plants: 0 })
-    const [isSubmitting, setIsSubmitting] = useState(false)
     const [videoLoaded, setVideoLoaded] = useState(false)
-    // One-shot notice when the user lands here because their session expired
-    // mid-use (not because they clicked Sign Out). Flag is set by useAuthSession
-    // on SESSION_INVALID_EVENT and cleared the moment LoginView mounts.
-    const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false)
-    const strengthCheckRef = useRef(null)
+    const loginPanelRef = useRef(null)
+
     useEffect(() => {
         const timer = setTimeout(() => setVideoLoaded(true), 100)
         return () => clearTimeout(timer)
     }, [])
-    useEffect(() => {
-        try {
-            if (sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_EXPIRED_BANNER) === '1') {
-                setSessionExpiredNotice(true)
-                sessionStorage.removeItem(SESSION_STORAGE_KEYS.SESSION_EXPIRED_BANNER)
-            }
-        } catch {}
-    }, [])
+
     // Fetch aggregate fleet counts after a 1s delay (so the UI paints first),
     // then animate them with a cubic ease-out over 1.5s.
     useEffect(() => {
@@ -170,104 +124,19 @@ function LoginView() {
             cancelled = true
         }
     }, [])
-    useEffect(() => {
-        return () => {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current)
-            if (strengthCheckRef.current) clearTimeout(strengthCheckRef.current)
+
+    const focusLoginPanel = useCallback(() => {
+        const node = loginPanelRef.current
+        if (!node) return
+        node.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        const emailInput = node.querySelector('input[type="email"]')
+        if (emailInput) {
+            window.setTimeout(() => emailInput.focus({ preventScroll: true }), 350)
         }
     }, [])
-    useEffect(() => {
-        if (strengthCheckRef.current) clearTimeout(strengthCheckRef.current)
-        if (password && isSignUp) {
-            strengthCheckRef.current = setTimeout(async () => {
-                const strengthValue = await ValidationUtility.passwordStrength(password)
-                const colorMap = { medium: '#f59e0b', strong: '#22c55e', weak: '#ef4444' }
-                setPasswordStrength({
-                    color: colorMap[strengthValue] || '',
-                    value: strengthValue ? strengthValue.charAt(0).toUpperCase() + strengthValue.slice(1) : ''
-                })
-            }, 300)
-        } else {
-            setPasswordStrength({ color: '', value: '' })
-        }
-    }, [password, isSignUp])
-    useEffect(() => {
-        if (error) {
-            setErrorMessage(error)
-            setSuccessMessage('')
-        }
-    }, [error])
-    /** Handles sign-in or sign-up with a 10s safety timeout to prevent infinite loading state. */
-    const handleSubmit = useCallback(
-        async (e) => {
-            e.preventDefault()
-            if (isSubmitting || loading) return
-            setErrorMessage('')
-            setSuccessMessage('')
-            setIsSubmitting(true)
-            if (timeoutRef.current) clearTimeout(timeoutRef.current)
-            timeoutRef.current = setTimeout(() => {
-                setIsSubmitting(false)
-                setErrorMessage('The operation timed out. Please try again.')
-            }, 10000)
-            try {
-                if (isSignUp) {
-                    if (!email || !password || !confirmPassword || !firstName || !lastName) {
-                        setErrorMessage('Please complete all fields.')
-                        if (timeoutRef.current) clearTimeout(timeoutRef.current)
-                        setIsSubmitting(false)
-                        return
-                    }
-                    if (!constantTimeEqual(password, confirmPassword)) {
-                        setErrorMessage('Passwords do not match.')
-                        if (timeoutRef.current) clearTimeout(timeoutRef.current)
-                        setIsSubmitting(false)
-                        return
-                    }
-                    const normFirst = await ValidationUtility.normalizeName(firstName)
-                    const normLast = await ValidationUtility.normalizeName(lastName)
-                    await signUp(email, password, normFirst, normLast)
-                    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-                    setSuccessMessage('Account created successfully.')
-                } else {
-                    if (!email || !password) {
-                        setErrorMessage('Please enter your email and password.')
-                        if (timeoutRef.current) clearTimeout(timeoutRef.current)
-                        setIsSubmitting(false)
-                        return
-                    }
-                    const result = await signIn(email, password)
-                    if (!result?.id) throw new Error('Sign in failed - no user data returned')
-                    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-                    setSuccessMessage('Signed in successfully.')
-                }
-            } catch (err) {
-                if (timeoutRef.current) clearTimeout(timeoutRef.current)
-                setErrorMessage(err?.message || 'An authentication error occurred. Please try again.')
-                setIsSubmitting(false)
-            }
-        },
-        [isSubmitting, loading, isSignUp, email, password, confirmPassword, firstName, lastName, signIn, signUp]
-    )
-    const toggleSignUp = useCallback(() => setIsSignUp((prev) => !prev), [])
-    const togglePassword = useCallback(() => setShowPassword((prev) => !prev), [])
-    const openRecovery = useCallback(() => setShowRecovery(true), [])
-    const closeRecovery = useCallback(() => setShowRecovery(false), [])
-    if (showRecovery) {
-        return (
-            <Suspense
-                fallback={
-                    <div className="flex items-center justify-center h-screen bg-white">
-                        <i className="fas fa-spinner fa-spin text-text-primary text-2xl" />
-                    </div>
-                }
-            >
-                <PasswordRecoveryView onBackToLogin={closeRecovery} />
-            </Suspense>
-        )
-    }
+
     return (
-        <div className="flex min-h-screen overflow-hidden">
+        <div className="relative min-h-screen w-full overflow-x-hidden">
             {videoLoaded ? (
                 <Suspense fallback={<VideoFallback />}>
                     <VideoBackground />
@@ -275,225 +144,73 @@ function LoginView() {
             ) : (
                 <VideoFallback />
             )}
+            {/* Extra dark vignette so portal content reads on top of the ambient video */}
+            <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 z-[4] bg-gradient-to-b from-slate-950/60 via-slate-950/35 to-slate-950/85"
+            />
             <VersionPopup version={version} />
-            <div className="flex items-stretch h-screen relative w-full z-10">
-                {/* Hero panel — hidden on mobile, shown on lg+ */}
-                <div className="hidden lg:flex flex-1 items-center justify-center relative p-12">
-                    <div className="relative z-[2] flex flex-col items-center text-center max-w-lg animate-fade-slide-in motion-reduce:animate-none">
-                        <img src={SrmLogo} alt="SRM" className="h-32 w-32 mb-8 drop-shadow-2xl" loading="eager" />
-                        <h1 className="text-white font-heading text-5xl font-extrabold tracking-tight leading-tight mb-3">
-                            Smyrna <span className="text-white/70">Tools</span>
-                        </h1>
-                        <p className="text-white/60 text-lg leading-relaxed mb-10 max-w-sm">
-                            Fleet management and operations platform.
-                        </p>
-                        <StatsDisplay stats={animatedStats} />
-                    </div>
-                </div>
-                {/* Login form panel */}
-                <div className="flex items-center justify-center w-full p-3 min-[481px]:p-6 lg:w-[480px] lg:min-w-[480px] lg:p-12 bg-white [background-image:linear-gradient(rgba(30,58,95,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(30,58,95,0.03)_1px,transparent_1px)] bg-[length:20px_20px]">
-                    <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] max-w-[380px] w-full p-10">
-                        {!isMobile && (
-                            <div className="lg:hidden mb-8 text-center">
-                                <img src={SrmLogo} alt="SRM" className="h-12 mb-2 inline" loading="eager" />
-                                <div className="text-text-primary text-xl font-bold">Smyrna Tools</div>
-                            </div>
-                        )}
-                        <div className="mb-10">
-                            <h2 className="text-slate-800 font-heading text-2xl font-bold tracking-tight mb-2">
-                                {isSignUp ? 'Create account' : 'Welcome back'}
-                            </h2>
-                            <p className="text-slate-500 text-[0.9rem] m-0">
-                                {isSignUp ? 'Join the team' : 'Enter your credentials to continue'}
-                            </p>
-                        </div>
-                        <form onSubmit={handleSubmit} noValidate>
-                            {isSignUp && (
-                                <div className="flex gap-6 mb-6">
-                                    <div className="flex-1 relative">
-                                        <label className={getLabelClasses(focusedField === 'firstName', firstName)}>
-                                            First name
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={firstName}
-                                            onChange={(e) => setFirstName(e.target.value)}
-                                            onFocus={() => setFocusedField('firstName')}
-                                            onBlur={() => setFocusedField(null)}
-                                            className={getInputClasses(focusedField === 'firstName')}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="flex-1 relative">
-                                        <label className={getLabelClasses(focusedField === 'lastName', lastName)}>
-                                            Last name
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={lastName}
-                                            onChange={(e) => setLastName(e.target.value)}
-                                            onFocus={() => setFocusedField('lastName')}
-                                            onBlur={() => setFocusedField(null)}
-                                            className={getInputClasses(focusedField === 'lastName')}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                            <div className="mb-6 relative">
-                                <label className={getLabelClasses(focusedField === 'email', email)}>
-                                    Email address
-                                </label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    onFocus={() => setFocusedField('email')}
-                                    onBlur={() => setFocusedField(null)}
-                                    autoComplete="username"
-                                    className={getInputClasses(focusedField === 'email')}
-                                    required
-                                />
-                            </div>
-                            <div className="mb-6">
-                                <div className="relative">
-                                    <label className={getLabelClasses(focusedField === 'password', password)}>
-                                        Password
-                                    </label>
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        onFocus={() => setFocusedField('password')}
-                                        onBlur={() => setFocusedField(null)}
-                                        autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                                        className={`${getInputClasses(focusedField === 'password')} pr-10`}
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={togglePassword}
-                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                        aria-pressed={showPassword}
-                                        className="absolute right-0 bottom-3 bg-transparent border-none text-slate-400 cursor-pointer text-sm p-1 transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-slate-700 focus-visible:outline-none focus-visible:text-[#1e3a5f] focus-visible:ring-2 focus-visible:ring-[#1e3a5f]/40 rounded"
-                                    >
-                                        <i
-                                            className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}
-                                            aria-hidden="true"
-                                        />
-                                    </button>
-                                </div>
-                            </div>
-                            {isSignUp && password && <PasswordStrengthBar strength={passwordStrength} />}
-                            {isSignUp && (
-                                <div className="mb-6">
-                                    <div className="relative">
-                                        <label
-                                            className={getLabelClasses(
-                                                focusedField === 'confirmPassword',
-                                                confirmPassword
-                                            )}
-                                        >
-                                            Confirm password
-                                        </label>
-                                        <input
-                                            type={showPassword ? 'text' : 'password'}
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            onFocus={() => setFocusedField('confirmPassword')}
-                                            onBlur={() => setFocusedField(null)}
-                                            autoComplete="new-password"
-                                            className={getInputClasses(focusedField === 'confirmPassword')}
-                                            required
-                                        />
-                                        {confirmPassword && password === confirmPassword && (
-                                            <i className="fas fa-check absolute right-0 bottom-3 text-text-primary" />
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                            {!isSignUp && (
-                                <div className="mb-6 text-right">
-                                    <button
-                                        type="button"
-                                        onClick={openRecovery}
-                                        className="bg-transparent border-none text-[#1e3a5f] cursor-pointer text-[0.8rem] font-medium p-0 transition-colors duration-150 ease-out motion-reduce:transition-none hover:underline focus-visible:outline-none focus-visible:underline focus-visible:ring-2 focus-visible:ring-[#1e3a5f]/40 rounded"
-                                    >
-                                        Forgot password?
-                                    </button>
-                                </div>
-                            )}
-                            {sessionExpiredNotice && !errorMessage && !successMessage && (
-                                <div
-                                    role="status"
-                                    aria-live="polite"
-                                    className="flex items-start gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in motion-reduce:animate-none bg-amber-50 border border-amber-200 text-amber-900"
-                                >
-                                    <i
-                                        className="fas fa-info-circle shrink-0 mt-0.5 text-[0.9rem]"
-                                        aria-hidden="true"
-                                    />
-                                    <span>Your session expired. Please sign in again.</span>
-                                </div>
-                            )}
-                            {errorMessage && (
-                                <div
-                                    role="alert"
-                                    className="flex items-start gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in motion-reduce:animate-none bg-red-50 border border-red-200 text-red-800"
-                                >
-                                    <i
-                                        className="fas fa-exclamation-circle shrink-0 mt-0.5 text-[0.9rem]"
-                                        aria-hidden="true"
-                                    />
-                                    <span>{errorMessage}</span>
-                                </div>
-                            )}
-                            {successMessage && (
-                                <div
-                                    role="status"
-                                    aria-live="polite"
-                                    className="flex items-start gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in motion-reduce:animate-none bg-green-50 border border-green-200 text-green-800"
-                                >
-                                    <i
-                                        className="fas fa-check-circle shrink-0 mt-0.5 text-[0.9rem]"
-                                        aria-hidden="true"
-                                    />
-                                    <span>{successMessage}</span>
-                                </div>
-                            )}
-                            <button
-                                type="submit"
-                                disabled={isSubmitting || loading}
-                                className={`w-full bg-[#1e3a5f] text-white rounded-md text-[0.9rem] font-semibold py-3.5 px-6 border-none transition-[filter,transform,opacity] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e3a5f]/50 focus-visible:ring-offset-2 ${isSubmitting || loading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:brightness-110 active:scale-[0.98]'}`}
-                            >
-                                {isSubmitting || loading ? (
-                                    <span className="inline-flex items-center gap-2">
-                                        <i className="fas fa-circle-notch fa-spin" aria-hidden="true" />
-                                        Processing...
-                                    </span>
-                                ) : isSignUp ? (
-                                    'Create account'
-                                ) : (
-                                    'Sign in'
-                                )}
-                            </button>
-                        </form>
-                        <div className="mt-8 text-center">
-                            <span className="text-slate-500 text-[0.85rem]">
-                                {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-                            </span>{' '}
-                            <button
-                                type="button"
-                                onClick={toggleSignUp}
-                                className="bg-transparent border-none text-[#1e3a5f] cursor-pointer text-[0.85rem] font-semibold p-0 transition-colors duration-150 ease-out motion-reduce:transition-none hover:underline focus-visible:outline-none focus-visible:underline focus-visible:ring-2 focus-visible:ring-[#1e3a5f]/40 rounded"
-                            >
-                                {isSignUp ? 'Sign in' : 'Sign up'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <main className="relative z-10 flex min-h-screen w-full flex-col items-center justify-start px-5 pb-16 pt-12 sm:px-8 sm:pt-16 lg:pt-20">
+                <header className="flex w-full max-w-5xl flex-col items-center text-center animate-fade-slide-in motion-reduce:animate-none">
+                    <img
+                        src={SrmLogo}
+                        alt="Smyrna Ready Mix"
+                        className="mb-6 h-20 w-20 drop-shadow-2xl sm:h-24 sm:w-24"
+                        loading="eager"
+                    />
+                    <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/80 backdrop-blur-md">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                        Smyrna Portal
+                    </span>
+                    <h1 className="font-heading text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+                        Welcome to <span className="text-white/70">Smyrna</span>
+                    </h1>
+                    <p className="mt-4 max-w-xl text-base leading-relaxed text-white/65 sm:text-lg">
+                        Choose your destination — visit the company, jump into the fleet platform, or sign in to the
+                        operations tool.
+                    </p>
+                    <PortalStatsRow stats={animatedStats} />
+                </header>
+                <section
+                    aria-label="Destinations"
+                    className="mt-12 grid w-full max-w-5xl grid-cols-1 gap-5 sm:mt-14 sm:grid-cols-2 lg:grid-cols-3"
+                >
+                    <PortalDestinationCard
+                        title="Smyrna Ready Mix"
+                        description="The company website — services, plants, and ways to request concrete."
+                        href={READY_MIX_URL}
+                        accent="#1e3a5f"
+                        label="Visit site"
+                        icon={<i className="fas fa-industry text-lg" aria-hidden="true" />}
+                    />
+                    <PortalDestinationCard
+                        title="Samsara"
+                        description="Live fleet telematics, dash cams, and routing for drivers and dispatchers."
+                        href={SAMSARA_URL}
+                        accent="#0a7d4f"
+                        label="Open Samsara"
+                        icon={<i className="fas fa-satellite-dish text-lg" aria-hidden="true" />}
+                    />
+                    <PortalDestinationCard
+                        title="Smyrna Tools"
+                        description="Internal operations platform — plants, fleet, people, and reporting."
+                        onClick={focusLoginPanel}
+                        accent="#1e3a5f"
+                        badge="Sign in"
+                        label="Sign in below"
+                        icon={<i className="fas fa-toolbox text-lg" aria-hidden="true" />}
+                    />
+                </section>
+                <section
+                    ref={loginPanelRef}
+                    aria-label="Smyrna Tools sign in"
+                    className="mt-14 w-full max-w-md"
+                >
+                    <LoginForm />
+                </section>
+            </main>
         </div>
     )
 }
+
 export default LoginView
