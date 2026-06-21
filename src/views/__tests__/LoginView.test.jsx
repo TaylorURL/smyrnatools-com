@@ -24,21 +24,6 @@ jest.mock('../../app/hooks/useVersion', () => ({
     useVersion: () => '1.0.0'
 }))
 
-jest.mock('../../app/hooks/useIsMobile', () => ({
-    useIsMobile: () => false
-}))
-
-jest.mock('../../services/DatabaseService', () => ({
-    Database: {
-        from: () => ({
-            select: () => ({
-                in: () => Promise.resolve({ count: 5 }),
-                neq: () => Promise.resolve({ count: 10 })
-            })
-        })
-    }
-}))
-
 jest.mock('../../utils/ValidationUtility', () => ({
     __esModule: true,
     default: {
@@ -57,10 +42,10 @@ jest.mock(
 
 jest.mock('../../assets/images/srm-logo.svg', () => 'srm-logo.svg')
 
-/** Resolves the form submit button by exact accessible name to avoid
- *  colliding with the "Smyrna Tools" destination card which also contains
- *  the words "Sign in". */
-const getSubmitButton = () => screen.getByRole('button', { name: 'Sign in' })
+/** Resolve the form's submit button by an exact accessible-name match. The
+ *  "Smyrna Tools" destination card also contains the words "Sign in" (badge
+ *  + label), so a substring match would collide. */
+const getSubmitButton = () => screen.getByRole('button', { name: /^sign in$/i })
 
 describe('LoginView portal', () => {
     beforeEach(() => {
@@ -75,6 +60,13 @@ describe('LoginView portal', () => {
         expect(getSubmitButton()).toBeInTheDocument()
     })
 
+    it('exposes a destinations navigation landmark alongside the sign-in panel', () => {
+        render(<LoginView />)
+
+        expect(screen.getByRole('navigation', { name: /destinations/i })).toBeInTheDocument()
+        expect(screen.getByRole('region', { name: /smyrna tools sign in/i })).toBeInTheDocument()
+    })
+
     it('exposes Smyrna Ready Mix and Samsara as external destination links', () => {
         render(<LoginView />)
 
@@ -87,6 +79,14 @@ describe('LoginView portal', () => {
         expect(samsara).toHaveAttribute('href', 'https://samsara.com')
         expect(samsara).toHaveAttribute('target', '_blank')
         expect(samsara).toHaveAttribute('rel', expect.stringContaining('noopener'))
+    })
+
+    it('exposes the Smyrna Tools destination as a keyboard-accessible button', () => {
+        render(<LoginView />)
+
+        const tools = screen.getByRole('button', { name: /smyrna tools/i })
+        expect(tools).toBeInTheDocument()
+        expect(tools.tagName).toBe('BUTTON')
     })
 
     it('shows error when submitting empty login form', async () => {
