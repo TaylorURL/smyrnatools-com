@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
 import VersionPopup from '../../../app/components/common/VersionPopup'
