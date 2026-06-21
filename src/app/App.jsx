@@ -11,7 +11,6 @@ import LoginView from '../views/common/login/LoginView'
 import LockedOverlay from './components/common/LockedOverlay'
 import Navigation from './components/common/Navigation'
 import OfflineOverlay from './components/common/OfflineOverlay'
-import SunsetNotice from './components/common/SunsetNotice'
 import TerminatedOverlay from './components/common/TerminatedOverlay'
 import TutorialManager from './components/common/TutorialPopup'
 import VersionUpdateBanner from './components/common/VersionUpdateBanner'
@@ -383,7 +382,6 @@ function App() {
             </Suspense>
             <TutorialManager />
             {hasUpdate && <VersionUpdateBanner onDismiss={dismiss} />}
-            <SunsetNotice />
             <Analytics />
             <SpeedInsights />
         </>
