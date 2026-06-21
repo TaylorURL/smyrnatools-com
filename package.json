@@ -1,6 +1,6 @@
 {
   "name": "smyrnatools",
-  "version": "2026.25.2",
+  "version": "2026.25.3",
   "private": true,
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
