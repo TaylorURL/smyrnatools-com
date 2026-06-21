@@ -382,7 +382,6 @@ function App() {
             </Suspense>
             <TutorialManager />
             {hasUpdate && <VersionUpdateBanner onDismiss={dismiss} />}
-            <SunsetNotice />
             <Analytics />
             <SpeedInsights />
         </>
