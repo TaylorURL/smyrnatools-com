@@ -54,21 +54,23 @@ function LoginView() {
     }, [])
 
     return (
-        <div className="relative min-h-screen w-full overflow-x-hidden">
-            {videoLoaded ? (
-                <Suspense fallback={<VideoFallback />}>
-                    <VideoBackground />
-                </Suspense>
-            ) : (
-                <VideoFallback />
-            )}
-            {/* Extra dark vignette so portal content reads on top of the ambient video */}
-            <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 z-[4] bg-gradient-to-b from-slate-950/70 via-slate-950/45 to-slate-950/90"
-            />
+        <div className="relative h-full min-h-screen w-full overflow-x-hidden overflow-y-auto bg-slate-950">
+            {/* Fixed ambient background — pinned to the viewport so the navy
+             *  layer always extends to the edges regardless of scroll
+             *  position or how tall the portal content grows. */}
+            <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
+                {videoLoaded ? (
+                    <Suspense fallback={<VideoFallback />}>
+                        <VideoBackground />
+                    </Suspense>
+                ) : (
+                    <VideoFallback />
+                )}
+                {/* Extra dark vignette so portal content reads on top of the ambient video */}
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/45 to-slate-950/90" />
+            </div>
             <VersionPopup version={version} />
-            <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 pb-16 pt-10 sm:px-8 sm:pt-14 lg:justify-center lg:py-16">
+            <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-5 py-12 sm:px-8 sm:py-14 lg:py-16">
                 <header className="mx-auto flex w-full max-w-2xl flex-col items-center text-center animate-fade-slide-in motion-reduce:animate-none">
                     <img
                         src={SrmLogo}
