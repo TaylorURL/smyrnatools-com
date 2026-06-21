@@ -7,20 +7,30 @@ import ValidationUtility from '../../../utils/ValidationUtility'
 
 const PasswordRecoveryView = lazy(() => import('./PasswordRecoveryView'))
 
+const STRENGTH_TONE_CLS = {
+    Medium: 'text-status-warning',
+    Strong: 'text-status-active',
+    Weak: 'text-status-danger'
+}
+
 /** Horizontal bar that fills to 33/66/100% based on Weak/Medium/Strong password strength. */
 const PasswordStrengthBar = memo(function PasswordStrengthBar({ strength }) {
     if (!strength.value) return null
     const widthMap = { Medium: '66%', Strong: '100%', Weak: '33%' }
     return (
-        <div className="mb-6">
+        <div className="mb-4 -mt-2">
             <div className="flex items-center gap-2">
-                <div className="flex-1 h-[3px] rounded-sm bg-white/10">
+                <div className="flex-1 h-1 rounded-sm bg-bg-tertiary">
                     <div
                         className="h-full rounded-sm transition-[width] duration-300"
                         style={{ background: strength.color, width: widthMap[strength.value] || '0%' }}
                     />
                 </div>
-                <span className="text-[0.7rem] font-semibold text-white/90">{strength.value}</span>
+                <span
+                    className={`text-[10px] font-bold uppercase tracking-[0.08em] ${STRENGTH_TONE_CLS[strength.value] || 'text-text-secondary'}`}
+                >
+                    {strength.value}
+                </span>
             </div>
         </div>
     )
@@ -36,18 +46,23 @@ const constantTimeEqual = (a, b) => {
     return mismatch === 0
 }
 
-/** Returns Tailwind classes for floating-label inputs rendered on a dark glass surface. */
-const getInputClasses = (isFocused) =>
-    `w-full bg-transparent border-0 rounded-none text-white text-base outline-none pt-4 pb-3 border-b-2 transition-colors duration-150 ease-out motion-reduce:transition-none placeholder-transparent autofill:shadow-[inset_0_0_0px_1000px_rgba(15,23,42,0.92)] autofill:[-webkit-text-fill-color:white] ${isFocused ? 'border-white' : 'border-white/25 hover:border-white/50'}`
+const INPUT_CLS =
+    'w-full rounded-md border border-border-light bg-bg-secondary text-text-primary text-[13.5px] ' +
+    'px-3 py-2.5 outline-none transition-[border-color,background-color,box-shadow] duration-150 ease-out motion-reduce:transition-none ' +
+    'placeholder:text-text-tertiary hover:border-border-medium ' +
+    'focus:border-accent focus:bg-bg-primary ' +
+    'focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_18%,transparent)]'
 
-/** Returns Tailwind classes for floating labels above inputs on a dark surface. */
-const getLabelClasses = (isFocused, hasValue) =>
-    `absolute left-0 pointer-events-none font-medium transition-[top,font-size,color] duration-150 ease-out motion-reduce:transition-none ${isFocused || hasValue ? 'top-0 text-[0.7rem]' : 'top-4 text-[0.9rem]'} ${isFocused ? 'text-white' : 'text-white/55'}`
+const LABEL_CLS = 'mb-1.5 block text-[10.5px] font-bold uppercase tracking-[0.1em] text-text-tertiary'
+
+const ALERT_BASE_CLS =
+    'mb-5 flex items-start gap-2 rounded-md border px-3 py-2 text-[12.5px] leading-snug animate-msg-in motion-reduce:animate-none'
 
 /**
  * Sign-in / sign-up form panel for Smyrna Tools. Hosts the full authentication
- * flow (preserved verbatim from the legacy LoginView) inside a dark glass
- * card suitable for the portal hero. Lazy-loads password recovery on demand.
+ * flow (preserved verbatim from the legacy LoginView) inside a flat, theme-
+ * aware product panel that matches the rest of the app's surface language.
+ * Lazy-loads password recovery on demand.
  */
 function LoginForm() {
     const [isSignUp, setIsSignUp] = useState(false)
@@ -63,7 +78,6 @@ function LoginForm() {
     const timeoutRef = useRef(null)
     const [showRecovery, setShowRecovery] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
-    const [focusedField, setFocusedField] = useState(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     // One-shot notice when the user lands here because their session expired
     // mid-use (not because they clicked Sign Out). Flag is set by useAuthSession
@@ -172,8 +186,8 @@ function LoginForm() {
         return (
             <Suspense
                 fallback={
-                    <div className="flex items-center justify-center h-screen bg-white">
-                        <i className="fas fa-spinner fa-spin text-text-primary text-2xl" />
+                    <div className="flex h-screen items-center justify-center bg-bg-primary">
+                        <i className="fas fa-spinner fa-spin text-2xl text-text-primary" />
                     </div>
                 }
             >
@@ -183,70 +197,91 @@ function LoginForm() {
     }
 
     return (
-        <div className="w-full max-w-md mx-auto rounded-2xl border border-white/15 bg-slate-950/55 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.45)] p-8 sm:p-10 animate-fade-slide-in motion-reduce:animate-none">
-            <div className="mb-8">
-                <h2 className="text-white font-heading text-2xl font-bold tracking-tight mb-2">
+        <div className="w-full rounded-card border border-border-light bg-bg-primary p-5 sm:p-6">
+            <div className="mb-5 flex flex-col gap-1.5">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-text-tertiary">
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+                    Smyrna Tools
+                </span>
+                <h2 className="m-0 font-heading text-[22px] font-bold leading-tight tracking-tight text-text-primary">
                     {isSignUp ? 'Create account' : 'Sign in to Smyrna Tools'}
                 </h2>
-                <p className="text-white/60 text-[0.9rem] m-0">
-                    {isSignUp ? 'Join the team' : 'Enter your credentials to continue'}
+                <p className="m-0 text-[12.5px] text-text-secondary">
+                    {isSignUp
+                        ? 'Fill in your details to request access.'
+                        : 'Enter your credentials to continue.'}
                 </p>
             </div>
             <form onSubmit={handleSubmit} noValidate>
                 {isSignUp && (
-                    <div className="flex gap-6 mb-6">
-                        <div className="flex-1 relative">
-                            <label className={getLabelClasses(focusedField === 'firstName', firstName)}>
+                    <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label htmlFor="login-first-name" className={LABEL_CLS}>
                                 First name
                             </label>
                             <input
+                                id="login-first-name"
                                 type="text"
                                 value={firstName}
                                 onChange={(e) => setFirstName(e.target.value)}
-                                onFocus={() => setFocusedField('firstName')}
-                                onBlur={() => setFocusedField(null)}
-                                className={getInputClasses(focusedField === 'firstName')}
+                                className={INPUT_CLS}
+                                autoComplete="given-name"
                                 required
                             />
                         </div>
-                        <div className="flex-1 relative">
-                            <label className={getLabelClasses(focusedField === 'lastName', lastName)}>Last name</label>
+                        <div>
+                            <label htmlFor="login-last-name" className={LABEL_CLS}>
+                                Last name
+                            </label>
                             <input
+                                id="login-last-name"
                                 type="text"
                                 value={lastName}
                                 onChange={(e) => setLastName(e.target.value)}
-                                onFocus={() => setFocusedField('lastName')}
-                                onBlur={() => setFocusedField(null)}
-                                className={getInputClasses(focusedField === 'lastName')}
+                                className={INPUT_CLS}
+                                autoComplete="family-name"
                                 required
                             />
                         </div>
                     </div>
                 )}
-                <div className="mb-6 relative">
-                    <label className={getLabelClasses(focusedField === 'email', email)}>Email address</label>
+                <div className="mb-4">
+                    <label htmlFor="login-email" className={LABEL_CLS}>
+                        Email address
+                    </label>
                     <input
+                        id="login-email"
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        onFocus={() => setFocusedField('email')}
-                        onBlur={() => setFocusedField(null)}
                         autoComplete="username"
-                        className={getInputClasses(focusedField === 'email')}
+                        className={INPUT_CLS}
                         required
                     />
                 </div>
-                <div className="mb-6">
+                <div className="mb-4">
+                    <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                        <label htmlFor="login-password" className={`${LABEL_CLS} mb-0`}>
+                            Password
+                        </label>
+                        {!isSignUp && (
+                            <button
+                                type="button"
+                                onClick={openRecovery}
+                                className="cursor-pointer border-none bg-transparent p-0 text-[11px] font-semibold text-accent transition-colors duration-150 ease-out hover:underline focus-visible:underline focus-visible:outline-none motion-reduce:transition-none"
+                            >
+                                Forgot password?
+                            </button>
+                        )}
+                    </div>
                     <div className="relative">
-                        <label className={getLabelClasses(focusedField === 'password', password)}>Password</label>
                         <input
+                            id="login-password"
                             type={showPassword ? 'text' : 'password'}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            onFocus={() => setFocusedField('password')}
-                            onBlur={() => setFocusedField(null)}
                             autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                            className={`${getInputClasses(focusedField === 'password')} pr-10`}
+                            className={`${INPUT_CLS} pr-10`}
                             required
                         />
                         <button
@@ -254,7 +289,7 @@ function LoginForm() {
                             onClick={togglePassword}
                             aria-label={showPassword ? 'Hide password' : 'Show password'}
                             aria-pressed={showPassword}
-                            className="absolute right-0 bottom-3 bg-transparent border-none text-white/50 cursor-pointer text-sm p-1 transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-white focus-visible:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/40 rounded"
+                            className="absolute inset-y-0 right-0 inline-flex w-9 cursor-pointer items-center justify-center border-none bg-transparent text-sm text-text-tertiary transition-colors duration-150 ease-out hover:text-text-primary focus-visible:rounded-md focus-visible:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
                         >
                             <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} aria-hidden="true" />
                         </button>
@@ -262,56 +297,51 @@ function LoginForm() {
                 </div>
                 {isSignUp && password && <PasswordStrengthBar strength={passwordStrength} />}
                 {isSignUp && (
-                    <div className="mb-6">
+                    <div className="mb-4">
+                        <label htmlFor="login-confirm-password" className={LABEL_CLS}>
+                            Confirm password
+                        </label>
                         <div className="relative">
-                            <label
-                                className={getLabelClasses(focusedField === 'confirmPassword', confirmPassword)}
-                            >
-                                Confirm password
-                            </label>
                             <input
+                                id="login-confirm-password"
                                 type={showPassword ? 'text' : 'password'}
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                onFocus={() => setFocusedField('confirmPassword')}
-                                onBlur={() => setFocusedField(null)}
                                 autoComplete="new-password"
-                                className={getInputClasses(focusedField === 'confirmPassword')}
+                                className={`${INPUT_CLS} pr-9`}
                                 required
                             />
                             {confirmPassword && password === confirmPassword && (
-                                <i className="fas fa-check absolute right-0 bottom-3 text-emerald-300" />
+                                <i
+                                    className="fas fa-check absolute right-3 top-1/2 -translate-y-1/2 text-status-active"
+                                    aria-hidden="true"
+                                />
                             )}
                         </div>
-                    </div>
-                )}
-                {!isSignUp && (
-                    <div className="mb-6 text-right">
-                        <button
-                            type="button"
-                            onClick={openRecovery}
-                            className="bg-transparent border-none text-white/80 cursor-pointer text-[0.8rem] font-medium p-0 transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-white hover:underline focus-visible:outline-none focus-visible:underline focus-visible:ring-2 focus-visible:ring-white/40 rounded"
-                        >
-                            Forgot password?
-                        </button>
                     </div>
                 )}
                 {sessionExpiredNotice && !errorMessage && !successMessage && (
                     <div
                         role="status"
                         aria-live="polite"
-                        className="flex items-start gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in motion-reduce:animate-none bg-amber-500/15 border border-amber-300/40 text-amber-100"
+                        className={`${ALERT_BASE_CLS} border-status-warning/40 bg-bg-secondary text-text-primary`}
                     >
-                        <i className="fas fa-info-circle shrink-0 mt-0.5 text-[0.9rem]" aria-hidden="true" />
+                        <i
+                            className="fas fa-info-circle mt-0.5 shrink-0 text-status-warning"
+                            aria-hidden="true"
+                        />
                         <span>Your session expired. Please sign in again.</span>
                     </div>
                 )}
                 {errorMessage && (
                     <div
                         role="alert"
-                        className="flex items-start gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in motion-reduce:animate-none bg-red-500/15 border border-red-300/40 text-red-100"
+                        className={`${ALERT_BASE_CLS} border-status-danger/40 bg-bg-secondary text-text-primary`}
                     >
-                        <i className="fas fa-exclamation-circle shrink-0 mt-0.5 text-[0.9rem]" aria-hidden="true" />
+                        <i
+                            className="fas fa-exclamation-circle mt-0.5 shrink-0 text-status-danger"
+                            aria-hidden="true"
+                        />
                         <span>{errorMessage}</span>
                     </div>
                 )}
@@ -319,37 +349,44 @@ function LoginForm() {
                     <div
                         role="status"
                         aria-live="polite"
-                        className="flex items-start gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in motion-reduce:animate-none bg-emerald-500/15 border border-emerald-300/40 text-emerald-100"
+                        className={`${ALERT_BASE_CLS} border-status-active/40 bg-bg-secondary text-text-primary`}
                     >
-                        <i className="fas fa-check-circle shrink-0 mt-0.5 text-[0.9rem]" aria-hidden="true" />
+                        <i
+                            className="fas fa-check-circle mt-0.5 shrink-0 text-status-active"
+                            aria-hidden="true"
+                        />
                         <span>{successMessage}</span>
                     </div>
                 )}
                 <button
                     type="submit"
                     disabled={isSubmitting || loading}
-                    className={`w-full bg-white text-slate-900 rounded-lg text-[0.9rem] font-semibold py-3.5 px-6 border-none transition-[filter,transform,opacity] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${isSubmitting || loading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:brightness-110 active:scale-[0.98]'}`}
+                    className={`mt-1 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-accent bg-accent px-4 py-2.5 text-[13px] font-bold tracking-tight text-white transition-[filter,transform,opacity] duration-150 ease-out hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary motion-reduce:transition-none ${isSubmitting || loading ? 'cursor-not-allowed opacity-70' : ''}`}
                 >
                     {isSubmitting || loading ? (
-                        <span className="inline-flex items-center gap-2">
+                        <>
                             <i className="fas fa-circle-notch fa-spin" aria-hidden="true" />
-                            Processing...
-                        </span>
-                    ) : isSignUp ? (
-                        'Create account'
+                            Processing…
+                        </>
                     ) : (
-                        'Sign in'
+                        <>
+                            <i
+                                className={`fas ${isSignUp ? 'fa-user-plus' : 'fa-arrow-right-to-bracket'} text-[11px]`}
+                                aria-hidden="true"
+                            />
+                            {isSignUp ? 'Create account' : 'Sign in'}
+                        </>
                     )}
                 </button>
             </form>
-            <div className="mt-8 text-center">
-                <span className="text-white/55 text-[0.85rem]">
+            <div className="mt-5 flex items-center justify-center gap-1.5 border-t border-border-light pt-4 text-[12px]">
+                <span className="text-text-secondary">
                     {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-                </span>{' '}
+                </span>
                 <button
                     type="button"
                     onClick={toggleSignUp}
-                    className="bg-transparent border-none text-white cursor-pointer text-[0.85rem] font-semibold p-0 transition-colors duration-150 ease-out motion-reduce:transition-none hover:underline focus-visible:outline-none focus-visible:underline focus-visible:ring-2 focus-visible:ring-white/40 rounded"
+                    className="cursor-pointer border-none bg-transparent p-0 font-bold text-accent transition-colors duration-150 ease-out hover:underline focus-visible:underline focus-visible:outline-none motion-reduce:transition-none"
                 >
                     {isSignUp ? 'Sign in' : 'Sign up'}
                 </button>
