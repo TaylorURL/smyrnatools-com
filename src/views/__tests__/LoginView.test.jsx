@@ -70,7 +70,7 @@ describe('LoginView portal', () => {
     it('renders the portal hero with the embedded login form', () => {
         render(<LoginView />)
 
-        expect(screen.getByRole('heading', { name: /smyrna/i, level: 1 })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { level: 1, name: /smyrna/i })).toBeInTheDocument()
         expect(screen.getByRole('heading', { name: /sign in to smyrna tools/i })).toBeInTheDocument()
         expect(getSubmitButton()).toBeInTheDocument()
     })
