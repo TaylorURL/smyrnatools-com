@@ -57,23 +57,42 @@ jest.mock(
 
 jest.mock('../../assets/images/srm-logo.svg', () => 'srm-logo.svg')
 
-describe('LoginView', () => {
+/** Resolves the form submit button by exact accessible name to avoid
+ *  colliding with the "Smyrna Tools" destination card which also contains
+ *  the words "Sign in". */
+const getSubmitButton = () => screen.getByRole('button', { name: 'Sign in' })
+
+describe('LoginView portal', () => {
     beforeEach(() => {
         jest.clearAllMocks()
     })
 
-    it('renders the login form with email and password fields', () => {
+    it('renders the portal hero with the embedded login form', () => {
         render(<LoginView />)
 
-        expect(screen.getByText('Welcome back')).toBeInTheDocument()
-        expect(screen.getByText('Sign in')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /smyrna/i, level: 1 })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /sign in to smyrna tools/i })).toBeInTheDocument()
+        expect(getSubmitButton()).toBeInTheDocument()
+    })
+
+    it('exposes Smyrna Ready Mix and Samsara as external destination links', () => {
+        render(<LoginView />)
+
+        const readyMix = screen.getByRole('link', { name: /smyrna ready mix/i })
+        const samsara = screen.getByRole('link', { name: /samsara/i })
+
+        expect(readyMix).toHaveAttribute('href', 'https://smyrnareadymix.com')
+        expect(readyMix).toHaveAttribute('target', '_blank')
+        expect(readyMix).toHaveAttribute('rel', expect.stringContaining('noopener'))
+        expect(samsara).toHaveAttribute('href', 'https://samsara.com')
+        expect(samsara).toHaveAttribute('target', '_blank')
+        expect(samsara).toHaveAttribute('rel', expect.stringContaining('noopener'))
     })
 
     it('shows error when submitting empty login form', async () => {
         render(<LoginView />)
 
-        const submitButton = screen.getByRole('button', { name: /sign in/i })
-        await userEvent.click(submitButton)
+        await userEvent.click(getSubmitButton())
 
         expect(screen.getByText('Please enter your email and password.')).toBeInTheDocument()
         expect(mockSignIn).not.toHaveBeenCalled()
@@ -83,15 +102,12 @@ describe('LoginView', () => {
         mockSignIn.mockResolvedValue({ id: 'user-123' })
         render(<LoginView />)
 
-        // Find inputs by their labels
         const emailInput = document.querySelector('input[type="email"]')
         const passwordInput = document.querySelector('input[type="password"]')
 
         await userEvent.type(emailInput, 'test@example.com')
         await userEvent.type(passwordInput, 'password123')
-
-        const submitButton = screen.getByRole('button', { name: /sign in/i })
-        await userEvent.click(submitButton)
+        await userEvent.click(getSubmitButton())
 
         await waitFor(() => {
             expect(mockSignIn).toHaveBeenCalledWith('test@example.com', 'password123')
@@ -107,9 +123,7 @@ describe('LoginView', () => {
 
         await userEvent.type(emailInput, 'test@example.com')
         await userEvent.type(passwordInput, 'secret')
-
-        const submitButton = screen.getByRole('button', { name: /sign in/i })
-        await userEvent.click(submitButton)
+        await userEvent.click(getSubmitButton())
 
         await waitFor(() => {
             expect(screen.getByText('Signed in successfully.')).toBeInTheDocument()
@@ -125,9 +139,7 @@ describe('LoginView', () => {
 
         await userEvent.type(emailInput, 'test@example.com')
         await userEvent.type(passwordInput, 'wrongpassword')
-
-        const submitButton = screen.getByRole('button', { name: /sign in/i })
-        await userEvent.click(submitButton)
+        await userEvent.click(getSubmitButton())
 
         await waitFor(() => {
             expect(screen.getByText('Invalid credentials')).toBeInTheDocument()
@@ -146,11 +158,9 @@ describe('LoginView', () => {
     it('shows error in sign-up mode when fields are incomplete', async () => {
         render(<LoginView />)
 
-        // Switch to sign-up mode
         const signUpLink = screen.getByRole('button', { name: /sign up/i })
         await userEvent.click(signUpLink)
 
-        // Submit without filling anything
         const submitButton = screen.getByRole('button', { name: /create account/i })
         await userEvent.click(submitButton)
 
@@ -163,7 +173,6 @@ describe('LoginView', () => {
         const passwordInput = document.querySelector('input[type="password"]')
         expect(passwordInput.type).toBe('password')
 
-        // The toggle button has an eye icon
         const toggleButton = passwordInput.parentElement.querySelector('button')
         await userEvent.click(toggleButton)
 
