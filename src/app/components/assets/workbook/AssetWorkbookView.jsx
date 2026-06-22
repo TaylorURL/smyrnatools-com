@@ -56,12 +56,12 @@ function WorkbookToolbar({ accentColor, exporting, onExport, onSearch, rowCount,
     )
 }
 
-function WorkbookHeaderCell({ column, onSort, sortDirection, style }) {
+function WorkbookHeaderCell({ column, isFirstColumn, onSort, sortDirection, style }) {
     return (
         <th
             scope="col"
             onClick={() => onSort(column.key)}
-            className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary uppercase tracking-wider cursor-pointer select-none whitespace-nowrap border-b border-r border-border-light bg-bg-tertiary hover:bg-bg-secondary transition-colors duration-100 last:border-r-0"
+            className={`px-3 py-2 text-left text-[11px] font-semibold text-text-secondary uppercase tracking-wider cursor-pointer select-none whitespace-nowrap border-b border-r border-border-light bg-bg-tertiary hover:bg-bg-secondary transition-colors duration-100 last:border-r-0 ${isFirstColumn ? 'sticky left-0 z-[3]' : ''}`}
             style={style}
         >
             <span className="inline-flex items-center">
