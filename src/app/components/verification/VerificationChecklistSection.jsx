@@ -182,7 +182,7 @@ export default function VerificationChecklistSection({
                             onChange={(e) =>
                                 setLastChipDate(e.target.value ? DateUtility.parseLocalDate(e.target.value) : null)
                             }
-                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none"
+                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
                             style={FIELD_STYLE}
                         />
                     </div>
