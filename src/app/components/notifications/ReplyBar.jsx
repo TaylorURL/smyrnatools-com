@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react'
 
 /** Fixed reply bar at the bottom of the conversation. Auto-grows up to 100px,
  *  submits on plain Enter, allows Shift-Enter for newlines. */
-export default function ReplyBar({ onSend, otherName }) {
+export default function ReplyBar({ accentColor, onSend, otherName }) {
     const [body, setBody] = useState('')
     const [sending, setSending] = useState(false)
     const textareaRef = useRef(null)
