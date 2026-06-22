@@ -248,6 +248,7 @@ export default function AssetWorkbookView({ columns, data, loading, lookups, tit
         <div className="flex flex-col flex-1 min-h-0 bg-bg-primary">
             <WorkbookToolbar
                 accentColor={accentColor}
+                exportMessage={exportMessage}
                 exporting={exporting}
                 onExport={handleExport}
                 onSearch={setSearchQuery}
