@@ -130,9 +130,15 @@ export function TableRowActionButton({ onClick, title }) {
 /** Portal-mounted modal — used by Add Trainer / Add Pending forms. Children
  *  are stacked vertically inside the body section. */
 export function FormModal({ children, icon, isOpen, onClose, onSubmit, sub, submitDisabled, submitLabel, title }) {
+    useEffect(() => {
+        if (!isOpen) return
+        const handleKeyDown = (e) => { if (e.key === 'Escape') onClose() }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, onClose])
     if (!isOpen || typeof document === 'undefined') return null
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" onClick={onClose}>
             <div
                 className="w-full max-w-[480px] max-h-[90vh] overflow-y-auto rounded shadow-2xl"
                 style={CARD_STYLE}
