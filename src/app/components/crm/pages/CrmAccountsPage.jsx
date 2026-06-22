@@ -267,7 +267,7 @@ export function CrmAccountsPage({
                         />
                         <div className="flex items-center gap-2 shrink-0">
                             <CrmViewToggle accentColor={accentColor} onChange={setViewMode} value={viewMode} />
-                            <button
+                            <button type="button"
                                 type="button"
                                 onClick={() => setIsBulkModalOpen(true)}
                                 className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-semibold border border-border-light bg-bg-secondary text-text-secondary cursor-pointer active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:text-text-primary hover:border-border-medium"
@@ -394,7 +394,7 @@ function StatusFilterRow({ activeKey, onSelect, roster }) {
             {options.map(({ count, key, label }) => {
                 const active = activeKey === key
                 return (
-                    <button
+                    <button type="button"
                         key={key}
                         type="button"
                         onClick={() => onSelect(key)}

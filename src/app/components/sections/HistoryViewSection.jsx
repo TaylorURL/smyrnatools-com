@@ -160,7 +160,7 @@ function HistoryViewSection({ item, onClose, type }) {
             return (
                 <div className="text-center py-8 text-text-primary">
                     <p>{error}</p>
-                    <button
+                    <button type="button"
                         className="bg-red-600 text-white border-none rounded-lg px-5 py-2.5 mt-4 text-sm font-semibold cursor-pointer hover:bg-red-700"
                         onClick={fetchHistory}
                     >

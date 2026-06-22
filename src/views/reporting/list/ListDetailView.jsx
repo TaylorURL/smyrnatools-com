@@ -311,7 +311,7 @@ function ListDetailView({ itemId, onClose }) {
                 footerActions={
                     canEditList && (
                         <>
-                            <button
+                            <button type="button"
                                 className="global-button-secondary flex-1 justify-center"
                                 onClick={handleSubmit}
                                 disabled={!hasUnsavedChanges || !canEditList}
@@ -320,7 +320,7 @@ function ListDetailView({ itemId, onClose }) {
                                 <span>Save</span>
                             </button>
                             {canDeleteList && (
-                                <button
+                                <button type="button"
                                     className="global-button-secondary flex-1 justify-center"
                                     onClick={() => setShowDeleteConfirmation(true)}
                                     disabled={!canEditList}
@@ -347,7 +347,7 @@ function ListDetailView({ itemId, onClose }) {
                                     Description
                                 </label>
                                 {canEditList && formData.description.trim() && (
-                                    <button
+                                    <button type="button"
                                         type="button"
                                         onClick={handleImproveDescription}
                                         disabled={isImprovingDescription}
@@ -386,7 +386,7 @@ function ListDetailView({ itemId, onClose }) {
                         </div>
                         <div className="form-group">
                             <label htmlFor="plantCode">Plant</label>
-                            <button
+                            <button type="button"
                                 className="operator-select-button"
                                 onClick={() => setShowPlantModal(true)}
                                 disabled={!canEdit || !canEditList}

@@ -144,7 +144,7 @@ function RecapModalSection({
                             <div className="text-[10.5px] truncate text-text-tertiary">{displaySubtitle}</div>
                         </div>
                     </div>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => setIsOpen(false)}
                         className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer text-text-secondary"
@@ -174,7 +174,7 @@ function RecapModalSection({
                         {filteredTotal !== 1 ? 's' : ''}
                     </span>
                     {hasActiveFilters && (
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={clearAllFilters}
                             className="text-[10.5px] font-semibold uppercase tracking-wider border-none bg-transparent cursor-pointer"

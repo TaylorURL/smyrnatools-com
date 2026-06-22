@@ -7,7 +7,7 @@ import PlantProductionOperatorCard, { computeRowStatus } from './PlantProduction
 import PlantProductionOperatorRoster from './PlantProductionOperatorRoster'
 
 const SummaryChip = ({ accent, count, icon, label, onClick, selected }) => (
-    <button
+    <button type="button"
         type="button"
         onClick={onClick}
         className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] font-semibold cursor-pointer tabular-nums ${

@@ -16,7 +16,7 @@ function ChatHeaderIconButton({ accentColor, active = false, danger = false, ico
           ? { background: `${accentColor}1a`, borderColor: `${accentColor}55`, color: 'var(--text-primary)' }
           : { background: 'var(--bg-secondary)', borderColor: 'var(--border-light)', color: 'var(--text-secondary)' }
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={onClick}
             title={title}
@@ -49,7 +49,7 @@ export default function ChatHeader({
     return (
         <div className="flex items-center gap-2.5 px-3 py-2 shrink-0 bg-bg-primary border-b border-border-light">
             {isMobile && (
-                <button
+                <button type="button"
                     onClick={onBack}
                     className="flex h-8 w-8 items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.92]"
                     aria-label="Back to inbox"

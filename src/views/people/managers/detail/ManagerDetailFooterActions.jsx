@@ -27,13 +27,13 @@ export default function ManagerDetailFooterActions({
     return (
         <>
             {showSave && (
-                <button className={footerButtonClasses} onClick={onSave} disabled={isSaving}>
+                <button type="button" className={footerButtonClasses} onClick={onSave} disabled={isSaving}>
                     <i className="fas fa-save"></i>
                     <span>{isSaving ? 'Saving...' : 'Save'}</span>
                 </button>
             )}
             {canDeleteManager && (
-                <button className={footerButtonClasses} onClick={onRequestDelete} disabled={isSaving}>
+                <button type="button" className={footerButtonClasses} onClick={onRequestDelete} disabled={isSaving}>
                     <i className="fas fa-trash-alt"></i>
                     <span>Delete</span>
                 </button>

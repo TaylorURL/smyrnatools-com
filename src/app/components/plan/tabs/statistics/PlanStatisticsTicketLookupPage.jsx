@@ -103,7 +103,7 @@ export default function PlanStatisticsTicketLookupPage({
                     autoFocus
                 />
                 {query && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => setQuery('')}
                         className="text-[11px] text-text-tertiary hover:text-text-primary border-0 bg-transparent cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"

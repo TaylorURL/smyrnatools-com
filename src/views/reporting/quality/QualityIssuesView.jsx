@@ -234,7 +234,7 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                 title="Quality Issues"
                                 sub="Active QC disputes and follow-ups, plus closed issues with the cost incurred to close."
                                 right={
-                                    <button
+                                    <button type="button"
                                         type="button"
                                         onClick={openCreate}
                                         className="inline-flex items-center gap-1.5 rounded text-[12px] font-bold uppercase tracking-wider text-white px-3 py-1.5 cursor-pointer border-none"

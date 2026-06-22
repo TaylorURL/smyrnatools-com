@@ -21,7 +21,7 @@ export default function TrailerAssignmentCard({
             <div className="form-group">
                 <label>Assigned Tractor</label>
                 <div className="operator-select-container">
-                    <button
+                    <button type="button"
                         className={`operator-select-button form-control text-left ${!canEditTrailer ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                         onClick={onOpenTractorModal}
                         type="button"
@@ -31,7 +31,7 @@ export default function TrailerAssignmentCard({
                     </button>
                     {canEditTrailer &&
                         (assignedTractor ? (
-                            <button
+                            <button type="button"
                                 className="unassign-operator-button focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                 aria-label="Unassign Tractor"
                                 onClick={onUnassignTractor}
@@ -41,7 +41,7 @@ export default function TrailerAssignmentCard({
                             </button>
                         ) : (
                             lastUnassignedTractorId && (
-                                <button
+                                <button type="button"
                                     className="undo-operator-button unassign-operator-button focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                     aria-label="Undo Unassign"
                                     onClick={onUndoUnassign}

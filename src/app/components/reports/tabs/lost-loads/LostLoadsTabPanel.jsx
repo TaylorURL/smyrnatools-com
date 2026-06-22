@@ -34,7 +34,7 @@ export default function LostLoadsTabPanel({
             <div className={RV_SPLIT_LEFT}>
                 {hasLostLoadsPermission && (
                     <div className="flex flex-wrap gap-2">
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={onOpenLostLoadModal}
                             className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider"

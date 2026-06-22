@@ -22,7 +22,7 @@ function AttachmentField({ attachment, fileInputRef, onFileSelect, onClear }) {
                     <span className="text-xs text-text-secondary shrink-0">
                         {(attachment.size / 1024 / 1024).toFixed(1)}MB
                     </span>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClear}
                         aria-label="Remove attachment"
@@ -32,7 +32,7 @@ function AttachmentField({ attachment, fileInputRef, onFileSelect, onClear }) {
                     </button>
                 </div>
             ) : (
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     className="flex items-center justify-center gap-2 px-3 py-3 rounded-lg border-2 border-dashed border-border-light text-sm text-text-secondary hover:border-border-dark transition-colors"

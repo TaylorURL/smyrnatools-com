@@ -110,7 +110,7 @@ export function AssetStatisticsSidebar({ accentColor, activeSection, onSelect, s
             {sections.map((section) => {
                 const active = section.id === activeSection
                 return (
-                    <button
+                    <button type="button"
                         key={section.id}
                         type="button"
                         onClick={() => onSelect(section.id)}
@@ -140,7 +140,7 @@ export function AssetStatisticsSectionTabs({ accentColor, activeSection, onSelec
             {sections.map((section) => {
                 const active = section.id === activeSection
                 return (
-                    <button
+                    <button type="button"
                         key={section.id}
                         type="button"
                         onClick={() => onSelect(section.id)}

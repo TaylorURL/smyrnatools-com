@@ -325,15 +325,15 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                 headerActions={
                     pickup && (
                         <>
-                            <button className="global-button-secondary" onClick={() => setShowIssues(true)}>
+                            <button type="button" className="global-button-secondary" onClick={() => setShowIssues(true)}>
                                 <i className="fas fa-tools"></i>
                                 <span>Issues</span>
                             </button>
-                            <button className="global-button-secondary" onClick={() => setShowComments(true)}>
+                            <button type="button" className="global-button-secondary" onClick={() => setShowComments(true)}>
                                 <i className="fas fa-comments"></i>
                                 <span>Comments</span>
                             </button>
-                            <button className="global-button-secondary" onClick={() => setShowHistory(true)}>
+                            <button type="button" className="global-button-secondary" onClick={() => setShowHistory(true)}>
                                 <i className="fas fa-history"></i>
                                 <span>History</span>
                             </button>
@@ -343,7 +343,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                 footerActions={
                     canEditPickup && (
                         <>
-                            <button
+                            <button type="button"
                                 className="global-button-secondary flex-1 justify-center"
                                 onClick={handleSave}
                                 disabled={isSaving || !canEditPickup}
@@ -352,7 +352,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                                 <span>{isSaving ? 'Saving...' : 'Save'}</span>
                             </button>
                             {canDeletePickup && (
-                                <button
+                                <button type="button"
                                     className="global-button-secondary flex-1 justify-center"
                                     onClick={handleDelete}
                                     disabled={isSaving || !canEditPickup}
@@ -407,7 +407,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                     <DetailViewSection.Card title="Pickup Details" icon="fas fa-info-circle">
                         <div className="form-group">
                             <label>Assigned Plant</label>
-                            <button
+                            <button type="button"
                                 className={`operator-select-button form-control text-left ${!canEditPickup ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                                 onClick={() => setShowPlantModal(true)}
                                 type="button"

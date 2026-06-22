@@ -38,20 +38,14 @@ export default function ReplyBar({ accentColor, onSend, otherName }) {
                 }}
                 placeholder={`Message ${otherName}…`}
                 rows="1"
-                className="flex-1 px-3 py-1.5 rounded text-[12.5px] outline-none resize-none bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150"
+                className="flex-1 px-3 py-1.5 rounded text-[12.5px] outline-none resize-none bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                 style={{ fontFamily: 'inherit', maxHeight: '100px' }}
-                onFocus={(e) => {
-                    e.currentTarget.style.borderColor = accentColor
-                }}
-                onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border-light)'
-                }}
                 onInput={(e) => {
                     e.target.style.height = 'auto'
                     e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px'
                 }}
             />
-            <button
+            <button type="button"
                 onClick={handleSend}
                 disabled={!canSend}
                 className="h-8 w-8 flex items-center justify-center rounded text-white shrink-0 active:scale-[0.92] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"

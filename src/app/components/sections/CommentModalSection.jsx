@@ -179,7 +179,7 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
                         </div>
                     </div>
                 </div>
-                <button
+                <button type="button"
                     onClick={onClose}
                     className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
@@ -261,7 +261,7 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
                                             {comment.text}
                                         </p>
                                     </div>
-                                    <button
+                                    <button type="button"
                                         onClick={() => handleDeleteComment(comment.id)}
                                         title="Delete"
                                         className="w-6 h-6 flex items-center justify-center shrink-0 rounded transition-colors bg-transparent text-text-tertiary"

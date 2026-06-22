@@ -96,15 +96,15 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                 onRegionTransfer={actions.handleRegionTransfer}
                 headerActions={
                     <>
-                        <button className="global-button-secondary" onClick={() => setShowIssues(true)}>
+                        <button type="button" className="global-button-secondary" onClick={() => setShowIssues(true)}>
                             <i className="fas fa-tools"></i>
                             <span>Issues</span>
                         </button>
-                        <button className="global-button-secondary" onClick={() => setShowComments(true)}>
+                        <button type="button" className="global-button-secondary" onClick={() => setShowComments(true)}>
                             <i className="fas fa-comments"></i>
                             <span>Comments</span>
                         </button>
-                        <button className="global-button-secondary" onClick={() => setShowHistory(true)}>
+                        <button type="button" className="global-button-secondary" onClick={() => setShowHistory(true)}>
                             <i className="fas fa-history"></i>
                             <span>History</span>
                         </button>
@@ -113,7 +113,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                 footerActions={
                     actions.canEditEquipment && (
                         <>
-                            <button
+                            <button type="button"
                                 className="global-button-secondary flex-1 justify-center"
                                 onClick={() => actions.handleSave()}
                                 disabled={actions.isSaving}
@@ -122,7 +122,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                                 <span>{actions.isSaving ? 'Saving...' : 'Save'}</span>
                             </button>
                             {actions.canDeleteEquipment && (
-                                <button
+                                <button type="button"
                                     className="global-button-secondary flex-1 justify-center"
                                     onClick={() => actions.setShowDeleteConfirmation(true)}
                                     disabled={actions.isSaving}

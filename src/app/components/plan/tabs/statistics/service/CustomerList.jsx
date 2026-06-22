@@ -93,7 +93,7 @@ export default function CustomerList({ emptyMessage, rows }) {
             })}
 
             {canCollapse && (
-                <button
+                <button type="button"
                     aria-expanded={showAll}
                     className="mt-2 self-center inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-transparent border-none text-[11.5px] font-medium text-text-secondary cursor-pointer transition-colors duration-150 ease-out hover:text-text-primary hover:bg-bg-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 motion-reduce:transition-none"
                     onClick={() => setShowAll((prev) => !prev)}

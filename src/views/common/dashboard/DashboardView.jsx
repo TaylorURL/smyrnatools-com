@@ -272,7 +272,7 @@ export default function DashboardView() {
                                 className="flex items-center justify-between rounded-md text-text-primary px-4 py-3 bg-status-danger/5 border border-status-danger/30 animate-fade-in-fast"
                             >
                                 <span className="text-[13px] font-semibold">{error}</span>
-                                <button
+                                <button type="button"
                                     type="button"
                                     onClick={() => setRefreshKey((v) => v + 1)}
                                     className="bg-transparent border-none text-text-primary cursor-pointer font-semibold text-[12px] px-2 py-1 rounded-md transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"

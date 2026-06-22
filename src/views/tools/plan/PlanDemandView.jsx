@@ -153,7 +153,7 @@ function PlanDemandView({
                             title="Filter Demand to a plant, district, or My Plants"
                         />
                         {filterActive && (
-                            <button
+                            <button type="button"
                                 type="button"
                                 onClick={() => setPlantFilter('all')}
                                 className="border-none bg-transparent cursor-pointer text-[11px] font-medium px-1 text-text-secondary"

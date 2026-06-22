@@ -21,7 +21,7 @@ export default function ManagerSecuritySection({
                         <label>Password</label>
                         <div className="flex items-center gap-3 mt-2">
                             <span className="text-text-secondary text-sm">••••••••</span>
-                            <button
+                            <button type="button"
                                 className="flex items-center gap-2 rounded-xl border border-border-light bg-bg-primary px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
                                 onClick={onShowPasswordField}
                             >
@@ -46,7 +46,7 @@ export default function ManagerSecuritySection({
                         <p className="text-text-secondary text-[13px] mt-2 mb-3">
                             Enter a new password and click &quot;Save&quot; to apply it.
                         </p>
-                        <button
+                        <button type="button"
                             className="flex items-center gap-2 rounded-xl border border-border-light bg-bg-primary px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
                             onClick={onCancelPasswordChange}
                         >

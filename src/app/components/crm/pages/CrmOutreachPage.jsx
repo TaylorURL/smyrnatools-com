@@ -196,7 +196,7 @@ function WorklistToggle({ accentColor, activeMode, onSelect }) {
             {modes.map(({ id, label }) => {
                 const active = activeMode === id
                 return (
-                    <button
+                    <button type="button"
                         key={id}
                         type="button"
                         onClick={() => onSelect(id)}

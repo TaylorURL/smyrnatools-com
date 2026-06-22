@@ -162,7 +162,7 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                             </div>
                         </div>
                     </div>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         aria-label="Close"
@@ -285,7 +285,7 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
 
                 <div className="flex items-center justify-between gap-1.5 px-3 py-2.5 bg-bg-secondary border-t border-border-light">
                     {isEditing ? (
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={remove}
                             disabled={deleting || submitting}
@@ -301,14 +301,14 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                         <span />
                     )}
                     <div className="flex gap-1.5">
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={onClose}
                             className="rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none bg-bg-tertiary border border-border-light text-text-secondary"
                         >
                             Cancel
                         </button>
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={save}
                             disabled={submitting || deleting}

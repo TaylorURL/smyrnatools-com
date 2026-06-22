@@ -46,7 +46,7 @@ export default function Modal({ children, onClose, title, titleIcon, footer, max
                         {titleIcon && <i className={`${titleIcon} text-accent`} aria-hidden="true" />}
                         {title}
                     </h3>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         aria-label="Close"

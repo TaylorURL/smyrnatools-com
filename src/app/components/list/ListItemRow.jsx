@@ -36,7 +36,7 @@ function StatusChip({ accentColor, isOverdue, item, onChange }) {
     const interactive = !item.completed
     return (
         <>
-            <button
+            <button type="button"
                 ref={triggerRef}
                 type="button"
                 disabled={!interactive}
@@ -78,7 +78,7 @@ function PriorityChip({ item, onChange }) {
     const pc = ListService.getPriorityConfig(item.priority || 'none')
     return (
         <>
-            <button
+            <button type="button"
                 ref={triggerRef}
                 type="button"
                 onClick={(e) => {
@@ -195,7 +195,7 @@ export default function ListItemRow({
                 }
             }}
         >
-            <button
+            <button type="button"
                 type="button"
                 onClick={handleSelect}
                 className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md transition-[transform,background-color,border-color] duration-150 ease-out motion-reduce:transition-none active:scale-[0.9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary ${
@@ -255,7 +255,7 @@ export default function ListItemRow({
                     className="ml-1 flex shrink-0 items-center gap-0.5 opacity-0 translate-x-1 transition-[opacity,transform] duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0 group-focus-within:opacity-100 group-focus-within:translate-x-0 motion-reduce:transition-none"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={handleEditClick}
                         className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary active:scale-[0.92] transition-[transform,colors] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -264,7 +264,7 @@ export default function ListItemRow({
                     >
                         <i className="fas fa-pen text-[11px]" aria-hidden="true" />
                     </button>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={handleDeleteClick}
                         className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-tertiary hover:text-status-danger active:scale-[0.92] transition-[transform,colors] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger"

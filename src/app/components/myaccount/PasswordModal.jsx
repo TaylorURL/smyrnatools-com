@@ -48,7 +48,7 @@ export default function PasswordModal({
                             Change Password
                         </span>
                     </div>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         className="flex h-9 w-9 items-center justify-center rounded-md text-text-secondary transition-all duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.92] motion-reduce:transition-none"
@@ -116,7 +116,7 @@ export default function PasswordModal({
                     </div>
                     <div className="mt-1 flex gap-3">
                         <SubtleButton onClick={onClose}>Cancel</SubtleButton>
-                        <button
+                        <button type="button"
                             type="submit"
                             disabled={!canSubmit}
                             className="flex-1 rounded-md py-2.5 text-[12px] font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-150 ease-out hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none"

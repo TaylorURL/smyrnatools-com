@@ -114,7 +114,7 @@ function Toolbar({ dirtyCount, loading, onResetAll, onSearch, regionName, search
                         className="rounded-md border border-border-medium bg-bg-secondary pl-7 pr-7 py-1.5 text-xs text-text-primary placeholder:text-text-tertiary outline-none w-44 sm:w-56 transition-colors duration-150 hover:border-text-tertiary focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25 [&::-webkit-search-cancel-button]:hidden"
                     />
                     {searchQuery && (
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={() => onSearch('')}
                             aria-label="Clear search"
@@ -124,7 +124,7 @@ function Toolbar({ dirtyCount, loading, onResetAll, onSearch, regionName, search
                         </button>
                     )}
                 </div>
-                <button
+                <button type="button"
                     type="button"
                     onClick={onResetAll}
                     disabled={dirtyCount > 0}
@@ -218,7 +218,7 @@ function SettingRow({ error, field, onChange, value }) {
                         {field.unit}
                     </span>
                 </div>
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => onChange(field.column, field.default)}
                     disabled={!isOverridden}
@@ -255,7 +255,7 @@ function ActionBar({
                 showSavedFlash={showSavedFlash}
             />
             <div className="flex items-center gap-2 shrink-0">
-                <button
+                <button type="button"
                     type="button"
                     onClick={onDiscard}
                     disabled={!isDirty || saving}
@@ -263,7 +263,7 @@ function ActionBar({
                 >
                     Discard
                 </button>
-                <button
+                <button type="button"
                     type="button"
                     onClick={onSave}
                     disabled={!canSave}

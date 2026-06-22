@@ -65,7 +65,7 @@ function PlantGridCard({ plant, region, plantType, managerCount, saturdayForecas
     const aliasCodes = getPlantAliasCodes(plant)
     const isColocated = hasColocation(plant)
     return (
-        <button
+        <button type="button"
             type="button"
             className="group relative flex flex-col overflow-hidden rounded-card border border-border-light bg-bg-primary text-left shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-border-medium hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:translate-y-0 motion-reduce:transition-none motion-reduce:transform-none"
             onClick={() => onSelect(code)}
@@ -449,7 +449,7 @@ function PlantsView({ title = 'Plants' }) {
                                             </td>
                                             <td className="px-5 py-4">
                                                 <div className="flex flex-wrap items-center gap-2">
-                                                    <button
+                                                    <button type="button"
                                                         type="button"
                                                         onClick={(event) => {
                                                             event.stopPropagation()

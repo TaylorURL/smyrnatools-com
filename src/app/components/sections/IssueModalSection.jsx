@@ -159,7 +159,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
     const TabBtn = ({ id, label, count, icon }) => {
         const isActive = activeTab === id
         return (
-            <button
+            <button type="button"
                 onClick={() => setActiveTab(id)}
                 className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
                 style={{
@@ -210,7 +210,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                             </div>
                         </div>
                     </div>
-                    <button
+                    <button type="button"
                         onClick={onClose}
                         className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
@@ -263,7 +263,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                         )
                                     })}
                                 </div>
-                                <button
+                                <button type="button"
                                     type="submit"
                                     disabled={isSubmitting || !newIssue.trim()}
                                     className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
@@ -344,7 +344,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                     <div className="flex shrink-0 gap-1">
                                         {!isResolved && (
                                             <>
-                                                <button
+                                                <button type="button"
                                                     onClick={() => handleCompleteIssue(issue.id)}
                                                     title="Mark resolved"
                                                     className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-text-primary"
@@ -357,7 +357,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                                 >
                                                     <i className="fas fa-check text-[10px]" />
                                                 </button>
-                                                <button
+                                                <button type="button"
                                                     onClick={() => setMessageIssue(issue)}
                                                     title="Send message"
                                                     className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-text-primary"
@@ -373,7 +373,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                             </>
                                         )}
                                         {canDelete && (
-                                            <button
+                                            <button type="button"
                                                 onClick={() => handleDeleteIssue(issue.id)}
                                                 title="Delete"
                                                 className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-text-tertiary"

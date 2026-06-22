@@ -36,7 +36,7 @@ export function ActivityToolbar({
                     className="bg-transparent outline-none border-none text-[12.5px] w-full text-text-primary placeholder:text-text-tertiary disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
                 />
                 {query && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => onQueryChange('')}
                         className="border-none bg-transparent cursor-pointer text-text-tertiary hover:text-text-primary active:scale-[0.92] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
@@ -50,7 +50,7 @@ export function ActivityToolbar({
                 {TIME_RANGE_OPTIONS.map((opt) => {
                     const active = opt.key === timeRange
                     return (
-                        <button
+                        <button type="button"
                             key={opt.key}
                             type="button"
                             onClick={() => onTimeRangeChange(opt.key)}
@@ -67,7 +67,7 @@ export function ActivityToolbar({
                 })}
             </div>
             {hasOutcomeFilter && (
-                <button
+                <button type="button"
                     type="button"
                     onClick={onClearOutcome}
                     className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -82,7 +82,7 @@ export function ActivityToolbar({
                     <i className="fas fa-xmark text-[10px] opacity-80" />
                 </button>
             )}
-            <button
+            <button type="button"
                 type="button"
                 onClick={onRefresh}
                 className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-tertiary text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"

@@ -94,7 +94,7 @@ export function PlanStatisticsOperatorsPage({
                             )}
                         </span>
                     ) : null}
-                    <button
+                    <button type="button"
                         className="inline-flex items-center gap-1.5 rounded bg-bg-secondary border border-border-light text-text-secondary text-[11px] font-semibold px-2 py-1 hover:bg-bg-tertiary disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
                         disabled={loadsByOperator.length === 0 || loading}
                         onClick={handlePrint}

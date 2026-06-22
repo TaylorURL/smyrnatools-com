@@ -115,7 +115,7 @@ export function DataTable({ data, emptyIcon = 'fa-check-circle', emptyMessage, h
 /** 22×22 red-tinted X button used by every removable table row. */
 export function TableRowActionButton({ onClick, title }) {
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={onClick}
             title={title}
@@ -151,7 +151,7 @@ export function FormModal({ children, icon, isOpen, onClose, onSubmit, sub, subm
                             {sub && <div className="text-[10.5px] mt-0.5 text-text-tertiary">{sub}</div>}
                         </div>
                     </div>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         aria-label="Close"
@@ -162,14 +162,14 @@ export function FormModal({ children, icon, isOpen, onClose, onSubmit, sub, subm
                 </div>
                 <div className="p-3 flex flex-col gap-2">{children}</div>
                 <div className="flex justify-end gap-1.5 px-3 py-2.5 bg-bg-secondary border-t border-border-light">
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         className="rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none bg-bg-tertiary border border-border-light text-text-secondary"
                     >
                         Cancel
                     </button>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onSubmit}
                         disabled={submitDisabled}

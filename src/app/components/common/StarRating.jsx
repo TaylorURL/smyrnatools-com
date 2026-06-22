@@ -232,7 +232,7 @@ export default function StarRating({
                 {...cleanedRest}
             >
                 {slots.map(({ starNumber }) => (
-                    <button
+                    <button type="button"
                         key={starNumber}
                         type="button"
                         role="radio"

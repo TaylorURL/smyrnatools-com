@@ -160,7 +160,7 @@ function WindowSelector({ activeDays, isLoading, onSelect }) {
                 {WINDOW_OPTIONS.map(({ days, label }) => {
                     const active = activeDays === days
                     return (
-                        <button
+                        <button type="button"
                             key={days}
                             type="button"
                             onClick={() => onSelect && onSelect(days)}

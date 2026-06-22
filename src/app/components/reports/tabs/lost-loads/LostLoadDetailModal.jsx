@@ -60,7 +60,7 @@ function LostLoadDetailModal({ report, getUserName, onClose }) {
                         </div>
                         <h2 className="text-base font-semibold m-0 text-text-primary">Lost Load Details</h2>
                     </div>
-                    <button
+                    <button type="button"
                         onClick={onClose}
                         aria-label="Close"
                         className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors duration-150 text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
@@ -161,7 +161,7 @@ function LostLoadDetailModal({ report, getUserName, onClose }) {
                     <DetailRow icon="clock" label="Submitted At" value={formatTimestamp(report.submitted_at)} />
                 </div>
                 <div className="px-6 py-4 flex items-center justify-end flex-shrink-0 border-t border-border-light">
-                    <button
+                    <button type="button"
                         onClick={onClose}
                         className="px-5 py-2.5 rounded-lg text-sm font-medium bg-bg-secondary text-text-secondary"
                         type="button"

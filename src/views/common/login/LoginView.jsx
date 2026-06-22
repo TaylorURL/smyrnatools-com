@@ -61,7 +61,7 @@ function LoginView() {
         <div className="flex h-full min-h-screen w-full flex-col overflow-y-auto overflow-x-hidden bg-bg-secondary text-text-primary">
             <VersionPopup version={version} />
             <header className="flex shrink-0 items-center gap-3 border-b border-border-light bg-bg-primary px-4 py-2.5 sm:px-5">
-                <button
+                <button type="button"
                     type="button"
                     onClick={handleBrandClick}
                     aria-expanded={isRevealed}
@@ -156,7 +156,7 @@ function LoginView() {
                     </div>
                 ) : (
                     <div className="m-auto flex w-full max-w-md flex-col items-center px-6 py-12 animate-fade-in motion-reduce:animate-none">
-                        <button
+                        <button type="button"
                             ref={gateButtonRef}
                             type="button"
                             onClick={reveal}

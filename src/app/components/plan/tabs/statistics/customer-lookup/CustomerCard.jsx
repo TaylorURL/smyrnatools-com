@@ -9,7 +9,7 @@ import VerdictTrail from './VerdictTrail'
 
 export default function CustomerCard({ customer, isActive, onSelect, orders }) {
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={() => onSelect(customer.key)}
             className="text-left rounded-md p-3 flex flex-col gap-2 cursor-pointer border active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"

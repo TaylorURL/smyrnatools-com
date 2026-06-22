@@ -59,7 +59,7 @@ function LockedOverlay({ reason }) {
                 </h1>
                 <p className="mb-8 text-base leading-relaxed text-text-secondary">{message}</p>
                 <div className="flex flex-col gap-3">
-                    <button
+                    <button type="button"
                         type="button"
                         className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none px-6 py-3.5 text-[15px] font-semibold text-white cursor-pointer active:scale-[0.98] transition-[transform,filter] duration-150 ease-out motion-reduce:transition-none hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                         style={{ backgroundColor: accentColor }}
@@ -68,7 +68,7 @@ function LockedOverlay({ reason }) {
                         <i className="fas fa-sync-alt" aria-hidden="true" />
                         Refresh Page
                     </button>
-                    <button
+                    <button type="button"
                         type="button"
                         className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border-light bg-bg-secondary px-6 py-3.5 text-[15px] font-semibold text-text-primary cursor-pointer active:scale-[0.98] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                         onClick={handleSignOut}

@@ -64,7 +64,7 @@ export function FlowMapToolbar({
                     icon={<i className="fas fa-crosshairs text-[10px]" aria-hidden="true" />}
                     className="pf-tool-pill pf-tool-pill-picking"
                     trailingIcon={
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={() => setPickingDestination(false)}
                             className="ml-1 border-none bg-transparent cursor-pointer p-0 text-text-primary font-bold transition-transform hover:scale-110"
@@ -89,7 +89,7 @@ export function FlowMapToolbar({
                     icon={<i className="fas fa-map-pin text-[10px]" aria-hidden="true" />}
                     className="pf-tool-pill transition-all border border-current/30"
                     trailingIcon={
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={() => setSelectedCode(null)}
                             className="ml-1 border-none bg-transparent cursor-pointer p-0 font-bold transition-transform hover:scale-110"

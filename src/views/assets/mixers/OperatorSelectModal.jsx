@@ -88,7 +88,7 @@ function OperatorSelectModal({
                     style={{ backgroundColor: accentColor }}
                 >
                     <h2 className="text-lg font-bold text-white">Select Operator</h2>
-                    <button
+                    <button type="button"
                         aria-label="Close"
                         className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                         onClick={onClose}
@@ -109,7 +109,7 @@ function OperatorSelectModal({
                             autoFocus
                         />
                         {searchText && (
-                            <button
+                            <button type="button"
                                 aria-label="Clear search"
                                 type="button"
                                 className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-bg-tertiary hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
@@ -120,7 +120,7 @@ function OperatorSelectModal({
                         )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <button
+                        <button type="button"
                             type="button"
                             aria-pressed={sortAvailableFirst}
                             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
@@ -134,7 +134,7 @@ function OperatorSelectModal({
                             <i className="fas fa-sort-amount-down"></i>
                             <span>Available First</span>
                         </button>
-                        <button
+                        <button type="button"
                             type="button"
                             aria-label="Refresh operator list"
                             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-bg-primary border border-border-light text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
@@ -195,7 +195,7 @@ function OperatorSelectModal({
                                 Please add operators with this plant code in the Operators section
                             </p>
                             <div className="flex items-center gap-2">
-                                <button
+                                <button type="button"
                                     type="button"
                                     className="px-4 py-2 bg-bg-tertiary hover:bg-bg-hover text-text-primary rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                     onClick={() => {
@@ -295,7 +295,7 @@ function OperatorSelectModal({
                     )}
                 </div>
                 <div className="px-6 py-4 border-t border-border-light bg-bg-secondary">
-                    <button
+                    <button type="button"
                         type="button"
                         className="w-full py-3 bg-bg-tertiary hover:bg-bg-hover text-text-primary rounded-xl text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                         onClick={onClose}

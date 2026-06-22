@@ -5,7 +5,7 @@ import React from 'react'
 function RefreshButton({ isMobile, isSyncing, lastSyncedAt, onRefresh }) {
     const title = lastSyncedAt ? `Last updated ${lastSyncedAt.toLocaleTimeString()}` : 'Refresh schedule'
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={() => onRefresh?.()}
             disabled={isSyncing}

@@ -206,7 +206,7 @@ function OrderInfoModal({
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                     {onOpenLocation && (
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={() => onOpenLocation(order)}
                             className="text-[12px] px-2.5 py-1.5 rounded border border-border-light bg-transparent cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-tertiary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
@@ -217,7 +217,7 @@ function OrderInfoModal({
                         </button>
                     )}
                     {onViewTickets && (
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={() => onViewTickets(order)}
                             className="text-[12px] px-2.5 py-1.5 rounded border border-border-light bg-transparent cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-tertiary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
@@ -228,7 +228,7 @@ function OrderInfoModal({
                         </button>
                     )}
                     {!inline && (
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={onClose}
                             className="w-7 h-7 ml-1 rounded flex items-center justify-center bg-transparent border-0 cursor-pointer text-text-tertiary hover:text-text-primary hover:bg-bg-hover active:scale-[0.92] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
@@ -256,7 +256,7 @@ function OrderInfoModal({
                     const active = tab === t.id
                     const badge = t.id === 'flags' && suggestions.length > 0 ? suggestions.length : null
                     return (
-                        <button
+                        <button type="button"
                             key={t.id}
                             type="button"
                             onClick={() => setTab(t.id)}

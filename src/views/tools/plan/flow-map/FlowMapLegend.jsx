@@ -113,7 +113,7 @@ export function FlowMapLegend() {
                         <i aria-hidden="true" className="fas fa-circle-question text-[10px] text-text-tertiary" />
                         Legend
                     </span>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => setCollapsed((prev) => !prev)}
                         className="w-6 h-6 -mr-1 inline-flex items-center justify-center rounded bg-transparent border-none cursor-pointer text-text-tertiary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"

@@ -30,7 +30,7 @@ export function DeleteConfirmModal({ onCancel, onConfirm, saving }) {
                 </div>
                 <div className="flex items-center justify-end gap-2 px-3 py-2 bg-bg-secondary border-t border-border-light">
                     <SubtleButton onClick={onCancel}>Cancel</SubtleButton>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onConfirm}
                         disabled={saving}

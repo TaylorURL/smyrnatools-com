@@ -58,7 +58,7 @@ export function LogInteractionComposer({ accentColor, defaultLens = 'general', i
                 {INTERACTION_TYPES.map((interactionType) => {
                     const isActive = selectedType === interactionType.id
                     return (
-                        <button
+                        <button type="button"
                             key={interactionType.id}
                             type="button"
                             aria-pressed={isActive}
@@ -79,7 +79,7 @@ export function LogInteractionComposer({ accentColor, defaultLens = 'general', i
                 {ROLE_LENSES.map((lens) => {
                     const isActive = selectedLens === lens.id
                     return (
-                        <button
+                        <button type="button"
                             key={lens.id}
                             type="button"
                             aria-pressed={isActive}
@@ -108,7 +108,7 @@ export function LogInteractionComposer({ accentColor, defaultLens = 'general', i
 
             {/* Submit */}
             <div className="flex justify-end">
-                <button
+                <button type="button"
                     type="submit"
                     disabled={isSaving}
                     className="rounded-md px-3 py-1.5 text-[12px] font-semibold text-white transition-transform duration-150 ease-out active:scale-[0.97] disabled:opacity-60"

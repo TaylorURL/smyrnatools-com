@@ -50,7 +50,7 @@ export function ScaleRow({ scale, allPlants, onReload, accentColor }) {
                     </div>
                 </div>
                 <StatusBadge status={status} />
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => setCalibModal(true)}
                     className="text-white text-[10.5px] font-semibold px-2 py-1 rounded shrink-0 hidden sm:inline-flex items-center gap-1 uppercase tracking-wider"

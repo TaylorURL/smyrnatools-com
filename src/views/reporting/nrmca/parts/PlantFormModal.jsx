@@ -40,7 +40,7 @@ export function PlantFormModal({ plant, regionPlants, onClose, onSaved }) {
     return (
         <Modal title={plant ? 'Edit Plant' : 'Add Plant'} onClose={onClose} onSubmit={handleSave} submitting={saving}>
             <Field label="Plant">
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => setShowPlantPicker(true)}
                     className={`${SELECT_CLS} text-left`}

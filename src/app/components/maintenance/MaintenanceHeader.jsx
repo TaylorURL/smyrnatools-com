@@ -11,7 +11,7 @@ const FOCUS_RING =
  *  the two surfaces feel identical. */
 function RefreshButton({ isMobile, isSyncing, onClick }) {
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={() => onClick?.()}
             disabled={isSyncing}
@@ -28,7 +28,7 @@ function RefreshButton({ isMobile, isSyncing, onClick }) {
  *  "Create" action. Collapses to icon on mobile. */
 function PrimaryActionButton({ icon, isMobile, label, onClick }) {
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={onClick}
             className={`inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all duration-150 ease-out hover:bg-accent-hover active:scale-[0.97] motion-reduce:transition-none ${FOCUS_RING}`}

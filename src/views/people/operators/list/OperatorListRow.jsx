@@ -50,7 +50,7 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
                 <div className="flex items-center gap-1.5">
                     <OperatorClockIndicator badge={operator.smyrnaId || operator.employeeId} />
                     <span className={duplicate ? 'duplicate' : ''}>{operator.name}</span>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={(e) => handleCopyName(e, operator.name)}
                         title="Copy name"
@@ -84,7 +84,7 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
             <td className={`${CELL_SECONDARY} w-[14%] group-hover:bg-bg-tertiary`}>{trainerName || '—'}</td>
             <td className={`${CELL_SECONDARY} w-[12%] group-hover:bg-bg-tertiary`}>
                 <div className="flex items-center">
-                    <button
+                    <button type="button"
                         onClick={(e) => {
                             e.stopPropagation()
                             onOpenComments(operator)
@@ -108,7 +108,7 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
                             </Badge>
                         )}
                     </button>
-                    <button
+                    <button type="button"
                         onClick={(e) => {
                             e.stopPropagation()
                             onOpenHistory(operator)

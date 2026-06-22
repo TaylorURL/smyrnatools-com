@@ -18,7 +18,7 @@ function PriorityChip({ item, onChange }) {
     const pc = ListService.getPriorityConfig(item.priority || 'none')
     return (
         <>
-            <button
+            <button type="button"
                 ref={ref}
                 type="button"
                 onClick={(e) => {
@@ -92,7 +92,7 @@ export default function ListCardItem({ accentColor, isSelected, item, onSelectIt
             }}
         >
             <div className="flex items-start gap-2">
-                <button
+                <button type="button"
                     type="button"
                     onClick={(e) => {
                         e.stopPropagation()
@@ -165,7 +165,7 @@ export default function ListCardItem({ accentColor, isSelected, item, onSelectIt
                     className="pointer-events-none absolute right-2 top-2 flex items-center gap-0.5 opacity-0 translate-x-1 transition-[opacity,transform] duration-150 ease-out group-hover:pointer-events-auto group-hover:opacity-100 group-hover:translate-x-0 group-focus-within:opacity-100 group-focus-within:translate-x-0 motion-reduce:transition-none"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={handleEdit}
                         className="flex h-6 w-6 items-center justify-center rounded-md bg-bg-primary text-text-tertiary border border-border-light hover:bg-bg-secondary hover:text-text-primary active:scale-[0.92] transition-[transform,colors] duration-150 ease-out"
@@ -174,7 +174,7 @@ export default function ListCardItem({ accentColor, isSelected, item, onSelectIt
                     >
                         <i className="fas fa-pen text-[10px]" aria-hidden="true" />
                     </button>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={handleDelete}
                         className="flex h-6 w-6 items-center justify-center rounded-md bg-bg-primary text-text-tertiary border border-border-light hover:bg-bg-tertiary hover:text-status-danger active:scale-[0.92] transition-[transform,colors] duration-150 ease-out"

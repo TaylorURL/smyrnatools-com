@@ -12,7 +12,7 @@ export default function DetailViewHeader({ headerActions, icon, onBack, onClose,
     return (
         <div className="relative border-b border-border-light bg-bg-primary">
             <div className="dv-header relative flex items-center gap-3 px-4 py-2.5">
-                <button
+                <button type="button"
                     onClick={onBack || onClose}
                     aria-label="Back"
                     className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border-none bg-bg-secondary text-[13px] text-text-secondary cursor-pointer transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"

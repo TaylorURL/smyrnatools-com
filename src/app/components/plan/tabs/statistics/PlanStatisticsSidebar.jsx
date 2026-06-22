@@ -188,7 +188,7 @@ export function PlanStatisticsSidebar({ accentColor, activeSection, onSelect }) 
  *  and white in dark, matching every other interactive surface. */
 function SidebarSectionButton({ accentColor, active, indent, onSelect, section }) {
     return (
-        <button
+        <button type="button"
             onClick={() => onSelect(section.id)}
             className="flex items-center gap-2.5 rounded-md border-none cursor-pointer text-left px-3 py-2 active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             style={{
@@ -215,7 +215,7 @@ function SidebarGroup({ accentColor, activeSection, containsActive, group, isOpe
     const headerTint = containsActive ? 'var(--text-primary)' : 'var(--text-secondary)'
     return (
         <>
-            <button
+            <button type="button"
                 type="button"
                 onClick={onToggle}
                 aria-expanded={isOpen}
@@ -267,7 +267,7 @@ export function PlanStatisticsSectionTabs({ accentColor, activeSection, onSelect
             {PLAN_STATS_SECTIONS.map((section) => {
                 const active = section.id === activeSection
                 return (
-                    <button
+                    <button type="button"
                         key={section.id}
                         onClick={() => onSelect(section.id)}
                         className="flex items-center gap-1.5 rounded-md border-none cursor-pointer px-2.5 py-1.5 text-[12px] font-semibold shrink-0 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"

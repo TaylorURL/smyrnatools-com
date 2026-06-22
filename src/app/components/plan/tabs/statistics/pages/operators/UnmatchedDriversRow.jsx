@@ -107,7 +107,7 @@ export function UnmatchedDriversRow({
                     </div>
                 </div>
                 {unmatchedNames.length > 0 && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={handleCopy}
                         className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border border-border-light shrink-0 text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"

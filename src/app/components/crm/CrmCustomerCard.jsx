@@ -43,7 +43,7 @@ const DEFAULT_ACCENT = '#2563eb'
 export function CrmCustomerCardRow({ isActive, onSelect, row }) {
     const phones = useMemo(() => parsePhoneNumbers(row?.phone), [row?.phone])
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={() => onSelect(row.account_id)}
             aria-current={isActive ? 'true' : undefined}
@@ -337,7 +337,7 @@ export function CrmCustomerDetail({
                         {CALL_OUTCOME_BUTTONS.map(({ color, icon, key, label }) => {
                             const busy = submitting === key
                             return (
-                                <button
+                                <button type="button"
                                     key={key}
                                     type="button"
                                     onClick={() => submitCallLog(key)}
@@ -356,7 +356,7 @@ export function CrmCustomerDetail({
                         })}
                     </div>
                     <div className="flex items-center justify-end">
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={() => submitCallLog('note')}
                             disabled={!callComment.trim() || submitting === 'note'}

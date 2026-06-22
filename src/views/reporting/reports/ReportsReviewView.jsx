@@ -246,7 +246,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         <div ref={containerRef} className="bg-bg-secondary min-h-screen w-full">
             <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4 bg-bg-primary border-b border-border-light px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-40">
                 <div className="flex items-center gap-4">
-                    <button
+                    <button type="button"
                         className={`w-10 h-10 flex items-center justify-center bg-bg-secondary text-text-secondary rounded-md hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 active:scale-[0.98] ${FOCUS_RING}`}
                         onClick={onBack}
                         type="button"
@@ -264,7 +264,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 <div className="flex items-center gap-3">
                     <StatusBadge isSubmitted={isSubmitted} />
                     {report.name === 'general_manager' && (
-                        <button
+                        <button type="button"
                             type="button"
                             className={`inline-flex items-center gap-2 px-4 py-2 bg-status-active text-white rounded-md text-sm font-semibold transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${FOCUS_RING}`}
                             disabled={exporting}
@@ -275,7 +275,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                         </button>
                     )}
                     {hasManagerEditPermission && showManagerEditButton && (
-                        <button
+                        <button type="button"
                             type="button"
                             className={`inline-flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-md text-sm font-semibold transition-all duration-150 hover:bg-accent-hover active:scale-[0.98] ${FOCUS_RING}`}
                             onClick={() => onManagerEdit(report, initialData)}

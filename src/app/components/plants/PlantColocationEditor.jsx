@@ -126,7 +126,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                                 ) : (
                                     row.plantName && <span className="text-text-secondary">{row.plantName}</span>
                                 )}
-                                <button
+                                <button type="button"
                                     type="button"
                                     className="flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.92] disabled:active:scale-100"
                                     onClick={() => remove(row.plantCode)}
@@ -162,7 +162,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                         aria-label="Filter sibling plant candidates"
                     />
                     {filterText && !disabled && (
-                        <button
+                        <button type="button"
                             type="button"
                             aria-label="Clear filter"
                             onClick={() => setFilterText('')}
@@ -181,7 +181,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                         </div>
                     ) : (
                         addableCandidates.map((candidate, idx) => (
-                            <button
+                            <button type="button"
                                 key={candidate.plantCode}
                                 type="button"
                                 disabled={disabled}
@@ -230,7 +230,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                         }}
                         disabled={disabled}
                     />
-                    <button
+                    <button type="button"
                         type="button"
                         className="rounded-xl border border-border-light bg-bg-primary px-5 py-2.5 text-sm font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97] disabled:active:scale-100"
                         onClick={handleAddCustom}

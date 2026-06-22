@@ -147,7 +147,7 @@ export default function PlanStatisticsCustomerLookupPage({
                     {FILTERS.map((f) => {
                         const active = filterKey === f.key
                         return (
-                            <button
+                            <button type="button"
                                 key={f.key}
                                 type="button"
                                 onClick={() => setFilterKey(f.key)}

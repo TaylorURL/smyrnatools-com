@@ -46,7 +46,7 @@ export default function TrailerBasicInfoCard({
             </div>
             <div className="form-group">
                 <label>Assigned Plant</label>
-                <button
+                <button type="button"
                     className={`operator-select-button form-control text-left ${!canEditTrailer ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                     onClick={() => canEditTrailer && onOpenPlantModal()}
                     type="button"

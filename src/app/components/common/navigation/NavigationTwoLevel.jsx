@@ -77,7 +77,7 @@ export default function NavigationTwoLevel({
                             {visibleCategories.map((cat) => {
                                 const isActive = activeCategory === cat.id
                                 return (
-                                    <button
+                                    <button type="button"
                                         type="button"
                                         key={cat.id}
                                         className={categoryTabClasses(isActive)}
@@ -138,7 +138,7 @@ export default function NavigationTwoLevel({
                         {secondaryItems.map((item) => {
                             const isActive = selectedView === item.id
                             return (
-                                <button
+                                <button type="button"
                                     type="button"
                                     key={item.id}
                                     data-active={isActive}

@@ -18,7 +18,7 @@ function PlantFilterButton({
 }) {
     const tinted = active && accentColor
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={onClick}
             aria-label={title}

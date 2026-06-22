@@ -115,7 +115,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-border-light">
                     <span className="text-base font-semibold text-text-primary">Send {itemType}</span>
-                    <button
+                    <button type="button"
                         onClick={onClose}
                         aria-label="Close"
                         className="flex items-center justify-center w-8 h-8 rounded-lg border-none cursor-pointer text-sm bg-bg-hover text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -131,7 +131,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                             <span className="text-sm font-medium text-text-primary">
                                 Sent to {selectedManager?.firstName} {selectedManager?.lastName}
                             </span>
-                            <button
+                            <button type="button"
                                 onClick={onClose}
                                 className="mt-2 px-5 py-2 rounded-lg border-none text-sm font-medium text-white cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 style={{ background: accentColor }}
@@ -162,7 +162,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                 </div>
                             ) : (
                                 <div ref={dropdownRef} className="relative mb-4">
-                                    <button
+                                    <button type="button"
                                         type="button"
                                         onClick={() => setDropdownOpen((prev) => !prev)}
                                         aria-haspopup="listbox"
@@ -228,7 +228,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                         style={{ fontFamily: 'inherit' }}
                                                     />
                                                     {recipientSearch && (
-                                                        <button
+                                                        <button type="button"
                                                             type="button"
                                                             onClick={() => setRecipientSearch('')}
                                                             aria-label="Clear search"
@@ -253,7 +253,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                     filteredManagers.map((mgr) => {
                                                         const isSelected = selectedManager?.id === mgr.id
                                                         return (
-                                                            <button
+                                                            <button type="button"
                                                                 key={mgr.id}
                                                                 type="button"
                                                                 role="option"
@@ -320,19 +320,8 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                 onChange={(e) => setCommentary(e.target.value)}
                                 placeholder="Add a note..."
                                 rows="3"
-                                className="w-full rounded-lg text-sm mb-4 outline-none resize-y bg-bg-primary text-text-primary"
-                                style={{
-                                    border: '1.5px solid var(--border-light)',
-                                    fontFamily: 'inherit',
-                                    lineHeight: 1.5,
-                                    padding: '0.625rem 0.75rem'
-                                }}
-                                onFocus={(e) => {
-                                    e.currentTarget.style.borderColor = accentColor
-                                }}
-                                onBlur={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--border-light)'
-                                }}
+                                className="w-full rounded-lg text-sm mb-4 outline-none resize-y bg-bg-primary text-text-primary border-[1.5px] border-border-light leading-normal px-3 py-2.5 transition-colors duration-150 focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                                style={{ fontFamily: 'inherit' }}
                             />
 
                             {error && (
@@ -343,7 +332,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                             )}
 
                             {/* Send */}
-                            <button
+                            <button type="button"
                                 onClick={handleSend}
                                 disabled={disabled}
                                 className="w-full flex items-center justify-center gap-2 rounded-lg border-none text-sm font-semibold py-2.5 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] disabled:active:scale-100"

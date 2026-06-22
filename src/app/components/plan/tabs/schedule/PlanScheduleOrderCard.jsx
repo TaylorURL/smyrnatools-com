@@ -208,7 +208,7 @@ export default function PlanScheduleOrderCard({
                     <div className="mt-1 flex items-center gap-x-2 gap-y-0.5 flex-wrap text-[11px] text-text-secondary leading-tight">
                         {plantCode &&
                             (onPickPlant ? (
-                                <button
+                                <button type="button"
                                     type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
@@ -235,7 +235,7 @@ export default function PlanScheduleOrderCard({
                         )}
                         {order.productCode &&
                             (onPickProduct ? (
-                                <button
+                                <button type="button"
                                     type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
@@ -279,7 +279,7 @@ export default function PlanScheduleOrderCard({
                     {/* Row 4: actions — Tickets button + Details hint */}
                     <div className="mt-1.5 flex items-center gap-2">
                         {onViewTickets && (
-                            <button
+                            <button type="button"
                                 type="button"
                                 onClick={(e) => {
                                     e.stopPropagation()
@@ -292,7 +292,7 @@ export default function PlanScheduleOrderCard({
                             </button>
                         )}
                         {hasAddress && !addressBad && onOpenLocation && (
-                            <button
+                            <button type="button"
                                 type="button"
                                 onClick={(e) => {
                                     e.stopPropagation()
@@ -352,7 +352,7 @@ export default function PlanScheduleOrderCard({
                         </div>
                         {status &&
                             (onPickStatus ? (
-                                <button
+                                <button type="button"
                                     type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
@@ -373,7 +373,7 @@ export default function PlanScheduleOrderCard({
                     <div className="text-[11.5px] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-text-secondary">
                         {plantCode &&
                             (onPickPlant ? (
-                                <button
+                                <button type="button"
                                     type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
@@ -410,7 +410,7 @@ export default function PlanScheduleOrderCard({
                             </Badge>
                         ) : onOpenLocation ? (
                             <div className="mt-1 flex flex-col gap-1">
-                                <button
+                                <button type="button"
                                     type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
@@ -456,7 +456,7 @@ export default function PlanScheduleOrderCard({
             </div>
             {(order.productCode || order.description) &&
                 (onPickProduct && order.productCode ? (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={(e) => {
                             e.stopPropagation()
@@ -507,7 +507,7 @@ export default function PlanScheduleOrderCard({
             </div>
             {onViewTickets && (
                 <div className="flex items-center gap-2 pt-0.5">
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={(e) => {
                             e.stopPropagation()

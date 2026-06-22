@@ -268,7 +268,7 @@ function TutorialPopup({ tutorialId, onDismiss }) {
                 </div>
                 <div className="p-4">
                     <p className="m-0 mb-4 text-[13px] leading-relaxed text-text-secondary">{tutorial.message}</p>
-                    <button
+                    <button type="button"
                         onClick={onDismiss}
                         className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border-none px-4 py-2.5 text-[13px] font-semibold text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{ background: accentColor }}

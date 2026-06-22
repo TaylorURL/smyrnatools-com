@@ -39,7 +39,7 @@ export function ContactsSection({
             <div className="flex items-baseline justify-between gap-2 mb-2">
                 <div className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Phone numbers</div>
                 {!showAddForm && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => setShowAddForm(true)}
                         className="inline-flex items-center gap-1 text-[11px] font-semibold cursor-pointer border-none bg-transparent p-0 text-text-secondary hover:underline active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -106,7 +106,7 @@ export function ContactsSection({
                                     )}
                                 </a>
                                 <div className="flex items-center gap-1 shrink-0">
-                                    <button
+                                    <button type="button"
                                         type="button"
                                         onClick={() => setEditingKey(entry.phoneDigits)}
                                         className="inline-flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer bg-transparent text-text-tertiary hover:text-text-primary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -115,7 +115,7 @@ export function ContactsSection({
                                     >
                                         <i className="fas fa-pen text-[10px]" />
                                     </button>
-                                    <button
+                                    <button type="button"
                                         type="button"
                                         onClick={() => handleDelete(entry)}
                                         className="inline-flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer bg-transparent text-text-tertiary hover:text-text-primary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"

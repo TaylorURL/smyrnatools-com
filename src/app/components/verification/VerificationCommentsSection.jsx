@@ -69,7 +69,7 @@ function AddCommentComposer({ accentColor, onAddComment }) {
 
     if (!isOpen) {
         return (
-            <button
+            <button type="button"
                 type="button"
                 onClick={() => setIsOpen(true)}
                 className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border-light bg-transparent px-3 py-2 text-[12px] font-medium text-text-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary active:scale-[0.97]"
@@ -91,14 +91,14 @@ function AddCommentComposer({ accentColor, onAddComment }) {
                 autoFocus
             />
             <div className="mt-2 flex justify-end gap-1.5">
-                <button
+                <button type="button"
                     type="button"
                     onClick={reset}
                     className="rounded-md px-2.5 py-1.5 text-[11.5px] font-medium text-text-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary active:scale-[0.97]"
                 >
                     Cancel
                 </button>
-                <button
+                <button type="button"
                     type="button"
                     onClick={handleSubmit}
                     disabled={!text.trim() || isSubmitting}

@@ -31,7 +31,7 @@ export function ActivityOutcomeBreakdown({ isLoading, metrics, onSelectOutcome, 
                     if (count === 0) return null
                     const pct = (count / metrics.total) * 100
                     return (
-                        <button
+                        <button type="button"
                             key={key}
                             type="button"
                             onClick={() => onSelectOutcome(key)}
@@ -53,7 +53,7 @@ export function ActivityOutcomeBreakdown({ isLoading, metrics, onSelectOutcome, 
                     if (count === 0) return null
                     const isActive = selectedOutcome === key
                     return (
-                        <button
+                        <button type="button"
                             key={key}
                             type="button"
                             onClick={() => onSelectOutcome(key)}

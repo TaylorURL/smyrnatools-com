@@ -154,7 +154,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                             <p className="text-xs text-slate-400">Report issues with lab results</p>
                         </div>
                     </div>
-                    <button
+                    <button type="button"
                         onClick={onClose}
                         aria-label="Close"
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer border-none bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
@@ -297,7 +297,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                                             <span className="text-xs text-slate-400 shrink-0">
                                                 {(file.size / 1024 / 1024).toFixed(1)}MB
                                             </span>
-                                            <button
+                                            <button type="button"
                                                 type="button"
                                                 onClick={() => removeFile(i)}
                                                 className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-text-primary hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent shrink-0"
@@ -320,13 +320,13 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                             {uploadProgress}
                         </span>
                     )}
-                    <button
+                    <button type="button"
                         onClick={onClose}
                         className="px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 bg-slate-100 border-none cursor-pointer hover:bg-slate-200 transition-colors"
                     >
                         Cancel
                     </button>
-                    <button
+                    <button type="button"
                         onClick={handleSubmit}
                         disabled={submitting}
                         className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white border-none cursor-pointer transition-colors disabled:opacity-50"

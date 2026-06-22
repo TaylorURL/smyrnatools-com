@@ -14,7 +14,7 @@ const PermissionRow = ({ permission, onRemove, hasITAccess, isSaving }) => {
             </div>
             <span className="flex-1 font-mono text-[13px] text-text-primary">{permission}</span>
             {hasITAccess && (
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => onRemove(permission)}
                     disabled={isSaving}

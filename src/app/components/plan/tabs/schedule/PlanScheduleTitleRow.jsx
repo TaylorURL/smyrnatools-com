@@ -42,7 +42,7 @@ export default function PlanScheduleTitleRow({
                 {!isMobile && (
                     <div className="flex items-center rounded-lg p-0.5 bg-bg-secondary border border-border-light">
                         {VIEW_MODES.map((m) => (
-                            <button
+                            <button type="button"
                                 key={m}
                                 type="button"
                                 onClick={() => setViewMode(m)}
@@ -59,7 +59,7 @@ export default function PlanScheduleTitleRow({
                     </div>
                 )}
                 {isMobile && hasAnyOrders && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onToggleFilters}
                         aria-expanded={filtersOpen}
@@ -87,7 +87,7 @@ export default function PlanScheduleTitleRow({
                     </button>
                 )}
                 {!isMobile && hasAnyOrders && onToggleCompare && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onToggleCompare}
                         className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -106,7 +106,7 @@ export default function PlanScheduleTitleRow({
                     </button>
                 )}
                 {!isMobile && hasAnyOrders && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onToggleMaximized}
                         className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -117,7 +117,7 @@ export default function PlanScheduleTitleRow({
                     </button>
                 )}
                 {onSwitchToPlanner && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onSwitchToPlanner}
                         className="min-h-[44px] md:min-h-0 md:py-2 px-3.5 rounded-lg text-[13px] md:text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"

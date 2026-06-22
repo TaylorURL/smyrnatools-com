@@ -31,7 +31,7 @@ import { EmptySection, isEmptyAfterLoad, RefreshingHint } from './planStatsShare
 function ViewDetails({ onSelect, section, label = 'View details' }) {
     if (!onSelect) return null
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={() => onSelect(section)}
             className="text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -102,7 +102,7 @@ function SatisfactionSummary({ aggregate, loading, onSelect }) {
  *  than trying to replay any sub-page's content. */
 function LaunchpadTile({ hint, icon, label, onSelect, section, value }) {
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={() => onSelect?.(section)}
             className="flex flex-col gap-1 items-start rounded-lg border bg-bg-secondary border-border-light cursor-pointer p-3 text-left hover:border-current active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"

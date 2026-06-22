@@ -189,7 +189,7 @@ export default function PlanScheduleFilterDrawer({
                     className="bg-transparent outline-none border-none text-[13px] md:text-[12.5px] w-full text-text-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:hidden"
                 />
                 {query && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => onChangeQuery('')}
                         className="-mr-1 inline-flex h-8 w-8 items-center justify-center rounded-md border-none bg-transparent cursor-pointer text-text-tertiary hover:text-text-primary active:scale-[0.92] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
@@ -203,7 +203,7 @@ export default function PlanScheduleFilterDrawer({
             <Divider />
 
             {/* Plants — full-width on mobile, sized to content on desktop. */}
-            <button
+            <button type="button"
                 type="button"
                 onClick={() => setPlantModalOpen(true)}
                 aria-haspopup="dialog"
@@ -384,7 +384,7 @@ export default function PlanScheduleFilterDrawer({
                 )}
                 <div className="ml-auto flex items-center gap-2 md:contents">
                     {typeof onClearFilters === 'function' && (
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={onClearFilters}
                             className="rounded-md min-h-[40px] md:min-h-0 px-3 py-2 md:py-1 text-[12.5px] md:text-[11.5px] font-semibold border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -394,7 +394,7 @@ export default function PlanScheduleFilterDrawer({
                         </button>
                     )}
                     {typeof onExitMaximized === 'function' && (
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={onExitMaximized}
                             className="rounded-md min-h-[40px] md:min-h-0 px-3 py-2 md:py-1 text-[12.5px] md:text-[11.5px] font-semibold border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"

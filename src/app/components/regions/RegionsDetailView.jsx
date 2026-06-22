@@ -168,7 +168,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
             loadingMessage="Loading region details..."
             footerActions={
                 <>
-                    <button
+                    <button type="button"
                         className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-100"
                         onClick={handleSave}
                         disabled={saving || loading}
@@ -176,7 +176,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                         <i className="fas fa-save"></i>
                         <span>{saving ? 'Saving...' : 'Save'}</span>
                     </button>
-                    <button
+                    <button type="button"
                         className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-100"
                         onClick={() => setShowDeleteConfirmation(true)}
                         disabled={saving || loading}
@@ -254,7 +254,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                             >
                                                 <span className="font-bold">{code}</span>
                                                 {p?.plant_name && <span className="opacity-80">{p.plant_name}</span>}
-                                                <button
+                                                <button type="button"
                                                     type="button"
                                                     className="ml-0.5 cursor-pointer bg-transparent border-none text-sm leading-none opacity-70 hover:opacity-100 active:scale-[0.97] transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded"
                                                     onClick={() => removeChip(code)}
@@ -265,7 +265,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                             </span>
                                         )
                                     })}
-                                    <button
+                                    <button type="button"
                                         type="button"
                                         className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer border border-border-light bg-bg-secondary text-text-secondary hover:bg-bg-tertiary hover:text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                         onClick={clearAllSelected}
@@ -289,7 +289,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                         aria-label="Search plants"
                                     />
                                     {plantQuery && (
-                                        <button
+                                        <button type="button"
                                             type="button"
                                             aria-label="Clear plant search"
                                             onClick={() => setPlantQuery('')}
@@ -302,7 +302,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                 <span className="text-xs text-text-secondary whitespace-nowrap">
                                     {filteredPlants.length} results
                                 </span>
-                                <button
+                                <button type="button"
                                     type="button"
                                     className="flex items-center gap-2 rounded-xl border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-100 disabled:cursor-not-allowed disabled:opacity-50"
                                     onClick={selectAllFiltered}
@@ -364,7 +364,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                         }
                                     }}
                                 />
-                                <button
+                                <button type="button"
                                     type="button"
                                     className="flex items-center gap-1 rounded-xl border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-100"
                                     onClick={addNewDistrict}
@@ -422,7 +422,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                                                 {p.plant_name}
                                                                             </span>
                                                                         )}
-                                                                        <button
+                                                                        <button type="button"
                                                                             type="button"
                                                                             className="ml-0.5 cursor-pointer bg-transparent border-none text-sm leading-none opacity-70 hover:opacity-100 active:scale-[0.97] transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded"
                                                                             onClick={() =>

@@ -16,7 +16,7 @@ function OperatorEmptyState({ hasActiveFilters, onAddOperator }) {
                     ? 'No operators match your search criteria.'
                     : 'There are no operators in the system yet.'}
             </p>
-            <button
+            <button type="button"
                 className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                 onClick={onAddOperator}
             >

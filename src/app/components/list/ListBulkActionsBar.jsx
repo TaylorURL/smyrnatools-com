@@ -23,7 +23,7 @@ function ActionButton({ ariaProps, children, icon, isMobile, onClick, tone = 'ne
     const cfg = TONE_CONFIG[tone] || TONE_CONFIG.neutral
     const inlineStyle = cfg.bg ? { background: cfg.bg } : undefined
     return (
-        <button
+        <button type="button"
             onClick={onClick}
             type="button"
             className={`flex items-center font-semibold border-none outline-none cursor-pointer transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-accent ${base} ${cfg.textClass}`}
@@ -54,7 +54,7 @@ function BulkDropdownPanel({ children, isMobile, minWidth }) {
 
 function MenuItem({ children, icon, iconBg, iconColor, isMobile, onClick }) {
     return (
-        <button
+        <button type="button"
             type="button"
             role="menuitem"
             onClick={onClick}

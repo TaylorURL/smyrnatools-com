@@ -50,7 +50,7 @@ function ActivityRow({ entry, onSelectCustomer }) {
     const tone = CALL_OUTCOME_COLORS[entry.outcome] || '#64748b'
     const icon = ICON_BY_OUTCOME[entry.outcome] || 'fa-phone'
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={() => onSelectCustomer && onSelectCustomer(entry.customer_num)}
             disabled={!entry.customer_num || !onSelectCustomer}

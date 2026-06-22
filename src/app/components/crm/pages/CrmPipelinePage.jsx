@@ -230,7 +230,7 @@ function OpportunityCard({ currentStage, materialize, onMove, onOpenAccount, opp
 
             <div className="flex flex-wrap gap-1">
                 {isWonVirtual ? (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={(e) => {
                             e.stopPropagation()
@@ -243,7 +243,7 @@ function OpportunityCard({ currentStage, materialize, onMove, onOpenAccount, opp
                     </button>
                 ) : (
                     otherStages.map((targetStage) => (
-                        <button
+                        <button type="button"
                             key={targetStage.id}
                             type="button"
                             onClick={(e) => {

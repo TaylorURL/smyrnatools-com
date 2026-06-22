@@ -230,7 +230,7 @@ function ListAddView({ initialDescription = '', onClose, onItemAdded, item = nul
                                     <div className="flex items-center gap-2">
                                         {description.trim() && (
                                             <>
-                                                <button
+                                                <button type="button"
                                                     type="button"
                                                     onClick={handleImproveDescription}
                                                     disabled={isImprovingDescription}
@@ -244,7 +244,7 @@ function ListAddView({ initialDescription = '', onClose, onItemAdded, item = nul
                                                     )}
                                                     <span className="hidden sm:inline">Improve</span>
                                                 </button>
-                                                <button
+                                                <button type="button"
                                                     type="button"
                                                     onClick={() => fetchSuggestions(description)}
                                                     disabled={isLoadingSuggestions}
@@ -297,7 +297,7 @@ function ListAddView({ initialDescription = '', onClose, onItemAdded, item = nul
                                                 <div className="flex items-center gap-2 text-xs font-medium text-text-secondary">
                                                     <i className="fas fa-robot text-accent" aria-hidden="true" />
                                                     <span>AI Suggestions</span>
-                                                    <button
+                                                    <button type="button"
                                                         type="button"
                                                         onClick={() => setShowSuggestions(false)}
                                                         className="ml-auto rounded p-1 text-text-tertiary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -309,7 +309,7 @@ function ListAddView({ initialDescription = '', onClose, onItemAdded, item = nul
                                             </div>
                                             <div className="max-h-48 overflow-y-auto">
                                                 {aiSuggestions.map((suggestion, idx) => (
-                                                    <button
+                                                    <button type="button"
                                                         key={idx}
                                                         type="button"
                                                         onClick={() => handleSelectSuggestion(suggestion)}
@@ -333,7 +333,7 @@ function ListAddView({ initialDescription = '', onClose, onItemAdded, item = nul
                                 </label>
                                 {!item ? (
                                     <>
-                                        <button
+                                        <button type="button"
                                             type="button"
                                             className={LIST_PLANT_BUTTON_CLASS}
                                             onClick={() => setIsPlantModalOpen(true)}
@@ -370,7 +370,7 @@ function ListAddView({ initialDescription = '', onClose, onItemAdded, item = nul
                                         )}
                                     </>
                                 ) : (
-                                    <button
+                                    <button type="button"
                                         type="button"
                                         className={LIST_PLANT_BUTTON_CLASS}
                                         onClick={() => setIsPlantModalOpen(true)}
@@ -453,7 +453,7 @@ function ListAddView({ initialDescription = '', onClose, onItemAdded, item = nul
                         </div>
                     </div>
                     <div className="flex justify-end pt-4">
-                        <button
+                        <button type="button"
                             type="submit"
                             className="inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                             disabled={isSaving}

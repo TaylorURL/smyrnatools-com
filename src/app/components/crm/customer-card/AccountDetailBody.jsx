@@ -77,7 +77,7 @@ export function AccountDetailBody({
                 {(isBack || onArchive) && (
                     <div className="flex items-center justify-between gap-2">
                         {isBack ? (
-                            <button
+                            <button type="button"
                                 type="button"
                                 aria-label={closeLabel}
                                 onClick={onClose}
@@ -90,7 +90,7 @@ export function AccountDetailBody({
                             <span aria-hidden="true" />
                         )}
                         {onArchive && (
-                            <button
+                            <button type="button"
                                 type="button"
                                 onClick={onArchive}
                                 className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11.5px] font-semibold border border-border-light bg-bg-primary text-text-secondary cursor-pointer hover:border-status-danger/40 hover:text-status-danger active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
@@ -130,7 +130,7 @@ export function AccountDetailBody({
                     )}
 
                     {!isBack && (
-                        <button
+                        <button type="button"
                             type="button"
                             aria-label={closeLabel}
                             onClick={onClose}

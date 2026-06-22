@@ -21,7 +21,7 @@ export default function AssetEmptyState({ config, filters, onAdd }) {
                     : `There are no ${config.pluralLabel.toLowerCase()} in the system yet.`}
             </p>
             {!filters.searchText && (
-                <button
+                <button type="button"
                     type="button"
                     onClick={onAdd}
                     className="inline-flex items-center gap-2 rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-accent-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"

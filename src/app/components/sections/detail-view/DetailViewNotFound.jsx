@@ -23,7 +23,7 @@ export default function DetailViewNotFound({
                 <h2 className="m-0 mb-2 text-[22px] font-bold text-slate-800">{notFoundMessage}</h2>
                 <p className="m-0 max-w-[300px] text-sm text-slate-500">{notFoundDescription}</p>
             </div>
-            <button
+            <button type="button"
                 onClick={onClose || onBack}
                 className="flex items-center gap-2 rounded-xl border-none text-sm font-semibold text-white cursor-pointer px-6 py-3"
                 style={{ background: accent }}

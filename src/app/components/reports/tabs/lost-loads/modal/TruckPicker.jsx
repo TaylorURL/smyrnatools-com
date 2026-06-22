@@ -15,7 +15,7 @@ function TruckPicker({
     return (
         <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Truck Number</label>
-            <button
+            <button type="button"
                 type="button"
                 onClick={() => setTruckPickerOpen((v) => !v)}
                 aria-haspopup="listbox"
@@ -69,7 +69,7 @@ function TruckPicker({
                                 const opName = operatorMap[m.assignedOperator] || null
                                 const isSelected = truckNumber === m.truckNumber
                                 return (
-                                    <button
+                                    <button type="button"
                                         key={m.id}
                                         type="button"
                                         role="option"

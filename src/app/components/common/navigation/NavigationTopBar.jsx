@@ -44,7 +44,7 @@ function TopBarDropdown({
 }) {
     return (
         <div className="relative" ref={isOpen ? onTriggerRef : null}>
-            <button
+            <button type="button"
                 type="button"
                 ref={registerMagnetic}
                 className={navItemClasses(isActive, isTablet)}
@@ -70,7 +70,7 @@ function TopBarDropdown({
                         const isItemActive = selectedView === item.id
                         const activeTint = `${accentColor}14`
                         return (
-                            <button
+                            <button type="button"
                                 type="button"
                                 role="menuitem"
                                 key={item.id}
@@ -170,7 +170,7 @@ export default function NavigationTopBar({
                             </div>
                         )}
                         {dashboardItem && (
-                            <button
+                            <button type="button"
                                 type="button"
                                 ref={registerMagnetic}
                                 className={navItemClasses(selectedView === 'Dashboard', isTablet)}
@@ -209,7 +209,7 @@ export default function NavigationTopBar({
                         {standaloneItems
                             .filter((i) => i.id !== 'Dashboard')
                             .map((item) => (
-                                <button
+                                <button type="button"
                                     type="button"
                                     key={item.id}
                                     ref={registerMagnetic}

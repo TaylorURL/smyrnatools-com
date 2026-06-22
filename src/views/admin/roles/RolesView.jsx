@@ -127,7 +127,7 @@ function RolesView() {
                 customActions={
                     hasITAccess ? (
                         <div className="flex items-center gap-2">
-                            <button
+                            <button type="button"
                                 type="button"
                                 onClick={() => setShowBulkAddModal(true)}
                                 className="inline-flex items-center gap-2 rounded-md bg-bg-tertiary px-4 py-2 text-sm font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.98]"

@@ -53,7 +53,7 @@ export default function DashboardHeader({
             <div className="flex-1 min-w-[8px]" />
             <div className="flex items-center gap-1.5">
                 {onPlantFilterClick && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onPlantFilterClick}
                         className={ACTION_BUTTON_CLASS}
@@ -64,7 +64,7 @@ export default function DashboardHeader({
                     </button>
                 )}
                 {onRefresh && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onRefresh}
                         disabled={refreshing}

@@ -59,7 +59,7 @@ export function AiAnalysisCard({ aiAnalysis, aiError, aiLoading, onRegenerate, p
             <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-text-primary mb-6">
                 <i className="fas fa-exclamation-triangle mr-2"></i>
                 Failed to generate AI analysis.
-                <button
+                <button type="button"
                     onClick={onRegenerate}
                     className="ml-2 cursor-pointer underline bg-transparent border-none text-inherit"
                 >
@@ -73,7 +73,7 @@ export function AiAnalysisCard({ aiAnalysis, aiError, aiLoading, onRegenerate, p
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 mb-6">
             <AiAnalysisHeader plantsCount={plantsCount} />
             <div className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">{aiAnalysis}</div>
-            <button
+            <button type="button"
                 className="mt-3 rounded-md border border-slate-300 bg-bg-primary px-3 py-1.5 text-xs text-slate-600 cursor-pointer hover:bg-slate-100"
                 onClick={onRegenerate}
             >

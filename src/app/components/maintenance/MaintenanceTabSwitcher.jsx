@@ -22,7 +22,7 @@ export function MaintenanceTabSwitcher({ activeTab, isMobile, onChange, tabs }) 
             {tabs.map(({ badge, icon, key, label }) => {
                 const isActive = activeTab === key
                 return (
-                    <button
+                    <button type="button"
                         key={key}
                         type="button"
                         role="tab"

@@ -58,7 +58,7 @@ export function CrmSettingsPage({ accentColor }) {
                 </p>
 
                 <div className="flex items-center gap-3 flex-wrap">
-                    <button
+                    <button type="button"
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium text-white transition-opacity disabled:opacity-60 active:scale-[0.97]"
                         disabled={isRunning}
                         onClick={handleGeocode}

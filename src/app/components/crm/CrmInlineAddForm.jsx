@@ -49,7 +49,7 @@ export function CrmInlineAddForm({ accentColor, fieldId, fieldLabel, placeholder
 
     if (!isOpen) {
         return (
-            <button
+            <button type="button"
                 type="button"
                 onClick={() => setIsOpen(true)}
                 className="self-start inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-semibold border border-border-light bg-bg-secondary text-text-secondary cursor-pointer active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:text-text-primary hover:border-border-medium"
@@ -75,7 +75,7 @@ export function CrmInlineAddForm({ accentColor, fieldId, fieldLabel, placeholder
                 onKeyDown={handleKeyDown}
                 className="flex-1 min-w-[180px] rounded-md border border-border-light bg-bg-primary px-2.5 py-1 text-[12.5px] text-text-primary placeholder:text-text-tertiary outline-none focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
             />
-            <button
+            <button type="button"
                 type="button"
                 disabled={!value.trim() || isSaving}
                 onClick={handleSave}
@@ -84,7 +84,7 @@ export function CrmInlineAddForm({ accentColor, fieldId, fieldLabel, placeholder
             >
                 {isSaving ? 'Saving…' : 'Save'}
             </button>
-            <button
+            <button type="button"
                 type="button"
                 onClick={handleCancel}
                 className="rounded-md px-2.5 py-1 text-[12px] font-semibold border border-border-light bg-transparent text-text-secondary cursor-pointer active:scale-[0.97] transition-[colors,transform] duration-150 ease-out hover:text-text-primary"

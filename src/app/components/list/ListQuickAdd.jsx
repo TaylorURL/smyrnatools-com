@@ -153,7 +153,7 @@ export default function ListQuickAdd({
                     className={`flex-1 min-w-0 bg-transparent border-none outline-none text-text-primary placeholder:text-text-tertiary disabled:opacity-60 ${inputTextSize}`}
                 />
                 {text.trim() && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => {
                             onOpenAdvanced?.(text)
@@ -167,7 +167,7 @@ export default function ListQuickAdd({
                     </button>
                 )}
                 <div ref={menuRef} className="relative">
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => setMenuOpen((o) => !o)}
                         aria-haspopup="listbox"
@@ -217,7 +217,7 @@ export default function ListQuickAdd({
                                     </div>
                                 ) : (
                                     filteredPlants.map((p) => (
-                                        <button
+                                        <button type="button"
                                             key={p.code}
                                             type="button"
                                             role="option"

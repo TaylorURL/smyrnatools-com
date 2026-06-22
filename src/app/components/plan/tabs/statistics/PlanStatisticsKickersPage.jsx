@@ -102,7 +102,7 @@ function KickerShareBar({ kickerYards, scheduledYards }) {
 
 function CustomerCard({ customer, isActive, onSelect, orders }) {
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={() => onSelect(customer.key)}
             className="text-left rounded-md p-3 flex flex-col gap-2 cursor-pointer border active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
@@ -249,7 +249,7 @@ function CustomerDetail({ colocationMap, customer, onClose, orders, plantNameByC
                         {customer.lastKickerDate && <> · last kicker {fmtDate(customer.lastKickerDate)}</>}
                     </div>
                 </div>
-                <button
+                <button type="button"
                     type="button"
                     onClick={onClose}
                     className="text-[11.5px] text-text-secondary cursor-pointer bg-transparent border-none p-1 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -427,7 +427,7 @@ export default function PlanStatisticsKickersPage({
                     {FILTERS.map((f) => {
                         const active = filterKey === f.key
                         return (
-                            <button
+                            <button type="button"
                                 key={f.key}
                                 type="button"
                                 onClick={() => setFilterKey(f.key)}

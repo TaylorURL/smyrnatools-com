@@ -21,7 +21,7 @@ export function PlanChartModeToggle({ accentColor, onChange, options, value }) {
             {options.map((option) => {
                 const isActive = value === option.key
                 return (
-                    <button
+                    <button type="button"
                         key={option.key}
                         type="button"
                         onClick={() => onChange(option.key)}

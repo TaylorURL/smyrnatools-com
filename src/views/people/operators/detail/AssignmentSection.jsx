@@ -55,7 +55,7 @@ function AssignmentSection({
                 )}
                 <div className="form-group">
                     <label>Assigned Plant</label>
-                    <button
+                    <button type="button"
                         className={`operator-select-button form-control text-left ${!canEditOperator ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                         onClick={() => setShowPlantModal(true)}
                         type="button"

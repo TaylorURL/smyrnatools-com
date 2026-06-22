@@ -14,7 +14,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNames, selectedPla
     const [open, setOpen] = useState(false)
     return (
         <div className="relative">
-            <button
+            <button type="button"
                 type="button"
                 onClick={() => setOpen((s) => !s)}
                 aria-haspopup="listbox"
@@ -39,7 +39,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNames, selectedPla
                     role="listbox"
                     className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light"
                 >
-                    <button
+                    <button type="button"
                         type="button"
                         role="option"
                         aria-selected={!selectedPlant}
@@ -62,7 +62,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNames, selectedPla
                         availablePlants.map(({ code, label }) => {
                             const isActive = selectedPlant === code
                             return (
-                                <button
+                                <button type="button"
                                     type="button"
                                     key={code}
                                     role="option"
@@ -126,7 +126,7 @@ export function AssetStatisticsControls({
                 setSelectedPlant={setSelectedPlant}
             />
             {selectedPlant && (
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => setSelectedPlant('')}
                     className="text-[11px] font-semibold border-none bg-transparent cursor-pointer text-text-secondary hover:text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded px-1"

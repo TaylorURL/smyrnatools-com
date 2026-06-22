@@ -34,7 +34,7 @@ export default function MixerAssignmentCard({
         <DetailViewSection.Card title="Assignment" icon="fas fa-user-tag">
             <div className="form-group">
                 <label>Assigned Plant</label>
-                <button
+                <button type="button"
                     className={`${FIELD_BUTTON_BASE} ${plantDisabled ? DISABLED_FIELD_CLASSES : ''}`}
                     onClick={() => canEditMixer && onOpenPlantModal()}
                     type="button"
@@ -46,7 +46,7 @@ export default function MixerAssignmentCard({
             <div className="form-group">
                 <label>Assigned Operator</label>
                 <div className="operator-select-container">
-                    <button
+                    <button type="button"
                         className={`${FIELD_BUTTON_BASE} ${operatorDisabled ? DISABLED_FIELD_CLASSES : ''}`}
                         onClick={onOpenOperatorModal}
                         type="button"
@@ -58,7 +58,7 @@ export default function MixerAssignmentCard({
                     </button>
                     {canEditMixer &&
                         (assignedOperator ? (
-                            <button
+                            <button type="button"
                                 className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                 aria-label="Unassign Operator"
                                 onClick={onUnassignOperator}
@@ -68,7 +68,7 @@ export default function MixerAssignmentCard({
                             </button>
                         ) : (
                             lastUnassignedOperatorId && (
-                                <button
+                                <button type="button"
                                     className={UNDO_BUTTON_CLASSES}
                                     aria-label="Undo Unassign"
                                     onClick={onUndoUnassignOperator}

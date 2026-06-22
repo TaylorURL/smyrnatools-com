@@ -45,7 +45,7 @@ function SunsetNotice() {
             <div className="flex items-center gap-2 bg-status-warning px-4 py-3">
                 <i className="fas fa-triangle-exclamation text-sm text-white" aria-hidden="true" />
                 <span className="text-sm font-semibold text-white">Smyrna Tools is shutting down soon</span>
-                <button
+                <button type="button"
                     type="button"
                     onClick={handleDismiss}
                     aria-label="Dismiss sunset notice"
