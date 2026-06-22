@@ -60,7 +60,6 @@ export default function PlanScheduleTitleRow({
                 )}
                 {isMobile && hasAnyOrders && (
                     <button type="button"
-                        type="button"
                         onClick={onToggleFilters}
                         aria-expanded={filtersOpen}
                         aria-label={filtersOpen ? 'Hide filters' : 'Show filters'}
@@ -88,7 +87,6 @@ export default function PlanScheduleTitleRow({
                 )}
                 {!isMobile && hasAnyOrders && onToggleCompare && (
                     <button type="button"
-                        type="button"
                         onClick={onToggleCompare}
                         className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{
@@ -107,7 +105,6 @@ export default function PlanScheduleTitleRow({
                 )}
                 {!isMobile && hasAnyOrders && (
                     <button type="button"
-                        type="button"
                         onClick={onToggleMaximized}
                         className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         title="Maximize the schedule — hide the KPI strip and side rail so the table fills the screen"
@@ -118,7 +115,6 @@ export default function PlanScheduleTitleRow({
                 )}
                 {onSwitchToPlanner && (
                     <button type="button"
-                        type="button"
                         onClick={onSwitchToPlanner}
                         className="min-h-[44px] md:min-h-0 md:py-2 px-3.5 rounded-lg text-[13px] md:text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{ background: accentColor }}

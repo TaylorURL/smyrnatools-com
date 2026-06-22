@@ -51,7 +51,6 @@ function ActivityRow({ entry, onSelectCustomer }) {
     const icon = ICON_BY_OUTCOME[entry.outcome] || 'fa-phone'
     return (
         <button type="button"
-            type="button"
             onClick={() => onSelectCustomer && onSelectCustomer(entry.customer_num)}
             disabled={!entry.customer_num || !onSelectCustomer}
             className="w-full text-left px-3 py-2.5 flex items-start gap-3 cursor-pointer disabled:cursor-default border-none bg-transparent hover:bg-bg-secondary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"

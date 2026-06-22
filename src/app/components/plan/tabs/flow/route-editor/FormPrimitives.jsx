@@ -45,7 +45,6 @@ export function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, v
     return (
         <div className="flex items-stretch rounded-lg overflow-hidden border bg-bg-primary border-border-medium transition-colors duration-150 hover:border-border-dark focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]">
             <button type="button"
-                type="button"
                 onClick={decrement}
                 disabled={atMin}
                 aria-label="Decrease"
@@ -66,7 +65,6 @@ export function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, v
                 className="flex-1 px-3 py-1.5 text-sm font-mono tabular-nums text-center bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-accent/30 text-text-primary"
             />
             <button type="button"
-                type="button"
                 onClick={increment}
                 disabled={atMax}
                 aria-label="Increase"

@@ -35,7 +35,6 @@ export default function LostLoadsTabPanel({
                 {hasLostLoadsPermission && (
                     <div className="flex flex-wrap gap-2">
                         <button type="button"
-                            type="button"
                             onClick={onOpenLostLoadModal}
                             className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider"
                             style={{ background: accent }}

@@ -194,7 +194,6 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                 </a>
                 {canDelete && (
                     <button type="button"
-                        type="button"
                         onClick={() => onDelete(doc)}
                         className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent text-text-tertiary transition-colors hover:bg-[color:var(--danger)]/10 hover:text-[color:var(--danger)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--danger)]/40"
                         title="Delete"
@@ -234,7 +233,6 @@ function EmptyState({ canUpload, onUpload }) {
             </p>
             {canUpload && (
                 <button type="button"
-                    type="button"
                     onClick={onUpload}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md border-none bg-accent text-white text-sm font-semibold cursor-pointer transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                 >

@@ -55,7 +55,6 @@ export function HistoryEntries({ currentUserId, entries, isLoading, onDelete }) 
                                 )}
                                 {canDelete && (
                                     <button type="button"
-                                        type="button"
                                         onClick={() => handleDelete(entry)}
                                         disabled={deletingId === entry.id}
                                         title="Delete this entry"

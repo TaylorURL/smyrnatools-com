@@ -46,7 +46,6 @@ function OrderTicketsHeader({
                 </div>
                 {!inline && (
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         className="w-8 h-8 rounded-md flex items-center justify-center bg-transparent border-0 cursor-pointer text-text-secondary hover:bg-bg-hover hover:text-text-primary active:scale-[0.92] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                         aria-label="Close"

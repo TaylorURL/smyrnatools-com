@@ -97,7 +97,6 @@ function AddIssueComposer({ accentColor, onAddIssue }) {
     if (!isOpen) {
         return (
             <button type="button"
-                type="button"
                 onClick={() => setIsOpen(true)}
                 className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border-light bg-transparent px-3 py-2 text-[12px] font-medium text-text-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary active:scale-[0.97]"
             >
@@ -112,6 +111,7 @@ function AddIssueComposer({ accentColor, onAddIssue }) {
             <textarea
                 rows={3}
                 placeholder="What's the issue?"
+                aria-label="Describe the issue"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 className="w-full resize-none rounded-md px-3 py-2 text-[13px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
@@ -141,14 +141,12 @@ function AddIssueComposer({ accentColor, onAddIssue }) {
                 </div>
                 <div className="flex gap-1.5">
                     <button type="button"
-                        type="button"
                         onClick={reset}
                         className="rounded-md px-2.5 py-1.5 text-[11.5px] font-medium text-text-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary active:scale-[0.97]"
                     >
                         Cancel
                     </button>
                     <button type="button"
-                        type="button"
                         onClick={handleSubmit}
                         disabled={!text.trim() || isSubmitting}
                         className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11.5px] font-semibold text-white transition-[filter] hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] disabled:active:scale-100"

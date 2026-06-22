@@ -169,7 +169,6 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                         </div>
                     </div>
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         aria-label="Close"
                         className="rounded border-none cursor-pointer bg-bg-tertiary text-text-secondary h-6 w-6 hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
@@ -292,7 +291,6 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                 <div className="flex items-center justify-between gap-1.5 px-3 py-2.5 bg-bg-secondary border-t border-border-light">
                     {isEditing ? (
                         <button type="button"
-                            type="button"
                             onClick={remove}
                             disabled={deleting || submitting}
                             className="inline-flex items-center gap-1.5 rounded-md bg-status-danger px-2.5 py-1.5 text-[11.5px] font-bold uppercase tracking-wider text-white shadow-sm transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
@@ -308,14 +306,12 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                     )}
                     <div className="flex gap-1.5">
                         <button type="button"
-                            type="button"
                             onClick={onClose}
                             className="rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none bg-bg-tertiary border border-border-light text-text-secondary"
                         >
                             Cancel
                         </button>
                         <button type="button"
-                            type="button"
                             onClick={save}
                             disabled={submitting || deleting}
                             className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"

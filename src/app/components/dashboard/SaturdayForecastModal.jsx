@@ -319,7 +319,6 @@ export default function SaturdayForecastModal({
 
                 <footer className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border-light bg-bg-secondary">
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         disabled={submitting}
                         className="px-3 py-1.5 rounded-md text-[12.5px] font-semibold bg-transparent border border-border-light text-text-primary hover:bg-bg-hover transition-colors duration-150 motion-reduce:transition-none active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_30%,transparent)] disabled:opacity-60 disabled:cursor-not-allowed"

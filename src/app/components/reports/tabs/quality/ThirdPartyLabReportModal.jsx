@@ -298,7 +298,6 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                                                 {(file.size / 1024 / 1024).toFixed(1)}MB
                                             </span>
                                             <button type="button"
-                                                type="button"
                                                 onClick={() => removeFile(i)}
                                                 className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-text-primary hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent shrink-0"
                                             >

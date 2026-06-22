@@ -26,7 +26,6 @@ export function PlanLoadErrorBanner({ message, onRetry }) {
             </span>
             {onRetry && (
                 <button type="button"
-                    type="button"
                     onClick={onRetry}
                     className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-border-medium bg-bg-primary text-text-primary cursor-pointer text-[11px] font-bold transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                 >

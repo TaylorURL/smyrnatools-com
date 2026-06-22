@@ -154,7 +154,6 @@ export default function ListQuickAdd({
                 />
                 {text.trim() && (
                     <button type="button"
-                        type="button"
                         onClick={() => {
                             onOpenAdvanced?.(text)
                             setText('')
@@ -168,7 +167,6 @@ export default function ListQuickAdd({
                 )}
                 <div ref={menuRef} className="relative">
                     <button type="button"
-                        type="button"
                         onClick={() => setMenuOpen((o) => !o)}
                         aria-haspopup="listbox"
                         aria-expanded={menuOpen}
@@ -205,6 +203,7 @@ export default function ListQuickAdd({
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         placeholder="Search plants…"
+                                        aria-label="Search plants"
                                         autoFocus
                                         className="w-full rounded-md border border-border-light bg-bg-secondary pl-7 pr-2 py-1.5 text-[12px] text-text-primary placeholder:text-text-tertiary outline-none focus:border-[var(--accent)]/60 focus:ring-2 focus:ring-[var(--accent)]/20"
                                     />

@@ -78,7 +78,6 @@ export default function NavigationTwoLevel({
                                 const isActive = activeCategory === cat.id
                                 return (
                                     <button type="button"
-                                        type="button"
                                         key={cat.id}
                                         className={categoryTabClasses(isActive)}
                                         aria-current={isActive ? 'page' : undefined}
@@ -139,7 +138,6 @@ export default function NavigationTwoLevel({
                             const isActive = selectedView === item.id
                             return (
                                 <button type="button"
-                                    type="button"
                                     key={item.id}
                                     data-active={isActive}
                                     className={secondaryTabClasses(isActive)}

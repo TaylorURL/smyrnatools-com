@@ -54,7 +54,6 @@ export default function DashboardHeader({
             <div className="flex items-center gap-1.5">
                 {onPlantFilterClick && (
                     <button type="button"
-                        type="button"
                         onClick={onPlantFilterClick}
                         className={ACTION_BUTTON_CLASS}
                         aria-label="Filter dashboard by plant"
@@ -65,7 +64,6 @@ export default function DashboardHeader({
                 )}
                 {onRefresh && (
                     <button type="button"
-                        type="button"
                         onClick={onRefresh}
                         disabled={refreshing}
                         className={`${ACTION_BUTTON_CLASS} justify-center w-[30px] px-0`}

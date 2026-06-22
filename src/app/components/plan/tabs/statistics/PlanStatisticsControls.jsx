@@ -162,7 +162,6 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                         style={{ right: pos.right, top: pos.top }}
                     >
                         <button type="button"
-                            type="button"
                             role="option"
                             aria-selected={!selectedPlant}
                             onClick={() => {

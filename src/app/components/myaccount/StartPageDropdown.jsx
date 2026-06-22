@@ -20,7 +20,6 @@ export default function StartPageDropdown({ accentColor, onChange, value }) {
     return (
         <div ref={ref} className="relative">
             <button type="button"
-                type="button"
                 onClick={() => setOpen((prev) => !prev)}
                 aria-haspopup="listbox"
                 aria-expanded={open}

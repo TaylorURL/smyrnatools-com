@@ -107,7 +107,6 @@ const PlantProductionFieldCell = ({
                 {showToggle &&
                     (isOverridden ? (
                         <button type="button"
-                            type="button"
                             onClick={onResetToAuto}
                             className="inline-flex items-center gap-1 rounded px-1.5 py-1 min-h-[28px] sm:min-h-0 sm:px-1 sm:py-0.5 text-[10px] sm:text-[8.5px] font-semibold uppercase tracking-wider cursor-pointer border border-border-light bg-bg-primary text-text-secondary hover:text-text-primary"
                             title={`Reset to ${SOURCE_LABELS[autoSource] || autoSource} value`}
@@ -117,7 +116,6 @@ const PlantProductionFieldCell = ({
                         </button>
                     ) : (
                         <button type="button"
-                            type="button"
                             onClick={onSetOverride}
                             className="inline-flex items-center gap-1 rounded px-1.5 py-1 min-h-[28px] sm:min-h-0 sm:px-1 sm:py-0.5 text-[10px] sm:text-[8.5px] font-semibold uppercase tracking-wider cursor-pointer border border-border-light bg-bg-primary text-text-secondary hover:text-text-primary"
                             title="Edit this value manually"

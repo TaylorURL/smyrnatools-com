@@ -39,7 +39,6 @@ function getRowDelay(index) {
 /** Minimal row icon button — 20px tap target, no chrome, hover brightness. */
 const RowIconButton = ({ icon, title, onClick }) => (
     <button type="button"
-        type="button"
         onClick={onClick}
         title={title}
         aria-label={title}
@@ -209,7 +208,6 @@ function ListViewModeSection({
                                             </Badge>
                                         ) : (
                                             <button type="button"
-                                                type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation()
                                                     if (!isVerified && onVerify) {

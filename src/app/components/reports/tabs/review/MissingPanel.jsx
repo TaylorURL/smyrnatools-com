@@ -79,7 +79,6 @@ function MissingPanel({ missing = [], getUserName, onNudge, weekRangeLabel }) {
                                     </div>
                                 </div>
                                 <button type="button"
-                                    type="button"
                                     onClick={() => onNudge?.(item)}
                                     className="px-2.5 py-1 text-[10.5px] font-semibold rounded-md border border-gray-200 bg-bg-primary text-slate-700 hover:bg-slate-50 shrink-0 mt-0.5 inline-flex items-center gap-1"
                                 >

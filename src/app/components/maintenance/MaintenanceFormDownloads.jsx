@@ -109,7 +109,6 @@ function FormDownloadCard({ accentColor, form }) {
             )}
 
             <button type="button"
-                type="button"
                 onClick={handleDownload}
                 className={`mt-auto inline-flex min-h-[40px] w-full cursor-pointer items-center justify-center gap-2 rounded-md border-none bg-accent px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-white shadow-sm transition-[background-color,transform] duration-150 ease-out hover:bg-accent-hover active:scale-[0.98] motion-reduce:transition-none ${FOCUS_RING}`}
             >

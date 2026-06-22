@@ -6,7 +6,6 @@ function RefreshButton({ isMobile, isSyncing, lastSyncedAt, onRefresh }) {
     const title = lastSyncedAt ? `Last updated ${lastSyncedAt.toLocaleTimeString()}` : 'Refresh schedule'
     return (
         <button type="button"
-            type="button"
             onClick={() => onRefresh?.()}
             disabled={isSyncing}
             aria-label={isSyncing ? 'Syncing' : 'Refresh schedule'}

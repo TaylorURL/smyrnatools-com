@@ -49,7 +49,6 @@ export default function PasswordModal({
                         </span>
                     </div>
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         className="flex h-9 w-9 items-center justify-center rounded-md text-text-secondary transition-all duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.92] motion-reduce:transition-none"
                         aria-label="Close"

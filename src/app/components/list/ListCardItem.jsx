@@ -93,7 +93,6 @@ export default function ListCardItem({ accentColor, isSelected, item, onSelectIt
         >
             <div className="flex items-start gap-2">
                 <button type="button"
-                    type="button"
                     onClick={(e) => {
                         e.stopPropagation()
                         onToggleSelect?.(item.id)
@@ -166,7 +165,6 @@ export default function ListCardItem({ accentColor, isSelected, item, onSelectIt
                     onClick={(e) => e.stopPropagation()}
                 >
                     <button type="button"
-                        type="button"
                         onClick={handleEdit}
                         className="flex h-6 w-6 items-center justify-center rounded-md bg-bg-primary text-text-tertiary border border-border-light hover:bg-bg-secondary hover:text-text-primary active:scale-[0.92] transition-[transform,colors] duration-150 ease-out"
                         aria-label="Edit task"
@@ -175,7 +173,6 @@ export default function ListCardItem({ accentColor, isSelected, item, onSelectIt
                         <i className="fas fa-pen text-[10px]" aria-hidden="true" />
                     </button>
                     <button type="button"
-                        type="button"
                         onClick={handleDelete}
                         className="flex h-6 w-6 items-center justify-center rounded-md bg-bg-primary text-text-tertiary border border-border-light hover:bg-bg-tertiary hover:text-status-danger active:scale-[0.92] transition-[transform,colors] duration-150 ease-out"
                         aria-label="Delete task"

@@ -105,7 +105,6 @@ const TopSectionMobile = ({
                     </div>
                 )}
                 <button type="button"
-                    type="button"
                     className="flex items-center justify-center w-8 h-8 rounded text-[12px] cursor-pointer"
                     style={{
                         background: showMobileFilters ? `${accentColor}14` : 'var(--bg-secondary)',
@@ -133,7 +132,6 @@ const TopSectionMobile = ({
                         {!hidePlantFilter && (
                             <MobileFilterItem label="Plant">
                                 <button type="button"
-                                    type="button"
                                     className="flex items-center justify-between w-full rounded text-[12px] py-2 px-2 cursor-pointer bg-bg-primary border border-border-light text-text-primary"
                                     onClick={() => setIsPlantModalOpen(true)}
                                     aria-label="Filter by plant"
@@ -180,7 +178,6 @@ const TopSectionMobile = ({
                         {showReset && onReset && (
                             <MobileFilterItem fullWidth>
                                 <button type="button"
-                                    type="button"
                                     className="flex items-center justify-center gap-2 w-full rounded text-[12px] font-semibold py-2 cursor-pointer bg-bg-primary border border-border-light text-text-secondary"
                                     onClick={onReset}
                                 >

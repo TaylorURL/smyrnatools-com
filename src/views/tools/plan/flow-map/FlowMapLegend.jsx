@@ -114,7 +114,6 @@ export function FlowMapLegend() {
                         Legend
                     </span>
                     <button type="button"
-                        type="button"
                         onClick={() => setCollapsed((prev) => !prev)}
                         className="w-6 h-6 -mr-1 inline-flex items-center justify-center rounded bg-transparent border-none cursor-pointer text-text-tertiary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         aria-label={collapsed ? 'Expand legend' : 'Collapse legend'}

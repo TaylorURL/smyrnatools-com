@@ -25,7 +25,6 @@ export function HighlightRow({ hint, icon, label, value }) {
 export function LaunchpadTile({ accent, hint, icon, label, onSelect, section, value }) {
     return (
         <button type="button"
-            type="button"
             onClick={() => onSelect?.(section)}
             className="flex flex-col gap-1 items-start rounded-lg border bg-bg-secondary border-border-light cursor-pointer p-3 text-left hover:border-current transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none text-text-secondary active:scale-[0.97]"
         >

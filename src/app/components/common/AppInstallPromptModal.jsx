@@ -109,7 +109,6 @@ function ActionButtons({ onPrimary, primaryIcon, primaryLabel, onSecondary, onDi
     return (
         <div className="flex flex-col gap-3">
             <button type="button"
-                type="button"
                 className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none px-6 py-3.5 text-[15px] font-semibold text-white cursor-pointer active:scale-[0.98] transition-[transform,filter] duration-150 ease-out motion-reduce:transition-none hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                 style={{ backgroundColor: accentColor }}
                 onClick={onPrimary}
@@ -117,14 +116,12 @@ function ActionButtons({ onPrimary, primaryIcon, primaryLabel, onSecondary, onDi
                 <i className={`fas ${primaryIcon}`} aria-hidden="true" /> {primaryLabel}
             </button>
             <button type="button"
-                type="button"
                 className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border-light bg-bg-secondary px-6 py-3.5 text-[15px] font-medium text-text-primary cursor-pointer active:scale-[0.98] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                 onClick={onSecondary}
             >
                 <i className="fas fa-clock" aria-hidden="true" /> Remind Me Later
             </button>
             <button type="button"
-                type="button"
                 className="mt-1 border-none bg-transparent p-2 text-[13px] text-text-tertiary cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary rounded"
                 onClick={onDismiss}
             >
@@ -294,7 +291,6 @@ function AppInstallPromptModal() {
                 onClick={(e) => e.stopPropagation()}
             >
                 <button type="button"
-                    type="button"
                     aria-label="Close"
                     className="absolute right-4 top-4 z-[1] flex h-9 w-9 items-center justify-center rounded-full border-none bg-bg-secondary text-base text-text-secondary cursor-pointer hover:bg-bg-hover hover:text-text-primary active:scale-[0.94] transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                     onClick={handleRemindLater}

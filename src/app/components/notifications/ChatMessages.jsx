@@ -121,7 +121,6 @@ export default function ChatMessages({ accentColor, conversation, onAttachmentCl
                                             )
                                             return isViewable ? (
                                                 <button type="button"
-                                                    type="button"
                                                     className="w-full text-left border-none bg-transparent rounded p-2 mb-1.5 cursor-pointer hover:opacity-80 active:scale-[0.99] active:opacity-70 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none"
                                                     style={previewStyle}
                                                     onClick={() =>

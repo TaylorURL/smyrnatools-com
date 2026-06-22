@@ -270,7 +270,6 @@ export default function Badge({
 
     const removeBtn = removable ? (
         <button type="button"
-            type="button"
             onClick={(e) => {
                 e.stopPropagation()
                 onRemove?.()

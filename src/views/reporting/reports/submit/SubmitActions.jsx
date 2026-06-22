@@ -12,7 +12,6 @@ const BASE_BUTTON = `inline-flex items-center justify-center gap-2 rounded-md px
 const SubmitActions = ({ isPlantProduction, managerEditUser, onCancel, onSaveDraft, savingDraft, submitting }) => (
     <div className="mt-4 flex flex-col items-stretch justify-end gap-2 border-t border-border-light pt-4 sm:mt-6 sm:flex-row sm:items-center sm:gap-3 sm:pt-6">
         <button type="button"
-            type="button"
             className={`${BASE_BUTTON} order-3 border border-border-light bg-bg-primary text-text-secondary hover:bg-bg-hover hover:text-text-primary sm:order-1`}
             onClick={onCancel}
             disabled={submitting || savingDraft}
@@ -20,7 +19,6 @@ const SubmitActions = ({ isPlantProduction, managerEditUser, onCancel, onSaveDra
             Cancel
         </button>
         <button type="button"
-            type="button"
             className={`${BASE_BUTTON} order-2 border border-border-light bg-bg-secondary text-text-primary hover:bg-bg-hover`}
             onClick={onSaveDraft}
             disabled={submitting || savingDraft}

@@ -108,7 +108,6 @@ export function CrmFollowupsPage({ accentColor }) {
                     }
                     return (
                         <button type="button"
-                            type="button"
                             onClick={(e) => {
                                 e.stopPropagation()
                                 complete(row.id)
@@ -222,7 +221,6 @@ function FollowupRow({ complete, followup }) {
                 </div>
             </div>
             <button type="button"
-                type="button"
                 onClick={() => complete(followup.id)}
                 title="Mark as done"
                 className="shrink-0 rounded-md px-2.5 py-1 text-[11.5px] font-semibold border border-border-light bg-bg-secondary text-text-secondary cursor-pointer active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:text-text-primary hover:border-border-medium"

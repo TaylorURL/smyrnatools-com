@@ -437,7 +437,6 @@ function SummaryStrip({ accentColor, liveCount, onToggleShowAllColumns, showAllC
             </span>
             <span className="flex-1 min-w-[8px]" />
             <button type="button"
-                type="button"
                 onClick={onToggleShowAllColumns}
                 className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-semibold cursor-pointer bg-bg-primary border border-border-light text-text-secondary hover:bg-bg-tertiary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                 title={

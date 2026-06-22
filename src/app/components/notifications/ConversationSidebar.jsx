@@ -48,7 +48,6 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
 
     return (
         <button type="button"
-            type="button"
             onClick={() => onSelect(conversation)}
             className="flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary border-b border-border-light active:scale-[0.97]"
             style={{
@@ -186,7 +185,6 @@ export default function ConversationSidebar({
                     />
                     {search && (
                         <button type="button"
-                            type="button"
                             aria-label="Clear search"
                             onClick={() => onSearchChange('')}
                             className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-text-tertiary transition-colors hover:bg-bg-hover hover:text-text-primary"

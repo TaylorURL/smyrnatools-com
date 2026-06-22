@@ -119,7 +119,6 @@ export default function NavigationMobile({
                 <div className="flex items-center gap-2">
                     {showDropPin && onDropPin && (
                         <button type="button"
-                            type="button"
                             aria-label="Drop a pin at current location"
                             onClick={onDropPin}
                             className="inline-flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-[10px] border-none bg-white/[0.15] px-3 text-white cursor-pointer active:scale-[0.94] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 hover:bg-white/[0.22]"
@@ -129,7 +128,6 @@ export default function NavigationMobile({
                         </button>
                     )}
                     <button type="button"
-                        type="button"
                         aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
                         aria-expanded={mobileMenuOpen}
                         aria-controls="mobile-nav-drawer"

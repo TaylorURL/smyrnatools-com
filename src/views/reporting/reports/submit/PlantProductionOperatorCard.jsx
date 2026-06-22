@@ -202,7 +202,6 @@ const PlantProductionOperatorCard = ({
                     </Badge>
                     {!readOnly && (
                         <button type="button"
-                            type="button"
                             onClick={onExclude}
                             className="inline-flex items-center gap-1 rounded-md px-2 py-1 min-h-[32px] text-[10px] font-semibold cursor-pointer border border-border-light bg-bg-secondary text-text-tertiary hover:border-status-danger/40 hover:text-status-danger hover:bg-status-danger/5 active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                             title="Exclude this operator from the report"

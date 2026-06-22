@@ -37,7 +37,6 @@ export default function CockpitHeader({
             <div className="flex shrink-0 items-center gap-1.5">
                 {onOpenMessages && (
                     <button type="button"
-                        type="button"
                         onClick={() => onOpenMessages()}
                         title={
                             unreadMessageCount > 0
@@ -67,7 +66,6 @@ export default function CockpitHeader({
                     </button>
                 )}
                 <button type="button"
-                    type="button"
                     onClick={onSignOut}
                     title="Sign out"
                     aria-label="Sign out"

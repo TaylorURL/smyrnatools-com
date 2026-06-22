@@ -116,7 +116,6 @@ export function DataTable({ data, emptyIcon = 'fa-check-circle', emptyMessage, h
 export function TableRowActionButton({ onClick, title }) {
     return (
         <button type="button"
-            type="button"
             onClick={onClick}
             title={title}
             aria-label={title}
@@ -158,7 +157,6 @@ export function FormModal({ children, icon, isOpen, onClose, onSubmit, sub, subm
                         </div>
                     </div>
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         aria-label="Close"
                         className="rounded border-none cursor-pointer bg-bg-tertiary text-text-secondary h-6 w-6 hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
@@ -169,14 +167,12 @@ export function FormModal({ children, icon, isOpen, onClose, onSubmit, sub, subm
                 <div className="p-3 flex flex-col gap-2">{children}</div>
                 <div className="flex justify-end gap-1.5 px-3 py-2.5 bg-bg-secondary border-t border-border-light">
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         className="rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none bg-bg-tertiary border border-border-light text-text-secondary"
                     >
                         Cancel
                     </button>
                     <button type="button"
-                        type="button"
                         onClick={onSubmit}
                         disabled={submitDisabled}
                         className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--accent, #1e3a5f)]"

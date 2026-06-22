@@ -78,7 +78,6 @@ export function AccountDetailBody({
                     <div className="flex items-center justify-between gap-2">
                         {isBack ? (
                             <button type="button"
-                                type="button"
                                 aria-label={closeLabel}
                                 onClick={onClose}
                                 className="-ml-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] font-semibold text-text-secondary hover:bg-bg-hover hover:text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
@@ -91,7 +90,6 @@ export function AccountDetailBody({
                         )}
                         {onArchive && (
                             <button type="button"
-                                type="button"
                                 onClick={onArchive}
                                 className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11.5px] font-semibold border border-border-light bg-bg-primary text-text-secondary cursor-pointer hover:border-status-danger/40 hover:text-status-danger active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                             >
@@ -131,7 +129,6 @@ export function AccountDetailBody({
 
                     {!isBack && (
                         <button type="button"
-                            type="button"
                             aria-label={closeLabel}
                             onClick={onClose}
                             className="mt-0.5 shrink-0 min-w-[40px] min-h-[40px] inline-flex items-center justify-center rounded-md text-text-tertiary hover:bg-bg-hover hover:text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"

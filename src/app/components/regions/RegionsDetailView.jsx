@@ -255,7 +255,6 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                 <span className="font-bold">{code}</span>
                                                 {p?.plant_name && <span className="opacity-80">{p.plant_name}</span>}
                                                 <button type="button"
-                                                    type="button"
                                                     className="ml-0.5 cursor-pointer bg-transparent border-none text-sm leading-none opacity-70 hover:opacity-100 active:scale-[0.97] transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded"
                                                     onClick={() => removeChip(code)}
                                                     aria-label={`Remove ${code}`}
@@ -266,7 +265,6 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                         )
                                     })}
                                     <button type="button"
-                                        type="button"
                                         className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer border border-border-light bg-bg-secondary text-text-secondary hover:bg-bg-tertiary hover:text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                         onClick={clearAllSelected}
                                     >
@@ -290,7 +288,6 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                     />
                                     {plantQuery && (
                                         <button type="button"
-                                            type="button"
                                             aria-label="Clear plant search"
                                             onClick={() => setPlantQuery('')}
                                             className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-bg-hover hover:text-text-primary"
@@ -303,7 +300,6 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                     {filteredPlants.length} results
                                 </span>
                                 <button type="button"
-                                    type="button"
                                     className="flex items-center gap-2 rounded-xl border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-100 disabled:cursor-not-allowed disabled:opacity-50"
                                     onClick={selectAllFiltered}
                                     disabled={!filteredPlants.length}
@@ -365,7 +361,6 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                     }}
                                 />
                                 <button type="button"
-                                    type="button"
                                     className="flex items-center gap-1 rounded-xl border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-100"
                                     onClick={addNewDistrict}
                                     disabled={
@@ -423,7 +418,6 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                                             </span>
                                                                         )}
                                                                         <button type="button"
-                                                                            type="button"
                                                                             className="ml-0.5 cursor-pointer bg-transparent border-none text-sm leading-none opacity-70 hover:opacity-100 active:scale-[0.97] transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded"
                                                                             onClick={() =>
                                                                                 removeDistrictFromPlant(

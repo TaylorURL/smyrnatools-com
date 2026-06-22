@@ -151,7 +151,6 @@ export function IssueCardHeader({ idx, issue, onRemove, readOnly }) {
             </div>
             {!readOnly && onRemove && (
                 <button type="button"
-                    type="button"
                     onClick={onRemove}
                     title="Remove issue"
                     aria-label="Remove issue"

@@ -44,7 +44,6 @@ function RegionGridCard({ region, onSelect }) {
     const name = getRegionName(region)
     return (
         <button type="button"
-            type="button"
             className="group flex flex-col overflow-hidden rounded-card border border-border-light bg-bg-primary text-left shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-border-medium hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:translate-y-0 motion-reduce:transition-none motion-reduce:transform-none"
             onClick={() => onSelect(code)}
             aria-label={`Open region ${code}${name ? ` — ${name}` : ''}`}
@@ -318,7 +317,6 @@ function RegionsEmptyState({ hasSearch, onAddClick }) {
                 {hasSearch ? 'No regions match your search criteria.' : 'There are no regions in the system yet.'}
             </p>
             <button type="button"
-                type="button"
                 className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-accent-hover hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.98] motion-reduce:transition-none motion-reduce:transform-none"
                 onClick={onAddClick}
             >

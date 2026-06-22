@@ -48,7 +48,6 @@ function CarouselNavButtons({ effIdx, effReports, setEffIdx }) {
     return (
         <div className="flex gap-2">
             <button type="button"
-                type="button"
                 className="rounded-md border border-gray-200 bg-slate-100 px-4 py-2 text-[0.8125rem] font-semibold text-slate-600 cursor-pointer transition-colors hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => setEffIdx((i) => Math.max(i - 1, 0))}
                 disabled={effIdx === 0}
@@ -56,7 +55,6 @@ function CarouselNavButtons({ effIdx, effReports, setEffIdx }) {
                 ← Prev Report
             </button>
             <button type="button"
-                type="button"
                 className="rounded-md border-none bg-accent px-4 py-2 text-[0.8125rem] font-semibold text-white cursor-pointer transition-colors hover:bg-accent-hover disabled:bg-slate-400 disabled:cursor-not-allowed"
                 onClick={() => setEffIdx((i) => Math.min(i + 1, effReports.length - 1))}
                 disabled={effIdx === effReports.length - 1}

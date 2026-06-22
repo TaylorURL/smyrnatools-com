@@ -15,7 +15,6 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNames, selectedPla
     return (
         <div className="relative">
             <button type="button"
-                type="button"
                 onClick={() => setOpen((s) => !s)}
                 aria-haspopup="listbox"
                 aria-expanded={open}
@@ -40,7 +39,6 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNames, selectedPla
                     className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light"
                 >
                     <button type="button"
-                        type="button"
                         role="option"
                         aria-selected={!selectedPlant}
                         onClick={() => {
@@ -63,7 +61,6 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNames, selectedPla
                             const isActive = selectedPlant === code
                             return (
                                 <button type="button"
-                                    type="button"
                                     key={code}
                                     role="option"
                                     aria-selected={isActive}
@@ -127,7 +124,6 @@ export function AssetStatisticsControls({
             />
             {selectedPlant && (
                 <button type="button"
-                    type="button"
                     onClick={() => setSelectedPlant('')}
                     className="text-[11px] font-semibold border-none bg-transparent cursor-pointer text-text-secondary hover:text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded px-1"
                 >

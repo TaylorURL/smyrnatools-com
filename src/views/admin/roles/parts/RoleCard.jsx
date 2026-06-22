@@ -88,7 +88,6 @@ const RoleCard = ({
         <div className="overflow-hidden rounded-card border border-border-light bg-bg-primary shadow-sm transition-shadow duration-200 hover:shadow-card">
             {/* Header — asset-card visual rhythm: 40x40 accent icon + bold name + stat pills + chevron. */}
             <button type="button"
-                type="button"
                 aria-expanded={isExpanded}
                 onClick={onToggle}
                 className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
@@ -152,7 +151,6 @@ const RoleCard = ({
                         {hasITAccess && (
                             <>
                                 <button type="button"
-                                    type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         setAddingPerm(true)
@@ -163,7 +161,6 @@ const RoleCard = ({
                                     Add Permission
                                 </button>
                                 <button type="button"
-                                    type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         onEditWeight(role)
@@ -192,7 +189,6 @@ const RoleCard = ({
                                 </span>
                             )}
                             <button type="button"
-                                type="button"
                                 onClick={(e) => {
                                     e.stopPropagation()
                                     handleCopyPermissions()
@@ -206,7 +202,6 @@ const RoleCard = ({
                             </button>
                             {hasITAccess && (
                                 <button type="button"
-                                    type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         handlePastePermissions()
@@ -235,7 +230,6 @@ const RoleCard = ({
                                 aria-label="New permission node"
                             />
                             <button type="button"
-                                type="button"
                                 onClick={handleAddPerm}
                                 disabled={!newPerm.trim()}
                                 className="rounded-md px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100"
@@ -244,7 +238,6 @@ const RoleCard = ({
                                 Add
                             </button>
                             <button type="button"
-                                type="button"
                                 onClick={() => {
                                     setAddingPerm(false)
                                     setNewPerm('')

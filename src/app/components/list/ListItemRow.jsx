@@ -196,7 +196,6 @@ export default function ListItemRow({
             }}
         >
             <button type="button"
-                type="button"
                 onClick={handleSelect}
                 className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md transition-[transform,background-color,border-color] duration-150 ease-out motion-reduce:transition-none active:scale-[0.9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary ${
                     isSelected
@@ -256,7 +255,6 @@ export default function ListItemRow({
                     onClick={(e) => e.stopPropagation()}
                 >
                     <button type="button"
-                        type="button"
                         onClick={handleEditClick}
                         className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary active:scale-[0.92] transition-[transform,colors] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                         aria-label="Edit task"
@@ -265,7 +263,6 @@ export default function ListItemRow({
                         <i className="fas fa-pen text-[11px]" aria-hidden="true" />
                     </button>
                     <button type="button"
-                        type="button"
                         onClick={handleDeleteClick}
                         className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-tertiary hover:text-status-danger active:scale-[0.92] transition-[transform,colors] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger"
                         aria-label="Delete task"

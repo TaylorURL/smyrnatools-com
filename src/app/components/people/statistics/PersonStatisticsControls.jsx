@@ -109,7 +109,6 @@ export function PersonStatisticsControls({
             />
             {selectedPlant && (
                 <button type="button"
-                    type="button"
                     onClick={() => setSelectedPlant('')}
                     className="text-[11px] font-semibold border-none bg-transparent cursor-pointer text-text-secondary rounded px-2 py-1 active:scale-[0.97] transition-[transform,background-color,color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >

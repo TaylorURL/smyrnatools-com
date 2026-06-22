@@ -88,7 +88,6 @@ export function FormDetailsSection({
                         </div>
                     )}
                     <button type="button"
-                        type="button"
                         onClick={() => setShowPlantModal(true)}
                         className="flex w-full items-center justify-between rounded px-2.5 py-1.5 text-[12.5px] cursor-pointer transition-colors duration-150 hover:bg-bg-tertiary hover:border-border-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         style={{

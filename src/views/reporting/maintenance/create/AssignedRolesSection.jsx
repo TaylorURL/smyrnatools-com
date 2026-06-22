@@ -27,7 +27,6 @@ export function AssignedRolesSection({
                 {errors.assignment && <ErrorText>{errors.assignment}</ErrorText>}
                 <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
                     <button type="button"
-                        type="button"
                         onClick={() => setShowRoleSelector((v) => !v)}
                         className="flex w-full items-center justify-between px-3 py-2 cursor-pointer border-none transition-colors hover:bg-bg-tertiary bg-bg-secondary"
                     >

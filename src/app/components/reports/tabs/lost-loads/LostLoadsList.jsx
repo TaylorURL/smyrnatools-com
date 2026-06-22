@@ -36,7 +36,6 @@ const PageSizeSelect = ({ value, onChange }) => (
 
 const PageButton = ({ disabled, onClick, children }) => (
     <button type="button"
-        type="button"
         className="px-2.5 py-1 text-[11px] font-semibold rounded uppercase tracking-wider border border-border-light transition-colors duration-150 hover:enabled:bg-bg-tertiary hover:enabled:border-border-medium disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
         style={{
             background: disabled ? 'var(--bg-secondary)' : 'var(--bg-primary)',
@@ -123,7 +122,6 @@ const LostLoadRow = ({ report, getUserName, accentColor, canDelete, onDelete, on
             </button>
             {canDelete && (
                 <button type="button"
-                    type="button"
                     onClick={async (e) => {
                         e.stopPropagation()
                         if (await confirm({ confirmLabel: 'Delete', title: 'Delete this lost load report?' })) {

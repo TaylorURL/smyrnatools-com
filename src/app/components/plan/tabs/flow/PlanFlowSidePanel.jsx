@@ -238,7 +238,6 @@ function MissingOperatorsEditor({ baseCount, hasMissing, missingOperators, onCha
                 </div>
                 {hasMissing && (
                     <button type="button"
-                        type="button"
                         onClick={() => onChange(0)}
                         className="bg-transparent border-none cursor-pointer text-[11px] font-semibold text-text-secondary hover:text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         title="Clear — everyone is in"
@@ -313,7 +312,6 @@ function SaturdayOverrideEditor({ halfFleetDefault, onChange, override, rosterCo
                 </div>
                 {hasOverride && (
                     <button type="button"
-                        type="button"
                         onClick={() => onChange(null)}
                         className="bg-transparent border-none cursor-pointer text-[11px] font-semibold text-text-secondary hover:text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         title="Clear — fall back to half-fleet default"
@@ -358,7 +356,6 @@ function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, placehol
     return (
         <div className="flex items-stretch rounded-lg overflow-hidden border bg-bg-primary border-border-medium transition-colors duration-150 hover:border-border-dark focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]">
             <button type="button"
-                type="button"
                 onClick={decrement}
                 disabled={atMin}
                 aria-label="Decrease"
@@ -380,7 +377,6 @@ function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, placehol
                 className="flex-1 px-3 py-1.5 text-sm font-mono tabular-nums text-center bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-accent/30 text-text-primary placeholder:text-text-tertiary"
             />
             <button type="button"
-                type="button"
                 onClick={increment}
                 disabled={atMax}
                 aria-label="Increase"

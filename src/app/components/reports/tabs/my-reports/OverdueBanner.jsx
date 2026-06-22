@@ -37,7 +37,6 @@ function OverdueBanner({ count, title, dueLabel, onSubmit }) {
             </div>
             {onSubmit && (
                 <button type="button"
-                    type="button"
                     onClick={onSubmit}
                     className="font-semibold text-[12px] px-3 py-1.5 rounded-md shrink-0 inline-flex items-center gap-1.5 border-none cursor-pointer text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     style={{ background: 'var(--status-danger)' }}

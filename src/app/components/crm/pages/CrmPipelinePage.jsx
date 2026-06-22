@@ -231,7 +231,6 @@ function OpportunityCard({ currentStage, materialize, onMove, onOpenAccount, opp
             <div className="flex flex-wrap gap-1">
                 {isWonVirtual ? (
                     <button type="button"
-                        type="button"
                         onClick={(e) => {
                             e.stopPropagation()
                             materialize(opportunity)

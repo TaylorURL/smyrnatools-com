@@ -16,7 +16,6 @@ function TruckPicker({
         <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Truck Number</label>
             <button type="button"
-                type="button"
                 onClick={() => setTruckPickerOpen((v) => !v)}
                 aria-haspopup="listbox"
                 aria-expanded={truckPickerOpen}

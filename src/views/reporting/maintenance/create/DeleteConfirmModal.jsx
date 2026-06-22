@@ -31,7 +31,6 @@ export function DeleteConfirmModal({ onCancel, onConfirm, saving }) {
                 <div className="flex items-center justify-end gap-2 px-3 py-2 bg-bg-secondary border-t border-border-light">
                     <SubtleButton onClick={onCancel}>Cancel</SubtleButton>
                     <button type="button"
-                        type="button"
                         onClick={onConfirm}
                         disabled={saving}
                         className="inline-flex items-center justify-center gap-1.5 rounded-md bg-status-danger px-3 py-2 min-h-[36px] text-[10.5px] font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"

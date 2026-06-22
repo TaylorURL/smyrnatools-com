@@ -26,7 +26,6 @@ export function MaintenanceFilterBar({ onClearSearch, onSearchChange, searchPlac
                 />
                 {searchValue && onClearSearch && (
                     <button type="button"
-                        type="button"
                         onClick={onClearSearch}
                         aria-label="Clear search"
                         className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded text-[10px] cursor-pointer border-none bg-bg-tertiary text-text-secondary hover:bg-bg-hover hover:text-text-primary active:scale-[0.92] transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none"

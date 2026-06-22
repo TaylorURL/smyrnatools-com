@@ -26,7 +26,6 @@ export default function PlanScheduleRowContextMenu({ onOpenAudit, onViewOrder, o
             }}
         >
             <button type="button"
-                type="button"
                 onClick={onViewOrder}
                 className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)] text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             >
@@ -34,7 +33,6 @@ export default function PlanScheduleRowContextMenu({ onOpenAudit, onViewOrder, o
                 View order
             </button>
             <button type="button"
-                type="button"
                 onClick={onViewTickets}
                 className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)] text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             >
@@ -43,7 +41,6 @@ export default function PlanScheduleRowContextMenu({ onOpenAudit, onViewOrder, o
             </button>
             {onOpenAudit && (
                 <button type="button"
-                    type="button"
                     onClick={onOpenAudit}
                     className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)] text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                 >

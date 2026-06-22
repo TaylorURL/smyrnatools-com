@@ -88,14 +88,12 @@ function ConfirmDialog({
                 </div>
                 <div className="flex gap-3 px-6 pt-4 pb-6">
                     <button type="button"
-                        type="button"
                         onClick={onCancel}
                         className="flex-1 cursor-pointer rounded-md border border-border-light bg-bg-tertiary text-text-primary py-3 text-sm font-semibold transition-colors duration-150 hover:bg-bg-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none"
                     >
                         {cancelLabel}
                     </button>
                     <button type="button"
-                        type="button"
                         onClick={onConfirm}
                         className={`flex-1 cursor-pointer rounded-md border-0 py-3 text-sm font-semibold transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none ${v.confirmButton}`}
                     >

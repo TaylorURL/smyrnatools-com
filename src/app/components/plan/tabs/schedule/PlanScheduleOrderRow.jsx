@@ -76,7 +76,6 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
         <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
                 <button type="button"
-                    type="button"
                     onClick={() => onOpenLocation?.(orderForMap)}
                     className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 font-semibold uppercase tracking-wide text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     style={{ fontSize: 12 }}

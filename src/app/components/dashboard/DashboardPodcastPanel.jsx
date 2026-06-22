@@ -235,7 +235,6 @@ export default function DashboardPodcastPanel() {
                 <div className="px-3 py-3 flex flex-col gap-2">
                     <div className="flex items-center gap-3">
                         <button type="button"
-                            type="button"
                             onClick={togglePlay}
                             disabled={!selected || audioError}
                             className="w-10 h-10 rounded-full border-0 flex items-center justify-center text-white cursor-pointer transition-all duration-150 active:scale-[0.95] disabled:cursor-not-allowed disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"

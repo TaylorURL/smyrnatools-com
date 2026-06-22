@@ -12,7 +12,6 @@ const FOCUS_RING =
 function RefreshButton({ isMobile, isSyncing, onClick }) {
     return (
         <button type="button"
-            type="button"
             onClick={() => onClick?.()}
             disabled={isSyncing}
             className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold text-text-secondary bg-bg-tertiary transition-all duration-150 ease-out hover:bg-bg-hover hover:text-text-primary active:scale-[0.97] disabled:opacity-60 disabled:active:scale-100 motion-reduce:transition-none ${FOCUS_RING}`}
@@ -29,7 +28,6 @@ function RefreshButton({ isMobile, isSyncing, onClick }) {
 function PrimaryActionButton({ icon, isMobile, label, onClick }) {
     return (
         <button type="button"
-            type="button"
             onClick={onClick}
             className={`inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all duration-150 ease-out hover:bg-accent-hover active:scale-[0.97] motion-reduce:transition-none ${FOCUS_RING}`}
             title={label}

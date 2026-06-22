@@ -51,7 +51,6 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
                     <OperatorClockIndicator badge={operator.smyrnaId || operator.employeeId} />
                     <span className={duplicate ? 'duplicate' : ''}>{operator.name}</span>
                     <button type="button"
-                        type="button"
                         onClick={(e) => handleCopyName(e, operator.name)}
                         title="Copy name"
                         aria-label="Copy operator name"

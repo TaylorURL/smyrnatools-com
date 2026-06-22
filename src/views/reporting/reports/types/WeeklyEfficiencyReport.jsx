@@ -125,7 +125,6 @@ function Toolbar({ filterText, setFilterText, sortKey, sortDir, setSort }) {
     ]
     const ToolbarBtn = ({ active, children, onClick, title }) => (
         <button type="button"
-            type="button"
             onClick={onClick}
             title={title}
             className="inline-flex items-center gap-1 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border-none border border-border-light"
@@ -360,7 +359,6 @@ function EfficiencyPluginBody({ form, operatorOptions, sidebarStats = false, pla
     }
     const exportButton = (
         <button type="button"
-            type="button"
             onClick={handleExport}
             disabled={isExporting || !rows.length}
             className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border-none disabled:cursor-not-allowed disabled:opacity-60 bg-bg-secondary border border-border-light text-text-primary"
