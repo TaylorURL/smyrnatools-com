@@ -111,6 +111,7 @@ function AddIssueComposer({ accentColor, onAddIssue }) {
             <textarea
                 rows={3}
                 placeholder="What's the issue?"
+                aria-label="Describe the issue"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 className="w-full resize-none rounded-md px-3 py-2 text-[13px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
