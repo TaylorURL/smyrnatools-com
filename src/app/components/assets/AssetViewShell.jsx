@@ -69,10 +69,11 @@ export default function AssetViewShell({
 }) {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
-    /** Always open the list — switching tabs is a per-session action; we
-     *  don't persist it so navigating away and back doesn't strand the
-     *  user on a statistics tab they no longer want. */
     const [activeTab, setActiveTab] = useState('list')
+
+    const tabs = config.workbookColumns
+        ? [...BASE_TABS, WORKBOOK_TAB]
+        : BASE_TABS
 
     if (embedded) {
         return (
@@ -95,10 +96,10 @@ export default function AssetViewShell({
                     <i className={`fas ${config.icon} text-[14px]`} style={{ color: accentColor }} />
                     <span className="text-[14px] font-bold text-text-primary">{title || config.pluralLabel}</span>
                 </div>
-                <AssetTabBar accentColor={accentColor} activeTab={activeTab} onChange={setActiveTab} />
+                <AssetTabBar accentColor={accentColor} activeTab={activeTab} onChange={setActiveTab} tabs={tabs} />
             </div>
             <TabFadeIn animationKey={activeTab} className="flex-1 min-h-0 flex flex-col">
-                {activeTab === 'list' ? (
+                {activeTab === 'list' && (
                     <AssetView
                         config={config}
                         embedded={false}
@@ -108,12 +109,28 @@ export default function AssetViewShell({
                         setSelectedView={setSelectedView}
                         title={title}
                     />
-                ) : (
+                )}
+                {activeTab === 'statistics' && (
                     <AssetStatisticsView
                         config={config}
                         onSelectAsset={(row) => row?.id && onSelectItem?.(row.id)}
                         title={title || config.pluralLabel}
                     />
+                )}
+                {activeTab === 'workbook' && config.workbookColumns && (
+                    <Suspense
+                        fallback={
+                            <div className="flex-1 flex items-center justify-center p-12">
+                                <i className="fas fa-spinner fa-spin text-2xl text-text-tertiary" />
+                            </div>
+                        }
+                    >
+                        <AssetWorkbookPage
+                            columns={config.workbookColumns}
+                            config={config}
+                            title={`${title || config.pluralLabel} Workbook`}
+                        />
+                    </Suspense>
                 )}
             </TabFadeIn>
         </div>
