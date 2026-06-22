@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom'
 
 import { Database } from '../../../services/DatabaseService'
 import { getSessionUserId } from '../../../services/SessionService'
-import { UserService } from '../../../services/UserService'
 
 const WARNING_COLOR = '#d97706'
 
@@ -14,24 +13,16 @@ function PlantManagerReminderToast() {
 
     useEffect(() => {
         let cancelled = false
-        async function checkRole() {
+        async function checkSignedIn() {
             try {
                 const { data: sessionData } = await Database.auth.getSession()
                 const userId = sessionData?.session?.user?.id || getSessionUserId() || ''
-                if (!userId || cancelled) return
-                const roles = await UserService.getUserRoles(userId)
-                const isPlantManager = roles?.some(
-                    (r) =>
-                        r?.name?.toLowerCase().includes('plant manager') ||
-                        r?.name?.toLowerCase().includes('pm') ||
-                        r?.name?.toLowerCase() === 'plant_manager'
-                )
-                if (!cancelled) setVisible(isPlantManager)
+                if (!cancelled) setVisible(!!userId)
             } catch {
-                /* role check failed — don't show the toast */
+                /* session check failed — don't show the toast */
             }
         }
-        checkRole()
+        checkSignedIn()
         return () => { cancelled = true }
     }, [])
 
