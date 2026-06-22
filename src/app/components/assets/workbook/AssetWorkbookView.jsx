@@ -183,6 +183,7 @@ export default function AssetWorkbookView({ columns, data, loading, lookups, tit
     const handleExport = useCallback(async () => {
         if (exporting) return
         setExporting(true)
+        setExportMessage(null)
         try {
             const { wb } = await createWorkbook()
             const ws = wb.addWorksheet(title || 'Workbook')
@@ -217,9 +218,16 @@ export default function AssetWorkbookView({ columns, data, loading, lookups, tit
             }
 
             const dateStr = new Date().toISOString().slice(0, 10)
-            await downloadWorkbook(wb, `${(title || 'Workbook').replace(/\s+/g, '_')}_${dateStr}.xlsx`)
+            const filename = `${(title || 'Workbook').replace(/\s+/g, '_')}_${dateStr}.xlsx`
+            const buffer = await wb.xlsx.writeBuffer()
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+
+            await uploadWorkbookToFiles(blob, filename, { folder: 'Workbooks' })
+            setExportMessage({ text: `${filename} uploaded to Files`, isError: false })
+            setTimeout(() => setExportMessage(null), 5000)
         } catch (err) {
-            console.error('Export failed:', err)
+            setExportMessage({ text: err.message || 'Export failed', isError: true })
+            setTimeout(() => setExportMessage(null), 8000)
         } finally {
             setExporting(false)
         }
