@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 
 import { usePreferences } from '../../../context/PreferencesContext'
-import { createWorkbook, downloadWorkbook } from '../../../../utils/ExportWorkbook'
+import { createWorkbook } from '../../../../utils/ExportWorkbook'
+import { uploadWorkbookToFiles } from '../../../../lib/sunday-files/uploadToFiles'
 
 const SORT_ASC = 'asc'
 const SORT_DESC = 'desc'
