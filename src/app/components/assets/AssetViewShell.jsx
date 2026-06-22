@@ -17,13 +17,13 @@ const WORKBOOK_TAB = { icon: 'fa-table-cells', id: 'workbook', label: 'Workbook'
 
 /** Tab pill — matches the Operations tab bar's chrome so the asset shell
  *  feels like the same product surface. */
-function AssetTabBar({ accentColor, activeTab, onChange }) {
+function AssetTabBar({ accentColor, activeTab, onChange, tabs }) {
     return (
         <div
             className="flex items-center gap-1 rounded-lg p-0.5 bg-bg-tertiary border border-border-light"
             role="tablist"
         >
-            {TABS.map((tab) => {
+            {tabs.map((tab) => {
                 const active = tab.id === activeTab
                 return (
                     <button
