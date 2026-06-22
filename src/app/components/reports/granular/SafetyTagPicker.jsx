@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import { DEFAULT_TAG_STYLE, TAG_COLORS } from '../../../constants/safetyManagerReportConstants'
