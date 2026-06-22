@@ -39,6 +39,12 @@ function TractorSelectModal({
         if (isOpen) document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [isOpen, onClose])
+    useEffect(() => {
+        if (!isOpen) return
+        const handleKeyDown = (e) => { if (e.key === 'Escape') onClose() }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, onClose])
     function isTractorAssigned(tractorId) {
         if (!tractorId || tractorId === '0' || !Array.isArray(trailers)) return false
         return trailers.some((trailer) => trailer.assignedTractor === tractorId && trailer.id !== trailerId)
