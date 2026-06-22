@@ -1,25 +1,29 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useState } from 'react'
+import React, { lazy, Suspense, useState } from 'react'
 
 import AssetView from '../../../views/assets/AssetView'
 import { usePreferences } from '../../context/PreferencesContext'
 import TabFadeIn from '../common/TabFadeIn'
 import AssetStatisticsView from './statistics/AssetStatisticsView'
 
-const TABS = [
+const AssetWorkbookPage = lazy(() => import('./workbook/AssetWorkbookPage'))
+
+const BASE_TABS = [
     { icon: 'fa-list', id: 'list', label: 'List' },
     { icon: 'fa-chart-column', id: 'statistics', label: 'Statistics' }
 ]
 
+const WORKBOOK_TAB = { icon: 'fa-table-cells', id: 'workbook', label: 'Workbook' }
+
 /** Tab pill — matches the Operations tab bar's chrome so the asset shell
  *  feels like the same product surface. */
-function AssetTabBar({ accentColor, activeTab, onChange }) {
+function AssetTabBar({ accentColor, activeTab, onChange, tabs }) {
     return (
         <div
             className="flex items-center gap-1 rounded-lg p-0.5 bg-bg-tertiary border border-border-light"
             role="tablist"
         >
-            {TABS.map((tab) => {
+            {tabs.map((tab) => {
                 const active = tab.id === activeTab
                 return (
                     <button
@@ -65,10 +69,11 @@ export default function AssetViewShell({
 }) {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
-    /** Always open the list — switching tabs is a per-session action; we
-     *  don't persist it so navigating away and back doesn't strand the
-     *  user on a statistics tab they no longer want. */
     const [activeTab, setActiveTab] = useState('list')
+
+    const tabs = config.workbookColumns
+        ? [...BASE_TABS, WORKBOOK_TAB]
+        : BASE_TABS
 
     if (embedded) {
         return (
@@ -91,10 +96,10 @@ export default function AssetViewShell({
                     <i className={`fas ${config.icon} text-[14px]`} style={{ color: accentColor }} />
                     <span className="text-[14px] font-bold text-text-primary">{title || config.pluralLabel}</span>
                 </div>
-                <AssetTabBar accentColor={accentColor} activeTab={activeTab} onChange={setActiveTab} />
+                <AssetTabBar accentColor={accentColor} activeTab={activeTab} onChange={setActiveTab} tabs={tabs} />
             </div>
             <TabFadeIn animationKey={activeTab} className="flex-1 min-h-0 flex flex-col">
-                {activeTab === 'list' ? (
+                {activeTab === 'list' && (
                     <AssetView
                         config={config}
                         embedded={false}
@@ -104,12 +109,28 @@ export default function AssetViewShell({
                         setSelectedView={setSelectedView}
                         title={title}
                     />
-                ) : (
+                )}
+                {activeTab === 'statistics' && (
                     <AssetStatisticsView
                         config={config}
                         onSelectAsset={(row) => row?.id && onSelectItem?.(row.id)}
                         title={title || config.pluralLabel}
                     />
+                )}
+                {activeTab === 'workbook' && config.workbookColumns && (
+                    <Suspense
+                        fallback={
+                            <div className="flex-1 flex items-center justify-center p-12">
+                                <i className="fas fa-spinner fa-spin text-2xl text-text-tertiary" />
+                            </div>
+                        }
+                    >
+                        <AssetWorkbookPage
+                            columns={config.workbookColumns}
+                            config={config}
+                            title={`${title || config.pluralLabel} Workbook`}
+                        />
+                    </Suspense>
                 )}
             </TabFadeIn>
         </div>
