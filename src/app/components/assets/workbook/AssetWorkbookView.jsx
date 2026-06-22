@@ -45,6 +45,7 @@ function WorkbookToolbar({ accentColor, exportMessage, exporting, onExport, onSe
                         value={searchQuery}
                         onChange={(e) => onSearch(e.target.value)}
                         placeholder="Search all columns…"
+                        aria-label="Search all columns"
                         className="pl-7 pr-3 py-1.5 text-[12px] rounded-md border border-border-light bg-bg-secondary text-text-primary placeholder:text-text-tertiary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 outline-none w-48 sm:w-56"
                     />
                 </div>
