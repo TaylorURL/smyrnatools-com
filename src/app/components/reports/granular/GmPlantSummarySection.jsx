@@ -70,7 +70,7 @@ function PlantTable({ form, getLastWeekValue, plant, readOnly, setForm }) {
     return (
         <div className="rounded-lg border border-gray-200 bg-bg-primary p-4 mb-4">
             <GmSectionHeader title={`${plant.plant_name} (${code})`} />
-            <table className="w-full border-collapse mt-3 rounded-lg overflow-hidden border border-gray-200 bg-bg-primary">
+            <table className="w-full border-collapse mt-3 rounded-lg overflow-x-auto border border-gray-200 bg-bg-primary">
                 <thead>
                     <tr>
                         {HEADERS.map((h) => (
