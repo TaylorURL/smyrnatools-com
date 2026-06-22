@@ -193,7 +193,6 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                 ) : (
                                     <div ref={dropdownRef} className="relative">
                                         <button type="button"
-                                            type="button"
                                             onClick={() => setManagerDropdownOpen((prev) => !prev)}
                                             className="w-full flex items-center gap-2.5 rounded px-3 py-2 text-left text-[12px] bg-bg-secondary"
                                             style={{

@@ -21,7 +21,6 @@ function ErrorMessage({ message, onDismiss, className = '' }) {
             <span className="flex-1 text-text-primary">{message}</span>
             {onDismiss && (
                 <button type="button"
-                    type="button"
                     onClick={onDismiss}
                     aria-label="Dismiss error"
                     className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-tertiary transition-colors duration-150 hover:bg-status-danger/15 hover:text-status-danger active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary motion-reduce:transition-none"

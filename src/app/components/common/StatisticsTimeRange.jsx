@@ -81,7 +81,6 @@ function PeriodNavigator({
     return (
         <div className="inline-flex items-center gap-0.5 rounded-md text-sm font-semibold px-1 py-0.5 bg-bg-tertiary border border-border-light">
             <button type="button"
-                type="button"
                 onClick={() => setAnchor(shiftAnchor(anchor, period, -1))}
                 aria-label="Previous period"
                 title="Previous period"
@@ -91,7 +90,6 @@ function PeriodNavigator({
             </button>
             <span className="px-2 text-xs font-semibold text-text-primary tabular-nums">{periodLabel}</span>
             <button type="button"
-                type="button"
                 onClick={() => setAnchor(shiftAnchor(anchor, period, 1))}
                 aria-label="Next period"
                 title="Next period"
@@ -100,7 +98,6 @@ function PeriodNavigator({
                 <i className="fas fa-chevron-right text-xs" aria-hidden="true" />
             </button>
             <button type="button"
-                type="button"
                 onClick={() => setAnchor(getTodayDate())}
                 className="border-0 bg-transparent cursor-pointer px-2 py-1 rounded text-xs font-semibold transition-colors duration-150 hover:bg-bg-hover active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
                 style={{ color: accentColor }}

@@ -38,7 +38,6 @@ export function PlanFlowSummary({ color, label, routes, summary }) {
 export function PlanChecklistRow({ accent, checked, onToggle, subtitle, text, time }) {
     return (
         <button type="button"
-            type="button"
             onClick={onToggle}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border-none cursor-pointer text-left active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             style={{

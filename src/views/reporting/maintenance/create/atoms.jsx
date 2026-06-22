@@ -76,7 +76,6 @@ export function IconButton({ bg, danger, disabled, fg, icon, onClick, title }) {
         : { bg: bg || 'var(--bg-tertiary)', fg: fg || 'var(--text-secondary)' }
     return (
         <button type="button"
-            type="button"
             onClick={onClick}
             disabled={disabled}
             title={title}
@@ -111,7 +110,6 @@ export function Chip({ accentColor, children, onRemove }) {
             {children}
             {onRemove && (
                 <button type="button"
-                    type="button"
                     onClick={onRemove}
                     className="flex h-4 w-4 items-center justify-center rounded-full border-none cursor-pointer transition-colors hover:brightness-90 text-white"
                     // eslint-disable-next-line react/forbid-dom-props -- data-driven per-user accent color

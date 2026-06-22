@@ -68,7 +68,6 @@ function QualityReportRow({ accent, getUserName, onDelete, onOpen, report }) {
                 {report.reviewed ? 'View' : 'Review'}
             </button>
             <button type="button"
-                type="button"
                 onClick={(e) => {
                     e.stopPropagation()
                     onDelete(report)

@@ -37,7 +37,6 @@ function RecapFiltersToolbar({
                 />
                 {searchQuery && (
                     <button type="button"
-                        type="button"
                         onClick={() => onSearchQueryChange('')}
                         aria-label="Clear search"
                         className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded border-none bg-transparent cursor-pointer text-text-tertiary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 transition-colors duration-150"

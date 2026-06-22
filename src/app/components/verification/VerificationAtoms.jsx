@@ -46,7 +46,6 @@ export function Section({ children, expanded, onToggle, status, subtitle, title 
     return (
         <div className="rounded-md overflow-hidden bg-bg-primary border border-border-light">
             <button type="button"
-                type="button"
                 onClick={onToggle}
                 className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left cursor-pointer border-none transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary bg-transparent active:scale-[0.97]"
                 aria-expanded={expanded}
@@ -173,7 +172,6 @@ export function OperatorRow({ label, last, mono, required, value }) {
 export function IconButton({ bg, fg, icon, onClick, title }) {
     return (
         <button type="button"
-            type="button"
             onClick={onClick}
             title={title}
             aria-label={title}

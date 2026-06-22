@@ -104,7 +104,6 @@ export default function StatsSidebar({ issues, onRefresh, refreshing }) {
                 sub="Live counts and cost rollups across the visible scope."
                 right={
                     <button type="button"
-                        type="button"
                         onClick={onRefresh}
                         disabled={refreshing}
                         className="inline-flex items-center gap-1 rounded text-[10.5px] font-semibold cursor-pointer border-none px-2 py-1 bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"

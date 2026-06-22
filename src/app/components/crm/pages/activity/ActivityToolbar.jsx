@@ -37,7 +37,6 @@ export function ActivityToolbar({
                 />
                 {query && (
                     <button type="button"
-                        type="button"
                         onClick={() => onQueryChange('')}
                         className="border-none bg-transparent cursor-pointer text-text-tertiary hover:text-text-primary active:scale-[0.92] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                         aria-label="Clear search"
@@ -68,7 +67,6 @@ export function ActivityToolbar({
             </div>
             {hasOutcomeFilter && (
                 <button type="button"
-                    type="button"
                     onClick={onClearOutcome}
                     className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     style={{
@@ -83,7 +81,6 @@ export function ActivityToolbar({
                 </button>
             )}
             <button type="button"
-                type="button"
                 onClick={onRefresh}
                 className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-tertiary text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 title="Reload activity feed"

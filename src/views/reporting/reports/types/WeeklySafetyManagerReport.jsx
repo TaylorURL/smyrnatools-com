@@ -47,7 +47,6 @@ export function SafetyManagerSubmitPlugin({ form, plants, readOnly, setForm }) {
                 right={
                     !readOnly ? (
                         <button type="button"
-                            type="button"
                             onClick={addIssue}
                             className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none bg-[var(--accent,_#1e3a5f)]"
                         >

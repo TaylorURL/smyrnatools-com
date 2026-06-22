@@ -60,7 +60,6 @@ function ContextActionButton({ accentColor, active = false, danger = false, icon
           : { background: 'var(--bg-secondary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }
     return (
         <button type="button"
-            type="button"
             onClick={onClick}
             className="flex items-center gap-2 rounded px-3 py-2 text-[12px] font-semibold cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 border active:scale-[0.97]"
             style={styles}

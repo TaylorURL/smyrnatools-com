@@ -69,7 +69,6 @@ export function TwoLevelIconButton({
 }) {
     return (
         <button type="button"
-            type="button"
             className={`${TWO_LEVEL_BUTTON_BASE} h-[34px] gap-1`}
             title={title}
             aria-label={title}
@@ -89,7 +88,6 @@ export function TwoLevelIconButton({
 export function TwoLevelUserAvatar({ accentColor, initials, title, onClick }) {
     return (
         <button type="button"
-            type="button"
             onClick={onClick}
             title={title}
             aria-label={title}
@@ -105,7 +103,6 @@ export function TopBarMessagesButton({ onClick, combinedCount, accentColor, isTa
     const size = isTablet ? 'h-8 w-10 rounded-lg gap-[3px] text-xs' : 'h-[42px] w-[52px] rounded-[12px] gap-1 text-sm'
     return (
         <button type="button"
-            type="button"
             className={`relative inline-flex items-center justify-center text-white bg-white/[0.05] border border-white/10 cursor-pointer flex-shrink-0 hover:bg-white/[0.18] hover:-translate-y-[1px] active:scale-[0.96] active:translate-y-0 transition-[background-color,transform] duration-200 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${size}`}
             onClick={onClick}
             title="Messages"
@@ -136,7 +133,6 @@ export function TopBarIconButton({
         : 'bg-white/[0.05] border border-white/10 hover:bg-white/[0.18]'
     return (
         <button type="button"
-            type="button"
             className={`relative inline-flex items-center justify-center text-white cursor-pointer flex-shrink-0 hover:-translate-y-[1px] active:scale-[0.96] active:translate-y-0 transition-[background-color,transform] duration-200 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${size} ${tone}`}
             onClick={onClick}
             title={title}

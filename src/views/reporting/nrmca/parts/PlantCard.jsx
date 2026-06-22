@@ -69,7 +69,6 @@ export function PlantCard({ plant, scales, allPlants, regionPlants, onReload, ac
                     </div>
                     <StatusBadge status={renewalStatus} />
                     <button type="button"
-                        type="button"
                         onClick={() => setRenewModal(true)}
                         className="text-white text-[10.5px] font-semibold px-2 py-1 rounded shrink-0 hidden sm:inline-flex items-center gap-1 uppercase tracking-wider"
                         style={{ background: accentColor }}
@@ -100,7 +99,6 @@ export function PlantCard({ plant, scales, allPlants, regionPlants, onReload, ac
                     <div className="w-4 shrink-0" />
                     <div className="w-6 shrink-0" />
                     <button type="button"
-                        type="button"
                         onClick={() => setAddScaleModal(true)}
                         className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-text-tertiary"
                     >

@@ -348,7 +348,6 @@ function ListDetailView({ itemId, onClose }) {
                                 </label>
                                 {canEditList && formData.description.trim() && (
                                     <button type="button"
-                                        type="button"
                                         onClick={handleImproveDescription}
                                         disabled={isImprovingDescription}
                                         className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 bg-bg-secondary text-[var(--accent)]"

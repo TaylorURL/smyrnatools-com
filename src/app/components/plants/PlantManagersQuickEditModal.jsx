@@ -84,7 +84,6 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                         <div className="truncate text-[12px] text-text-tertiary">{plantCode}</div>
                     </div>
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         disabled={isSaving}
                         className="flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-all duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.92] disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none"
@@ -108,7 +107,6 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                 </div>
                 <div className="flex justify-end gap-2 border-t border-border-light bg-bg-secondary px-5 py-3">
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         disabled={isSaving}
                         className="rounded-md border border-border-light bg-bg-primary px-4 py-2 text-sm font-semibold text-text-secondary transition-all duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none"
@@ -116,7 +114,6 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                         Cancel
                     </button>
                     <button type="button"
-                        type="button"
                         onClick={handleSave}
                         disabled={isSaving}
                         className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-accent-hover hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none"

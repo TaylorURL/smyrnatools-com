@@ -20,7 +20,6 @@ function ConversationRow({ accentColor, conversation, displayName, onSelectConve
 
     return (
         <button type="button"
-            type="button"
             className="flex w-full items-center gap-2.5 border-b border-border-light px-3 py-2 text-left cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:bg-bg-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
             style={{ background: hasUnread ? `${accentColor}0D` : 'transparent' }}
             onClick={() => (onSelectConversation ? onSelectConversation(conversation.otherId) : onViewAll())}
@@ -179,7 +178,6 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                     <div className="flex items-center gap-1.5">
                         {unreadCount > 0 && (
                             <button type="button"
-                                type="button"
                                 onClick={markAllRead}
                                 className="rounded border border-border-light bg-bg-secondary px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-text-secondary cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                             >
@@ -187,7 +185,6 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                             </button>
                         )}
                         <button type="button"
-                            type="button"
                             onClick={onClose}
                             className="flex h-6 w-6 items-center justify-center rounded text-text-secondary cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                             aria-label="Close messages"
@@ -292,7 +289,6 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                 {/* Footer */}
                 <div className="shrink-0 border-t border-border-light">
                     <button type="button"
-                        type="button"
                         onClick={onViewAll}
                         className="flex w-full items-center justify-center gap-1.5 px-3 py-2 text-[10.5px] font-semibold uppercase tracking-wider cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
                         style={{ color: accentColor }}

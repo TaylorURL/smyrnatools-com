@@ -119,7 +119,6 @@ function TrackCard({ item, history = [], onStart, onContinue, onView, plantLabel
 
                 <div className="flex justify-end">
                     <button type="button"
-                        type="button"
                         onClick={handleAction}
                         className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={

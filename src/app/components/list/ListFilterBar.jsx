@@ -199,7 +199,6 @@ export default function ListFilterBar({
                                     </span>
                                     {statusFilter && (
                                         <button type="button"
-                                            type="button"
                                             onClick={() => onClearStatusFilter?.()}
                                             className="text-[10.5px] font-medium text-text-tertiary hover:text-text-primary"
                                         >
@@ -242,7 +241,6 @@ export default function ListFilterBar({
                                     </span>
                                     {roleFilter && (
                                         <button type="button"
-                                            type="button"
                                             onClick={() => onClearRoleFilter?.()}
                                             className="text-[10.5px] font-medium text-text-tertiary hover:text-text-primary"
                                         >

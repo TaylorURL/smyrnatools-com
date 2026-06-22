@@ -47,7 +47,6 @@ export default function Modal({ children, onClose, title, titleIcon, footer, max
                         {title}
                     </h3>
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         aria-label="Close"
                         className="rounded-md p-2 text-base text-text-tertiary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none"

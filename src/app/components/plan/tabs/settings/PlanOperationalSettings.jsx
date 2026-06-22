@@ -115,7 +115,6 @@ function Toolbar({ dirtyCount, loading, onResetAll, onSearch, regionName, search
                     />
                     {searchQuery && (
                         <button type="button"
-                            type="button"
                             onClick={() => onSearch('')}
                             aria-label="Clear search"
                             className="absolute right-1.5 top-1/2 -translate-y-1/2 border-none bg-transparent cursor-pointer text-text-tertiary hover:text-text-primary p-0.5 transition-colors duration-150"
@@ -125,7 +124,6 @@ function Toolbar({ dirtyCount, loading, onResetAll, onSearch, regionName, search
                     )}
                 </div>
                 <button type="button"
-                    type="button"
                     onClick={onResetAll}
                     disabled={dirtyCount > 0}
                     title={
@@ -219,7 +217,6 @@ function SettingRow({ error, field, onChange, value }) {
                     </span>
                 </div>
                 <button type="button"
-                    type="button"
                     onClick={() => onChange(field.column, field.default)}
                     disabled={!isOverridden}
                     title={`Reset to default (${field.default})`}
@@ -256,7 +253,6 @@ function ActionBar({
             />
             <div className="flex items-center gap-2 shrink-0">
                 <button type="button"
-                    type="button"
                     onClick={onDiscard}
                     disabled={!isDirty || saving}
                     className="rounded-md border border-border-medium bg-bg-secondary px-3 py-1.5 text-xs font-semibold text-text-secondary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"
@@ -264,7 +260,6 @@ function ActionBar({
                     Discard
                 </button>
                 <button type="button"
-                    type="button"
                     onClick={onSave}
                     disabled={!canSave}
                     className="rounded-md border-none px-3 py-1.5 text-xs font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"

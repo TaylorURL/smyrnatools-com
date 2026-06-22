@@ -265,7 +265,6 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                     <StatusBadge isSubmitted={isSubmitted} />
                     {report.name === 'general_manager' && (
                         <button type="button"
-                            type="button"
                             className={`inline-flex items-center gap-2 px-4 py-2 bg-status-active text-white rounded-md text-sm font-semibold transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${FOCUS_RING}`}
                             disabled={exporting}
                             onClick={handleExport}
@@ -276,7 +275,6 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                     )}
                     {hasManagerEditPermission && showManagerEditButton && (
                         <button type="button"
-                            type="button"
                             className={`inline-flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-md text-sm font-semibold transition-all duration-150 hover:bg-accent-hover active:scale-[0.98] ${FOCUS_RING}`}
                             onClick={() => onManagerEdit(report, initialData)}
                         >

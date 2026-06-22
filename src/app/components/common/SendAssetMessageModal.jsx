@@ -163,7 +163,6 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                             ) : (
                                 <div ref={dropdownRef} className="relative mb-4">
                                     <button type="button"
-                                        type="button"
                                         onClick={() => setDropdownOpen((prev) => !prev)}
                                         aria-haspopup="listbox"
                                         aria-expanded={dropdownOpen}
@@ -229,7 +228,6 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                     />
                                                     {recipientSearch && (
                                                         <button type="button"
-                                                            type="button"
                                                             onClick={() => setRecipientSearch('')}
                                                             aria-label="Clear search"
                                                             className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-text-tertiary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 transition-colors duration-150"

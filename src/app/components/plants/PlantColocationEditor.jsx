@@ -127,7 +127,6 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                                     row.plantName && <span className="text-text-secondary">{row.plantName}</span>
                                 )}
                                 <button type="button"
-                                    type="button"
                                     className="flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.92] disabled:active:scale-100"
                                     onClick={() => remove(row.plantCode)}
                                     disabled={disabled}
@@ -163,7 +162,6 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                     />
                     {filterText && !disabled && (
                         <button type="button"
-                            type="button"
                             aria-label="Clear filter"
                             onClick={() => setFilterText('')}
                             className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-bg-hover hover:text-text-primary"
@@ -231,7 +229,6 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                         disabled={disabled}
                     />
                     <button type="button"
-                        type="button"
                         className="rounded-xl border border-border-light bg-bg-primary px-5 py-2.5 text-sm font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97] disabled:active:scale-100"
                         onClick={handleAddCustom}
                         disabled={disabled || !customCodeInput.trim()}

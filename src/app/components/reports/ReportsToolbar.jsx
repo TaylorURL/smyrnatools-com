@@ -34,7 +34,6 @@ const FlatSelect = ({ value, onChange, options, ariaLabel, className = '' }) => 
 /** Refresh button — Plan-tab subtle action button. */
 const RefreshButton = ({ isRefreshing, onClick }) => (
     <button type="button"
-        type="button"
         onClick={onClick}
         disabled={isRefreshing}
         aria-label={isRefreshing ? 'Refreshing' : 'Refresh'}
@@ -117,7 +116,6 @@ const SortSelect = ({ value, onChange, options }) => (
 
 const ClearButton = ({ onClick }) => (
     <button type="button"
-        type="button"
         onClick={onClick}
         aria-label="Clear filters"
         className="flex items-center gap-1 rounded text-[12px] font-semibold px-2 py-1.5 cursor-pointer transition-colors duration-150 bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-tertiary hover:border-border-medium hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
@@ -209,7 +207,6 @@ export function ReportsActionBar({
             <div className="flex items-center gap-1.5 ml-auto flex-wrap">
                 {onExport && (
                     <button type="button"
-                        type="button"
                         onClick={onExport}
                         disabled={!canExport || isExporting}
                         className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-bg-secondary border border-border-light text-text-primary hover:bg-bg-tertiary hover:border-border-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
@@ -425,7 +422,6 @@ export function LossFilterBar({
             <div className="flex items-stretch sm:items-center flex-wrap gap-2 w-full sm:w-auto sm:ml-auto">
                 {onExport && (
                     <button type="button"
-                        type="button"
                         onClick={onExport}
                         aria-label="Export lost loads"
                         className="flex items-center justify-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer flex-1 sm:flex-none bg-bg-secondary border border-border-light text-text-primary hover:bg-bg-tertiary hover:border-border-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
@@ -459,7 +455,6 @@ export function MobileFilterShell({ activeCount = 0, children, defaultOpen = fal
         <>
             <div className="sm:hidden flex items-center justify-between gap-2 mb-2">
                 <button type="button"
-                    type="button"
                     onClick={() => setOpen((v) => !v)}
                     aria-expanded={open}
                     aria-label={open ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}

@@ -33,7 +33,6 @@ export default function QualityTabPanel({
                 {hasQCStrengthPermission && (
                     <div className="flex flex-wrap gap-2">
                         <button type="button"
-                            type="button"
                             onClick={onOpenQcStrengthModal}
                             className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider"
                             style={{ background: accent }}
@@ -41,14 +40,12 @@ export default function QualityTabPanel({
                             <i className="fas fa-flask text-[10px]" /> Submit QC Strength
                         </button>
                         <button type="button"
-                            type="button"
                             onClick={onOpenLabReportModal}
                             className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider bg-[#e11d48]"
                         >
                             <i className="fas fa-vial text-[10px]" /> Submit Lab Report
                         </button>
                         <button type="button"
-                            type="button"
                             onClick={onOpenQualityIssueModal}
                             className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider bg-red-600"
                             title="Log a new quality dispute / follow-up. Tracked in the Quality Issues tab."

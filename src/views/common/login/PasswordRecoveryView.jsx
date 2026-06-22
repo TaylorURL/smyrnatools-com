@@ -101,7 +101,6 @@ function PasswordRecoveryView({ onBackToLogin }) {
                         </form>
                         <div className="mt-6 text-center">
                             <button type="button"
-                                type="button"
                                 className="text-[#1e3a5f] font-semibold text-sm inline-flex items-center gap-2 transition-colors duration-150 ease-out motion-reduce:transition-none hover:underline focus-visible:outline-none focus-visible:underline focus-visible:ring-2 focus-visible:ring-[#1e3a5f]/40 rounded"
                                 onClick={onBackToLogin}
                             >

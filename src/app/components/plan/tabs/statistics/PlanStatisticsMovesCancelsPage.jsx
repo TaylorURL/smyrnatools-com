@@ -112,7 +112,6 @@ function SpotlightCard({ customers, emptyHint, icon, label, metric, onSelect, to
                     return (
                         <li key={c.key} className="flex flex-col gap-1">
                             <button type="button"
-                                type="button"
                                 onClick={() => onSelect(c.key)}
                                 className="w-full text-left flex items-center gap-2 bg-transparent border-none p-0 cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             >
@@ -326,7 +325,6 @@ export default function PlanStatisticsMovesCancelsPage({
                             />
                             {filterText && (
                                 <button type="button"
-                                    type="button"
                                     onClick={() => setFilterText('')}
                                     aria-label="Clear search"
                                     className="absolute right-1.5 top-1/2 -translate-y-1/2 border-none bg-transparent cursor-pointer text-text-tertiary hover:text-text-primary p-0.5 transition-colors duration-150"

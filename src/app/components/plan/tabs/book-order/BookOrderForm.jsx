@@ -259,7 +259,6 @@ export default function BookOrderForm({
                      * noise on a fresh form. */}
                     {(yardage || startTime || spacingMin || address || pourMethod || submitted) && (
                         <button type="button"
-                            type="button"
                             onClick={handleReset}
                             className="inline-flex items-center gap-2 rounded-lg text-[12px] font-semibold uppercase tracking-wider px-3.5 py-2.5 bg-bg-secondary border border-border-light text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                             title="Clear every field on the form"

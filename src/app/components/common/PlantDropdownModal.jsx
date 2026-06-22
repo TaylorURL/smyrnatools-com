@@ -163,7 +163,6 @@ function PlantDropdownModal({
                         {allowMultiple ? 'Select Plants' : 'Select Plant'}
                     </h2>
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         aria-label="Close"
                         className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-transparent text-base text-text-secondary transition-colors duration-150 hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
@@ -187,7 +186,6 @@ function PlantDropdownModal({
                     />
                     {search && (
                         <button type="button"
-                            type="button"
                             onClick={() => setSearch('')}
                             aria-label="Clear search"
                             className="absolute right-6 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary transition-colors duration-150 hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
@@ -234,7 +232,6 @@ function PlantDropdownModal({
                                     <div key={region.code} className="mb-1">
                                         <div className="flex items-center gap-1 rounded-card hover:bg-bg-hover transition-colors duration-150">
                                             <button type="button"
-                                                type="button"
                                                 onClick={() =>
                                                     setExpandedRegions((prev) => ({
                                                         ...prev,
@@ -251,7 +248,6 @@ function PlantDropdownModal({
                                                 />
                                             </button>
                                             <button type="button"
-                                                type="button"
                                                 role="option"
                                                 aria-selected={false}
                                                 onClick={() => {
@@ -368,7 +364,6 @@ function PlantDropdownModal({
                                 const partial = selectedInDistrict > 0 && !allSelected
                                 return (
                                     <button type="button"
-                                        type="button"
                                         key={district.name}
                                         role="option"
                                         aria-selected={allSelected}
@@ -413,7 +408,6 @@ function PlantDropdownModal({
                               const isSelected = allowMultiple && localSelectedCodes.includes(code)
                               return (
                                   <button type="button"
-                                      type="button"
                                       key={code}
                                       onClick={() => handlePlantClick(code)}
                                       role="option"
@@ -449,7 +443,6 @@ function PlantDropdownModal({
                 {allowMultiple && (
                     <div className="border-t border-border-light bg-bg-tertiary/40 px-4 py-3 flex items-center gap-2">
                         <button type="button"
-                            type="button"
                             onClick={() => {
                                 // Emit a toggle for every currently selected
                                 // code so the parent's per-event reducer
@@ -463,7 +456,6 @@ function PlantDropdownModal({
                             Clear
                         </button>
                         <button type="button"
-                            type="button"
                             onClick={onClose}
                             className="flex-1 rounded-md border-0 px-5 py-3 text-sm font-semibold text-white transition-colors duration-150 hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none"
                             style={{ backgroundColor: accentColor }}
@@ -482,7 +474,6 @@ function PlantDropdownModal({
 function PickerRow({ icon, accentColor, onClick, children, count }) {
     return (
         <button type="button"
-            type="button"
             role="option"
             aria-selected={false}
             onClick={onClick}
@@ -499,7 +490,6 @@ function PickerRow({ icon, accentColor, onClick, children, count }) {
 function NestedRow({ icon, accentColor, onClick, children, count }) {
     return (
         <button type="button"
-            type="button"
             role="option"
             aria-selected={false}
             onClick={onClick}

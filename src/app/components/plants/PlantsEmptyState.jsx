@@ -12,7 +12,6 @@ function PlantsEmptyState({ hasSearch, onAddClick }) {
                 {hasSearch ? 'No plants match your search criteria.' : 'There are no plants in the system yet.'}
             </p>
             <button type="button"
-                type="button"
                 className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-accent-hover hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.98] motion-reduce:transition-none motion-reduce:transform-none"
                 onClick={onAddClick}
             >

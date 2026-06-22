@@ -19,7 +19,6 @@ function PlantFilterButton({
     const tinted = active && accentColor
     return (
         <button type="button"
-            type="button"
             onClick={onClick}
             aria-label={title}
             aria-haspopup="dialog"

@@ -266,7 +266,6 @@ function LoginForm() {
                         </label>
                         {!isSignUp && (
                             <button type="button"
-                                type="button"
                                 onClick={openRecovery}
                                 className="cursor-pointer border-none bg-transparent p-0 text-[11px] font-semibold text-accent transition-colors duration-150 ease-out hover:underline focus-visible:underline focus-visible:outline-none motion-reduce:transition-none"
                             >
@@ -285,7 +284,6 @@ function LoginForm() {
                             required
                         />
                         <button type="button"
-                            type="button"
                             onClick={togglePassword}
                             aria-label={showPassword ? 'Hide password' : 'Show password'}
                             aria-pressed={showPassword}
@@ -384,7 +382,6 @@ function LoginForm() {
                     {isSignUp ? 'Already have an account?' : "Don't have an account?"}
                 </span>
                 <button type="button"
-                    type="button"
                     onClick={toggleSignUp}
                     className="cursor-pointer border-none bg-transparent p-0 font-bold text-accent transition-colors duration-150 ease-out hover:underline focus-visible:underline focus-visible:outline-none motion-reduce:transition-none"
                 >

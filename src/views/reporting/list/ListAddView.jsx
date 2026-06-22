@@ -231,7 +231,6 @@ function ListAddView({ initialDescription = '', onClose, onItemAdded, item = nul
                                         {description.trim() && (
                                             <>
                                                 <button type="button"
-                                                    type="button"
                                                     onClick={handleImproveDescription}
                                                     disabled={isImprovingDescription}
                                                     className="inline-flex items-center gap-1.5 rounded-md border border-accent/20 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
@@ -245,7 +244,6 @@ function ListAddView({ initialDescription = '', onClose, onItemAdded, item = nul
                                                     <span className="hidden sm:inline">Improve</span>
                                                 </button>
                                                 <button type="button"
-                                                    type="button"
                                                     onClick={() => fetchSuggestions(description)}
                                                     disabled={isLoadingSuggestions}
                                                     className="inline-flex items-center gap-1.5 rounded-md border border-accent/20 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
@@ -298,7 +296,6 @@ function ListAddView({ initialDescription = '', onClose, onItemAdded, item = nul
                                                     <i className="fas fa-robot text-accent" aria-hidden="true" />
                                                     <span>AI Suggestions</span>
                                                     <button type="button"
-                                                        type="button"
                                                         onClick={() => setShowSuggestions(false)}
                                                         className="ml-auto rounded p-1 text-text-tertiary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                                         aria-label="Close suggestions"
@@ -334,7 +331,6 @@ function ListAddView({ initialDescription = '', onClose, onItemAdded, item = nul
                                 {!item ? (
                                     <>
                                         <button type="button"
-                                            type="button"
                                             className={LIST_PLANT_BUTTON_CLASS}
                                             onClick={() => setIsPlantModalOpen(true)}
                                             aria-label="Select plants"
@@ -371,7 +367,6 @@ function ListAddView({ initialDescription = '', onClose, onItemAdded, item = nul
                                     </>
                                 ) : (
                                     <button type="button"
-                                        type="button"
                                         className={LIST_PLANT_BUTTON_CLASS}
                                         onClick={() => setIsPlantModalOpen(true)}
                                         aria-label="Select plant"

@@ -43,7 +43,6 @@ function ChecklistItems({
                 </div>
             ))}
             <button type="button"
-                type="button"
                 onClick={() => addChecklistItem(index)}
                 className="inline-flex items-center justify-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-2 min-h-[36px] cursor-pointer self-start transition-colors hover:brightness-95 bg-transparent border border-border-light"
                 style={{ color: accentColor }}

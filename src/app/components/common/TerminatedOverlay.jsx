@@ -40,7 +40,6 @@ function TerminatedOverlay() {
                     information.
                 </p>
                 <button type="button"
-                    type="button"
                     className="inline-flex w-full items-center justify-center gap-2.5 rounded-xl border-none px-8 py-3.5 text-[15px] font-semibold text-white cursor-pointer active:scale-[0.98] transition-[transform,filter] duration-150 ease-out motion-reduce:transition-none hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                     style={{ backgroundColor: accentColor }}
                     onClick={handleSignOut}

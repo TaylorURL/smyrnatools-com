@@ -45,7 +45,6 @@ function TopBarDropdown({
     return (
         <div className="relative" ref={isOpen ? onTriggerRef : null}>
             <button type="button"
-                type="button"
                 ref={registerMagnetic}
                 className={navItemClasses(isActive, isTablet)}
                 onClick={onToggle}
@@ -71,7 +70,6 @@ function TopBarDropdown({
                         const activeTint = `${accentColor}14`
                         return (
                             <button type="button"
-                                type="button"
                                 role="menuitem"
                                 key={item.id}
                                 className={`flex w-full items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-sm text-text-primary cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary ${isItemActive ? 'font-semibold' : 'font-normal'}`}
@@ -171,7 +169,6 @@ export default function NavigationTopBar({
                         )}
                         {dashboardItem && (
                             <button type="button"
-                                type="button"
                                 ref={registerMagnetic}
                                 className={navItemClasses(selectedView === 'Dashboard', isTablet)}
                                 onClick={() => onMenuClick('Dashboard')}
@@ -210,7 +207,6 @@ export default function NavigationTopBar({
                             .filter((i) => i.id !== 'Dashboard')
                             .map((item) => (
                                 <button type="button"
-                                    type="button"
                                     key={item.id}
                                     ref={registerMagnetic}
                                     className={navItemClasses(selectedView === item.id, isTablet)}

@@ -103,7 +103,6 @@ function KickerShareBar({ kickerYards, scheduledYards }) {
 function CustomerCard({ customer, isActive, onSelect, orders }) {
     return (
         <button type="button"
-            type="button"
             onClick={() => onSelect(customer.key)}
             className="text-left rounded-md p-3 flex flex-col gap-2 cursor-pointer border active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
             style={{
@@ -250,7 +249,6 @@ function CustomerDetail({ colocationMap, customer, onClose, orders, plantNameByC
                     </div>
                 </div>
                 <button type="button"
-                    type="button"
                     onClick={onClose}
                     className="text-[11.5px] text-text-secondary cursor-pointer bg-transparent border-none p-1 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     title="Clear selection"

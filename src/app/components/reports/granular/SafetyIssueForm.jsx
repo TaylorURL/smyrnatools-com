@@ -16,7 +16,6 @@ function IssueLocationFields({ issue, onOpenPlantPicker, readOnly, updateIssue }
                     Plant Location
                 </FieldLabel>
                 <button type="button"
-                    type="button"
                     disabled={readOnly}
                     onClick={onOpenPlantPicker}
                     className={`${FIELD_INPUT_CLASS} flex items-center justify-between text-left cursor-pointer disabled:cursor-not-allowed`}

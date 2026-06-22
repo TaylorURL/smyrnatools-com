@@ -110,7 +110,6 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
         >
             <div className="flex items-center justify-between mb-1.5 px-1">
                 <button type="button"
-                    type="button"
                     onClick={() => stepMonth(-1)}
                     className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     title="Previous month"
@@ -122,7 +121,6 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
                     {monthLabel(view.year, view.month)}
                 </span>
                 <button type="button"
-                    type="button"
                     onClick={() => stepMonth(1)}
                     className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     title="Next month"
@@ -169,14 +167,12 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
             </div>
             <div className="flex justify-between gap-1 mt-2 pt-1.5 border-t border-border-light">
                 <button type="button"
-                    type="button"
                     onClick={() => pickDate(skipSundayDate(getTodayDate(), 1))}
                     className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer bg-bg-secondary border border-border-light text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     Today
                 </button>
                 <button type="button"
-                    type="button"
                     onClick={() => pickDate(skipSundayDate(getTomorrowDate(), 1))}
                     className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer bg-bg-secondary border border-border-light text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
@@ -238,7 +234,6 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
             aria-disabled={disabled}
         >
             <button type="button"
-                type="button"
                 onClick={() => !disabled && onChange(offsetDateSkipSunday(planDate, -1))}
                 disabled={disabled}
                 className="border-none bg-transparent p-1 rounded inline-flex items-center justify-center text-text-secondary active:scale-[0.92] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -267,7 +262,6 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
                 <i className="fas fa-caret-down text-[10px] text-text-tertiary" />
             </button>
             <button type="button"
-                type="button"
                 onClick={() => !disabled && onChange(offsetDateSkipSunday(planDate, 1))}
                 disabled={disabled}
                 className="border-none bg-transparent p-1 rounded inline-flex items-center justify-center text-text-secondary active:scale-[0.92] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -302,7 +296,6 @@ function TomorrowButton({ accentColor, disabled = false, disabledReason, isDark,
     const isTomorrow = planDate === tomorrowTarget
     return (
         <button type="button"
-            type="button"
             onClick={() => !disabled && onChange(tomorrowTarget)}
             disabled={disabled}
             title={disabled ? disabledReason : undefined}

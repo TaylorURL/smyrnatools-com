@@ -129,7 +129,6 @@ export function BulkAssignSalesRepsModal({ accentColor, onClose, onDone }) {
                         </div>
                     </div>
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         className="rounded-md p-1.5 border-none bg-transparent cursor-pointer text-text-tertiary hover:text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out"
                         aria-label="Close"
@@ -169,7 +168,6 @@ export function BulkAssignSalesRepsModal({ accentColor, onClose, onDone }) {
                 {/* Footer */}
                 <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border-light bg-bg-secondary">
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         className="rounded-md px-3 py-1.5 text-[12px] font-semibold border border-border-light bg-transparent text-text-secondary cursor-pointer active:scale-[0.97] transition-[colors,transform] duration-150 ease-out hover:text-text-primary"
                     >
@@ -177,7 +175,6 @@ export function BulkAssignSalesRepsModal({ accentColor, onClose, onDone }) {
                     </button>
                     {!result && (
                         <button type="button"
-                            type="button"
                             onClick={handleAssign}
                             disabled={!text.trim() || isSaving || isLoadingUsers}
                             className="rounded-md px-3 py-1.5 text-[12px] font-semibold text-white cursor-pointer active:scale-[0.97] transition-[colors,transform] duration-150 ease-out disabled:opacity-60 disabled:cursor-not-allowed"

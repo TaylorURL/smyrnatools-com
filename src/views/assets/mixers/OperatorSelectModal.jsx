@@ -127,7 +127,6 @@ function OperatorSelectModal({
                     </div>
                     <div className="flex items-center gap-2">
                         <button type="button"
-                            type="button"
                             aria-pressed={sortAvailableFirst}
                             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
                                 sortAvailableFirst
@@ -141,7 +140,6 @@ function OperatorSelectModal({
                             <span>Available First</span>
                         </button>
                         <button type="button"
-                            type="button"
                             aria-label="Refresh operator list"
                             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-bg-primary border border-border-light text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                             onClick={() => onRefresh && onRefresh()}
@@ -202,7 +200,6 @@ function OperatorSelectModal({
                             </p>
                             <div className="flex items-center gap-2">
                                 <button type="button"
-                                    type="button"
                                     className="px-4 py-2 bg-bg-tertiary hover:bg-bg-hover text-text-primary rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                     onClick={() => {
                                         setFilterPosition('')
@@ -302,7 +299,6 @@ function OperatorSelectModal({
                 </div>
                 <div className="px-6 py-4 border-t border-border-light bg-bg-secondary">
                     <button type="button"
-                        type="button"
                         className="w-full py-3 bg-bg-tertiary hover:bg-bg-hover text-text-primary rounded-xl text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                         onClick={onClose}
                     >

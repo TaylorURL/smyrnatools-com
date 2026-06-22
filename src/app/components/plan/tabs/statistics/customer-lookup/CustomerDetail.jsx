@@ -39,7 +39,6 @@ export default function CustomerDetail({ colocationMap, customer, onClose, order
                     </div>
                 </div>
                 <button type="button"
-                    type="button"
                     onClick={onClose}
                     className="text-[11.5px] text-text-secondary cursor-pointer bg-transparent border-none p-1 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     title="Clear selection"

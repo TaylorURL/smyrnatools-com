@@ -128,7 +128,6 @@ export function DropPinModal({ accentColor, location, onClose, onSaved }) {
                         <h2 className="text-[15px] font-bold text-text-primary m-0">Drop a pin</h2>
                     </div>
                     <button type="button"
-                        type="button"
                         aria-label="Close"
                         onClick={onClose}
                         className="inline-flex h-8 w-8 items-center justify-center rounded-md border-none bg-transparent text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer transition-colors duration-150"
@@ -165,7 +164,6 @@ export function DropPinModal({ accentColor, location, onClose, onSaved }) {
                         </label>
                         {hasSpeechApi && (
                             <button type="button"
-                                type="button"
                                 aria-label={isRecording ? 'Stop recording' : 'Start voice dictation'}
                                 onClick={handleToggleRecording}
                                 className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold border-none cursor-pointer transition-colors duration-150 ${
@@ -198,14 +196,12 @@ export function DropPinModal({ accentColor, location, onClose, onSaved }) {
                 {/* Actions */}
                 <div className="flex items-center gap-2 justify-end">
                     <button type="button"
-                        type="button"
                         onClick={onClose}
                         className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-[13px] font-semibold border-none bg-bg-secondary text-text-secondary hover:text-text-primary hover:bg-bg-hover cursor-pointer transition-colors duration-150 active:scale-[0.97]"
                     >
                         Cancel
                     </button>
                     <button type="button"
-                        type="button"
                         disabled={locationUnavailable || isSaving}
                         onClick={handleSave}
                         className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-[13px] font-semibold border-none text-white cursor-pointer transition-[background-color,transform,opacity] duration-150 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"

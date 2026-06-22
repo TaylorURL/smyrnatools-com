@@ -209,7 +209,6 @@ export default function PlanScheduleOrderCard({
                         {plantCode &&
                             (onPickPlant ? (
                                 <button type="button"
-                                    type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         onPickPlant(plantCode)
@@ -236,7 +235,6 @@ export default function PlanScheduleOrderCard({
                         {order.productCode &&
                             (onPickProduct ? (
                                 <button type="button"
-                                    type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         onPickProduct(clean(order.productCode))
@@ -280,7 +278,6 @@ export default function PlanScheduleOrderCard({
                     <div className="mt-1.5 flex items-center gap-2">
                         {onViewTickets && (
                             <button type="button"
-                                type="button"
                                 onClick={(e) => {
                                     e.stopPropagation()
                                     onViewTickets(order)
@@ -293,7 +290,6 @@ export default function PlanScheduleOrderCard({
                         )}
                         {hasAddress && !addressBad && onOpenLocation && (
                             <button type="button"
-                                type="button"
                                 onClick={(e) => {
                                     e.stopPropagation()
                                     onOpenLocation(order)
@@ -353,7 +349,6 @@ export default function PlanScheduleOrderCard({
                         {status &&
                             (onPickStatus ? (
                                 <button type="button"
-                                    type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         onPickStatus(status.kind)
@@ -374,7 +369,6 @@ export default function PlanScheduleOrderCard({
                         {plantCode &&
                             (onPickPlant ? (
                                 <button type="button"
-                                    type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         onPickPlant(plantCode)
@@ -411,7 +405,6 @@ export default function PlanScheduleOrderCard({
                         ) : onOpenLocation ? (
                             <div className="mt-1 flex flex-col gap-1">
                                 <button type="button"
-                                    type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         onOpenLocation(order)
@@ -457,7 +450,6 @@ export default function PlanScheduleOrderCard({
             {(order.productCode || order.description) &&
                 (onPickProduct && order.productCode ? (
                     <button type="button"
-                        type="button"
                         onClick={(e) => {
                             e.stopPropagation()
                             onPickProduct(clean(order.productCode))
@@ -508,7 +500,6 @@ export default function PlanScheduleOrderCard({
             {onViewTickets && (
                 <div className="flex items-center gap-2 pt-0.5">
                     <button type="button"
-                        type="button"
                         onClick={(e) => {
                             e.stopPropagation()
                             onViewTickets(order)

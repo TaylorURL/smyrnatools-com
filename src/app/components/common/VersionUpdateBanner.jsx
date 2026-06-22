@@ -26,14 +26,12 @@ function VersionUpdateBanner({ onDismiss }) {
                 </p>
                 <div className="flex items-center justify-end gap-2">
                     <button type="button"
-                        type="button"
                         className="rounded-lg px-3 py-1.5 text-xs font-medium text-text-secondary cursor-pointer transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                         onClick={onDismiss}
                     >
                         Ignore
                     </button>
                     <button type="button"
-                        type="button"
                         className="rounded-lg px-3 py-1.5 text-xs font-medium text-white cursor-pointer transition-[filter,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-110 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                         style={{ backgroundColor: accentColor }}
                         onClick={() => window.location.reload()}

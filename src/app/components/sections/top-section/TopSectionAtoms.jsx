@@ -31,7 +31,6 @@ export const ActionButton = ({ icon, label, onClick, variant = 'subtle', accentC
     const isPrimary = variant === 'primary'
     return (
         <button type="button"
-            type="button"
             className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer border-none"
             style={{
                 background: isPrimary ? accentColor : 'var(--bg-secondary)',
@@ -99,7 +98,6 @@ export const FilterSelect = ({ value, options, onChange, ariaLabel, className = 
 /** Reset filters button — square, flat. */
 export const ResetButton = ({ onClick }) => (
     <button type="button"
-        type="button"
         className="flex items-center justify-center w-7 h-7 rounded text-[12px] cursor-pointer border-none bg-bg-secondary border border-border-light text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
         onClick={onClick}
         aria-label="Reset filters"

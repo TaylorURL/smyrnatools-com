@@ -44,7 +44,6 @@ export function CrmCustomerCardRow({ isActive, onSelect, row }) {
     const phones = useMemo(() => parsePhoneNumbers(row?.phone), [row?.phone])
     return (
         <button type="button"
-            type="button"
             onClick={() => onSelect(row.account_id)}
             aria-current={isActive ? 'true' : undefined}
             className={`text-left rounded-md p-3 flex flex-col gap-2 cursor-pointer border transition-[colors,transform,box-shadow] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary ${
@@ -357,7 +356,6 @@ export function CrmCustomerDetail({
                     </div>
                     <div className="flex items-center justify-end">
                         <button type="button"
-                            type="button"
                             onClick={() => submitCallLog('note')}
                             disabled={!callComment.trim() || submitting === 'note'}
                             className="inline-flex items-center gap-1 text-[11px] font-semibold cursor-pointer disabled:opacity-40 border-none bg-transparent p-0 text-text-secondary hover:underline active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"

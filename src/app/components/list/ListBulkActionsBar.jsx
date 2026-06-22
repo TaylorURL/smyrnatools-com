@@ -55,7 +55,6 @@ function BulkDropdownPanel({ children, isMobile, minWidth }) {
 function MenuItem({ children, icon, iconBg, iconColor, isMobile, onClick }) {
     return (
         <button type="button"
-            type="button"
             role="menuitem"
             onClick={onClick}
             className={`flex w-full items-center rounded font-medium border-none bg-transparent text-text-primary transition-colors duration-100 hover:bg-bg-secondary cursor-pointer ${

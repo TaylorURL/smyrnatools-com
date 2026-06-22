@@ -108,7 +108,6 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                             </div>
                         </div>
                         <button type="button"
-                            type="button"
                             onClick={() => onNudge?.(item)}
                             className="px-2 py-1 text-[10.5px] font-semibold rounded shrink-0 inline-flex items-center gap-1 uppercase tracking-wider bg-bg-secondary border border-border-light text-text-primary"
                         >
@@ -152,7 +151,6 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                             <span className={`${STATUS_PILL_BASE} bg-amber-100 text-text-primary`}>Pending</span>
                         )}
                         <button type="button"
-                            type="button"
                             onClick={() => onReview?.(item)}
                             className="text-white text-[10.5px] font-semibold px-2 py-1 rounded shrink-0 ml-1 hidden sm:inline-flex items-center gap-1 uppercase tracking-wider"
                             style={{ background: accent }}

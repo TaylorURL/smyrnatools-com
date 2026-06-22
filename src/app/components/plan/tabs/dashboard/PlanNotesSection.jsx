@@ -107,7 +107,6 @@ function PlanNotesModeToggle({ accentColor, mode, onToggle }) {
     return (
         <div className="flex justify-end">
             <button type="button"
-                type="button"
                 onClick={onToggle}
                 className="px-2.5 py-1 rounded-md text-[11px] font-semibold border-none cursor-pointer flex items-center gap-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{

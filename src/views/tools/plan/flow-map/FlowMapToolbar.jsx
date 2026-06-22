@@ -65,7 +65,6 @@ export function FlowMapToolbar({
                     className="pf-tool-pill pf-tool-pill-picking"
                     trailingIcon={
                         <button type="button"
-                            type="button"
                             onClick={() => setPickingDestination(false)}
                             className="ml-1 border-none bg-transparent cursor-pointer p-0 text-text-primary font-bold transition-transform hover:scale-110"
                             aria-label="Cancel picking"
@@ -90,7 +89,6 @@ export function FlowMapToolbar({
                     className="pf-tool-pill transition-all border border-current/30"
                     trailingIcon={
                         <button type="button"
-                            type="button"
                             onClick={() => setSelectedCode(null)}
                             className="ml-1 border-none bg-transparent cursor-pointer p-0 font-bold transition-transform hover:scale-110"
                             // eslint-disable-next-line react/forbid-dom-props -- color is paired with the parent badge fg

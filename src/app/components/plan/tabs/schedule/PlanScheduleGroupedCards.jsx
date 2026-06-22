@@ -41,7 +41,6 @@ export default function PlanScheduleGroupedCards({
                     <div key={code} className="flex flex-col gap-1.5 md:gap-2">
                         <div className="flex items-center gap-2 px-1 text-[12px] md:text-[13px]">
                             <button type="button"
-                                type="button"
                                 onClick={() => onPickPlant(code)}
                                 className="border-none bg-transparent p-0 cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 title={

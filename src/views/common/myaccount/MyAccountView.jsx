@@ -276,7 +276,6 @@ function MyAccountView({ onSelectView, userId }) {
                                 />
                                 <span className="flex-1 text-[13px] font-medium">{message}</span>
                                 <button type="button"
-                                    type="button"
                                     onClick={() => setMessage('')}
                                     className="rounded p-1 text-text-secondary opacity-70 transition-opacity duration-150 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                     aria-label="Dismiss"

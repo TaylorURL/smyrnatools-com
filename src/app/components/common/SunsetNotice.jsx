@@ -46,7 +46,6 @@ function SunsetNotice() {
                 <i className="fas fa-triangle-exclamation text-sm text-white" aria-hidden="true" />
                 <span className="text-sm font-semibold text-white">Smyrna Tools is shutting down soon</span>
                 <button type="button"
-                    type="button"
                     onClick={handleDismiss}
                     aria-label="Dismiss sunset notice"
                     className="ml-auto -mr-1 inline-flex h-6 w-6 items-center justify-center rounded-md text-white/90 cursor-pointer transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-white/15 hover:text-white active:scale-[0.93] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-1 focus-visible:ring-offset-status-warning"

@@ -23,7 +23,6 @@ const ExportButton = ({ exporting, loadingPlants, onClick }) => {
     const label = loadingPlants ? 'Loading...' : exporting ? 'Exporting...' : 'Export'
     return (
         <button type="button"
-            type="button"
             className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs sm:text-sm font-semibold transition-colors disabled:opacity-50"
             onClick={onClick}
             disabled={exporting || loadingPlants}

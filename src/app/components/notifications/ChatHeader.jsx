@@ -17,7 +17,6 @@ function ChatHeaderIconButton({ accentColor, active = false, danger = false, ico
           : { background: 'var(--bg-secondary)', borderColor: 'var(--border-light)', color: 'var(--text-secondary)' }
     return (
         <button type="button"
-            type="button"
             onClick={onClick}
             title={title}
             aria-label={title}

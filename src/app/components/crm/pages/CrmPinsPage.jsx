@@ -66,7 +66,6 @@ function DeleteCell({ isDeleting, isOwn, onDelete, pin }) {
     if (!isOwn) return null
     return (
         <button type="button"
-            type="button"
             aria-label="Delete pin"
             disabled={isDeleting}
             onClick={(e) => {
@@ -269,7 +268,6 @@ export function CrmPinsPage({ accentColor }) {
 
     const refreshButton = !isLoading && (
         <button type="button"
-            type="button"
             onClick={loadPins}
             className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none bg-bg-secondary text-text-secondary hover:text-text-primary hover:bg-bg-hover cursor-pointer transition-colors duration-150 active:scale-[0.97]"
         >

@@ -81,7 +81,6 @@ export default function AssetListRow({
 
     const copyButton = (text, title = 'Copy') => (
         <button type="button"
-            type="button"
             onClick={(event) => handleCopy(event, text)}
             title={title}
             aria-label={title}
@@ -382,7 +381,6 @@ export default function AssetListRow({
                 <td key={col.key} className={cellClass} style={widthStyle(col.width)}>
                     <div className="flex items-center gap-0.5">
                         <button type="button"
-                            type="button"
                             onClick={(event) => {
                                 event.stopPropagation()
                                 onComment(item.id, identifier)
@@ -405,7 +403,6 @@ export default function AssetListRow({
                             )}
                         </button>
                         <button type="button"
-                            type="button"
                             onClick={(event) => {
                                 event.stopPropagation()
                                 onIssue(item.id, identifier)
@@ -428,7 +425,6 @@ export default function AssetListRow({
                             )}
                         </button>
                         <button type="button"
-                            type="button"
                             onClick={(event) => {
                                 event.stopPropagation()
                                 onHistory(item)
@@ -440,7 +436,6 @@ export default function AssetListRow({
                             <i className="fas fa-history" />
                         </button>
                         <button type="button"
-                            type="button"
                             onClick={(event) => {
                                 event.stopPropagation()
                                 onSendMessage?.(item, identifier)

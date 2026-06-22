@@ -64,7 +64,6 @@ export function SubtleButton({ children, danger = false, disabled = false, icon,
 export function Toggle({ accentColor, ariaLabel, checked, onChange }) {
     return (
         <button type="button"
-            type="button"
             role="switch"
             aria-checked={checked}
             aria-label={ariaLabel}

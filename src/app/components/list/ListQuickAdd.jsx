@@ -154,7 +154,6 @@ export default function ListQuickAdd({
                 />
                 {text.trim() && (
                     <button type="button"
-                        type="button"
                         onClick={() => {
                             onOpenAdvanced?.(text)
                             setText('')
@@ -168,7 +167,6 @@ export default function ListQuickAdd({
                 )}
                 <div ref={menuRef} className="relative">
                     <button type="button"
-                        type="button"
                         onClick={() => setMenuOpen((o) => !o)}
                         aria-haspopup="listbox"
                         aria-expanded={menuOpen}

@@ -49,7 +49,6 @@ function WorkbookToolbar({ accentColor, exportMessage, exporting, onExport, onSe
                     />
                 </div>
                 <button type="button"
-                    type="button"
                     onClick={onExport}
                     disabled={exporting}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold text-white border-none cursor-pointer transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"

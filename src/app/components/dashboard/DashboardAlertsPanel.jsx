@@ -254,7 +254,6 @@ export default function DashboardAlertsPanel({
                 ))}
                 {canExpand && (
                     <button type="button"
-                        type="button"
                         onClick={() => setExpanded((prev) => !prev)}
                         aria-expanded={expanded}
                         className="self-start inline-flex items-center gap-1.5 text-[12px] font-semibold mt-1.5 px-2 py-1 rounded-md bg-transparent cursor-pointer text-text-secondary transition-[color,background-color,transform] duration-150 ease-out hover:text-text-primary hover:bg-bg-hover active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"

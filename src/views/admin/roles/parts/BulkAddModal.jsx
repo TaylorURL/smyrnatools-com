@@ -65,14 +65,12 @@ const BulkAddModal = ({ isOpen, onClose, roles, onBulkAdd, accentColor: _accentC
                 <RoleFormField label="Add to Roles">
                     <div className="mb-2 flex items-center gap-2">
                         <button type="button"
-                            type="button"
                             onClick={selectAll}
                             className="rounded-md bg-bg-tertiary px-2 py-1 text-[11px] font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
                         >
                             Select All
                         </button>
                         <button type="button"
-                            type="button"
                             onClick={selectNone}
                             className="rounded-md bg-bg-tertiary px-2 py-1 text-[11px] font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
                         >

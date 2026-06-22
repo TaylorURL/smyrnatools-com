@@ -306,7 +306,6 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
                                     <tr key={row.id} className="border-t border-border-light">
                                         <td className="px-3 py-2">
                                             <button type="button"
-                                                type="button"
                                                 onClick={() => onSelectAsset?.(row)}
                                                 className="font-mono tabular-nums font-semibold bg-transparent border-none cursor-pointer p-0 text-left text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                             >

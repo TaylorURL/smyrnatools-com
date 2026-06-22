@@ -96,7 +96,6 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                         )}
                     </div>
                     <button type="button"
-                        type="button"
                         className="flex h-6 w-6 items-center justify-center rounded text-text-secondary cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                         onClick={onClose}
                         aria-label="Close online users"
