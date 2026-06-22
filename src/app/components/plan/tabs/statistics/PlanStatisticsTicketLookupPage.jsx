@@ -99,7 +99,7 @@ export default function PlanStatisticsTicketLookupPage({
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search by ticket number"
                     aria-label="Ticket number"
-                    className="flex-1 min-w-0 bg-transparent border-0 outline-none text-[13px] font-mono tabular-nums text-text-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:hidden"
+                    className="flex-1 min-w-0 bg-transparent border-0 outline-none focus-visible:ring-2 focus-visible:ring-accent/30 text-[13px] font-mono tabular-nums text-text-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:hidden"
                     autoFocus
                 />
                 {query && (

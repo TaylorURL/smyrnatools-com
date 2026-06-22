@@ -36,7 +36,8 @@ export function GmAggregateProductionSection({ aggReport, lastWeekAgg }) {
             <div className="text-lg font-semibold text-slate-800">Aggregate Production</div>
             <div className="rounded-lg border border-gray-200 bg-bg-primary p-4">
                 {aggReport ? (
-                    <table className="w-full border-collapse mt-4 rounded-lg overflow-hidden border border-gray-200 bg-bg-primary">
+                    <div className="overflow-x-auto mt-4">
+                    <table className="w-full border-collapse rounded-lg overflow-hidden border border-gray-200 bg-bg-primary">
                         <thead>
                             <tr>
                                 {HEADERS.map((h) => (
@@ -57,6 +58,7 @@ export function GmAggregateProductionSection({ aggReport, lastWeekAgg }) {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 ) : (
                     <GmEmptyState message="No aggregate production report found." />
                 )}

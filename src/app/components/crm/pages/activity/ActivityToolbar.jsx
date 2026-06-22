@@ -33,7 +33,7 @@ export function ActivityToolbar({
                     placeholder="Search by customer, contact, note, or who called…"
                     disabled={isLoading}
                     aria-label="Search activity feed"
-                    className="bg-transparent outline-none border-none text-[12.5px] w-full text-text-primary placeholder:text-text-tertiary disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
+                    className="bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-accent/30 border-none text-[12.5px] w-full text-text-primary placeholder:text-text-tertiary disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
                 />
                 {query && (
                     <button type="button"

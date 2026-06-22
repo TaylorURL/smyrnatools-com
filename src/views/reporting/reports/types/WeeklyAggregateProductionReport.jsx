@@ -15,7 +15,7 @@ const FIELD_STYLE = {
     color: 'var(--text-primary)'
 }
 const FIELD_INPUT_CLASS =
-    'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border tabular-nums disabled:opacity-90'
+    'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none focus-visible:ring-2 focus-visible:ring-accent/30 box-border tabular-nums disabled:opacity-90'
 /** Compact card header — same primitive as the other redesigned reports. */
 function CardHeader({ icon, label, sub, title, right }) {
     return (

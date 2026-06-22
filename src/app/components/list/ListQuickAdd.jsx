@@ -150,7 +150,7 @@ export default function ListQuickAdd({
                     disabled={isSaving}
                     placeholder={dense ? 'Add a task…' : 'Add a task and press Enter…'}
                     aria-label="Add a task"
-                    className={`flex-1 min-w-0 bg-transparent border-none outline-none text-text-primary placeholder:text-text-tertiary disabled:opacity-60 ${inputTextSize}`}
+                    className={`flex-1 min-w-0 bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-accent/30 text-text-primary placeholder:text-text-tertiary disabled:opacity-60 ${inputTextSize}`}
                 />
                 {text.trim() && (
                     <button type="button"

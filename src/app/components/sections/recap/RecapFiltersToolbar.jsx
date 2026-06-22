@@ -91,7 +91,7 @@ function RecapFiltersToolbar({
                 )}
             </div>
 
-            <div className="grid grid-cols-4 rounded overflow-hidden bg-bg-primary border border-border-light">
+            <div className="grid grid-cols-2 sm:grid-cols-4 rounded overflow-hidden bg-bg-primary border border-border-light">
                 <RecapMetricCell
                     value={changeMetrics.operatorsNet}
                     label="Operators"

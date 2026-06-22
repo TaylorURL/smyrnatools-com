@@ -389,7 +389,7 @@ function PlantsView({ title = 'Plants' }) {
                         })}
                     </div>
                 ) : (
-                    <div className="overflow-hidden rounded-card border border-border-light bg-bg-primary">
+                    <div className="overflow-x-auto rounded-card border border-border-light bg-bg-primary">
                         <table className="w-full">
                             <tbody className="divide-y divide-border-light">
                                 {filteredPlants.map((plant) => {

@@ -214,7 +214,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
     )
 
     const renderAggregateTable = () => (
-        <div className="bg-bg-primary rounded-card border border-border-light overflow-hidden mb-6">
+        <div className="bg-bg-primary rounded-card border border-border-light overflow-x-auto mb-6">
             <table className="w-full border-collapse">
                 <thead>
                     <tr>

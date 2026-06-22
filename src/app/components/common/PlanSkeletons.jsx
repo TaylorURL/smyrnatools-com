@@ -130,7 +130,7 @@ export function FlowSkeleton() {
                     <Bar className="h-2 w-full rounded-full" />
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center pt-20">
-                    <div className="grid grid-cols-3 gap-12">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-12">
                         {[1, 2, 3, 4, 5, 6].map((i) => (
                             <div
                                 key={i}

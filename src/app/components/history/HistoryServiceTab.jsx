@@ -153,7 +153,7 @@ function IssueRow({ entry, getCreatorName, isLast, onCompleteIssue, onDeleteIssu
                         onClick={() => onDeleteIssue(issue.id)}
                         title="Delete issue"
                         aria-label="Delete issue"
-                        className="rounded border-none cursor-pointer flex items-center justify-center bg-[rgba(220,_38,_38,_0.12)] text-text-primary h-[22px] w-[22px] active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-[rgba(220,_38,_38,_0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dc2626]/40"
+                        className="rounded border-none cursor-pointer flex items-center justify-center bg-[rgba(220,_38,_38,_0.12)] text-text-primary h-8 w-8 active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-[rgba(220,_38,_38,_0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dc2626]/40"
                     >
                         <i className="fas fa-trash text-[10px]" />
                     </button>

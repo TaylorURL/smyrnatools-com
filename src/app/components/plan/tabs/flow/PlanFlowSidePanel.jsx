@@ -377,7 +377,7 @@ function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, placehol
                 onBlur={onBlur}
                 onFocus={(event) => event.target.select()}
                 aria-label={ariaLabel}
-                className="flex-1 px-3 py-1.5 text-sm font-mono tabular-nums text-center bg-transparent border-none outline-none text-text-primary placeholder:text-text-tertiary"
+                className="flex-1 px-3 py-1.5 text-sm font-mono tabular-nums text-center bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-accent/30 text-text-primary placeholder:text-text-tertiary"
             />
             <button type="button"
                 type="button"
