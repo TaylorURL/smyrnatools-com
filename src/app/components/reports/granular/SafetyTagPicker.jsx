@@ -122,8 +122,13 @@ function TagPickerModal({ onChange, onClose, options, value }) {
         const has = value.includes(val)
         onChange(has ? value.filter((v) => v !== val) : [...value, val])
     }
+    useEffect(() => {
+        const handleKeyDown = (e) => { if (e.key === 'Escape') onClose() }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [onClose])
     return (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" onClick={onClose}>
             <div
                 className="flex w-full max-w-[400px] max-h-[80vh] flex-col overflow-hidden rounded shadow-2xl"
                 style={CARD_STYLE}
