@@ -420,7 +420,10 @@ const mixerConfig = {
     viewModeStorageKey: 'mixers_last_view_mode',
 
     // VIN search
-    vinSearchFn: (query) => MixerService.searchMixersByVinProcessed(query)
+    vinSearchFn: (query) => MixerService.searchMixersByVinProcessed(query),
+
+    // Workbook (spreadsheet) view columns — enables the Workbook tab
+    workbookColumns: MIXER_WORKBOOK_COLUMNS
 }
 
 export default mixerConfig
