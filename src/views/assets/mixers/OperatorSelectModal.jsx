@@ -50,6 +50,12 @@ function OperatorSelectModal({
         if (isOpen) document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [isOpen, onClose])
+    useEffect(() => {
+        if (!isOpen) return
+        const handleKeyDown = (e) => { if (e.key === 'Escape') onClose() }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, onClose])
     /** Returns true if the operator is already assigned to an active mixer (prevents double-assignment). */
     function isOperatorAssigned(operatorId) {
         if (!operatorId || operatorId === '0' || !Array.isArray(mixers)) return false
