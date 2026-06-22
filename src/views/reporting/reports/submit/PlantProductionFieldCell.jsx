@@ -13,7 +13,7 @@ import { FORM_FIELD_STYLE, FORM_SECTION_LABEL_CLASS } from './formStyles'
  *  to be fully legible — the user identifies them by the badge, not by a
  *  greyed-out input. */
 const COMPACT_INPUT_CLASS =
-    'w-full rounded px-1.5 py-1.5 sm:py-1 text-[16px] sm:text-[11px] outline-none box-border tabular-nums'
+    'w-full rounded px-1.5 py-1.5 sm:py-1 text-[16px] sm:text-[11px] outline-none box-border tabular-nums focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40'
 
 /** Browsers apply a user-agent grey to `<input disabled>` text via
  *  `-webkit-text-fill-color` (Chrome/Safari) and a reduced opacity on

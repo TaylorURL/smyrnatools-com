@@ -116,7 +116,7 @@ export default function JobMapModal({ onClose, order, plantAddress, plantCode, p
                     <a
                         href={externalUrl}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="text-[12px] px-2.5 py-1.5 rounded border border-border-light bg-transparent cursor-pointer text-text-secondary no-underline hover:text-text-primary hover:bg-bg-tertiary"
                         title={canRoute ? 'Open route in Google Maps' : 'Open in Google Maps'}
                     >

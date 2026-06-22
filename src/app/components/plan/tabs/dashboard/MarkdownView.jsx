@@ -40,7 +40,7 @@ function InlineLink({ href, label }) {
         <a
             href={href}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="underline font-semibold text-[var(--accent, #1e3a5f)]"
         >
             {label}
