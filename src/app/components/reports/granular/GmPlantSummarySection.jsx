@@ -102,6 +102,7 @@ function PlantTable({ form, getLastWeekValue, plant, readOnly, setForm }) {
                     />
                 </tbody>
             </table>
+            </div>
         </div>
     )
 }
