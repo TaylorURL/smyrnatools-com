@@ -250,6 +250,7 @@ export default function AssetWorkbookView({ columns, data, loading, lookups, tit
                                 <WorkbookHeaderCell
                                     key={col.key}
                                     column={col}
+                                    isFirstColumn={idx === 0}
                                     onSort={handleSort}
                                     sortDirection={sortKey === col.key ? sortDirection : null}
                                     style={{ minWidth: col.minWidth || (idx === 0 ? 120 : 100) }}
