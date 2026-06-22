@@ -239,7 +239,7 @@ function PlanFlowMapView({
                      * `pointer-events-none` on the wrapper keeps the
                      * map draggable everywhere the scrubber doesn't
                      * physically occupy. */}
-                    <div className="absolute bottom-0 right-0 z-[1000] pointer-events-none">
+                    <div className="absolute bottom-0 left-0 right-0 lg:left-auto z-[1000] pointer-events-none">
                         <PlanFlowTimeScrubber
                             hasActivity={scrubberActivityCount}
                             isPlaying={isPlaying}
