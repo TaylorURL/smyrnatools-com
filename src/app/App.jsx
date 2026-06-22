@@ -13,6 +13,7 @@ import Navigation from './components/common/Navigation'
 import OfflineOverlay from './components/common/OfflineOverlay'
 import TerminatedOverlay from './components/common/TerminatedOverlay'
 import TutorialManager from './components/common/TutorialPopup'
+import PlantManagerReminderToast from './components/common/PlantManagerReminderToast'
 import VersionUpdateBanner from './components/common/VersionUpdateBanner'
 import WebOverlay from './components/common/WebOverlay'
 import { MessagesProvider } from './context/MessagesContext'
@@ -382,6 +383,7 @@ function App() {
             </Suspense>
             <TutorialManager />
             {hasUpdate && <VersionUpdateBanner onDismiss={dismiss} />}
+            <PlantManagerReminderToast />
             <Analytics />
             <SpeedInsights />
         </>
