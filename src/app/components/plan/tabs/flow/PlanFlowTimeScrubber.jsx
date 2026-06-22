@@ -62,8 +62,7 @@ export function PlanFlowTimeScrubber({ hasActivity, isPlaying, onChange, onPlayT
 
     return (
         <div
-            className="pf-scrubber pointer-events-auto flex items-center gap-3 px-3 py-2 rounded-tl-md bg-bg-primary border-l border-t border-border-light shadow-card"
-            style={{ minWidth: 440 }}
+            className="pf-scrubber pointer-events-auto flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 rounded-tl-md bg-bg-primary border-l border-t border-border-light shadow-card sm:min-w-[440px]"
         >
             {onPlayToggle && (
                 <button type="button"
