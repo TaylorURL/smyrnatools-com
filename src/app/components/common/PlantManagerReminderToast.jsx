@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom'
 
 import { Database } from '../../../services/DatabaseService'
 import { getSessionUserId } from '../../../services/SessionService'
-import { UserService } from '../../../services/UserService'
 
 const WARNING_COLOR = '#d97706'
 
