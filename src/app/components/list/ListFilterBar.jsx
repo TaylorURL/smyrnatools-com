@@ -108,7 +108,7 @@ export default function ListFilterBar({
                 {LAYOUT_OPTIONS.map((opt) => {
                     const active = layout === opt.id
                     return (
-                        <button
+                        <button type="button"
                             key={opt.id}
                             type="button"
                             onClick={() => onLayoutChange?.(opt.id)}
@@ -132,7 +132,7 @@ export default function ListFilterBar({
                     {GROUP_OPTIONS.map((opt) => {
                         const active = viewMode === opt.id
                         return (
-                            <button
+                            <button type="button"
                                 key={opt.id}
                                 type="button"
                                 onClick={() => onViewModeChange?.(opt.id)}
@@ -149,7 +149,7 @@ export default function ListFilterBar({
             )}
 
             <div className="relative">
-                <button
+                <button type="button"
                     ref={filtersBtnRef}
                     type="button"
                     onClick={() => setFiltersOpen((o) => !o)}
@@ -198,7 +198,7 @@ export default function ListFilterBar({
                                         Status
                                     </span>
                                     {statusFilter && (
-                                        <button
+                                        <button type="button"
                                             type="button"
                                             onClick={() => onClearStatusFilter?.()}
                                             className="text-[10.5px] font-medium text-text-tertiary hover:text-text-primary"
@@ -213,7 +213,7 @@ export default function ListFilterBar({
                                         const color = STATUS_COLORS[key] || STATUS_COLORS.pending
                                         const active = statusDisplay === label
                                         return (
-                                            <button
+                                            <button type="button"
                                                 key={label}
                                                 type="button"
                                                 onClick={() => onSelectStatus(label)}
@@ -241,7 +241,7 @@ export default function ListFilterBar({
                                         Assigned to
                                     </span>
                                     {roleFilter && (
-                                        <button
+                                        <button type="button"
                                             type="button"
                                             onClick={() => onClearRoleFilter?.()}
                                             className="text-[10.5px] font-medium text-text-tertiary hover:text-text-primary"
@@ -254,7 +254,7 @@ export default function ListFilterBar({
                                     {ROLE_OPTIONS.map((label) => {
                                         const active = roleDisplay === label
                                         return (
-                                            <button
+                                            <button type="button"
                                                 key={label}
                                                 type="button"
                                                 onClick={() => onSelectRole(label)}

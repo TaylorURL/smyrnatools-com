@@ -171,7 +171,7 @@ export default function NRMCAView() {
                 isRefreshing={refreshing}
                 onRefresh={() => loadData({ background: true })}
                 rightChildren={
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => setAddPlantModal(true)}
                         className="inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1.5 text-[12px] font-semibold text-white shadow-sm transition-all duration-150 hover:bg-accent-hover active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"

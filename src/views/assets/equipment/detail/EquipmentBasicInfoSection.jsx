@@ -60,7 +60,7 @@ export default function EquipmentBasicInfoSection({
                 </div>
                 <div className="form-group">
                     <label>Assigned Plant</label>
-                    <button
+                    <button type="button"
                         className={`operator-select-button form-control text-left ${!canEditEquipment ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                         onClick={() => canEditEquipment && setShowPlantModal(true)}
                         type="button"

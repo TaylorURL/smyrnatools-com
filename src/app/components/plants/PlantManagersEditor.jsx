@@ -166,7 +166,7 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
                     <div className="px-4 py-3 text-sm text-text-tertiary italic">No matching users.</div>
                 ) : (
                     pickerResults.map((user) => (
-                        <button
+                        <button type="button"
                             key={user.id}
                             type="button"
                             role="option"
@@ -213,7 +213,7 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
                                     <div className="truncate text-[11.5px] text-text-tertiary">{user.email}</div>
                                 )}
                             </div>
-                            <button
+                            <button type="button"
                                 type="button"
                                 onClick={() => removeManager(id)}
                                 disabled={disabled}

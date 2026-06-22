@@ -5,7 +5,7 @@ export default function DetailViewMobileNav({ accent, activeSection, footerActio
     return (
         <nav className="dv-mobile-nav">
             {sections.map((section) => (
-                <button
+                <button type="button"
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
                     className="dv-mobile-nav-btn"

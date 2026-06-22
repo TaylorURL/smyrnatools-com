@@ -126,7 +126,7 @@ export function CrmSidebar({ accentColor, activeSection, onSelect, sectionIds, s
                 if (!section) return null
                 const isActive = sectionId === activeSection
                 return (
-                    <button
+                    <button type="button"
                         key={sectionId}
                         type="button"
                         onClick={() => onSelect(sectionId)}

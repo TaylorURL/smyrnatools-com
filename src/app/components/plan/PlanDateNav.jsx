@@ -109,7 +109,7 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
             aria-label="Pick a date"
         >
             <div className="flex items-center justify-between mb-1.5 px-1">
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => stepMonth(-1)}
                     className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -121,7 +121,7 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
                 <span className="text-[12.5px] font-semibold text-text-primary">
                     {monthLabel(view.year, view.month)}
                 </span>
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => stepMonth(1)}
                     className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -146,7 +146,7 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
                     const isSelected = cell.iso === planDate
                     const isSunday = cell.weekday === 0
                     return (
-                        <button
+                        <button type="button"
                             key={cell.iso}
                             type="button"
                             onClick={() => !isSunday && pickDate(cell.iso)}
@@ -168,14 +168,14 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
                 })}
             </div>
             <div className="flex justify-between gap-1 mt-2 pt-1.5 border-t border-border-light">
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => pickDate(skipSundayDate(getTodayDate(), 1))}
                     className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer bg-bg-secondary border border-border-light text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     Today
                 </button>
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => pickDate(skipSundayDate(getTomorrowDate(), 1))}
                     className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer bg-bg-secondary border border-border-light text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -237,7 +237,7 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
             title={wrapperTitle}
             aria-disabled={disabled}
         >
-            <button
+            <button type="button"
                 type="button"
                 onClick={() => !disabled && onChange(offsetDateSkipSunday(planDate, -1))}
                 disabled={disabled}
@@ -248,7 +248,7 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
             >
                 <i className="fas fa-chevron-left text-xs" />
             </button>
-            <button
+            <button type="button"
                 ref={triggerRef}
                 type="button"
                 onClick={() => !disabled && setOpen((v) => !v)}
@@ -266,7 +266,7 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
                 })}
                 <i className="fas fa-caret-down text-[10px] text-text-tertiary" />
             </button>
-            <button
+            <button type="button"
                 type="button"
                 onClick={() => !disabled && onChange(offsetDateSkipSunday(planDate, 1))}
                 disabled={disabled}
@@ -301,7 +301,7 @@ function TomorrowButton({ accentColor, disabled = false, disabledReason, isDark,
     const tomorrowTarget = skipSundayDate(getTomorrowDate(), 1)
     const isTomorrow = planDate === tomorrowTarget
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={() => !disabled && onChange(tomorrowTarget)}
             disabled={disabled}

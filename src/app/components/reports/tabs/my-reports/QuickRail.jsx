@@ -64,7 +64,7 @@ function QuickRail({
                     </div>
                     <div className="flex flex-col">
                         {visible.map((o, idx) => (
-                            <button
+                            <button type="button"
                                 key={o.key}
                                 type="button"
                                 onClick={() => handlers[o.key]?.()}

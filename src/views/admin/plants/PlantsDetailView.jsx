@@ -173,7 +173,7 @@ function PlantsDetailView({ plant, onClose, onDelete }) {
             message={message}
             footerActions={
                 <>
-                    <button
+                    <button type="button"
                         className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
                         onClick={handleSave}
                         disabled={isSaving}
@@ -181,7 +181,7 @@ function PlantsDetailView({ plant, onClose, onDelete }) {
                         <i className="fas fa-save"></i>
                         <span>{isSaving ? 'Saving...' : 'Save'}</span>
                     </button>
-                    <button
+                    <button type="button"
                         className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
                         onClick={() => setShowDeleteConfirmation(true)}
                         disabled={isSaving}

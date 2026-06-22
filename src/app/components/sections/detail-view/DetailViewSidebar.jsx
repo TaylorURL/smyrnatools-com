@@ -21,7 +21,7 @@ export default function DetailViewSidebar({
             style={{ width: sidebarCollapsed ? 64 : 240 }}
         >
             <div style={{ padding: sidebarCollapsed ? '12px 8px' : '16px' }}>
-                <button
+                <button type="button"
                     onClick={handleSidebarToggle}
                     className="flex h-9 items-center justify-center gap-2 rounded-lg border-none bg-slate-100 text-sm text-slate-500 cursor-pointer transition-all duration-200 hover:bg-slate-200"
                     style={{ width: sidebarCollapsed ? 48 : '100%' }}
@@ -32,7 +32,7 @@ export default function DetailViewSidebar({
             </div>
             <nav className="flex flex-1 flex-col gap-1" style={{ padding: sidebarCollapsed ? '0 8px' : '0 12px' }}>
                 {sections.map((section, idx) => (
-                    <button
+                    <button type="button"
                         key={section.id}
                         onClick={() => setActiveSection(section.id)}
                         title={sidebarCollapsed ? section.title : undefined}
@@ -69,7 +69,7 @@ export default function DetailViewSidebar({
                 >
                     {footerActions}
                     {hasTransferPerm && onRegionTransfer && currentRegion && (
-                        <button
+                        <button type="button"
                             className="global-button-secondary"
                             onClick={openTransfer}
                             disabled={isSaving}

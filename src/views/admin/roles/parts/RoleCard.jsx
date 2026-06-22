@@ -87,7 +87,7 @@ const RoleCard = ({
     return (
         <div className="overflow-hidden rounded-card border border-border-light bg-bg-primary shadow-sm transition-shadow duration-200 hover:shadow-card">
             {/* Header — asset-card visual rhythm: 40x40 accent icon + bold name + stat pills + chevron. */}
-            <button
+            <button type="button"
                 type="button"
                 aria-expanded={isExpanded}
                 onClick={onToggle}
@@ -151,7 +151,7 @@ const RoleCard = ({
                     <div className="flex items-center gap-2 border-b border-border-light bg-bg-secondary px-5 py-3">
                         {hasITAccess && (
                             <>
-                                <button
+                                <button type="button"
                                     type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
@@ -162,7 +162,7 @@ const RoleCard = ({
                                     <i className="fas fa-plus text-[9px]" aria-hidden="true" />
                                     Add Permission
                                 </button>
-                                <button
+                                <button type="button"
                                     type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
@@ -191,7 +191,7 @@ const RoleCard = ({
                                     {pasteStatus.text}
                                 </span>
                             )}
-                            <button
+                            <button type="button"
                                 type="button"
                                 onClick={(e) => {
                                     e.stopPropagation()
@@ -205,7 +205,7 @@ const RoleCard = ({
                                 {copied ? 'Copied' : 'Copy'}
                             </button>
                             {hasITAccess && (
-                                <button
+                                <button type="button"
                                     type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
@@ -234,7 +234,7 @@ const RoleCard = ({
                                 className="flex-1 rounded-md border border-border-light bg-bg-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
                                 aria-label="New permission node"
                             />
-                            <button
+                            <button type="button"
                                 type="button"
                                 onClick={handleAddPerm}
                                 disabled={!newPerm.trim()}
@@ -243,7 +243,7 @@ const RoleCard = ({
                             >
                                 Add
                             </button>
-                            <button
+                            <button type="button"
                                 type="button"
                                 onClick={() => {
                                     setAddingPerm(false)

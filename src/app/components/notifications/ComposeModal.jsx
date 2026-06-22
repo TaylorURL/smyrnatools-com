@@ -103,7 +103,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                             New Message
                         </span>
                     </div>
-                    <button
+                    <button type="button"
                         onClick={onClose}
                         className="flex h-6 w-6 items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.92]"
                         aria-label="Close"
@@ -122,7 +122,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                             <p className="text-[12px] text-text-secondary">
                                 {selectedRecipient?.firstName} {selectedRecipient?.lastName} will receive your message
                             </p>
-                            <button
+                            <button type="button"
                                 onClick={onClose}
                                 className="rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                 style={{ background: accentColor }}
@@ -159,7 +159,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                                         : ''}
                                                 </div>
                                             </div>
-                                            <button
+                                            <button type="button"
                                                 onClick={() => setSelectedRecipient(null)}
                                                 className="text-[11px] flex h-6 w-6 items-center justify-center rounded hover:bg-bg-tertiary text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                                                 aria-label="Clear recipient"
@@ -206,7 +206,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                                         </div>
                                                     ) : (
                                                         filteredRecipients.map((r) => (
-                                                            <button
+                                                            <button type="button"
                                                                 key={r.id}
                                                                 type="button"
                                                                 role="option"
@@ -280,7 +280,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                 </div>
                             )}
 
-                            <button
+                            <button type="button"
                                 onClick={handleSend}
                                 disabled={!selectedRecipient || !body.trim() || sending}
                                 className="w-full flex items-center justify-center gap-1.5 py-2 rounded text-[10.5px] font-semibold uppercase tracking-wider active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"

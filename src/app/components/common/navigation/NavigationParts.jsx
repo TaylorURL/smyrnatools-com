@@ -22,7 +22,7 @@ export function MobileSection({ title, children }) {
 export function MobileMenuItem({ item, isActive, onClick, accentColor = '#1e3a5f' }) {
     const activeTint = `${accentColor}14`
     return (
-        <button
+        <button type="button"
             type="button"
             className={`mb-1 flex w-full items-center gap-3 rounded-[10px] border-none p-3 text-left text-text-primary cursor-pointer transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary ${isActive ? 'font-semibold' : 'font-normal bg-transparent'}`}
             style={isActive ? { backgroundColor: activeTint } : undefined}

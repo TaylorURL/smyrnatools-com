@@ -101,7 +101,7 @@ function AddViewSection({ title, onClose, children, error, isListItem = false })
                                 </span>
                             </div>
                         </div>
-                        <button
+                        <button type="button"
                             className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-text-secondary text-xl cursor-pointer transition-all duration-200 p-2 hover:bg-border-light hover:text-text-primary"
                             onClick={onClose}
                             aria-label="Close"
@@ -147,7 +147,7 @@ function AddViewSection({ title, onClose, children, error, isListItem = false })
                             </span>
                         </div>
                     </div>
-                    <button
+                    <button type="button"
                         className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-text-secondary text-xl cursor-pointer transition-all duration-200 p-2 hover:bg-border-light hover:text-text-primary"
                         onClick={onClose}
                         aria-label="Close"

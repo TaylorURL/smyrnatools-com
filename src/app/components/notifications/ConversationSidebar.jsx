@@ -47,7 +47,7 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
     const attachmentIconName = attachmentIconClass ? attachmentIconClass.replace(/^fa[a-z]?\s+fa-/, '') : null
 
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={() => onSelect(conversation)}
             className="flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary border-b border-border-light active:scale-[0.97]"
@@ -185,7 +185,7 @@ export default function ConversationSidebar({
                         className="w-full rounded text-[12px] pl-7 pr-7 py-1.5 outline-none bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
                     />
                     {search && (
-                        <button
+                        <button type="button"
                             type="button"
                             aria-label="Clear search"
                             onClick={() => onSearchChange('')}
@@ -202,7 +202,7 @@ export default function ConversationSidebar({
                     const isActive = activeFilter === id
                     const count = counts[id] ?? 0
                     return (
-                        <button
+                        <button type="button"
                             key={id}
                             type="button"
                             onClick={() => onFilterChange?.(id)}

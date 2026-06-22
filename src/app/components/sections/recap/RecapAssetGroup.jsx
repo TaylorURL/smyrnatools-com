@@ -18,7 +18,7 @@ function RecapAssetGroup({ group, changes, isExpanded, onToggle, operatorNames, 
 
     return (
         <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
-            <button
+            <button type="button"
                 type="button"
                 onClick={onToggle}
                 className="flex w-full items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary border-none text-left bg-transparent"

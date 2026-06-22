@@ -118,7 +118,7 @@ export default function NavigationMobile({
                 <img className="h-[34px]" src={SrmLogo} alt="Logo" draggable={false} />
                 <div className="flex items-center gap-2">
                     {showDropPin && onDropPin && (
-                        <button
+                        <button type="button"
                             type="button"
                             aria-label="Drop a pin at current location"
                             onClick={onDropPin}
@@ -128,7 +128,7 @@ export default function NavigationMobile({
                             <span className="text-[12px] font-semibold">Drop a pin</span>
                         </button>
                     )}
-                    <button
+                    <button type="button"
                         type="button"
                         aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
                         aria-expanded={mobileMenuOpen}

@@ -33,7 +33,7 @@ const FlatSelect = ({ value, onChange, options, ariaLabel, className = '' }) => 
 
 /** Refresh button — Plan-tab subtle action button. */
 const RefreshButton = ({ isRefreshing, onClick }) => (
-    <button
+    <button type="button"
         type="button"
         onClick={onClick}
         disabled={isRefreshing}
@@ -116,7 +116,7 @@ const SortSelect = ({ value, onChange, options }) => (
 )
 
 const ClearButton = ({ onClick }) => (
-    <button
+    <button type="button"
         type="button"
         onClick={onClick}
         aria-label="Clear filters"
@@ -208,7 +208,7 @@ export function ReportsActionBar({
             {leftChildren}
             <div className="flex items-center gap-1.5 ml-auto flex-wrap">
                 {onExport && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onExport}
                         disabled={!canExport || isExporting}
@@ -229,7 +229,7 @@ export function ReportsActionBar({
                         {safeTabs.map(({ key, label, icon, badge }) => {
                             const isActive = activeTab === key
                             return (
-                                <button
+                                <button type="button"
                                     key={key}
                                     type="button"
                                     role="tab"
@@ -424,7 +424,7 @@ export function LossFilterBar({
             {hasActiveFilters && <ClearButton onClick={onClear} />}
             <div className="flex items-stretch sm:items-center flex-wrap gap-2 w-full sm:w-auto sm:ml-auto">
                 {onExport && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onExport}
                         aria-label="Export lost loads"
@@ -458,7 +458,7 @@ export function MobileFilterShell({ activeCount = 0, children, defaultOpen = fal
     return (
         <>
             <div className="sm:hidden flex items-center justify-between gap-2 mb-2">
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => setOpen((v) => !v)}
                     aria-expanded={open}

@@ -26,7 +26,7 @@ export function CardHeader({ accentColor: _accentColor, description, icon, title
 /** Filled accent-color button — primary form actions. */
 export function PrimaryButton({ accentColor, children, disabled, icon, onClick, type = 'button' }) {
     return (
-        <button
+        <button type="button"
             type={type}
             onClick={onClick}
             disabled={disabled}
@@ -46,7 +46,7 @@ export function SubtleButton({ children, danger = false, disabled = false, icon,
     const subtleClasses =
         'bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:ring-accent'
     return (
-        <button
+        <button type="button"
             type={type}
             onClick={onClick}
             disabled={disabled}
@@ -63,7 +63,7 @@ export function SubtleButton({ children, danger = false, disabled = false, icon,
 /** iOS-style toggle switch. */
 export function Toggle({ accentColor, ariaLabel, checked, onChange }) {
     return (
-        <button
+        <button type="button"
             type="button"
             role="switch"
             aria-checked={checked}
@@ -87,7 +87,7 @@ export function SegmentedControl({ accentColor, onChange, options, value }) {
             {options.map((opt) => {
                 const active = value === opt.value
                 return (
-                    <button
+                    <button type="button"
                         key={opt.value}
                         type="button"
                         onClick={() => onChange(opt.value)}

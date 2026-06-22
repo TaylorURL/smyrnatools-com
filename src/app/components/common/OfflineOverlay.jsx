@@ -38,7 +38,7 @@ function OfflineOverlay({ onRetry }) {
                 <p className="mb-6 text-[15px] leading-relaxed text-text-secondary">
                     Your connection appears to be offline or unstable. Please check your network and try again.
                 </p>
-                <button
+                <button type="button"
                     type="button"
                     className={`inline-flex items-center justify-center gap-2.5 rounded-[10px] border-none px-7 py-3.5 text-[15px] font-semibold text-white transition-[transform,filter,opacity] duration-150 ease-out motion-reduce:transition-none active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary ${isRetrying ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:brightness-110'}`}
                     style={{ backgroundColor: accentColor }}

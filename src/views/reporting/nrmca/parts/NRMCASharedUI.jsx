@@ -28,7 +28,7 @@ export function Modal({ title, onClose, onSubmit, submitting, children }) {
             <div className="rounded shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto bg-bg-primary border border-border-light">
                 <div className="sticky top-0 flex items-center justify-between px-6 py-4 z-10 bg-bg-primary border-b border-border-light">
                     <h2 className="text-base font-bold text-text-primary">{title}</h2>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         className="transition-colors text-text-tertiary"
@@ -47,14 +47,14 @@ export function Modal({ title, onClose, onSubmit, submitting, children }) {
                     {children}
                 </form>
                 <div className="sticky bottom-0 flex justify-end gap-3 px-6 py-4 bg-bg-primary border-t border-border-light">
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         className="px-4 py-2 text-sm font-semibold rounded transition-colors bg-bg-secondary border border-border-light text-text-primary"
                     >
                         Cancel
                     </button>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onSubmit}
                         disabled={submitting}
@@ -70,7 +70,7 @@ export function Modal({ title, onClose, onSubmit, submitting, children }) {
 
 export function IconBtn({ icon, onClick, danger, title }) {
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={onClick}
             title={title}

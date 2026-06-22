@@ -94,7 +94,7 @@ export function PlanFlowPlantOverview({
             )}
 
             {canEdit && (
-                <button
+                <button type="button"
                     onClick={onAddRoute}
                     className="border-none rounded-lg cursor-pointer text-sm font-semibold text-white flex items-center justify-center gap-2 py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     style={{ background: accentColor }}
@@ -237,7 +237,7 @@ function MissingOperatorsEditor({ baseCount, hasMissing, missingOperators, onCha
                     <SectionLabel>Missing operators</SectionLabel>
                 </div>
                 {hasMissing && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => onChange(0)}
                         className="bg-transparent border-none cursor-pointer text-[11px] font-semibold text-text-secondary hover:text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -312,7 +312,7 @@ function SaturdayOverrideEditor({ halfFleetDefault, onChange, override, rosterCo
                     <SectionLabel>Saturday operator count</SectionLabel>
                 </div>
                 {hasOverride && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => onChange(null)}
                         className="bg-transparent border-none cursor-pointer text-[11px] font-semibold text-text-secondary hover:text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -357,7 +357,7 @@ function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, placehol
     const increment = () => onChange(String(Math.min(max ?? safeNumeric + 1, safeNumeric + 1)))
     return (
         <div className="flex items-stretch rounded-lg overflow-hidden border bg-bg-primary border-border-medium transition-colors duration-150 hover:border-border-dark focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]">
-            <button
+            <button type="button"
                 type="button"
                 onClick={decrement}
                 disabled={atMin}
@@ -379,7 +379,7 @@ function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, placehol
                 aria-label={ariaLabel}
                 className="flex-1 px-3 py-1.5 text-sm font-mono tabular-nums text-center bg-transparent border-none outline-none text-text-primary placeholder:text-text-tertiary"
             />
-            <button
+            <button type="button"
                 type="button"
                 onClick={increment}
                 disabled={atMax}
@@ -462,7 +462,7 @@ function RouteRow({ accentColor: _accentColor, assignment, canEdit, clockIn, onD
             </div>
             {canEdit && (
                 <div className="flex items-center gap-0.5 shrink-0">
-                    <button
+                    <button type="button"
                         onClick={onEdit}
                         className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         title="Edit"
@@ -470,7 +470,7 @@ function RouteRow({ accentColor: _accentColor, assignment, canEdit, clockIn, onD
                     >
                         <i className="fas fa-pen text-[10px]" />
                     </button>
-                    <button
+                    <button type="button"
                         onClick={onDelete}
                         className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-text-primary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         title="Delete"

@@ -10,7 +10,7 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
     const [open, setOpen] = useState(false)
     return (
         <div className="relative">
-            <button
+            <button type="button"
                 onClick={() => setOpen((s) => !s)}
                 className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                 style={{
@@ -31,7 +31,7 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
                     className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light"
                     role="listbox"
                 >
-                    <button
+                    <button type="button"
                         onClick={() => {
                             setSelectedPlant('')
                             setOpen(false)
@@ -52,7 +52,7 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
                         <div className="px-3 py-2 text-[11px] text-text-tertiary">No plants in scope</div>
                     ) : (
                         availablePlants.map(({ code, label }) => (
-                            <button
+                            <button type="button"
                                 key={code}
                                 onClick={() => {
                                     setSelectedPlant(code)
@@ -108,7 +108,7 @@ export function PersonStatisticsControls({
                 setSelectedPlant={setSelectedPlant}
             />
             {selectedPlant && (
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => setSelectedPlant('')}
                     className="text-[11px] font-semibold border-none bg-transparent cursor-pointer text-text-secondary rounded px-2 py-1 active:scale-[0.97] transition-[transform,background-color,color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"

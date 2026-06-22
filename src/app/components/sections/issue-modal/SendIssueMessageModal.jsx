@@ -119,7 +119,7 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                             <div className="text-[12px] truncate text-text-primary">Notify a team member</div>
                         </div>
                     </div>
-                    <button
+                    <button type="button"
                         onClick={onClose}
                         className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
@@ -139,7 +139,7 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                             <div className="text-[11px] text-text-secondary">
                                 {selectedManager?.firstName} {selectedManager?.lastName} will be notified
                             </div>
-                            <button
+                            <button type="button"
                                 onClick={onClose}
                                 className="rounded text-[10.5px] font-semibold uppercase tracking-wider px-3 py-1.5 mt-1 text-white"
                                 style={{ background: accent }}
@@ -192,7 +192,7 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                     </div>
                                 ) : (
                                     <div ref={dropdownRef} className="relative">
-                                        <button
+                                        <button type="button"
                                             type="button"
                                             onClick={() => setManagerDropdownOpen((prev) => !prev)}
                                             className="w-full flex items-center gap-2.5 rounded px-3 py-2 text-left text-[12px] bg-bg-secondary"
@@ -248,7 +248,7 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                                     managers.map((mgr) => {
                                                         const isSelected = selectedManager?.id === mgr.id
                                                         return (
-                                                            <button
+                                                            <button type="button"
                                                                 key={mgr.id}
                                                                 type="button"
                                                                 onClick={() => {
@@ -325,7 +325,7 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                 </div>
                             )}
 
-                            <button
+                            <button type="button"
                                 onClick={handleSend}
                                 disabled={!selectedManager || sending}
                                 className="w-full rounded text-[11px] font-semibold uppercase tracking-wider py-2 inline-flex items-center justify-center gap-1.5"

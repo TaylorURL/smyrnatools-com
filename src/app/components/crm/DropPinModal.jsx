@@ -127,7 +127,7 @@ export function DropPinModal({ accentColor, location, onClose, onSaved }) {
                         <i className="fas fa-map-pin text-[16px]" style={{ color: accentColor }} aria-hidden="true" />
                         <h2 className="text-[15px] font-bold text-text-primary m-0">Drop a pin</h2>
                     </div>
-                    <button
+                    <button type="button"
                         type="button"
                         aria-label="Close"
                         onClick={onClose}
@@ -164,7 +164,7 @@ export function DropPinModal({ accentColor, location, onClose, onSaved }) {
                             Job notes
                         </label>
                         {hasSpeechApi && (
-                            <button
+                            <button type="button"
                                 type="button"
                                 aria-label={isRecording ? 'Stop recording' : 'Start voice dictation'}
                                 onClick={handleToggleRecording}
@@ -197,14 +197,14 @@ export function DropPinModal({ accentColor, location, onClose, onSaved }) {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 justify-end">
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-[13px] font-semibold border-none bg-bg-secondary text-text-secondary hover:text-text-primary hover:bg-bg-hover cursor-pointer transition-colors duration-150 active:scale-[0.97]"
                     >
                         Cancel
                     </button>
-                    <button
+                    <button type="button"
                         type="button"
                         disabled={locationUnavailable || isSaving}
                         onClick={handleSave}

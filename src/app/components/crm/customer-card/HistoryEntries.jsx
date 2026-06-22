@@ -54,7 +54,7 @@ export function HistoryEntries({ currentUserId, entries, isLoading, onDelete }) 
                                     <span className="font-semibold text-text-secondary">· {entry.created_by_name}</span>
                                 )}
                                 {canDelete && (
-                                    <button
+                                    <button type="button"
                                         type="button"
                                         onClick={() => handleDelete(entry)}
                                         disabled={deletingId === entry.id}

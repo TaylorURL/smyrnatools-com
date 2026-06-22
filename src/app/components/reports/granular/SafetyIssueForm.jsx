@@ -15,7 +15,7 @@ function IssueLocationFields({ issue, onOpenPlantPicker, readOnly, updateIssue }
                 <FieldLabel icon="fa-industry" required>
                     Plant Location
                 </FieldLabel>
-                <button
+                <button type="button"
                     type="button"
                     disabled={readOnly}
                     onClick={onOpenPlantPicker}

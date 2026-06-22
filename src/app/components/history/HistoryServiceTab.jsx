@@ -148,7 +148,7 @@ function IssueRow({ entry, getCreatorName, isLast, onCompleteIssue, onDeleteIssu
                         />
                         <div className="text-[12.5px] leading-snug text-text-primary">{issue.issue}</div>
                     </div>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => onDeleteIssue(issue.id)}
                         title="Delete issue"

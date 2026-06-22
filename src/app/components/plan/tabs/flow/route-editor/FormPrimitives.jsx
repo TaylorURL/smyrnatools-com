@@ -44,7 +44,7 @@ export function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, v
     const increment = () => onChange(String(Math.min(max ?? safeNumeric + 1, safeNumeric + 1)))
     return (
         <div className="flex items-stretch rounded-lg overflow-hidden border bg-bg-primary border-border-medium transition-colors duration-150 hover:border-border-dark focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]">
-            <button
+            <button type="button"
                 type="button"
                 onClick={decrement}
                 disabled={atMin}
@@ -65,7 +65,7 @@ export function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, v
                 aria-label={ariaLabel}
                 className="flex-1 px-3 py-1.5 text-sm font-mono tabular-nums text-center bg-transparent border-none outline-none text-text-primary"
             />
-            <button
+            <button type="button"
                 type="button"
                 onClick={increment}
                 disabled={atMax}

@@ -128,7 +128,7 @@ export function BulkAssignSalesRepsModal({ accentColor, onClose, onDone }) {
                             <span className="font-mono">CustomerNumOrName, Rep Full Name</span>
                         </div>
                     </div>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         className="rounded-md p-1.5 border-none bg-transparent cursor-pointer text-text-tertiary hover:text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out"
@@ -168,7 +168,7 @@ export function BulkAssignSalesRepsModal({ accentColor, onClose, onDone }) {
 
                 {/* Footer */}
                 <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border-light bg-bg-secondary">
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         className="rounded-md px-3 py-1.5 text-[12px] font-semibold border border-border-light bg-transparent text-text-secondary cursor-pointer active:scale-[0.97] transition-[colors,transform] duration-150 ease-out hover:text-text-primary"
@@ -176,7 +176,7 @@ export function BulkAssignSalesRepsModal({ accentColor, onClose, onDone }) {
                         {result ? 'Close' : 'Cancel'}
                     </button>
                     {!result && (
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={handleAssign}
                             disabled={!text.trim() || isSaving || isLoadingUsers}

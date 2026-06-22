@@ -78,11 +78,11 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
             onBack={handleBackClick}
             headerActions={
                 <>
-                    <button className="global-button-secondary" onClick={() => setShowComments(true)}>
+                    <button type="button" className="global-button-secondary" onClick={() => setShowComments(true)}>
                         <i className="fas fa-comments"></i>
                         <span>Comments</span>
                     </button>
-                    <button className="global-button-secondary" onClick={() => setShowHistory(true)}>
+                    <button type="button" className="global-button-secondary" onClick={() => setShowHistory(true)}>
                         <i className="fas fa-history"></i>
                         <span>History</span>
                     </button>
@@ -104,7 +104,7 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
                 <>
                     {canEditOperator ? (
                         <>
-                            <button
+                            <button type="button"
                                 className="global-button-secondary flex-1 justify-center"
                                 onClick={handleSave}
                                 disabled={isSaving || !canEditOperator}
@@ -113,7 +113,7 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
                                 <span>{isSaving ? 'Saving...' : 'Save'}</span>
                             </button>
                             {canDeleteOperator && (
-                                <button
+                                <button type="button"
                                     className="global-button-secondary flex-1 justify-center"
                                     onClick={() => setShowDeleteConfirmation(true)}
                                     disabled={isSaving || !canEditOperator}

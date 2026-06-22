@@ -66,7 +66,7 @@ export function PlanFlowTimeScrubber({ hasActivity, isPlaying, onChange, onPlayT
             style={{ minWidth: 440 }}
         >
             {onPlayToggle && (
-                <button
+                <button type="button"
                     type="button"
                     onClick={onPlayToggle}
                     className={`shrink-0 w-8 h-8 rounded-full inline-flex items-center justify-center border cursor-pointer transition-[background-color,border-color,color,transform] duration-150 ease-out motion-reduce:transition-none active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary ${isPlaying ? 'border-transparent text-white' : 'border-border-light bg-bg-secondary text-text-primary hover:bg-bg-hover'}`}

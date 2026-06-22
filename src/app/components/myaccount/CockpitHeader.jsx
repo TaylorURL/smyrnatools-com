@@ -36,7 +36,7 @@ export default function CockpitHeader({
             <div className="min-w-[8px] flex-1" />
             <div className="flex shrink-0 items-center gap-1.5">
                 {onOpenMessages && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => onOpenMessages()}
                         title={
@@ -66,7 +66,7 @@ export default function CockpitHeader({
                         )}
                     </button>
                 )}
-                <button
+                <button type="button"
                     type="button"
                     onClick={onSignOut}
                     title="Sign out"
@@ -100,7 +100,7 @@ export default function CockpitHeader({
                 {tabs.map(({ icon, id, label }) => {
                     const isActive = activeTab === id
                     return (
-                        <button
+                        <button type="button"
                             key={id}
                             type="button"
                             role="tab"

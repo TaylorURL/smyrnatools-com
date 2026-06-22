@@ -195,7 +195,7 @@ export function Button({ variant = 'primary', block, children, ...props }) {
     }
     const v = variants[variant] || variants.primary
     return (
-        <button
+        <button type="button"
             {...props}
             className={`dv-btn inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold transition-[opacity,transform] duration-150 ${block ? 'w-full' : 'w-auto'} ${props.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'}`}
             style={{

@@ -65,14 +65,14 @@ export function ContactEditor({ initial, isSaving, onCancel, onSave }) {
                     Mark as primary
                 </label>
                 <div className="flex items-center gap-2">
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onCancel}
                         className="inline-flex items-center gap-1 text-[11px] font-semibold cursor-pointer border-none bg-transparent p-0 text-text-tertiary hover:underline active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     >
                         Cancel
                     </button>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={submit}
                         disabled={!canSave}

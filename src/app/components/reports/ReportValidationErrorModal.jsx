@@ -103,7 +103,7 @@ function ErrorModal({ error, onClose }) {
                     </div>
                 )}
                 <div className="text-right">
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         className="px-4 sm:px-5 py-2 sm:py-2.5 bg-accent text-white rounded-lg text-sm font-semibold hover:bg-accent-hover transition-colors"

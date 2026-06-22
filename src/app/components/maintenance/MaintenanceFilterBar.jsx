@@ -25,7 +25,7 @@ export function MaintenanceFilterBar({ onClearSearch, onSearchChange, searchPlac
                     className={`w-full ${SEARCH_INPUT_CLASS} bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary`}
                 />
                 {searchValue && onClearSearch && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClearSearch}
                         aria-label="Clear search"

@@ -234,7 +234,7 @@ export default function DashboardPodcastPanel() {
 
                 <div className="px-3 py-3 flex flex-col gap-2">
                     <div className="flex items-center gap-3">
-                        <button
+                        <button type="button"
                             type="button"
                             onClick={togglePlay}
                             disabled={!selected || audioError}
@@ -317,7 +317,7 @@ export default function DashboardPodcastPanel() {
                         ? 'bg-bg-tertiary border-border-medium text-text-primary font-semibold'
                         : 'bg-transparent border-transparent text-text-secondary font-medium hover:bg-bg-hover'
                     return (
-                        <button
+                        <button type="button"
                             key={ep.key}
                             type="button"
                             onClick={() => setSelectedKey(ep.key)}

@@ -82,7 +82,7 @@ export function PersonStatisticsSidebar({ accentColor, activeSection, onSelect, 
             {sections.map((section) => {
                 const active = section.id === activeSection
                 return (
-                    <button
+                    <button type="button"
                         key={section.id}
                         type="button"
                         onClick={() => onSelect(section.id)}
@@ -112,7 +112,7 @@ export function PersonStatisticsSectionTabs({ accentColor, activeSection, onSele
             {sections.map((section) => {
                 const active = section.id === activeSection
                 return (
-                    <button
+                    <button type="button"
                         key={section.id}
                         type="button"
                         onClick={() => onSelect(section.id)}

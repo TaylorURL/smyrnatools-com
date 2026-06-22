@@ -115,7 +115,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     </div>
                     <div className="flex items-center gap-2 mt-2">
                         {previewable && (
-                            <button
+                            <button type="button"
                                 onClick={() => onPreview(doc)}
                                 className="text-xs font-medium px-2.5 py-1 rounded-md border border-border-light bg-bg-primary text-text-secondary cursor-pointer hover:bg-bg-tertiary hover:border-border-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                             >
@@ -134,7 +134,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                             Download
                         </a>
                         {canDelete && (
-                            <button
+                            <button type="button"
                                 onClick={() => onDelete(doc)}
                                 className="text-xs font-medium px-2.5 py-1 rounded-md border border-[color:var(--danger)]/40 bg-bg-primary text-[color:var(--danger)] cursor-pointer hover:bg-[color:var(--danger)]/10 hover:border-[color:var(--danger)]/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--danger)]/40"
                             >
@@ -172,7 +172,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
             </div>
             <div className="flex items-center justify-end gap-0.5">
                 {previewable && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => onPreview(doc)}
                         className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
@@ -194,7 +194,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     <i className="fas fa-download" />
                 </a>
                 {canDelete && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => onDelete(doc)}
                         className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent text-text-tertiary transition-colors hover:bg-[color:var(--danger)]/10 hover:text-[color:var(--danger)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--danger)]/40"
@@ -234,7 +234,7 @@ function EmptyState({ canUpload, onUpload }) {
                 {canUpload ? 'Upload your first document to get started.' : 'Documents will appear here once uploaded.'}
             </p>
             {canUpload && (
-                <button
+                <button type="button"
                     type="button"
                     onClick={onUpload}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md border-none bg-accent text-white text-sm font-semibold cursor-pointer transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
@@ -270,7 +270,7 @@ function Pagination({ currentPage, totalPages, pageSize, onPageSizeChange, onPag
                 ))}
             </select>
             <div className="flex items-center gap-2">
-                <button
+                <button type="button"
                     className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
                         currentPage === 1
                             ? 'bg-bg-tertiary text-text-tertiary border-border-light cursor-not-allowed opacity-60'
@@ -286,7 +286,7 @@ function Pagination({ currentPage, totalPages, pageSize, onPageSizeChange, onPag
                 <span className="text-sm text-text-secondary tabular-nums">
                     {currentPage} / {totalPages}
                 </span>
-                <button
+                <button type="button"
                     className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
                         currentPage === totalPages
                             ? 'bg-bg-tertiary text-text-tertiary border-border-light cursor-not-allowed opacity-60'

@@ -14,7 +14,7 @@ export const SearchInput = ({ value, onChange, onClear, placeholder, className =
             aria-label={placeholder || 'Search'}
         />
         {value && onClear && (
-            <button
+            <button type="button"
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded text-[10px] cursor-pointer border-none bg-bg-tertiary text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                 onClick={onClear}
                 type="button"
@@ -30,7 +30,7 @@ export const SearchInput = ({ value, onChange, onClear, placeholder, className =
 export const ActionButton = ({ icon, label, onClick, variant = 'subtle', accentColor }) => {
     const isPrimary = variant === 'primary'
     return (
-        <button
+        <button type="button"
             type="button"
             className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer border-none"
             style={{
@@ -57,7 +57,7 @@ export const ViewToggle = ({ viewMode, onChange, accentColor }) => (
         {['list', 'grid'].map((mode) => {
             const isActive = viewMode === mode
             return (
-                <button
+                <button type="button"
                     key={mode}
                     type="button"
                     className="flex items-center justify-center w-7 h-7 text-[12px] cursor-pointer border-none"
@@ -98,7 +98,7 @@ export const FilterSelect = ({ value, options, onChange, ariaLabel, className = 
 
 /** Reset filters button — square, flat. */
 export const ResetButton = ({ onClick }) => (
-    <button
+    <button type="button"
         type="button"
         className="flex items-center justify-center w-7 h-7 rounded text-[12px] cursor-pointer border-none bg-bg-secondary border border-border-light text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
         onClick={onClick}
@@ -117,7 +117,7 @@ export const ListHeader = ({ labels, colWidths, sortKey, sortDirection, onHeader
             const isFlex = colWidth === 'flex' || colWidth === 'auto'
             const isActive = sortKey === label
             return (
-                <button
+                <button type="button"
                     key={label}
                     type="button"
                     className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider py-2 px-2 cursor-pointer select-none border-none bg-transparent"
@@ -150,7 +150,7 @@ export const MobileViewToggle = ({ viewMode, onChange, accentColor }) => (
         ].map(({ mode, icon, label }) => {
             const isActive = viewMode === mode
             return (
-                <button
+                <button type="button"
                     key={mode}
                     type="button"
                     className="flex items-center justify-center gap-1.5 flex-1 rounded text-[12px] font-semibold py-2 cursor-pointer"

@@ -39,7 +39,7 @@ export function CrmTabSwitcher({ accentColor, activeTab, canManage = false, onSe
             {visibleTabs.map(({ icon, id, label }) => {
                 const isActive = activeTab === id
                 return (
-                    <button
+                    <button type="button"
                         key={id}
                         type="button"
                         role="tab"

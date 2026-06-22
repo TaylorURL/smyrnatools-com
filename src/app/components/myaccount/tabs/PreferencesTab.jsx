@@ -59,7 +59,7 @@ export default function PreferencesTab({
                                 {ACCENT_PRESETS.map(({ color, name }) => {
                                     const isActive = (preferences.accentColor || '#2A3163') === color
                                     return (
-                                        <button
+                                        <button type="button"
                                             key={color}
                                             onClick={() => updatePreferences('accentColor', color)}
                                             className="relative h-10 w-10 rounded-lg transition-transform duration-150 ease-out motion-reduce:transition-none hover:scale-105 active:scale-[0.97]"

@@ -16,7 +16,7 @@ export default function AccountSideNav({ accentColor, activeId, onJump, sections
                 {sections.map(({ icon, id, label }) => {
                     const isActive = activeId === id
                     return (
-                        <button
+                        <button type="button"
                             key={id}
                             type="button"
                             onClick={() => onJump(id)}

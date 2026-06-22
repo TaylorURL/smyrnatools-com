@@ -20,7 +20,7 @@ function ErrorMessage({ message, onDismiss, className = '' }) {
             <i className="fas fa-exclamation-triangle mt-0.5 text-status-danger shrink-0" aria-hidden="true" />
             <span className="flex-1 text-text-primary">{message}</span>
             {onDismiss && (
-                <button
+                <button type="button"
                     type="button"
                     onClick={onDismiss}
                     aria-label="Dismiss error"

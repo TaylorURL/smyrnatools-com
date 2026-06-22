@@ -148,7 +148,7 @@ export default function ListInlineMenu({
                     const isSelected = opt.value === selectedValue
                     const isHighlighted = idx === highlightIdx
                     return (
-                        <button
+                        <button type="button"
                             key={opt.value}
                             type="button"
                             role="option"

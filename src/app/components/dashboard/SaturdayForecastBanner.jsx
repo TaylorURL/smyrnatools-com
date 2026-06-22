@@ -38,7 +38,7 @@ export default function SaturdayForecastBanner() {
     return (
         <>
             <div className="px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4">
-                <button
+                <button type="button"
                     type="button"
                     onClick={openModal}
                     aria-label={`Open Saturday operator forecast form for ${saturdayLabel}`}

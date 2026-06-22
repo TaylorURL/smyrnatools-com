@@ -35,7 +35,7 @@ const PageSizeSelect = ({ value, onChange }) => (
 )
 
 const PageButton = ({ disabled, onClick, children }) => (
-    <button
+    <button type="button"
         type="button"
         className="px-2.5 py-1 text-[11px] font-semibold rounded uppercase tracking-wider border border-border-light transition-colors duration-150 hover:enabled:bg-bg-tertiary hover:enabled:border-border-medium disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
         style={{
@@ -111,7 +111,7 @@ const LostLoadRow = ({ report, getUserName, accentColor, canDelete, onDelete, on
                 </div>
             </div>
             <span className={`${STATUS_PILL_BASE} bg-green-100 text-text-primary`}>Submitted</span>
-            <button
+            <button type="button"
                 className="ml-2 px-2 py-1 rounded text-white text-[10.5px] font-semibold shrink-0 hidden sm:inline-flex uppercase tracking-wider"
                 style={{ background: accentColor }}
                 onClick={(e) => {
@@ -122,7 +122,7 @@ const LostLoadRow = ({ report, getUserName, accentColor, canDelete, onDelete, on
                 View
             </button>
             {canDelete && (
-                <button
+                <button type="button"
                     type="button"
                     onClick={async (e) => {
                         e.stopPropagation()

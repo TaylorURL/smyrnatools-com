@@ -26,7 +26,7 @@ function AssetTabBar({ accentColor, activeTab, onChange, tabs }) {
             {tabs.map((tab) => {
                 const active = tab.id === activeTab
                 return (
-                    <button
+                    <button type="button"
                         key={tab.id}
                         type="button"
                         role="tab"

@@ -242,7 +242,7 @@ function InteractionTypeFilterRow({ accentColor, activeFilter, onSelect }) {
             {INTERACTION_TYPE_FILTERS.map(({ id, label }) => {
                 const isActive = activeFilter === id
                 return (
-                    <button
+                    <button type="button"
                         key={id}
                         type="button"
                         onClick={() => onSelect(id)}

@@ -71,7 +71,7 @@ export default function EmbeddedViewModal({
                             </span>
                         )}
                     </div>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         className="flex items-center justify-center w-9 h-9 rounded-md bg-white/10 transition-all duration-150 hover:bg-white/20 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"

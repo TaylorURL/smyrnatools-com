@@ -111,7 +111,7 @@ function SpotlightCard({ customers, emptyHint, icon, label, metric, onSelect, to
                     const fillPct = Math.max(4, (value / topValue) * 100)
                     return (
                         <li key={c.key} className="flex flex-col gap-1">
-                            <button
+                            <button type="button"
                                 type="button"
                                 onClick={() => onSelect(c.key)}
                                 className="w-full text-left flex items-center gap-2 bg-transparent border-none p-0 cursor-pointer active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -325,7 +325,7 @@ export default function PlanStatisticsMovesCancelsPage({
                                 aria-label="Customer filter"
                             />
                             {filterText && (
-                                <button
+                                <button type="button"
                                     type="button"
                                     onClick={() => setFilterText('')}
                                     aria-label="Clear search"

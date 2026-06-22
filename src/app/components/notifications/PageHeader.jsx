@@ -36,7 +36,7 @@ export default function PageHeader({ accentColor, conversationCount = 0, onCompo
             )}
             <div className="flex-1 min-w-[8px]" />
             {unreadCount > 0 && (
-                <button
+                <button type="button"
                     type="button"
                     onClick={onMarkAllRead}
                     className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 bg-bg-tertiary text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
@@ -45,7 +45,7 @@ export default function PageHeader({ accentColor, conversationCount = 0, onCompo
                     <span className="hidden sm:inline">Mark all read</span>
                 </button>
             )}
-            <button
+            <button type="button"
                 type="button"
                 onClick={onCompose}
                 className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"

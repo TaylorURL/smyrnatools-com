@@ -164,7 +164,7 @@ function VerificationCardSection({
                     </div>
                 </div>
                 {!isVerified && canEdit && !verificationDisabled && (
-                    <button
+                    <button type="button"
                         onClick={onVerify}
                         data-verify-trigger="true"
                         className="flex items-center gap-2 border-none rounded-[10px] text-white cursor-pointer text-sm font-semibold py-3 px-5"

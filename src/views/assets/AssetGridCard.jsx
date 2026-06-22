@@ -53,7 +53,7 @@ function CountBadge({ count, tone = 'accent' }) {
  */
 function CardFooterAction({ count, countTone, icon, label, onActivate, divider }) {
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={(event) => {
                 event.stopPropagation()
@@ -87,7 +87,7 @@ function CardFooterAction({ count, countTone, icon, label, onActivate, divider }
  */
 function AssignmentIconButton({ ariaLabel, count, icon, onActivate }) {
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={(event) => {
                 event.stopPropagation()

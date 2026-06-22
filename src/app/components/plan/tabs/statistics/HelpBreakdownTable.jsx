@@ -109,7 +109,7 @@ function PopoverStarRow({ filled, total = 5 }) {
 function HelpScoreInfo() {
     return (
         <span className="relative inline-flex items-center group">
-            <button
+            <button type="button"
                 type="button"
                 className="inline-flex h-4 w-4 items-center justify-center rounded-full border-none bg-transparent text-text-tertiary hover:text-text-primary focus:text-text-primary focus:outline-none cursor-help peer active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 aria-label="How the help score is calculated"

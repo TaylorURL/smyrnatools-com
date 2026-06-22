@@ -81,7 +81,7 @@ function SortHeader({ activeKey, align = 'right', children, onSelect, sortKey })
             className={`text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 border-b border-border-light bg-bg-tertiary whitespace-nowrap ${alignClass}`}
             style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
         >
-            <button
+            <button type="button"
                 type="button"
                 onClick={() => onSelect(sortKey)}
                 className="bg-transparent border-none p-0 cursor-pointer inline-flex items-center gap-1.5 font-semibold uppercase tracking-wider active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"

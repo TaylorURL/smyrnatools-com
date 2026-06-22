@@ -19,7 +19,7 @@ export default function StartPageDropdown({ accentColor, onChange, value }) {
 
     return (
         <div ref={ref} className="relative">
-            <button
+            <button type="button"
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
                 aria-haspopup="listbox"
@@ -50,7 +50,7 @@ export default function StartPageDropdown({ accentColor, onChange, value }) {
                     {START_PAGE_OPTIONS.map(({ icon, id }) => {
                         const isActive = id === value
                         return (
-                            <button
+                            <button type="button"
                                 key={id}
                                 type="button"
                                 role="option"

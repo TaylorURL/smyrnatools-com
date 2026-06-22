@@ -51,7 +51,7 @@ export function PlanSettingsRoutesPanel({
                         onChange={(e) => setNewTravelTime({ ...newTravelTime, minutes: e.target.value })}
                         className="border rounded-lg text-sm outline-none py-1.5 px-2 text-center w-[60px] bg-bg-primary border-border-medium text-text-primary focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
                     />
-                    <button
+                    <button type="button"
                         onClick={addTravelTime}
                         className="border-none rounded-lg cursor-pointer text-sm font-semibold px-3 py-1.5 text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{ background: accentColor }}
@@ -101,7 +101,7 @@ function RouteRow({ accentColor, minutes, onRemove, routeKey }) {
                 <span className="text-xs font-bold" style={{ color: accentColor }}>
                     {minutes} min
                 </span>
-                <button
+                <button type="button"
                     onClick={onRemove}
                     aria-label="Remove route"
                     className="bg-transparent border-none cursor-pointer p-1 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors duration-150 active:scale-[0.92] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"

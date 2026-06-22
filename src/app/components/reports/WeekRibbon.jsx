@@ -45,7 +45,7 @@ function WeekRibbon({ weeks, activeIso, onPick }) {
                 // the 1px → 2px border swap doesn't shift the inner content.
                 const padding = isActive ? '5px 11px' : '6px 12px'
                 return (
-                    <button
+                    <button type="button"
                         key={wk.iso}
                         ref={isActive ? activeRef : undefined}
                         type="button"

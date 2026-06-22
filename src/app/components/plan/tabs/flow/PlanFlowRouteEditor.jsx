@@ -145,7 +145,7 @@ export function PlanFlowRouteEditor({
     return (
         <div className="px-4 py-4 flex flex-col gap-4">
             <div className="flex items-center gap-2">
-                <button
+                <button type="button"
                     onClick={onCancel}
                     className="border-none bg-transparent cursor-pointer flex items-center gap-1 text-[12px] font-semibold text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
@@ -182,7 +182,7 @@ export function PlanFlowRouteEditor({
                             className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none text-text-tertiary"
                         />
                     </div>
-                    <button
+                    <button type="button"
                         onClick={() => setPickingDestination((value) => !value)}
                         className="px-3 rounded-lg text-[12px] font-semibold border cursor-pointer flex items-center gap-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                         style={{
@@ -300,20 +300,20 @@ export function PlanFlowRouteEditor({
 
             <div className="flex gap-2 pt-1">
                 {onDelete && (
-                    <button
+                    <button type="button"
                         onClick={onDelete}
                         className="px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer border bg-bg-primary border-border-medium text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                     >
                         <i className="fas fa-trash mr-1" /> Delete
                     </button>
                 )}
-                <button
+                <button type="button"
                     onClick={onCancel}
                     className="px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer border bg-bg-primary border-border-medium text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 >
                     Cancel
                 </button>
-                <button
+                <button type="button"
                     onClick={onSubmit}
                     disabled={!draft.toPlant || !timingComplete}
                     className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold text-white border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none disabled:active:scale-100"

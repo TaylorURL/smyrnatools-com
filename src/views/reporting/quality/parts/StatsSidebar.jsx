@@ -103,7 +103,7 @@ export default function StatsSidebar({ issues, onRefresh, refreshing }) {
                 title="Issue stats"
                 sub="Live counts and cost rollups across the visible scope."
                 right={
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onRefresh}
                         disabled={refreshing}

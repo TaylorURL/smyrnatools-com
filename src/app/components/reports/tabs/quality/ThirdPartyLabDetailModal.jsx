@@ -75,7 +75,7 @@ function ThirdPartyLabDetailModal({ report, getUserName, onClose, onReviewed }) 
                             </div>
                         </div>
                     </div>
-                    <button
+                    <button type="button"
                         onClick={onClose}
                         aria-label="Close"
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer border-none bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
@@ -120,7 +120,7 @@ function ThirdPartyLabDetailModal({ report, getUserName, onClose, onReviewed }) 
                                 {attachments.map((att, i) => {
                                     const isVid = att.type?.startsWith('video/')
                                     return (
-                                        <button
+                                        <button type="button"
                                             key={i}
                                             type="button"
                                             onClick={() => setViewerIndex(i)}
@@ -181,14 +181,14 @@ function ThirdPartyLabDetailModal({ report, getUserName, onClose, onReviewed }) 
                         )}
                     </div>
                     <div className="flex items-center gap-3">
-                        <button
+                        <button type="button"
                             onClick={onClose}
                             className="px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 bg-slate-100 border-none cursor-pointer hover:bg-slate-200 transition-colors"
                         >
                             Close
                         </button>
                         {!report?.reviewed && (
-                            <button
+                            <button type="button"
                                 onClick={handleMarkReviewed}
                                 disabled={marking}
                                 className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white border-none cursor-pointer transition-colors disabled:opacity-50"

@@ -89,7 +89,7 @@ function TractorOperatorAssignmentField({
         <>
             <div className="form-group">
                 <label>Assigned Plant</label>
-                <button
+                <button type="button"
                     className={`operator-select-button form-control text-left active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none ${plantDisabled ? DISABLED_FIELD_CLASSES : ''}`}
                     onClick={() => canEditTractor && setShowPlantModal(true)}
                     type="button"
@@ -101,7 +101,7 @@ function TractorOperatorAssignmentField({
             <div className="form-group">
                 <label>Assigned Operator</label>
                 <div className="operator-select-container">
-                    <button
+                    <button type="button"
                         className={`operator-select-button form-control text-left active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none ${operatorDisabled ? DISABLED_FIELD_CLASSES : ''}`}
                         onClick={async () => {
                             if (canEditTractor) {
@@ -118,7 +118,7 @@ function TractorOperatorAssignmentField({
                     </button>
                     {canEditTractor &&
                         (assignedOperator ? (
-                            <button
+                            <button type="button"
                                 className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                 aria-label="Unassign Operator"
                                 onClick={handleUnassign}
@@ -128,7 +128,7 @@ function TractorOperatorAssignmentField({
                             </button>
                         ) : (
                             lastUnassignedOperatorId && (
-                                <button
+                                <button type="button"
                                     className={UNDO_BUTTON_CLASSES}
                                     aria-label="Undo Unassign"
                                     onClick={handleUndoUnassign}

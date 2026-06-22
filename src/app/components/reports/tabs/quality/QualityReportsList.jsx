@@ -57,7 +57,7 @@ function QualityReportRow({ accent, getUserName, onDelete, onOpen, report }) {
                     Pending
                 </Badge>
             )}
-            <button
+            <button type="button"
                 className="ml-2 px-2 py-1 rounded text-white text-[10.5px] font-semibold shrink-0 hidden sm:inline-flex uppercase tracking-wider"
                 style={{ background: accent }}
                 onClick={(e) => {
@@ -67,7 +67,7 @@ function QualityReportRow({ accent, getUserName, onDelete, onOpen, report }) {
             >
                 {report.reviewed ? 'View' : 'Review'}
             </button>
-            <button
+            <button type="button"
                 type="button"
                 onClick={(e) => {
                     e.stopPropagation()

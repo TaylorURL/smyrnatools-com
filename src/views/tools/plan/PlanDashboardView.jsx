@@ -339,7 +339,7 @@ function PlanDashboardView({
                                     </div>
                                     <div className="flex flex-col gap-1">
                                         {mySpecialJobs.map((job) => (
-                                            <button
+                                            <button type="button"
                                                 key={`alert-s-${job.id}`}
                                                 onClick={() => jumpTo('special')}
                                                 className="text-left text-[12px] border-none cursor-pointer bg-transparent flex items-baseline gap-2 px-0 py-0.5 text-text-secondary"
@@ -350,7 +350,7 @@ function PlanDashboardView({
                                             </button>
                                         ))}
                                         {myQcJobs.map((job) => (
-                                            <button
+                                            <button type="button"
                                                 key={`alert-q-${job.id}`}
                                                 onClick={() => jumpTo('qc')}
                                                 className="text-left text-[12px] border-none cursor-pointer bg-transparent flex items-baseline gap-2 px-0 py-0.5 text-text-secondary"

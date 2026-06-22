@@ -320,7 +320,7 @@ export default function VerificationRequirementsModal({
                                         Review the items below before confirming verification.
                                     </p>
                                 </div>
-                                <button
+                                <button type="button"
                                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.92]"
                                     onClick={onClose}
                                     title="Close"
@@ -438,14 +438,14 @@ export default function VerificationRequirementsModal({
                         </div>
 
                         <div className="flex gap-2 px-4 py-3 shrink-0 bg-bg-primary border-t border-border-light">
-                            <button
+                            <button type="button"
                                 onClick={onClose}
                                 disabled={isVerifying}
                                 className="rounded-md px-4 py-2 text-[12.5px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.97] disabled:active:scale-100"
                             >
                                 Cancel
                             </button>
-                            <button
+                            <button type="button"
                                 onClick={handleSaveAndVerify}
                                 disabled={!canVerify || isVerifying}
                                 aria-busy={isVerifying}

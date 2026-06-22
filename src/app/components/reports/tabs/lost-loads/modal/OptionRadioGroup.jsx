@@ -17,7 +17,7 @@ function OptionRadioGroup({ label, required, options, value, onChange, accentCol
                 {options.map((option) => {
                     const isSelected = value === option
                     return (
-                        <button
+                        <button type="button"
                             key={option}
                             type="button"
                             onClick={() => onChange(option)}

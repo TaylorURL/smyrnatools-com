@@ -26,7 +26,7 @@ export default function ManagerAssignmentCard({
         <DetailViewSection.Card title="Assignment" icon="fas fa-building">
             <div className="form-group">
                 <label>Plant</label>
-                <button
+                <button type="button"
                     className={`operator-select-button form-control text-left ${readOnly ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                     onClick={() => !readOnly && onOpenPlantModal()}
                     type="button"
@@ -37,7 +37,7 @@ export default function ManagerAssignmentCard({
             </div>
             <div className="form-group">
                 <label>Additional Plants</label>
-                <button
+                <button type="button"
                     className={`operator-select-button form-control text-left ${readOnly ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                     onClick={() => !readOnly && onOpenAdditionalPlantsModal()}
                     type="button"

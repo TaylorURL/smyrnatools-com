@@ -124,7 +124,7 @@ function Toolbar({ filterText, setFilterText, sortKey, sortDir, setSort }) {
         { key: 'lph', label: 'L/H' }
     ]
     const ToolbarBtn = ({ active, children, onClick, title }) => (
-        <button
+        <button type="button"
             type="button"
             onClick={onClick}
             title={title}
@@ -359,7 +359,7 @@ function EfficiencyPluginBody({ form, operatorOptions, sidebarStats = false, pla
         }
     }
     const exportButton = (
-        <button
+        <button type="button"
             type="button"
             onClick={handleExport}
             disabled={isExporting || !rows.length}

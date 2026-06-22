@@ -218,7 +218,7 @@ export default function SaturdayForecastModal({
                             </span>
                         </p>
                     </div>
-                    <button
+                    <button type="button"
                         ref={closeButtonRef}
                         type="button"
                         onClick={onClose}
@@ -318,7 +318,7 @@ export default function SaturdayForecastModal({
                 </div>
 
                 <footer className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border-light bg-bg-secondary">
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         disabled={submitting}
@@ -326,7 +326,7 @@ export default function SaturdayForecastModal({
                     >
                         Close
                     </button>
-                    <button
+                    <button type="button"
                         ref={submitButtonRef}
                         type="button"
                         onClick={handleSubmit}

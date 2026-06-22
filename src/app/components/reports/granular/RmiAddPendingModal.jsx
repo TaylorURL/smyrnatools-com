@@ -48,7 +48,7 @@ export default function RmiAddPendingModal({
                 />
             </ModalField>
             <ModalField icon="fa-industry" label="Assign to Plant" required>
-                <button
+                <button type="button"
                     type="button"
                     className={`${FIELD_INPUT_CLASS} flex items-center justify-between text-left cursor-pointer`}
                     style={FIELD_STYLE}

@@ -86,7 +86,7 @@ export function ReportsHomeOfficeGate({ userId }) {
                             const shape = toSelectedRegionShape(region)
                             return (
                                 <li key={shape.code}>
-                                    <button
+                                    <button type="button"
                                         type="button"
                                         onClick={() => handleSelect(region)}
                                         className="w-full text-left rounded-md px-3 py-2.5 flex items-center justify-between gap-3 cursor-pointer border bg-bg-secondary border-border-light hover:bg-bg-tertiary transition-colors"

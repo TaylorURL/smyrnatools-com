@@ -253,7 +253,7 @@ export default function DashboardAlertsPanel({
                     />
                 ))}
                 {canExpand && (
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={() => setExpanded((prev) => !prev)}
                         aria-expanded={expanded}

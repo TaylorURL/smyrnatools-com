@@ -37,7 +37,7 @@ function PeriodSelector({ accentColor, period, setPeriod }) {
             className="flex items-center rounded-lg p-0.5 bg-bg-tertiary border border-border-light"
         >
             {PLAN_STATS_PERIODS.map(({ id, label }) => (
-                <button
+                <button type="button"
                     key={id}
                     onClick={() => setPeriod(id)}
                     aria-pressed={period === id}
@@ -93,7 +93,7 @@ function PeriodNavigator({
     const periodLabel = formatPeriodLabel(period, range)
     return (
         <div className="inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1 py-0.5 bg-bg-tertiary border border-border-light">
-            <button
+            <button type="button"
                 onClick={() => setAnchor(shiftAnchor(anchor, period, -1))}
                 className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors duration-150 active:scale-[0.92] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                 title="Previous period"
@@ -102,7 +102,7 @@ function PeriodNavigator({
                 <i className="fas fa-chevron-left text-xs" />
             </button>
             <span className="px-2 text-xs font-semibold text-text-primary">{periodLabel}</span>
-            <button
+            <button type="button"
                 onClick={() => setAnchor(shiftAnchor(anchor, period, 1))}
                 className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors duration-150 active:scale-[0.92] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                 title="Next period"
@@ -110,7 +110,7 @@ function PeriodNavigator({
             >
                 <i className="fas fa-chevron-right text-xs" />
             </button>
-            <button
+            <button type="button"
                 onClick={() => setAnchor(getTodayDate())}
                 className="border-none bg-transparent cursor-pointer px-2 py-1 rounded text-xs font-semibold active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{ color: 'var(--text-primary)' }}
@@ -130,7 +130,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
     useClickOutsideToClose(open, setOpen, triggerRef, menuRef)
     return (
         <div className="relative ml-auto shrink-0">
-            <button
+            <button type="button"
                 ref={triggerRef}
                 type="button"
                 onClick={() => setOpen((s) => !s)}
@@ -161,7 +161,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                         className="fixed rounded-lg overflow-hidden shadow-lg z-50 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light origin-top-right animate-[fadeSlideIn_180ms_ease-out_both] motion-reduce:animate-none"
                         style={{ right: pos.right, top: pos.top }}
                     >
-                        <button
+                        <button type="button"
                             type="button"
                             role="option"
                             aria-selected={!selectedPlant}
@@ -182,7 +182,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                             <div className="px-3 py-2 text-[11px] text-text-tertiary">No plants in this range</div>
                         ) : (
                             availablePlants.map(({ code, label }) => (
-                                <button
+                                <button type="button"
                                     key={code}
                                     type="button"
                                     role="option"
@@ -220,7 +220,7 @@ function ComparisonMenu({ accentColor, comparison, setComparison }) {
     useClickOutsideToClose(open, setOpen, triggerRef, menuRef)
     return (
         <div className="relative shrink-0">
-            <button
+            <button type="button"
                 ref={triggerRef}
                 type="button"
                 onClick={() => setOpen((s) => !s)}
@@ -252,7 +252,7 @@ function ComparisonMenu({ accentColor, comparison, setComparison }) {
                         style={{ right: pos.right, top: pos.top }}
                     >
                         {PLAN_STATS_COMPARISONS.map(({ id, label }) => (
-                            <button
+                            <button type="button"
                                 key={id}
                                 type="button"
                                 role="option"

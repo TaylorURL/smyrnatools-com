@@ -23,7 +23,7 @@ export function CrmViewToggle({ accentColor, onChange, value }) {
             {OPTIONS.map((opt) => {
                 const active = value === opt.id
                 return (
-                    <button
+                    <button type="button"
                         key={opt.id}
                         type="button"
                         onClick={() => onChange(opt.id)}

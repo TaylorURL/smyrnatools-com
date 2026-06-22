@@ -59,7 +59,7 @@ function ContextActionButton({ accentColor, active = false, danger = false, icon
           ? { background: `${accentColor}14`, borderColor: `${accentColor}55`, color: 'var(--text-primary)' }
           : { background: 'var(--bg-secondary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={onClick}
             className="flex items-center gap-2 rounded px-3 py-2 text-[12px] font-semibold cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 border active:scale-[0.97]"
@@ -159,7 +159,7 @@ export default function ConversationContextRail({
                                 })()
                                 const isViewable = !!resolveAttachmentView(type, meta)
                                 return (
-                                    <button
+                                    <button type="button"
                                         key={`${type}-${meta.itemNumber || Math.random()}`}
                                         type="button"
                                         onClick={() => isViewable && onAttachmentClick?.(type, meta)}

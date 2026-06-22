@@ -26,7 +26,7 @@ export default function ListEmptyState({ hasSearchOrPlant, onReset, onAddClick, 
         body = 'Try adjusting filters, or clear them to see everything.'
         if (onReset) {
             action = (
-                <button
+                <button type="button"
                     onClick={onReset}
                     type="button"
                     className="inline-flex items-center gap-1.5 rounded-md border border-border-light bg-bg-primary px-3 py-1.5 text-[12px] font-medium text-text-primary transition-[background-color,transform] duration-150 hover:bg-bg-secondary active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -38,7 +38,7 @@ export default function ListEmptyState({ hasSearchOrPlant, onReset, onAddClick, 
         }
     } else if (onAddClick) {
         action = (
-            <button
+            <button type="button"
                 onClick={onAddClick}
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-md border border-border-light bg-bg-primary px-3 py-1.5 text-[12px] font-medium text-text-primary transition-[background-color,transform] duration-150 hover:bg-bg-secondary active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"

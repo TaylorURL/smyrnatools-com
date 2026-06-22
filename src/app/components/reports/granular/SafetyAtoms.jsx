@@ -150,7 +150,7 @@ export function IssueCardHeader({ idx, issue, onRemove, readOnly }) {
                 )}
             </div>
             {!readOnly && onRemove && (
-                <button
+                <button type="button"
                     type="button"
                     onClick={onRemove}
                     title="Remove issue"

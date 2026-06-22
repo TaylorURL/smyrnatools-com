@@ -126,7 +126,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             {isEditing ? 'Edit Lost Load Report' : 'Lost Load Report'}
                         </h2>
                     </div>
-                    <button
+                    <button type="button"
                         onClick={onClose}
                         aria-label="Close"
                         className="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
@@ -292,14 +292,14 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                     />
                 </div>
                 <div className="px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 sticky bottom-0 bg-bg-primary border-t border-border-light z-10 border-t border-border-light">
-                    <button
+                    <button type="button"
                         onClick={onClose}
                         className="px-4 py-2.5 rounded-lg text-sm font-medium bg-bg-secondary text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         type="button"
                     >
                         Cancel
                     </button>
-                    <button
+                    <button type="button"
                         onClick={handleSubmit}
                         disabled={submitting}
                         className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-[background-color,opacity] duration-150 hover:brightness-110 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"

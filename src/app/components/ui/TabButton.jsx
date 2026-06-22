@@ -10,7 +10,7 @@ export default function TabButton({ label, isActive, onClick, className = '' }) 
         ? 'bg-bg-primary border-border-light text-text-primary shadow-sm'
         : 'bg-transparent border-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary'
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={onClick}
             aria-pressed={isActive}

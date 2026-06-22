@@ -83,7 +83,7 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                         </div>
                         <div className="truncate text-[12px] text-text-tertiary">{plantCode}</div>
                     </div>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         disabled={isSaving}
@@ -107,7 +107,7 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                     )}
                 </div>
                 <div className="flex justify-end gap-2 border-t border-border-light bg-bg-secondary px-5 py-3">
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         disabled={isSaving}
@@ -115,7 +115,7 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                     >
                         Cancel
                     </button>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={handleSave}
                         disabled={isSaving}

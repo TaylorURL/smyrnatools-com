@@ -40,7 +40,7 @@ export default function HistoryViewModal({
                             </h2>
                         </div>
                     </div>
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         aria-label="Close history"
@@ -63,7 +63,7 @@ export default function HistoryViewModal({
                     {children}
                 </div>
                 <div className="flex justify-end gap-2 border-t border-border-light bg-bg-secondary px-4 py-2.5">
-                    <button
+                    <button type="button"
                         type="button"
                         onClick={onClose}
                         className="inline-flex items-center rounded-md border border-border-light bg-bg-primary px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-text-primary transition-colors duration-150 ease-out hover:bg-bg-hover hover:border-border-medium active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"

@@ -63,7 +63,7 @@ function PhoneControl({ accentColor, isSavingPhone, onChange, onSave, phoneOk, v
                         borderColor: !phoneOk ? '#dc2626' : 'var(--border-light)'
                     }}
                 />
-                <button
+                <button type="button"
                     onClick={onSave}
                     disabled={isSavingPhone || !value.trim()}
                     className="flex h-9 w-9 items-center justify-center rounded-md text-white border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 active:scale-[0.92] disabled:active:scale-100"

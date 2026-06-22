@@ -29,7 +29,7 @@ function PlantPickerField({
                 <label htmlFor={htmlFor} className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
                     {label}
                 </label>
-                <button
+                <button type="button"
                     id={htmlFor}
                     type="button"
                     onClick={openPicker}

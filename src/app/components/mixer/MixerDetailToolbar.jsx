@@ -7,15 +7,15 @@ const footerButtonClasses = `${buttonClasses} flex-1 justify-center`
 export function MixerDetailHeaderActions({ onOpenComments, onOpenHistory, onOpenIssues }) {
     return (
         <>
-            <button className={buttonClasses} onClick={onOpenIssues}>
+            <button type="button" className={buttonClasses} onClick={onOpenIssues}>
                 <i className="fas fa-tools"></i>
                 <span>Issues</span>
             </button>
-            <button className={buttonClasses} onClick={onOpenComments}>
+            <button type="button" className={buttonClasses} onClick={onOpenComments}>
                 <i className="fas fa-comments"></i>
                 <span>Comments</span>
             </button>
-            <button className={buttonClasses} onClick={onOpenHistory}>
+            <button type="button" className={buttonClasses} onClick={onOpenHistory}>
                 <i className="fas fa-history"></i>
                 <span>History</span>
             </button>
@@ -27,12 +27,12 @@ export function MixerDetailHeaderActions({ onOpenComments, onOpenHistory, onOpen
 export function MixerDetailFooterActions({ canDeleteMixer, isSaving, onDelete, onSave }) {
     return (
         <>
-            <button className={footerButtonClasses} onClick={onSave} disabled={isSaving}>
+            <button type="button" className={footerButtonClasses} onClick={onSave} disabled={isSaving}>
                 <i className="fas fa-save"></i>
                 <span>{isSaving ? 'Saving...' : 'Save'}</span>
             </button>
             {canDeleteMixer && (
-                <button className={footerButtonClasses} onClick={onDelete} disabled={isSaving}>
+                <button type="button" className={footerButtonClasses} onClick={onDelete} disabled={isSaving}>
                     <i className="fas fa-trash-alt"></i>
                     <span>Delete</span>
                 </button>

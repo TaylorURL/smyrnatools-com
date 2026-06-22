@@ -165,7 +165,7 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
                 <div className="flex items-center gap-1.5 sm:gap-2">
                     {!isVideo && (
                         <>
-                            <button
+                            <button type="button"
                                 onClick={() => setZoom((z) => Math.max(z - 0.5, 0.5))}
                                 aria-label="Zoom out"
                                 className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
@@ -175,14 +175,14 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
                             <span className="text-white/50 text-[10px] sm:text-xs tabular-nums w-10 sm:w-12 text-center hidden sm:block">
                                 {Math.round(zoom * 100)}%
                             </span>
-                            <button
+                            <button type="button"
                                 onClick={() => setZoom((z) => Math.min(z + 0.5, 5))}
                                 aria-label="Zoom in"
                                 className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                             >
                                 <i className="fas fa-search-plus text-xs" />
                             </button>
-                            <button
+                            <button type="button"
                                 onClick={resetView}
                                 aria-label="Reset view"
                                 className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors hidden sm:flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
@@ -201,7 +201,7 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
                     >
                         <i className="fas fa-external-link-alt text-xs" />
                     </a>
-                    <button
+                    <button type="button"
                         onClick={onClose}
                         aria-label="Close"
                         className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
@@ -219,7 +219,7 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
             >
                 {/* Prev */}
                 {hasPrev && (
-                    <button
+                    <button type="button"
                         onClick={() => goTo(index - 1)}
                         className="absolute left-2 sm:left-4 z-10 w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors"
                     >
@@ -257,7 +257,7 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
 
                 {/* Next */}
                 {hasNext && (
-                    <button
+                    <button type="button"
                         onClick={() => goTo(index + 1)}
                         className="absolute right-2 sm:right-4 z-10 w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-white/10 text-white/70 active:bg-white/30 hover:bg-white/20 border-none cursor-pointer flex items-center justify-center transition-colors"
                     >
@@ -273,7 +273,7 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
                         const isVid = att.type?.startsWith('video/')
                         const isActive = i === index
                         return (
-                            <button
+                            <button type="button"
                                 key={att.url || i}
                                 onClick={() => goTo(i)}
                                 className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${

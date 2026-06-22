@@ -32,7 +32,7 @@ export default function DetailViewTransferModal({
                     <span className="flex items-center gap-2.5 text-[15px] font-semibold text-white">
                         <i className="fas fa-exchange-alt"></i> Transfer Region
                     </span>
-                    <button
+                    <button type="button"
                         onClick={closeTransfer}
                         aria-label="Close"
                         className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-white/15 text-sm text-white cursor-pointer hover:bg-white/25 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
@@ -116,14 +116,14 @@ export default function DetailViewTransferModal({
                     )}
                 </div>
                 <div className="flex gap-2.5 border-t border-border-light bg-slate-50 px-5 py-3.5">
-                    <button
+                    <button type="button"
                         className="dv-btn flex-1 rounded-[10px] border-none bg-slate-100 px-4 py-2.5 text-[13px] font-semibold text-slate-600 cursor-pointer"
                         onClick={closeTransfer}
                         disabled={transferring}
                     >
                         Cancel
                     </button>
-                    <button
+                    <button type="button"
                         className="dv-btn flex-1 flex items-center justify-center gap-2 rounded-[10px] border-none px-4 py-2.5 text-[13px] font-semibold text-white"
                         onClick={doTransfer}
                         disabled={transferring || !targetRegion || !targetPlant}

@@ -102,7 +102,7 @@ export function CrmTable({
                                     style={{ boxShadow: '0 1px 0 0 var(--border-light)' }}
                                 >
                                     {sortable ? (
-                                        <button
+                                        <button type="button"
                                             type="button"
                                             onClick={() => cycleSort(col)}
                                             className={`group -mx-1 inline-flex items-center gap-1.5 rounded px-1 py-0.5 cursor-pointer select-none border-none bg-transparent uppercase tracking-wider text-[10.5px] font-bold transition-colors duration-150 ${active ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_35%,transparent)]`}

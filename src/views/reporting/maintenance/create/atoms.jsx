@@ -39,7 +39,7 @@ export function FieldLabel({ children, required }) {
 
 export function PrimaryButton({ accentColor, children, disabled, icon, onClick, type = 'button' }) {
     return (
-        <button
+        <button type="button"
             type={type}
             onClick={onClick}
             disabled={disabled}
@@ -54,7 +54,7 @@ export function PrimaryButton({ accentColor, children, disabled, icon, onClick, 
 
 export function SubtleButton({ children, danger = false, disabled = false, icon, onClick, type = 'button' }) {
     return (
-        <button
+        <button type="button"
             type={type}
             onClick={onClick}
             disabled={disabled}
@@ -75,7 +75,7 @@ export function IconButton({ bg, danger, disabled, fg, icon, onClick, title }) {
         ? { bg: '#fee2e2', fg: 'var(--text-primary)' }
         : { bg: bg || 'var(--bg-tertiary)', fg: fg || 'var(--text-secondary)' }
     return (
-        <button
+        <button type="button"
             type="button"
             onClick={onClick}
             disabled={disabled}
@@ -110,7 +110,7 @@ export function Chip({ accentColor, children, onRemove }) {
         >
             {children}
             {onRemove && (
-                <button
+                <button type="button"
                     type="button"
                     onClick={onRemove}
                     className="flex h-4 w-4 items-center justify-center rounded-full border-none cursor-pointer transition-colors hover:brightness-90 text-white"

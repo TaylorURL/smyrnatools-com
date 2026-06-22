@@ -12,7 +12,7 @@ export function TimeModeToggle({ accentColor, isCustom, onModeChange }) {
                 {[TIME_MODE_STAGGER, TIME_MODE_CUSTOM].map((modeOption) => {
                     const active = (modeOption === TIME_MODE_CUSTOM) === isCustom
                     return (
-                        <button
+                        <button type="button"
                             key={modeOption}
                             type="button"
                             onClick={() => onModeChange(modeOption)}

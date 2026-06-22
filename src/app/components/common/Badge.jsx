@@ -269,7 +269,7 @@ export default function Badge({
     const content = count != null ? formatCount(count) : children
 
     const removeBtn = removable ? (
-        <button
+        <button type="button"
             type="button"
             onClick={(e) => {
                 e.stopPropagation()
