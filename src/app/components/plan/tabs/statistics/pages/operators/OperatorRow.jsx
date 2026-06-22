@@ -27,7 +27,7 @@ export function OperatorRow({ accentColor, idxInSegment, maxLoads, onShowComment
     }
     return (
         <div
-            className="grid grid-cols-[2.25rem_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.1fr)_4.5rem_4.5rem_5rem] gap-3 items-center px-3 py-2 text-[12.5px]"
+            className="min-w-[720px] grid grid-cols-[2.25rem_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.1fr)_4.5rem_4.5rem_5rem] gap-3 items-center px-3 py-2 text-[12.5px]"
             style={{
                 borderTop: idxInSegment === 0 ? 'none' : '1px solid var(--border-light)'
             }}
