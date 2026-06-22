@@ -29,7 +29,7 @@ export function FilterStrip({ isLoading, onChangeQuery, onChangeSort, query, sor
                     placeholder="Search customers, contacts, phone…"
                     disabled={isLoading}
                     aria-label="Search call list"
-                    className="bg-transparent outline-none border-none text-[12.5px] w-full text-text-primary placeholder:text-text-tertiary disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
+                    className="bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-accent/30 border-none text-[12.5px] w-full text-text-primary placeholder:text-text-tertiary disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
                 />
                 {query && (
                     <button type="button"
