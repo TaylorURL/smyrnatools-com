@@ -383,6 +383,7 @@ function App() {
             </Suspense>
             <TutorialManager />
             {hasUpdate && <VersionUpdateBanner onDismiss={dismiss} />}
+            <PlantManagerReminderToast />
             <Analytics />
             <SpeedInsights />
         </>
