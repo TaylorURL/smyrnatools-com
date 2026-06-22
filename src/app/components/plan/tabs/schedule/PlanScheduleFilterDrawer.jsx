@@ -186,7 +186,7 @@ export default function PlanScheduleFilterDrawer({
                     onChange={(e) => onChangeQuery(e.target.value)}
                     placeholder="Search customer, address, PO…"
                     aria-label="Filter schedule"
-                    className="bg-transparent outline-none border-none text-[13px] md:text-[12.5px] w-full text-text-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:hidden"
+                    className="bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-accent/30 border-none text-[13px] md:text-[12.5px] w-full text-text-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:hidden"
                 />
                 {query && (
                     <button type="button"
