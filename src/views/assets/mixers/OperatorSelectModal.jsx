@@ -83,7 +83,7 @@ function OperatorSelectModal({
         })
     if (!isOpen) return null
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" role="dialog" aria-modal="true">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}></div>
             <div
                 ref={modalRef}
