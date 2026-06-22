@@ -173,7 +173,6 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
             <div className="flex items-center justify-end gap-0.5">
                 {previewable && (
                     <button type="button"
-                        type="button"
                         onClick={() => onPreview(doc)}
                         className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent text-text-tertiary transition-colors hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                         title="Preview"
