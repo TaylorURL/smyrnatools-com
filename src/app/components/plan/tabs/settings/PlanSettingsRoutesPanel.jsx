@@ -49,7 +49,7 @@ export function PlanSettingsRoutesPanel({
                         placeholder="min"
                         value={newTravelTime.minutes}
                         onChange={(e) => setNewTravelTime({ ...newTravelTime, minutes: e.target.value })}
-                        className="border rounded-lg text-sm outline-none py-1.5 px-2 text-center w-[60px] bg-bg-primary border-border-medium text-text-primary"
+                        className="border rounded-lg text-sm outline-none py-1.5 px-2 text-center w-[60px] bg-bg-primary border-border-medium text-text-primary focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
                     />
                     <button
                         onClick={addTravelTime}
