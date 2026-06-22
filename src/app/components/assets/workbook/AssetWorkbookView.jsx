@@ -22,7 +22,7 @@ function SortIndicator({ direction }) {
     )
 }
 
-function WorkbookToolbar({ accentColor, exporting, onExport, onSearch, rowCount, searchQuery, title }) {
+function WorkbookToolbar({ accentColor, exportMessage, exporting, onExport, onSearch, rowCount, searchQuery, title }) {
     return (
         <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border-light bg-bg-primary flex-wrap">
             <div className="flex items-center gap-3">
@@ -32,6 +32,12 @@ function WorkbookToolbar({ accentColor, exporting, onExport, onSearch, rowCount,
                 </span>
             </div>
             <div className="flex items-center gap-2">
+                {exportMessage && (
+                    <span className={`text-[12px] font-medium ${exportMessage.isError ? 'text-red-600' : 'text-green-600'}`}>
+                        <i className={`fas ${exportMessage.isError ? 'fa-times-circle' : 'fa-check-circle'} mr-1`} />
+                        {exportMessage.text}
+                    </span>
+                )}
                 <div className="relative">
                     <i className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary pointer-events-none" />
                     <input
@@ -49,8 +55,8 @@ function WorkbookToolbar({ accentColor, exporting, onExport, onSearch, rowCount,
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold text-white border-none cursor-pointer transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ background: accentColor }}
                 >
-                    <i className={`fas ${exporting ? 'fa-spinner fa-spin' : 'fa-file-excel'} text-[11px]`} />
-                    <span>{exporting ? 'Exporting…' : 'Download .xlsx'}</span>
+                    <i className={`fas ${exporting ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'} text-[11px]`} />
+                    <span>{exporting ? 'Uploading…' : 'Export to Files'}</span>
                 </button>
             </div>
         </div>
