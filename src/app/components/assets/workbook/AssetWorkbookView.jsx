@@ -161,28 +161,16 @@ export default function AssetWorkbookView({ columns, data, loading, lookups, tit
     }, [filteredRows, sortKey, sortDirection, resolvedColumns])
 
     const handleSort = useCallback((key) => {
-        setSortKey((prev) => {
-            if (prev !== key) {
-                setSortDirection(SORT_ASC)
-                return key
-            }
-            setSortDirection((dir) => {
-                if (dir === SORT_ASC) return SORT_DESC
-                if (dir === SORT_DESC) {
-                    return null
-                }
-                return SORT_ASC
-            })
-            return dir => dir === null ? null : key
-        })
-        setSortKey(key)
-        setSortDirection((prev) => {
-            if (sortKey !== key) return SORT_ASC
-            if (prev === SORT_ASC) return SORT_DESC
-            if (prev === SORT_DESC) return null
-            return SORT_ASC
-        })
-    }, [sortKey])
+        if (sortKey !== key) {
+            setSortKey(key)
+            setSortDirection(SORT_ASC)
+        } else if (sortDirection === SORT_ASC) {
+            setSortDirection(SORT_DESC)
+        } else {
+            setSortKey(null)
+            setSortDirection(null)
+        }
+    }, [sortKey, sortDirection])
 
     const handleExport = useCallback(async () => {
         if (exporting) return
