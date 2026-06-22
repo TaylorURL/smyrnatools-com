@@ -34,7 +34,7 @@ const FOCUS_RING =
 
 const REVIEW_SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider text-text-tertiary'
 const REVIEW_FIELD_CLASS =
-    'w-full rounded-md border border-border-light bg-bg-secondary px-2.5 py-1.5 text-[12.5px] text-text-primary outline-none box-border opacity-90 [color-scheme:light] dark:[color-scheme:dark]'
+    'w-full rounded-md border border-border-light bg-bg-secondary px-2.5 py-1.5 text-[12.5px] text-text-primary outline-none box-border opacity-90 [color-scheme:light] dark:[color-scheme:dark] focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40'
 
 const getFieldIcon = (fieldName) => {
     const iconMap = { total_hours: 'fa-clock' }
