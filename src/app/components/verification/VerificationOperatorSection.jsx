@@ -57,7 +57,7 @@ function PhoneControl({ accentColor, isSavingPhone, onChange, onSave, phoneOk, v
                     placeholder="(555) 555-5555"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="flex-1 rounded-md px-3 py-2 text-[13px] outline-none font-mono tabular-nums"
+                    className="flex-1 rounded-md px-3 py-2 text-[13px] outline-none font-mono tabular-nums focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
                     style={{
                         ...FIELD_STYLE,
                         borderColor: !phoneOk ? '#dc2626' : 'var(--border-light)'
