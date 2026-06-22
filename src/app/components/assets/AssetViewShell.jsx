@@ -1,15 +1,19 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useState } from 'react'
+import React, { lazy, Suspense, useState } from 'react'
 
 import AssetView from '../../../views/assets/AssetView'
 import { usePreferences } from '../../context/PreferencesContext'
 import TabFadeIn from '../common/TabFadeIn'
 import AssetStatisticsView from './statistics/AssetStatisticsView'
 
-const TABS = [
+const AssetWorkbookPage = lazy(() => import('./workbook/AssetWorkbookPage'))
+
+const BASE_TABS = [
     { icon: 'fa-list', id: 'list', label: 'List' },
     { icon: 'fa-chart-column', id: 'statistics', label: 'Statistics' }
 ]
+
+const WORKBOOK_TAB = { icon: 'fa-table-cells', id: 'workbook', label: 'Workbook' }
 
 /** Tab pill — matches the Operations tab bar's chrome so the asset shell
  *  feels like the same product surface. */
