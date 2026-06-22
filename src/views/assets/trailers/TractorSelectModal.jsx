@@ -39,6 +39,12 @@ function TractorSelectModal({
         if (isOpen) document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [isOpen, onClose])
+    useEffect(() => {
+        if (!isOpen) return
+        const handleKeyDown = (e) => { if (e.key === 'Escape') onClose() }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, onClose])
     function isTractorAssigned(tractorId) {
         if (!tractorId || tractorId === '0' || !Array.isArray(trailers)) return false
         return trailers.some((trailer) => trailer.assignedTractor === tractorId && trailer.id !== trailerId)
@@ -62,7 +68,7 @@ function TractorSelectModal({
         })
     if (!isOpen) return null
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" role="dialog" aria-modal="true">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}></div>
             <div
                 ref={modalRef}

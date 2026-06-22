@@ -136,10 +136,16 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
         }
     }
 
+    useEffect(() => {
+        const handleKeyDown = (e) => { if (e.key === 'Escape') onClose() }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [onClose])
+
     if (typeof document === 'undefined') return null
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" onClick={onClose}>
             <div
                 className="w-full max-w-[560px] max-h-[90vh] overflow-y-auto rounded shadow-2xl"
                 style={CARD_STYLE}

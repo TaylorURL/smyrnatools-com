@@ -239,7 +239,7 @@ function PlanFlowMapView({
                      * `pointer-events-none` on the wrapper keeps the
                      * map draggable everywhere the scrubber doesn't
                      * physically occupy. */}
-                    <div className="absolute bottom-0 right-0 z-[1000] pointer-events-none">
+                    <div className="absolute bottom-0 left-0 right-0 lg:left-auto z-[1000] pointer-events-none">
                         <PlanFlowTimeScrubber
                             hasActivity={scrubberActivityCount}
                             isPlaying={isPlaying}
@@ -251,7 +251,7 @@ function PlanFlowMapView({
                 </div>
             </div>
 
-            <aside className="w-[360px] shrink-0 overflow-y-auto flex flex-col bg-bg-primary border-l border-border-light">
+            <aside className="hidden lg:flex w-[360px] shrink-0 overflow-y-auto flex-col bg-bg-primary border-l border-border-light">
                 {!selected && panelMode === 'overview' && <PlanFlowEmptyPanel accentColor={accentColor} />}
                 {selected && panelMode === 'overview' && (
                     <PlanFlowPlantOverview

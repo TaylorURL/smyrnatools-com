@@ -120,8 +120,8 @@ export function PlanStatisticsOperatorsPage({
                     })()}
                 />
             ) : (
-                <div className="flex flex-col">
-                    <div className="grid grid-cols-[2.25rem_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.1fr)_4.5rem_4.5rem_5rem] gap-3 items-center px-3 py-2 text-[10px] font-bold uppercase tracking-wider border-b border-border-light bg-bg-secondary text-text-tertiary">
+                <div className="flex flex-col overflow-x-auto">
+                    <div className="min-w-[720px] grid grid-cols-[2.25rem_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.1fr)_4.5rem_4.5rem_5rem] gap-3 items-center px-3 py-2 text-[10px] font-bold uppercase tracking-wider border-b border-border-light bg-bg-secondary text-text-tertiary">
                         <span className="text-right">#</span>
                         <span>Operator</span>
                         <span>Assigned</span>

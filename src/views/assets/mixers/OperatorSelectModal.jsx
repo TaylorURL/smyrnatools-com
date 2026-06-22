@@ -50,6 +50,12 @@ function OperatorSelectModal({
         if (isOpen) document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [isOpen, onClose])
+    useEffect(() => {
+        if (!isOpen) return
+        const handleKeyDown = (e) => { if (e.key === 'Escape') onClose() }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, onClose])
     /** Returns true if the operator is already assigned to an active mixer (prevents double-assignment). */
     function isOperatorAssigned(operatorId) {
         if (!operatorId || operatorId === '0' || !Array.isArray(mixers)) return false
@@ -77,7 +83,7 @@ function OperatorSelectModal({
         })
     if (!isOpen) return null
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" role="dialog" aria-modal="true">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}></div>
             <div
                 ref={modalRef}
