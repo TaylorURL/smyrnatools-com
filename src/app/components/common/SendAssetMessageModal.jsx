@@ -320,19 +320,8 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                 onChange={(e) => setCommentary(e.target.value)}
                                 placeholder="Add a note..."
                                 rows="3"
-                                className="w-full rounded-lg text-sm mb-4 outline-none resize-y bg-bg-primary text-text-primary"
-                                style={{
-                                    border: '1.5px solid var(--border-light)',
-                                    fontFamily: 'inherit',
-                                    lineHeight: 1.5,
-                                    padding: '0.625rem 0.75rem'
-                                }}
-                                onFocus={(e) => {
-                                    e.currentTarget.style.borderColor = accentColor
-                                }}
-                                onBlur={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--border-light)'
-                                }}
+                                className="w-full rounded-lg text-sm mb-4 outline-none resize-y bg-bg-primary text-text-primary border-[1.5px] border-border-light leading-normal px-3 py-2.5 transition-colors duration-150 focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                                style={{ fontFamily: 'inherit' }}
                             />
 
                             {error && (
