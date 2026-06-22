@@ -97,6 +97,7 @@ export default function AssetWorkbookView({ columns, data, loading, lookups, tit
     const [sortKey, setSortKey] = useState(null)
     const [sortDirection, setSortDirection] = useState(null)
     const [exporting, setExporting] = useState(false)
+    const [exportMessage, setExportMessage] = useState(null)
     const tableContainerRef = useRef(null)
 
     const resolvedColumns = useMemo(() =>
