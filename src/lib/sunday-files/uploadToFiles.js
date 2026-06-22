@@ -2,6 +2,7 @@ import { sundayMyClient } from './client'
 
 const BUCKET = 'sunday-files'
 const STORAGE_PREFIX = 'smyrnatools-workbook'
+// Coupled to "smyrnatools workbook insert" RLS policy on sunday-my — must match the policy's user_id check
 const TRENTON_USER_ID = '07a1299d-d63d-4b4c-b862-53ea44a02b1a'
 const XLSX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
