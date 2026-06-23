@@ -90,6 +90,7 @@ function TopBarDropdown({
 }
 
 const DROPDOWN_CONFIGS = [
+    { activeKey: 'hasTools', icon: ICONS.Tools, id: 'tools', items: TOOLS_ITEMS, label: 'Tools' },
     { activeKey: 'hasAssets', icon: ICONS.Assets, id: 'assets', items: ASSET_ITEMS, label: 'Assets' },
     { activeKey: 'hasPeople', icon: ICONS.People, id: 'people', items: PEOPLE_ITEMS, label: 'People' },
     { activeKey: 'hasAdmin', icon: 'fa-cog', id: 'admin', items: ADMIN_ITEMS, label: 'Admin' }
