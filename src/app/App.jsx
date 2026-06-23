@@ -281,8 +281,6 @@ function AppContent() {
                     <LoginView />
                 )
             }
-            case 'Documents':
-                return <DocumentsView />
             case 'Notifications':
                 return (
                     <NotificationsView
@@ -290,10 +288,6 @@ function AppContent() {
                         initialConversationId={selectedView.initialConversationId || null}
                     />
                 )
-            case 'CRM':
-                return <CrmView />
-            case 'Plan':
-                return <OperationsView title="My Operations" />
             default:
                 return (
                     <div className="relative mx-auto my-8 flex h-[70vh] w-full max-w-[600px] flex-col items-center justify-center overflow-x-hidden rounded-xl bg-bg-primary p-8 text-center shadow-md">
