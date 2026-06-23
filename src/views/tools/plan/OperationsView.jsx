@@ -327,6 +327,17 @@ function OperationsViewImpl({ accentColor, isDark }) {
                                 />
                             )}
 
+                            {effectiveViewMode === 'ongoing' && (
+                                <PlanOngoingView
+                                    accentColor={accentColor}
+                                    detailByOrderId={detailByOrderId}
+                                    planDate={planDate}
+                                    plantNameByCode={plantNameByCode}
+                                    plantProduction={plantProduction}
+                                    stats={stats}
+                                />
+                            )}
+
                             {effectiveViewMode === 'flow' && (
                                 <div className="relative flex flex-1 min-h-0 w-full flex-col">
                                     <PlanFlowMapView
