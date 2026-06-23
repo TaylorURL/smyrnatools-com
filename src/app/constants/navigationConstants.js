@@ -65,7 +65,6 @@ export const CATEGORIES = [
     { icon: 'fa-toolbox', id: 'tools', items: TOOLS_ITEMS, label: 'Tools' },
     { icon: 'fa-truck', id: 'assets', items: ASSET_ITEMS, label: 'Assets' },
     { icon: 'fa-users', id: 'people', items: PEOPLE_ITEMS, label: 'People' },
-    { icon: 'fa-file-alt', id: 'reporting', items: REPORTING_ITEMS, label: 'Reporting' },
     { icon: 'fa-cog', id: 'admin', items: ADMIN_ITEMS, label: 'Admin' }
 ]
 
