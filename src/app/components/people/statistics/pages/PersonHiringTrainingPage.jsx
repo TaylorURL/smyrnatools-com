@@ -24,6 +24,7 @@ export function PersonHiringTrainingPage({ stats }) {
 
     const {
         counts,
+        hiredRetained,
         hiresInPeriod,
         inTraining,
         noHireList,
@@ -31,6 +32,7 @@ export function PersonHiringTrainingPage({ stats }) {
         periodActive,
         plantsMissingTrainers,
         recentHires,
+        retentionRate,
         terminatedInPeriod,
         trainers
     } = hiringTraining
