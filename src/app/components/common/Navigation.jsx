@@ -2,13 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { UserService } from '../../../services/UserService'
 import { canDropPin } from '../../../utils/CrmRoleUtility'
-import {
-    ADMIN_ITEMS,
-    ASSET_ITEMS,
-    CATEGORIES,
-    PEOPLE_ITEMS,
-    TOOLS_ITEMS
-} from '../../constants/navigationConstants'
+import { ADMIN_ITEMS, ASSET_ITEMS, CATEGORIES, PEOPLE_ITEMS } from '../../constants/navigationConstants'
 import { useSharedMessages } from '../../context/MessagesContext'
 import { usePreferences } from '../../context/PreferencesContext'
 import { useAccentColor } from '../../hooks/useAccentColor'
