@@ -38,7 +38,6 @@ const lazyWithRetry = (importer) =>
     )
 const AppInstallPromptModal = lazyWithRetry(() => import('./components/common/AppInstallPromptModal'))
 const DashboardView = lazyWithRetry(() => import('../views/common/dashboard/DashboardView'))
-const DocumentsView = lazyWithRetry(() => import('../views/tools/documents/DocumentsView'))
 const EquipmentsView = lazyWithRetry(() => import('../views/assets/equipment/EquipmentsView'))
 const ManagersView = lazyWithRetry(() => import('../views/people/managers/ManagersView'))
 const MixerDetailView = lazyWithRetry(() => import('../views/assets/mixers/MixerDetailView'))
@@ -46,8 +45,6 @@ const MixersView = lazyWithRetry(() => import('../views/assets/mixers/MixersView
 const MyAccountView = lazyWithRetry(() => import('../views/common/myaccount/MyAccountView'))
 const OperatorsView = lazyWithRetry(() => import('../views/people/operators/OperatorsView'))
 const PickupTrucksView = lazyWithRetry(() => import('../views/assets/pickup-trucks/PickupTrucksView'))
-const CrmView = lazyWithRetry(() => import('../views/tools/crm/CrmView'))
-const OperationsView = lazyWithRetry(() => import('../views/tools/plan/OperationsView'))
 const PlantsView = lazyWithRetry(() => import('../views/admin/plants/PlantsView'))
 const RegionsView = lazyWithRetry(() => import('../views/admin/regions/RegionsView'))
 const RolesView = lazyWithRetry(() => import('../views/admin/roles/RolesView'))
@@ -60,6 +57,9 @@ const OFFICE_VISIBLE_VIEWS = new Set(['Dashboard', 'Managers', 'Plants', 'Region
 const AGGREGATE_HIDDEN_VIEWS = new Set(['Mixers', 'Plants', 'Regions'])
 /** Views hidden by default (non-Office, non-Aggregate). */
 const DEFAULT_HIDDEN_VIEWS = new Set(['Plants', 'Regions'])
+/** Views removed when the Tools/Operations sections were disabled — any
+ *  persisted preference pointing at one of these falls back to the Dashboard. */
+const DISABLED_VIEWS = new Set(['Plan', 'CRM', 'Documents'])
 /**
  * Main application shell managing authentication state, view routing,
  * region-based view filtering, role checks, and offline/terminated overlays.
@@ -90,7 +90,7 @@ function AppContent() {
     useEffect(() => {
         if (startPageAppliedRef.current || preferencesLoading || !userId || !rolesLoaded || isGuestOnly) return
         const page = preferences.startPage
-        if (page && page !== 'Dashboard') {
+        if (page && page !== 'Dashboard' && !DISABLED_VIEWS.has(page)) {
             setSelectedView({ initialStatusFilter: null, view: page })
         }
         startPageAppliedRef.current = true
@@ -182,13 +182,14 @@ function AppContent() {
     const handleViewSelection = useCallback(
         (viewId, options = {}) => {
             if (isGuestOnly && viewId !== 'Guest') return
+            const target = DISABLED_VIEWS.has(viewId) ? 'Dashboard' : viewId
             setSelectedView({
                 initialConversationId: options.initialConversationId || null,
                 initialStatusFilter: null,
-                view: viewId
+                view: target
             })
-            setTitle(viewId === 'Guest' ? 'Access Pending' : viewId)
-            setSelectedMixer((prev) => (prev && viewId !== 'Mixers' ? null : prev))
+            setTitle(target === 'Guest' ? 'Access Pending' : target)
+            setSelectedMixer((prev) => (prev && target !== 'Mixers' ? null : prev))
         },
         [isGuestOnly]
     )
@@ -284,8 +285,6 @@ function AppContent() {
                     <LoginView />
                 )
             }
-            case 'Documents':
-                return <DocumentsView />
             case 'Notifications':
                 return (
                     <NotificationsView
@@ -293,10 +292,6 @@ function AppContent() {
                         initialConversationId={selectedView.initialConversationId || null}
                     />
                 )
-            case 'CRM':
-                return <CrmView />
-            case 'Plan':
-                return <OperationsView title="My Operations" />
             default:
                 return (
                     <div className="relative mx-auto my-8 flex h-[70vh] w-full max-w-[600px] flex-col items-center justify-center overflow-x-hidden rounded-xl bg-bg-primary p-8 text-center shadow-md">

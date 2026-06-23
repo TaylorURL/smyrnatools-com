@@ -20,7 +20,6 @@ export const START_PAGE_OPTIONS = [
     { icon: 'fa-truck', id: 'Tractors' },
     { icon: 'fa-trailer', id: 'Trailers' },
     { icon: 'fa-hard-hat', id: 'Operators' },
-    { icon: 'fa-calendar-days', id: 'Plan' },
     { icon: 'fa-cogs', id: 'Heavy Equipment' },
     { icon: 'fa-truck-pickup', id: 'Pickup Trucks' }
 ]
