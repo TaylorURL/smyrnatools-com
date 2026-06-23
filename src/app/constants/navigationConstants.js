@@ -1,7 +1,7 @@
 /** Menu items visible only for Office-type regions. */
-export const OFFICE_VISIBLE_ITEMS = ['Reports', 'Dashboard', 'Managers', 'Plants', 'Regions']
+export const OFFICE_VISIBLE_ITEMS = ['Dashboard', 'Managers', 'Plants', 'Regions']
 /** Items hidden for Aggregate-type regions. */
-export const AGGREGATE_HIDDEN_ITEMS = ['Mixers', 'Plants', 'Regions', 'Maintenance']
+export const AGGREGATE_HIDDEN_ITEMS = ['Mixers', 'Plants', 'Regions']
 /** Items hidden by default for standard regions. */
 export const DEFAULT_HIDDEN_ITEMS = ['Plants', 'Regions']
 /** Items exclusively available to Office regions. */
