@@ -84,7 +84,7 @@ function PlantManagerReminderToast() {
         >
             <div
                 className="flex items-center gap-2 px-4 py-2.5"
-                style={{ backgroundColor: WARNING_COLOR }}
+                style={{ backgroundColor: SUCCESS_COLOR }}
             >
                 <i className="fas fa-triangle-exclamation text-sm text-white" aria-hidden="true" />
                 <span className="text-sm font-semibold text-white">Plant Manager Reminder</span>
