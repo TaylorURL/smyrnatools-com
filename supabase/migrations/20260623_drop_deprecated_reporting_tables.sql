@@ -32,3 +32,18 @@ DROP TABLE IF EXISTS public.nrmca_scale_calibrations CASCADE;
 DROP TABLE IF EXISTS public.nrmca_renewals CASCADE;
 DROP TABLE IF EXISTS public.nrmca_scales CASCADE;
 DROP TABLE IF EXISTS public.nrmca_plants CASCADE;
+
+-- Functions exclusive to the dropped tables. Sourced from pg_proc and
+-- verified to reference no surviving table (the only callers were the
+-- removed Lists view's list-service edge function and direct PostgREST
+-- calls from its UI). SQL-language functions that depend on a dropped
+-- table are typically auto-dropped via the CASCADE on the table above,
+-- but we DROP explicitly so the migration is self-documenting and
+-- idempotent regardless of the planner's dependency tracking.
+DROP FUNCTION IF EXISTS public.fetch_list_items_all();
+DROP FUNCTION IF EXISTS public.update_list_item_all(uuid, text, text, timestamptz, text, boolean, timestamptz, text, text, text);
+
+-- The 22 RLS policies attached to the 11 tables above are auto-dropped
+-- by the DROP TABLE ... CASCADE statements (policies live ON the table
+-- and cannot outlive it), so no explicit DROP POLICY statements are
+-- needed. There are no triggers on any of the dropped tables.

@@ -1,19 +1,17 @@
 /**
  * Barrel for the Excel export pipeline. The original monolithic ExportUtility
  * was split into topical modules so each file stays under ~400 lines and
- * change-percent formatting, plant sorting, date math, report fetching,
- * styling, and worksheet layout all live in their own concern.
+ * change-percent formatting, plant sorting, styling, and worksheet layout all
+ * live in their own concern.
  *
  * Importers continue to import from `utils/ExportUtility` — every symbol the
  * old file exported is re-exported here.
  */
 
-export { exportGeneralManagerReport } from '../app/components/modules/export/ExportModule'
 export * from './ExportConstants'
 export * from './ExportDateHelpers'
 export * from './ExportExcelStyles'
 export * from './ExportPlantHelpers'
-export * from './ExportReportFetch'
 export * from './ExportValueHelpers'
 export * from './ExportWorkbook'
 export * from './ExportWorksheetLayout'

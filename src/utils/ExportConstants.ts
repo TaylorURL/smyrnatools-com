@@ -1,16 +1,12 @@
 /**
  * Shared constants for the Excel export pipeline — color palette, font name,
- * workbook metadata, column lists for report queries, and the empty result
- * sentinel returned when a week window cannot be resolved.
+ * and workbook metadata.
  */
 
 export const LOCALE_COMPARE_OPTIONS = { numeric: true, sensitivity: 'base' }
-export const REPORT_COLUMNS_FULL = 'id,data,week,submitted_at,report_date_range_start,completed'
-export const REPORT_COLUMNS_SHORT = 'id,data,week,submitted_at,completed'
 export const FONT_CALIBRI = 'Calibri'
 export const WORKBOOK_CREATOR = 'Smyrna Ready Mix'
 export const SITE_URL = 'https://smyrnatools.com'
-export const EMPTY_WEEK_RESULT = { reports: [], targetMondayIso: '' }
 
 export const COLORS = {
     accent: 'FF4B7BA8',
