@@ -377,6 +377,15 @@ export const computeHiringTraining = ({ isWithinRange, perPlant, regionPlantScop
     const terminatedInPeriod = buildPeriodList((person) => person.status === 'Terminated', 'statusChangedAt')
     const noHireInPeriod = buildPeriodList((person) => person.status === 'No Hire', 'statusChangedAt')
 
+    /* Retention rate — of the operators hired inside the active window
+       (or lifetime when no window is set), the share whose CURRENT status
+       is still on the working roster (not Terminated / No Hire). 'No Hire'
+       is already excluded from the denominator by `hiresInPeriod`, but
+       checking RETIRED_STATUSES keeps the numerator self-evidently correct
+       if that filter ever loosens. */
+    const hiredRetained = hiresInPeriod.filter((row) => !RETIRED_STATUSES.includes(row.status)).length
+    const retentionRate = hiresInPeriod.length > 0 ? hiredRetained / hiresInPeriod.length : null
+
     const recentHires = regionPlantScopedItems
         .filter((person) => !RETIRED_STATUSES.includes(person.status))
         .map((person) => personRow(person, { tenureDays: daysSince(person.createdAt) }))
