@@ -60,9 +60,6 @@ const OFFICE_VISIBLE_VIEWS = new Set(['Dashboard', 'Managers', 'Plants', 'Region
 const AGGREGATE_HIDDEN_VIEWS = new Set(['Mixers', 'Plants', 'Regions'])
 /** Views hidden by default (non-Office, non-Aggregate). */
 const DEFAULT_HIDDEN_VIEWS = new Set(['Plants', 'Regions'])
-/** Views removed when the Tools/Operations sections were disabled — any
- *  persisted preference pointing at one of these falls back to the Dashboard. */
-const DISABLED_VIEWS = new Set(['Plan', 'CRM', 'Documents'])
 /**
  * Main application shell managing authentication state, view routing,
  * region-based view filtering, role checks, and offline/terminated overlays.
