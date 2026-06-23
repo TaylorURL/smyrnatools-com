@@ -138,7 +138,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                 (i) =>
                     !ASSET_ITEMS.includes(i.id) &&
                     !(groupFlags.hasPeople && PEOPLE_ITEMS.includes(i.id)) &&
-                    !(groupFlags.hasReporting && REPORTING_ITEMS.includes(i.id)) &&
                     !(groupFlags.hasTools && TOOLS_ITEMS.includes(i.id)) &&
                     !(groupFlags.hasAdmin && ADMIN_ITEMS.includes(i.id))
             ),
