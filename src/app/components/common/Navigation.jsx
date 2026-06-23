@@ -127,7 +127,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
             hasAdmin: visibleMenuItems.some((i) => ADMIN_ITEMS.includes(i.id)),
             hasAssets: visibleMenuItems.some((i) => ASSET_ITEMS.includes(i.id)),
             hasPeople: visibleMenuItems.some((i) => PEOPLE_ITEMS.includes(i.id)),
-            hasReporting: visibleMenuItems.some((i) => REPORTING_ITEMS.includes(i.id)),
             hasTools: visibleMenuItems.some((i) => TOOLS_ITEMS.includes(i.id))
         }),
         [visibleMenuItems]
