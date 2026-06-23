@@ -88,7 +88,6 @@ const ALLOWED_TABLES = new Set([
     'pickup_trucks',
     'plants',
     'regions',
-    'list_items',
     'mixer_comments',
     'mixer_history',
     'mixer_images',
