@@ -8,7 +8,8 @@ import {
     buildHeaderStyle,
     ICONS,
     NAV_SKELETON_WIDTHS,
-    PEOPLE_ITEMS
+    PEOPLE_ITEMS,
+    TOOLS_ITEMS
 } from '../../../constants/navigationConstants'
 import { TopBarIconButton, TopBarMessagesButton } from './NavigationActionButtons'
 import { TopBarRegionSelect } from './NavigationParts'
