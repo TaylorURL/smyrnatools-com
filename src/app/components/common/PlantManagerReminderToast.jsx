@@ -80,7 +80,7 @@ function PlantManagerReminderToast() {
         <div
             role="status"
             aria-live="polite"
-            className="fixed bottom-5 right-5 z-[9998] w-[22rem] overflow-hidden rounded-modal border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
+            className="fixed bottom-5 right-5 z-[9998] w-[22rem] overflow-hidden rounded-modal border border-green-600/30 bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
         >
             <div
                 className="flex items-center gap-2 px-4 py-2.5"
