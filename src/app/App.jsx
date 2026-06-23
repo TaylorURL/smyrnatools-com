@@ -182,14 +182,13 @@ function AppContent() {
     const handleViewSelection = useCallback(
         (viewId, options = {}) => {
             if (isGuestOnly && viewId !== 'Guest') return
-            const target = DISABLED_VIEWS.has(viewId) ? 'Dashboard' : viewId
             setSelectedView({
                 initialConversationId: options.initialConversationId || null,
                 initialStatusFilter: null,
-                view: target
+                view: viewId
             })
-            setTitle(target === 'Guest' ? 'Access Pending' : target)
-            setSelectedMixer((prev) => (prev && target !== 'Mixers' ? null : prev))
+            setTitle(viewId === 'Guest' ? 'Access Pending' : viewId)
+            setSelectedMixer((prev) => (prev && viewId !== 'Mixers' ? null : prev))
         },
         [isGuestOnly]
     )
