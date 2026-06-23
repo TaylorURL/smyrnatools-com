@@ -16,7 +16,6 @@ const ALLOWED_TABLES = new Set([
     'pickup_trucks',
     'plants',
     'regions',
-    'list_items',
     'mixer_comments',
     'mixer_history',
     'mixer_images',
@@ -29,7 +28,6 @@ const ALLOWED_TABLES = new Set([
     'pickup_truck_comments',
     'roles',
     'users_roles',
-    'reports',
     'notifications',
     'documents',
     'users_pinned_conversations'
