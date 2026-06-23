@@ -88,47 +88,6 @@ class AIServiceImpl {
         if (!result?.content) return null
         return result.content.replace(/^```(?:markdown|md)?\s*|\s*```$/g, '').trim()
     }
-    async suggestListItems(partialDescription = '') {
-        if (!partialDescription?.trim()) return []
-        const result = await this.callAPI(PROMPTS.suggestListItems, `Complete this task: "${partialDescription}"`, {
-            model: FAST_MODEL,
-            temperature: 0.6
-        })
-        if (!result?.content) return []
-        return result.content
-            .split('\n')
-            .map((s) => s.trim())
-            .filter(Boolean)
-            .slice(0, MAX_SUGGESTIONS)
-    }
-    /**
-     * Validates whether an operator's free-text comment adequately explains
-     * flagged efficiency issues (late start, early end, low loads, excessive hours).
-     */
-    async validateEfficiencyComment(comment, issues) {
-        const issueLines = [
-            issues.startDelayed && `Punch in to 1st load: ${issues.startMinutes} minutes (expected: <=15)`,
-            issues.endDelayed && `Washout to punch out: ${issues.endMinutes} minutes (expected: <=20)`,
-            issues.lowLoads && `Total loads: ${issues.loads} (expected: >=3)`,
-            issues.excessiveHours && `Total hours: ${issues.hours.toFixed(1)} (expected: <=14)`
-        ].filter(Boolean)
-        const userPrompt = `Performance Issues:\n${issueLines.join('\n')}\n\nOperator Comment: "${comment}"\n\nIs this a valid explanation?`
-        /* 30s timeout so a single slow / hung AI request can't stall the
-         * whole Plant Efficiency submit flow. The validator loop in
-         * `validatePlantProduction` runs sequentially; one stuck call
-         * previously locked the AI-validating modal open indefinitely. */
-        const result = await this.callAPI(PROMPTS.validateEfficiencyComment, userPrompt, {
-            temperature: 0.1,
-            timeout: 30000
-        })
-        if (result?.error) return { error: true }
-        const response = result?.content?.trim() ?? ''
-        if (response.startsWith('VALID')) return { valid: true }
-        const invalidMatch = response.match(/^INVALID:\s*(.+)$/i)
-        return invalidMatch
-            ? { guidance: invalidMatch[1].trim(), valid: false }
-            : { guidance: 'Please provide a detailed explanation for the timing issues.', valid: false }
-    }
     /** Formats asset history data (status changes, cleanliness trends, service records) for AI analysis. */
     formatHistoryData(ctx) {
         const parts = [
