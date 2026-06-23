@@ -51,7 +51,7 @@ export function getWeekWindow(weekIso) {
 
 /**
  * Shared guard for week-window queries. Returns the window or null when the
- * ISO date is unparseable so the caller can short-circuit with EMPTY_WEEK_RESULT.
+ * ISO date is unparseable so the caller can short-circuit.
  */
 export function resolveWeekWindow(weekIso) {
     const window = getWeekWindow(weekIso)
