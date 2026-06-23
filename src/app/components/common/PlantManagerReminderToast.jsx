@@ -92,7 +92,7 @@ function PlantManagerReminderToast() {
             <div className="px-4 py-3">
                 <p className="mb-3 text-[0.8125rem] leading-relaxed text-text-secondary">
                     Plant Managers will continue to be expected to keep their assets up to date.
-                    Smyrna Tools will still be used for this.
+                    Smyrna Tools will still be used for this and will remain up and running.
                 </p>
                 <div className="flex items-center justify-end">
                     <button
