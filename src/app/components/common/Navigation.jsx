@@ -162,11 +162,7 @@ export default function Navigation({ selectedView, onSelectView, children, userN
     const userInitials = useMemo(() => computeUserInitials(userName), [userName])
 
     const handleMenuClick = (id) => {
-        if (window.appSwitchView && (id === 'List' || id === 'Archive')) {
-            window.appSwitchView(id)
-        } else {
-            onSelectView(id)
-        }
+        onSelectView(id)
         setMobileMenuOpen(false)
         setOpenDropdown(null)
     }
