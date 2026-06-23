@@ -45,7 +45,7 @@ export function PlanTabSwitcher({ accentColor, canSeeSettings = false, isMobile 
             {tabs.map(({ icon, label, mobileLabel, mode }) => {
                 const isActive = viewMode === mode
                 return (
-                    <button type="button"
+                    <button
                         key={mode}
                         type="button"
                         role="tab"
