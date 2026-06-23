@@ -9,7 +9,6 @@ import {
     ICONS,
     NAV_SKELETON_WIDTHS,
     PEOPLE_ITEMS,
-    REPORTING_ITEMS,
     TOOLS_ITEMS
 } from '../../../constants/navigationConstants'
 import { TopBarIconButton, TopBarMessagesButton } from './NavigationActionButtons'
