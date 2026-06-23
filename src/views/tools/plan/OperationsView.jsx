@@ -22,6 +22,7 @@ import { PLAN_META_KEY } from '../../../utils/PlanUtility'
 import PlanDashboardView from './PlanDashboardView'
 import PlanDemandView from './PlanDemandView'
 import PlanFlowMapView from './PlanFlowMapView'
+import PlanOngoingView from './PlanOngoingView'
 import PlanScheduleView from './PlanScheduleView'
 import PlanSettingsView from './PlanSettingsView'
 import PlanStatisticsView from './PlanStatisticsView'
@@ -87,12 +88,13 @@ function OperationsView() {
 function OperationsViewImpl({ accentColor, isDark }) {
     const isMobile = useIsMobile()
 
-    /* Mobile users get a focused two-tab Operations surface — Dashboard
-     * (manager "Your Plant / District / Region" view + clock-ins) and
-     * Schedule (the full daily order list in card mode). Any other tab
-     * (Planner, Demand, Statistics, etc.) falls back to Dashboard
-     * because their wide layouts don't fit a phone. */
-    const MOBILE_VIEW_MODES = new Set(['dashboard', 'schedule', 'statistics'])
+    /* Mobile users get a focused Operations surface — Dashboard (manager
+     * "Your Plant / District / Region" view + clock-ins), Ongoing (live
+     * day-progress by plant), Schedule (the full daily order list in
+     * card mode), and Statistics. Any other tab (Planner, Demand, etc.)
+     * falls back to Dashboard because their wide layouts don't fit a
+     * phone. */
+    const MOBILE_VIEW_MODES = new Set(['dashboard', 'ongoing', 'schedule', 'statistics'])
     const [viewMode, setViewModeRaw] = useState('dashboard')
     const effectiveViewMode = isMobile && !MOBILE_VIEW_MODES.has(viewMode) ? 'dashboard' : viewMode
     const { planDate, setPlanDate } = usePlanDate(effectiveViewMode)
@@ -322,6 +324,17 @@ function OperationsViewImpl({ accentColor, isDark }) {
                                     totalOps={totalOps}
                                     validAssignmentCount={validAssignmentCount}
                                     yourPlantScope={yourPlantScope}
+                                />
+                            )}
+
+                            {effectiveViewMode === 'ongoing' && (
+                                <PlanOngoingView
+                                    accentColor={accentColor}
+                                    detailByOrderId={detailByOrderId}
+                                    planDate={planDate}
+                                    plantNameByCode={plantNameByCode}
+                                    plantProduction={plantProduction}
+                                    stats={stats}
                                 />
                             )}
 

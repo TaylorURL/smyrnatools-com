@@ -345,6 +345,39 @@ export function CrmSkeleton() {
     )
 }
 
+/** Ongoing tab — aggregate KPI strip plus a card grid of per-plant progress
+ *  rows. Mirrors the live shape so the skeleton swap doesn't reflow. */
+export function OngoingSkeleton() {
+    return (
+        <div className="flex-1 min-h-0 overflow-auto px-3 sm:px-4 lg:px-6 py-3 flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+                <Bar className="h-4 w-24" />
+                <Bar className="h-3 w-48" />
+            </div>
+            <StatGroupSkeleton cols={6} />
+            <PanelShell>
+                <div className="px-3 py-3 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i} className="rounded-card p-3 flex flex-col gap-2 border border-border-light">
+                            <div className="flex items-center gap-2">
+                                <Bar className="h-2.5 w-2.5 rounded-sm" />
+                                <Bar className="h-3 w-24" />
+                                <div className="flex-1" />
+                                <Bar className="h-3 w-10" />
+                            </div>
+                            <Bar className="h-2.5 w-full rounded" />
+                            <div className="flex items-center justify-between gap-2">
+                                <Bar className="h-3 w-28" />
+                                <Bar className="h-2.5 w-20" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </PanelShell>
+        </div>
+    )
+}
+
 export function PlanTabSkeleton({ mode }) {
     switch (mode) {
         case 'schedule':
@@ -357,6 +390,8 @@ export function PlanTabSkeleton({ mode }) {
             return <StatisticsSkeleton />
         case 'call-list':
             return <CrmSkeleton />
+        case 'ongoing':
+            return <OngoingSkeleton />
         case 'dashboard':
         default:
             return <DashboardSkeleton />

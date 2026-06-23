@@ -10,6 +10,7 @@ import React from 'react'
  *  render branch in OperationsView. */
 const PLAN_TABS = [
     { icon: 'fa-gauge-high', label: 'Plan Dashboard', mobileLabel: 'Dashboard', mode: 'dashboard' },
+    { icon: 'fa-truck-fast', label: 'Ongoing', mobileLabel: 'Ongoing', mode: 'ongoing' },
     { icon: 'fa-calendar-days', label: 'Schedule', mobileLabel: 'Schedule', mode: 'schedule' },
     { icon: 'fa-project-diagram', label: 'Planner', mode: 'flow' },
     { icon: 'fa-chart-column', label: 'Demand', mode: 'demand' },
@@ -19,10 +20,11 @@ const PLAN_TABS = [
 
 /** Tabs that survive on a phone. Wide-layout tabs (Planner / Demand /
  *  Call List / Settings) need horizontal real estate that doesn't exist
- *  on mobile, so they're hidden in favour of Dashboard, Schedule, and
- *  Statistics — the surfaces that render usefully at narrow widths and
- *  cover the most frequent on-the-go workflows. */
-const MOBILE_TAB_MODES = new Set(['dashboard', 'schedule', 'statistics'])
+ *  on mobile, so they're hidden in favour of the focused live-ops
+ *  surfaces (Dashboard, Ongoing, Schedule, Statistics) — the views that
+ *  render usefully at narrow widths and cover the most frequent
+ *  on-the-go workflows. */
+const MOBILE_TAB_MODES = new Set(['dashboard', 'ongoing', 'schedule', 'statistics'])
 
 /**
  * Tab toggle in the Plan header. Desktop renders the full ladder; mobile
@@ -43,7 +45,7 @@ export function PlanTabSwitcher({ accentColor, canSeeSettings = false, isMobile 
             {tabs.map(({ icon, label, mobileLabel, mode }) => {
                 const isActive = viewMode === mode
                 return (
-                    <button type="button"
+                    <button
                         key={mode}
                         type="button"
                         role="tab"
