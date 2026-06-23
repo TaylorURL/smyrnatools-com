@@ -54,12 +54,15 @@ export const MENU_ITEMS = [
 export const ASSET_ITEMS = ['Mixers', 'Tractors', 'Trailers', 'Heavy Equipment', 'Pickup Trucks']
 /** Navigation item IDs grouped under the "People" dropdown. */
 export const PEOPLE_ITEMS = ['Operators', 'Managers']
+/** Navigation item IDs grouped under the "Tools" dropdown. */
+export const TOOLS_ITEMS = ['Plan', 'CRM']
 /** Navigation item IDs grouped under the "Admin" category (two-level mode). */
 export const ADMIN_ITEMS = ['Plants', 'Regions', 'Roles']
 
 /** Category definitions for the two-level tab nav row. */
 export const CATEGORIES = [
     { icon: 'fa-tachometer-alt', id: 'dashboard', items: [], label: 'Dashboard' },
+    { icon: 'fa-toolbox', id: 'tools', items: TOOLS_ITEMS, label: 'Tools' },
     { icon: 'fa-truck', id: 'assets', items: ASSET_ITEMS, label: 'Assets' },
     { icon: 'fa-users', id: 'people', items: PEOPLE_ITEMS, label: 'People' },
     { icon: 'fa-cog', id: 'admin', items: ADMIN_ITEMS, label: 'Admin' }
@@ -70,6 +73,7 @@ export const getCategoryForView = (viewId) => {
     if (!viewId || viewId === 'Dashboard') return 'dashboard'
     if (ASSET_ITEMS.includes(viewId)) return 'assets'
     if (PEOPLE_ITEMS.includes(viewId)) return 'people'
+    if (TOOLS_ITEMS.includes(viewId)) return 'tools'
     if (ADMIN_ITEMS.includes(viewId)) return 'admin'
     return 'dashboard'
 }
