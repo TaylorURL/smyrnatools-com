@@ -1,6 +1,4 @@
-import React, { useMemo } from 'react'
-
-import { useOperatorClockStatusContext } from '../../context/OperatorClockStatusContext'
+import React from 'react'
 
 const SKELETON_ROW_LABELS = [
     'Asset Total',
@@ -11,7 +9,6 @@ const SKELETON_ROW_LABELS = [
     'Allocation',
     'Verified',
     'Operators',
-    'Clocked In',
     'Open Alerts',
     'Open Issues'
 ]
