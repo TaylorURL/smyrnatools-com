@@ -55,7 +55,7 @@ const TractorsView = lazyWithRetry(() => import('../views/assets/tractors/Tracto
 const TrailersView = lazyWithRetry(() => import('../views/assets/trailers/TrailersView'))
 const NotificationsView = lazyWithRetry(() => import('../views/common/notifications/NotificationsView'))
 /** Views only available when region type is "Office". */
-const OFFICE_VISIBLE_VIEWS = new Set(['Reports', 'Dashboard', 'Managers', 'Plants', 'Regions', 'Roles'])
+const OFFICE_VISIBLE_VIEWS = new Set(['Dashboard', 'Managers', 'Plants', 'Regions', 'Roles'])
 /** Views hidden when region type is "Aggregate". */
 const AGGREGATE_HIDDEN_VIEWS = new Set(['Mixers', 'Plants', 'Regions'])
 /** Views hidden by default (non-Office, non-Aggregate). */
