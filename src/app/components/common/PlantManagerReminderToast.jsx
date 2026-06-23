@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom'
 import { Database } from '../../../services/DatabaseService'
 import { getSessionUserId } from '../../../services/SessionService'
 
-const WARNING_COLOR = '#d97706'
+const SUCCESS_COLOR = '#16a34a'
 const DISMISS_STORAGE_KEY = 'plantManagerReminderToastDismissed'
 
 const readDismissed = () => {
