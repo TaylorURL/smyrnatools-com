@@ -406,6 +406,7 @@ export const computeHiringTraining = ({ isWithinRange, perPlant, regionPlantScop
             startedTraining: startedTrainingInPeriod.length,
             terminated: terminatedInPeriod.length
         },
+        hiredRetained,
         hiresInPeriod,
         inTraining,
         noHireInPeriod,
@@ -414,6 +415,7 @@ export const computeHiringTraining = ({ isWithinRange, perPlant, regionPlantScop
         periodActive,
         plantsMissingTrainers,
         recentHires,
+        retentionRate,
         startedTrainingInPeriod,
         terminatedInPeriod,
         trainers
