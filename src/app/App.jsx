@@ -90,7 +90,7 @@ function AppContent() {
     useEffect(() => {
         if (startPageAppliedRef.current || preferencesLoading || !userId || !rolesLoaded || isGuestOnly) return
         const page = preferences.startPage
-        if (page && page !== 'Dashboard') {
+        if (page && page !== 'Dashboard' && !DISABLED_VIEWS.has(page)) {
             setSelectedView({ initialStatusFilter: null, view: page })
         }
         startPageAppliedRef.current = true
