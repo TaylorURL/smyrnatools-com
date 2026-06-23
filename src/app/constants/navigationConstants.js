@@ -7,13 +7,14 @@ export const DEFAULT_HIDDEN_ITEMS = ['Plants', 'Regions']
 /** Items exclusively available to Office regions. */
 export const OFFICE_ONLY_ITEMS = ['Roles']
 /** Items visible only to users holding the IT Access role, regardless of permission. */
-export const IT_ACCESS_ONLY_ITEMS = []
+export const IT_ACCESS_ONLY_ITEMS = ['CRM']
 /** Role name that grants access to IT-restricted navigation items. */
 export const IT_ACCESS_ROLE_NAME = 'IT Access'
 
 /** FontAwesome icon class mapping for each navigation item ID. */
 export const ICONS = {
     Assets: 'fa-truck',
+    CRM: 'fa-address-book',
     Dashboard: 'fa-tachometer-alt',
     'Heavy Equipment': 'fa-snowplow',
     Logout: 'fa-sign-out-alt',
@@ -23,9 +24,11 @@ export const ICONS = {
     Operators: 'fa-users',
     People: 'fa-users',
     'Pickup Trucks': 'fa-truck-pickup',
+    Plan: 'fa-calendar-alt',
     Plants: 'fa-industry',
     Regions: 'fa-map-marker-alt',
     Roles: 'fa-lock',
+    Tools: 'fa-toolbox',
     Tractors: 'fa-tractor',
     Trailers: 'fa-trailer'
 }
