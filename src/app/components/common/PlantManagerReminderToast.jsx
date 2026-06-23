@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom'
 import { Database } from '../../../services/DatabaseService'
 import { getSessionUserId } from '../../../services/SessionService'
 
-const WARNING_COLOR = '#d97706'
+const SUCCESS_COLOR = '#16a34a'
 const DISMISS_STORAGE_KEY = 'plantManagerReminderToastDismissed'
 
 const readDismissed = () => {
@@ -80,19 +80,19 @@ function PlantManagerReminderToast() {
         <div
             role="status"
             aria-live="polite"
-            className="fixed bottom-5 right-5 z-[9998] w-[22rem] overflow-hidden rounded-modal border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
+            className="fixed bottom-5 right-5 z-[9998] w-[22rem] overflow-hidden rounded-modal border border-green-600/30 bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
         >
             <div
                 className="flex items-center gap-2 px-4 py-2.5"
-                style={{ backgroundColor: WARNING_COLOR }}
+                style={{ backgroundColor: SUCCESS_COLOR }}
             >
-                <i className="fas fa-triangle-exclamation text-sm text-white" aria-hidden="true" />
+                <i className="fas fa-circle-check text-sm text-white" aria-hidden="true" />
                 <span className="text-sm font-semibold text-white">Plant Manager Reminder</span>
             </div>
             <div className="px-4 py-3">
                 <p className="mb-3 text-[0.8125rem] leading-relaxed text-text-secondary">
                     Plant Managers will continue to be expected to keep their assets up to date.
-                    Smyrna Tools will still be used for this.
+                    Smyrna Tools will still be used for this and will remain up and running.
                 </p>
                 <div className="flex items-center justify-end">
                     <button
