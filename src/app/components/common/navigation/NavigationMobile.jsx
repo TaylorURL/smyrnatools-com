@@ -3,17 +3,10 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 
 import SrmLogo from '../../../../assets/images/srm-logo.svg'
-import {
-    ADMIN_ITEMS,
-    ASSET_ITEMS,
-    buildHeaderStyle,
-    PEOPLE_ITEMS,
-    TOOLS_ITEMS
-} from '../../../constants/navigationConstants'
+import { ADMIN_ITEMS, ASSET_ITEMS, buildHeaderStyle, PEOPLE_ITEMS } from '../../../constants/navigationConstants'
 import { MobileMenuItem, MobileRegionSelect, MobileSection } from './NavigationParts'
 
 const SECTIONS = [
-    { items: TOOLS_ITEMS, key: 'hasTools', title: 'Tools' },
     { items: ASSET_ITEMS, key: 'hasAssets', title: 'Assets' },
     { items: PEOPLE_ITEMS, key: 'hasPeople', title: 'People' },
     { items: ADMIN_ITEMS, key: 'hasAdmin', title: 'Admin' }
