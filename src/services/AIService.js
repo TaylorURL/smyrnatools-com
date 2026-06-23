@@ -3,13 +3,10 @@ import APIUtility from '../utils/APIUtility'
 
 const DEFAULT_MODEL = 'grok-4'
 const FAST_MODEL = 'grok-3-mini-fast'
-const MAX_SUGGESTIONS = 5
 const MAX_RECENT_CHANGES = 10
-const EXCLUDED_AGGREGATE_KEYS = ['report_date', 'notes']
 /**
- * AI-powered content service using the Grok API. Provides history summaries,
- * GM report analysis, report validation, list-item suggestions/improvements,
- * task prioritization, and plan-notes formatting.
+ * AI-powered content service using the Grok API. Provides asset history
+ * summaries and plan-notes markdown formatting.
  */
 class AIServiceImpl {
     /**
