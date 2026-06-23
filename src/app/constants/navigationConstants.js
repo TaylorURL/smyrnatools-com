@@ -54,8 +54,6 @@ export const MENU_ITEMS = [
 export const ASSET_ITEMS = ['Mixers', 'Tractors', 'Trailers', 'Heavy Equipment', 'Pickup Trucks']
 /** Navigation item IDs grouped under the "People" dropdown. */
 export const PEOPLE_ITEMS = ['Operators', 'Managers']
-/** Navigation item IDs grouped under the "Reporting" dropdown. */
-export const REPORTING_ITEMS = ['Reports', 'List', 'Maintenance', 'NRMCA']
 /** Navigation item IDs grouped under the "Tools" dropdown. */
 export const TOOLS_ITEMS = ['Plan', 'CRM']
 /** Navigation item IDs grouped under the "Admin" category (two-level mode). */
