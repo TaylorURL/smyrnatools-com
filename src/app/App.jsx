@@ -189,7 +189,6 @@ function AppContent() {
             })
             setTitle(viewId === 'Guest' ? 'Access Pending' : viewId)
             setSelectedMixer((prev) => (prev && viewId !== 'Mixers' ? null : prev))
-            setSelectedItem((prev) => (prev && viewId !== 'List' ? null : prev))
         },
         [isGuestOnly]
     )
