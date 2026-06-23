@@ -4,13 +4,11 @@ import PlantDropdownModal from '../../../app/components/common/PlantDropdownModa
 import DashboardAlertsPanel from '../../../app/components/dashboard/DashboardAlertsPanel'
 import { DashboardAtAGlance } from '../../../app/components/dashboard/DashboardAtAGlance'
 import DashboardHeader from '../../../app/components/dashboard/DashboardHeader'
-import ServiceImprovementCard from '../../../app/components/plan/tabs/statistics/ServiceImprovementCard'
 import DashboardPeopleSection from '../../../app/components/dashboard/DashboardPeopleSection'
 import DashboardPodcastPanel from '../../../app/components/dashboard/DashboardPodcastPanel'
 import DashboardSkeleton from '../../../app/components/dashboard/DashboardSkeleton'
 import EmbeddedViewModal from '../../../app/components/dashboard/EmbeddedViewModal'
 import FleetOverviewSection from '../../../app/components/dashboard/FleetOverviewSection'
-import SaturdayForecastBanner from '../../../app/components/dashboard/SaturdayForecastBanner'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useDashboardAssets, useIssueCommentCounts, usePlantFilter } from '../../../app/hooks/useDashboardData'
 import { useAnimatedStats, useDateFilter } from '../../../app/hooks/useDashboardEffects'
@@ -257,7 +255,6 @@ export default function DashboardView() {
                 regionDisplayName={regionDisplayName}
             />
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0">
-                <SaturdayForecastBanner />
                 <div className="w-full px-3 sm:px-4 lg:px-6 flex flex-col lg:flex-row gap-3 lg:gap-4">
                     {/* Podcast panel is desktop-only — the embedded player
                         consumes vertical real estate that phones can't
@@ -290,7 +287,6 @@ export default function DashboardView() {
                                     setEmbeddedViewProps={setEmbeddedViewProps}
                                     setEmbeddedViewSearch={setEmbeddedViewSearch}
                                 />
-                                <ServiceImprovementCard />
                                 <FleetOverviewSection
                                     accentColor={accentColor}
                                     displayStats={displayStats}
