@@ -25,15 +25,6 @@ const ASIDE_CLASS = 'hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-
  * doesn't disappear during the dashboard's bootstrap.
  */
 export function DashboardAtAGlance({ alertCount, displayStats, loading = false, openIssues }) {
-    const { statusByBadge } = useOperatorClockStatusContext()
-    const clockedInCount = useMemo(() => {
-        let count = 0
-        statusByBadge.forEach((record) => {
-            if (record.isClockedIn) count += 1
-        })
-        return count
-    }, [statusByBadge])
-
     if (loading) {
         return (
             <aside className={ASIDE_CLASS} aria-busy="true" aria-label="Loading dashboard snapshot">
