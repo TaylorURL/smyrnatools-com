@@ -287,7 +287,6 @@ export default function DashboardView() {
                                     setEmbeddedViewProps={setEmbeddedViewProps}
                                     setEmbeddedViewSearch={setEmbeddedViewSearch}
                                 />
-                                <ServiceImprovementCard />
                                 <FleetOverviewSection
                                     accentColor={accentColor}
                                     displayStats={displayStats}
