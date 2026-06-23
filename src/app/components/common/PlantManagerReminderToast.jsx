@@ -1,32 +1,79 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import { Database } from '../../../services/DatabaseService'
 import { getSessionUserId } from '../../../services/SessionService'
 
 const WARNING_COLOR = '#d97706'
+const DISMISS_STORAGE_KEY = 'plantManagerReminderToastDismissed'
+
+const readDismissed = () => {
+    try {
+        return sessionStorage.getItem(DISMISS_STORAGE_KEY) === '1'
+    } catch {
+        return false
+    }
+}
+
+const persistDismissed = () => {
+    try {
+        sessionStorage.setItem(DISMISS_STORAGE_KEY, '1')
+    } catch {
+        /* sessionStorage unavailable — fall back to in-memory state only */
+    }
+}
+
+const clearDismissed = () => {
+    try {
+        sessionStorage.removeItem(DISMISS_STORAGE_KEY)
+    } catch {
+        /* nothing to do */
+    }
+}
 
 function PlantManagerReminderToast() {
-    const [visible, setVisible] = useState(false)
-    const [dismissed, setDismissed] = useState(false)
+    const [signedIn, setSignedIn] = useState(false)
+    const [dismissed, setDismissed] = useState(readDismissed)
 
-    useEffect(() => {
-        let cancelled = false
-        async function checkSignedIn() {
-            try {
-                const { data: sessionData } = await Database.auth.getSession()
-                const userId = sessionData?.session?.user?.id || getSessionUserId() || ''
-                if (!cancelled) setVisible(!!userId)
-            } catch {
-                /* session check failed — don't show the toast */
-            }
+    const refreshSignedIn = useCallback(async () => {
+        try {
+            const { data: sessionData } = await Database.auth.getSession()
+            const userId = sessionData?.session?.user?.id || getSessionUserId() || ''
+            setSignedIn(!!userId)
+        } catch {
+            /* session check failed — don't show the toast */
         }
-        checkSignedIn()
-        return () => { cancelled = true }
     }, [])
 
-    if (!visible || dismissed) return null
+    useEffect(() => {
+        refreshSignedIn()
+        const handleAuthSuccess = () => {
+            // Fresh login — let the reminder surface again even if a prior
+            // session dismissed it within the same browser tab.
+            clearDismissed()
+            setDismissed(false)
+            refreshSignedIn()
+        }
+        const handleSignOut = () => {
+            clearDismissed()
+            setDismissed(false)
+            setSignedIn(false)
+        }
+        window.addEventListener('authSuccess', handleAuthSuccess)
+        window.addEventListener('authSignOut', handleSignOut)
+        return () => {
+            window.removeEventListener('authSuccess', handleAuthSuccess)
+            window.removeEventListener('authSignOut', handleSignOut)
+        }
+    }, [refreshSignedIn])
+
+    const handleDismiss = useCallback(() => {
+        persistDismissed()
+        setDismissed(true)
+    }, [])
+
+    if (!signedIn || dismissed) return null
     if (typeof document === 'undefined' || !document.body) return null
 
     return ReactDOM.createPortal(
@@ -44,14 +91,14 @@ function PlantManagerReminderToast() {
             </div>
             <div className="px-4 py-3">
                 <p className="mb-3 text-[0.8125rem] leading-relaxed text-text-secondary">
-                    Verify your operators are using the correct operator phones, the right assigned
-                    truck, and completing pre-trips in Samsara.
+                    Plant Managers will continue to be expected to keep their assets up to date.
+                    Smyrna Tools will still be used for this.
                 </p>
                 <div className="flex items-center justify-end">
                     <button
                         type="button"
                         className="rounded-lg px-3 py-1.5 text-xs font-medium text-text-secondary cursor-pointer transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
-                        onClick={() => setDismissed(true)}
+                        onClick={handleDismiss}
                     >
                         Dismiss
                     </button>
