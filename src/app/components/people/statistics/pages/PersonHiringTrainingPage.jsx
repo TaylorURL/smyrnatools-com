@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtInt, fmtScorePct } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { Panel, Stat, StatGroup } from '../../../ui/Panel'
 import { daysUntilLabel, formatEventDate, formatPendingDate } from './personStatsShared'
 
