@@ -255,7 +255,6 @@ export default function DashboardView() {
                 regionDisplayName={regionDisplayName}
             />
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0">
-                <SaturdayForecastBanner />
                 <div className="w-full px-3 sm:px-4 lg:px-6 flex flex-col lg:flex-row gap-3 lg:gap-4">
                     {/* Podcast panel is desktop-only — the embedded player
                         consumes vertical real estate that phones can't
