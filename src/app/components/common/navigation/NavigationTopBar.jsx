@@ -9,7 +9,6 @@ import {
     ICONS,
     NAV_SKELETON_WIDTHS,
     PEOPLE_ITEMS,
-    REPORTING_ITEMS,
     TOOLS_ITEMS
 } from '../../../constants/navigationConstants'
 import { TopBarIconButton, TopBarMessagesButton } from './NavigationActionButtons'
@@ -94,13 +93,6 @@ const DROPDOWN_CONFIGS = [
     { activeKey: 'hasTools', icon: ICONS.Tools, id: 'tools', items: TOOLS_ITEMS, label: 'Tools' },
     { activeKey: 'hasAssets', icon: ICONS.Assets, id: 'assets', items: ASSET_ITEMS, label: 'Assets' },
     { activeKey: 'hasPeople', icon: ICONS.People, id: 'people', items: PEOPLE_ITEMS, label: 'People' },
-    {
-        activeKey: 'hasReporting',
-        icon: ICONS.Reporting,
-        id: 'reporting',
-        items: REPORTING_ITEMS,
-        label: 'Reporting'
-    },
     { activeKey: 'hasAdmin', icon: 'fa-cog', id: 'admin', items: ADMIN_ITEMS, label: 'Admin' }
 ]
 

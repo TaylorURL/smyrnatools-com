@@ -3,13 +3,10 @@ import APIUtility from '../utils/APIUtility'
 
 const DEFAULT_MODEL = 'grok-4'
 const FAST_MODEL = 'grok-3-mini-fast'
-const MAX_SUGGESTIONS = 5
 const MAX_RECENT_CHANGES = 10
-const EXCLUDED_AGGREGATE_KEYS = ['report_date', 'notes']
 /**
- * AI-powered content service using the Grok API. Provides history summaries,
- * GM report analysis, report validation, list-item suggestions/improvements,
- * task prioritization, and plan-notes formatting.
+ * AI-powered content service using the Grok API. Provides asset history
+ * summaries and plan-notes markdown formatting.
  */
 class AIServiceImpl {
     /**
@@ -52,88 +49,6 @@ class AIServiceImpl {
     async generateHistorySummary(historyContext) {
         return this.generateContentFromPrompt('historySummary', this.formatHistoryData, historyContext)
     }
-    async generateGMReportAnalysis(reportContext) {
-        return this.generateContentFromPrompt('gmReportAnalysis', this.formatGMReportData, reportContext)
-    }
-    async generateGMReportExportSummary(reportContext) {
-        return this.generateContentFromPrompt('gmReportExportSummary', this.formatGMExportData, reportContext, {
-            temperature: 0.4
-        })
-    }
-    async improveListItem(description, comments = '') {
-        const userPrompt = comments
-            ? `Description: "${description}"\nComments: "${comments}"`
-            : `Description: "${description}"\nComments: (none - please add a brief relevant comment)`
-        const result = await this.callAPI(PROMPTS.improveListItem, userPrompt, { model: FAST_MODEL })
-        if (!result?.content) return null
-        try {
-            const parsed = JSON.parse(result.content.trim())
-            return { comments: parsed.comments || '', description: parsed.description || description }
-        } catch {
-            return { comments: '', description: result.content }
-        }
-    }
-    /**
-     * Scores list items by operational priority using AI analysis.
-     * Processes items in batches of 15 to keep each API call fast.
-     * @param {Array<{id: string, status: string, deadline: string, responsible_role: string, description: string, comments: string}>} items
-     * @returns {Map<string, number>|null} Map of itemId → priority score (1-10), or null on failure.
-     */
-    /**
-     * Scores list items by operational priority using AI analysis.
-     * Returns Map of itemId → { score, status, deadline }.
-     */
-    async prioritizeListItems(items) {
-        if (!items?.length) return null
-        const BATCH_SIZE = 10
-        const allResults = new Map()
-        for (let i = 0; i < items.length; i += BATCH_SIZE) {
-            const batch = items.slice(i, i + BATCH_SIZE)
-            const batchResults = await this.scorePriorityBatch(batch)
-            if (batchResults) {
-                for (const [itemId, data] of batchResults) allResults.set(itemId, data)
-            }
-        }
-        return allResults.size > 0 ? allResults : null
-    }
-    /**
-     * Scores a single batch of items against the priority prompt.
-     * Returns a Map of itemId → { score, status, deadline } for each item.
-     */
-    async scorePriorityBatch(batch) {
-        const todayStr = new Date().toISOString().split('T')[0]
-        const compactPayload =
-            `Today: ${todayStr}\n\n` +
-            batch
-                .map(
-                    (item) =>
-                        `${item.id} | ${item.status || 'pending'} | ${item.deadline ? new Date(item.deadline).toISOString().split('T')[0] : 'none'} | ${item.responsible_role || 'unassigned'} | ${item.description || ''} | ${item.comments || ''}`
-                )
-                .join('\n')
-        const result = await this.callAPI(PROMPTS.prioritizeListItems, compactPayload, {
-            model: FAST_MODEL,
-            temperature: 0.2
-        })
-        if (!result?.content) return null
-        try {
-            const cleaned = result.content.replace(/```json\s*|```\s*/g, '').trim()
-            const parsed = JSON.parse(cleaned)
-            if (!Array.isArray(parsed)) return null
-            const VALID_STATUSES = new Set(['pending', 'in_progress', 'ordered_materials', 'blocked', 'waiting'])
-            const resultMap = new Map()
-            for (const entry of parsed) {
-                if (!entry?.id || typeof entry.score !== 'number') continue
-                resultMap.set(entry.id, {
-                    deadline: entry.deadline || null,
-                    score: Math.max(1, Math.min(10, Math.round(entry.score))),
-                    status: VALID_STATUSES.has(entry.status) ? entry.status : null
-                })
-            }
-            return resultMap.size > 0 ? resultMap : null
-        } catch {
-            return null
-        }
-    }
     /**
      * Reformats a plan's free-text notes into tidy markdown without altering
      * meaning. Used for read-only display on the Plan dashboard — the raw
@@ -172,47 +87,6 @@ class AIServiceImpl {
         })
         if (!result?.content) return null
         return result.content.replace(/^```(?:markdown|md)?\s*|\s*```$/g, '').trim()
-    }
-    async suggestListItems(partialDescription = '') {
-        if (!partialDescription?.trim()) return []
-        const result = await this.callAPI(PROMPTS.suggestListItems, `Complete this task: "${partialDescription}"`, {
-            model: FAST_MODEL,
-            temperature: 0.6
-        })
-        if (!result?.content) return []
-        return result.content
-            .split('\n')
-            .map((s) => s.trim())
-            .filter(Boolean)
-            .slice(0, MAX_SUGGESTIONS)
-    }
-    /**
-     * Validates whether an operator's free-text comment adequately explains
-     * flagged efficiency issues (late start, early end, low loads, excessive hours).
-     */
-    async validateEfficiencyComment(comment, issues) {
-        const issueLines = [
-            issues.startDelayed && `Punch in to 1st load: ${issues.startMinutes} minutes (expected: <=15)`,
-            issues.endDelayed && `Washout to punch out: ${issues.endMinutes} minutes (expected: <=20)`,
-            issues.lowLoads && `Total loads: ${issues.loads} (expected: >=3)`,
-            issues.excessiveHours && `Total hours: ${issues.hours.toFixed(1)} (expected: <=14)`
-        ].filter(Boolean)
-        const userPrompt = `Performance Issues:\n${issueLines.join('\n')}\n\nOperator Comment: "${comment}"\n\nIs this a valid explanation?`
-        /* 30s timeout so a single slow / hung AI request can't stall the
-         * whole Plant Efficiency submit flow. The validator loop in
-         * `validatePlantProduction` runs sequentially; one stuck call
-         * previously locked the AI-validating modal open indefinitely. */
-        const result = await this.callAPI(PROMPTS.validateEfficiencyComment, userPrompt, {
-            temperature: 0.1,
-            timeout: 30000
-        })
-        if (result?.error) return { error: true }
-        const response = result?.content?.trim() ?? ''
-        if (response.startsWith('VALID')) return { valid: true }
-        const invalidMatch = response.match(/^INVALID:\s*(.+)$/i)
-        return invalidMatch
-            ? { guidance: invalidMatch[1].trim(), valid: false }
-            : { guidance: 'Please provide a detailed explanation for the timing issues.', valid: false }
     }
     /** Formats asset history data (status changes, cleanliness trends, service records) for AI analysis. */
     formatHistoryData(ctx) {
@@ -271,79 +145,6 @@ class AIServiceImpl {
                     parts.push(`  - ${c.field}: "${c.from}" -> "${c.to}" (${new Date(c.date).toLocaleDateString()})`)
                 )
         }
-        return parts.join('\n')
-    }
-    /** Formats General Manager weekly report data for AI-powered analysis. */
-    formatGMReportData(ctx) {
-        const parts = ['Weekly General Manager Report Summary', `Week: ${ctx.weekIso || 'Unknown'}`]
-        if (ctx.plants?.length > 0) {
-            parts.push(
-                `\nRegion covers ${ctx.plants.length} plants: ${ctx.plants.map((p) => p.plant_code || p).join(', ')}`
-            )
-        }
-        if (ctx.plantSummaries?.length > 0) {
-            parts.push('\nPer-Plant Metrics:')
-            ctx.plantSummaries.forEach((p) => {
-                parts.push(`\n${p.plantName} (${p.plantCode}):`)
-                const metrics = [
-                    p.operators !== undefined &&
-                        `  Operators: ${p.operators} (last week: ${p.lastWeekOperators || 'N/A'})`,
-                    p.runnableTrucks !== undefined &&
-                        `  Runnable Trucks: ${p.runnableTrucks} (last week: ${p.lastWeekRunnable || 'N/A'})`,
-                    p.downTrucks !== undefined &&
-                        `  Down Trucks: ${p.downTrucks} (last week: ${p.lastWeekDown || 'N/A'})`,
-                    p.operatorsStarting !== undefined && `  Operators Starting: ${p.operatorsStarting}`,
-                    p.operatorsLeaving !== undefined && `  Operators Leaving: ${p.operatorsLeaving}`,
-                    p.operatorsTraining !== undefined && `  In Training: ${p.operatorsTraining}`,
-                    p.yardage !== undefined &&
-                        `  Total Yardage: ${p.yardage} (last week: ${p.lastWeekYardage || 'N/A'})`,
-                    p.hours !== undefined && `  Total Hours: ${p.hours} (last week: ${p.lastWeekHours || 'N/A'})`,
-                    p.notes && `  Notes: ${p.notes}`
-                ].filter(Boolean)
-                parts.push(...metrics)
-            })
-        }
-        if (ctx.efficiencyReports?.length > 0) {
-            parts.push(`\nPlant Efficiency Reports Available: ${ctx.efficiencyReports.length}`)
-            ctx.efficiencyReports.forEach((e) => {
-                parts.push(
-                    `  ${e.plantCode}: ${e.totalLoads || 0} loads, ${e.totalHours?.toFixed(1) || 0} hours, ${e.avgLoadsPerHour?.toFixed(2) || 'N/A'} loads/hour`
-                )
-            })
-        }
-        if (ctx.aggregateData) {
-            parts.push('\nAggregate Production This Week:')
-            Object.entries(ctx.aggregateData)
-                .filter(([key, value]) => value && !EXCLUDED_AGGREGATE_KEYS.includes(key))
-                .forEach(([key, value]) => parts.push(`  ${key}: ${value}`))
-        }
-        if (ctx.rmiReport) {
-            parts.push('\nReady Mix Instructor Report Available: Yes')
-            if (ctx.rmiReport.total_trainees !== undefined)
-                parts.push(`  Total Trainees: ${ctx.rmiReport.total_trainees}`)
-        }
-        return parts.join('\n')
-    }
-    /** Formats condensed GM export data for AI-generated summary paragraphs. */
-    formatGMExportData(ctx) {
-        const parts = [`Week: ${ctx.weekIso || 'Unknown'}`, `Plants: ${ctx.plantCount || 0}`]
-        const conditionalMetrics = [
-            ctx.totalYardage !== undefined && `Total Yardage: ${ctx.totalYardage}`,
-            ctx.totalOperators !== undefined && `Total Operators: ${ctx.totalOperators}`,
-            ctx.totalRunnable !== undefined && `Runnable Trucks: ${ctx.totalRunnable}`,
-            ctx.totalDown !== undefined && `Down Trucks: ${ctx.totalDown}`,
-            ctx.fleetUtilization !== undefined && `Fleet Utilization: ${ctx.fleetUtilization}%`,
-            ctx.allocationPct !== undefined && `Operator Allocation: ${ctx.allocationPct}%`
-        ].filter(Boolean)
-        parts.push(...conditionalMetrics)
-        if (ctx.prevWeekYardage !== undefined && ctx.totalYardage !== undefined) {
-            const change =
-                ctx.prevWeekYardage > 0
-                    ? Math.round(((ctx.totalYardage - ctx.prevWeekYardage) / ctx.prevWeekYardage) * 100)
-                    : 0
-            parts.push(`WoW Yardage Change: ${change > 0 ? '+' : ''}${change}%`)
-        }
-        if (ctx.plantIssues?.length > 0) parts.push(`Plant Issues: ${ctx.plantIssues.join(', ')}`)
         return parts.join('\n')
     }
 }

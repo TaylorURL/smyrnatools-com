@@ -1,7 +1,7 @@
 /** Menu items visible only for Office-type regions. */
-export const OFFICE_VISIBLE_ITEMS = ['Reports', 'Dashboard', 'Managers', 'Plants', 'Regions']
+export const OFFICE_VISIBLE_ITEMS = ['Dashboard', 'Managers', 'Plants', 'Regions']
 /** Items hidden for Aggregate-type regions. */
-export const AGGREGATE_HIDDEN_ITEMS = ['Mixers', 'Plants', 'Regions', 'Maintenance']
+export const AGGREGATE_HIDDEN_ITEMS = ['Mixers', 'Plants', 'Regions']
 /** Items hidden by default for standard regions. */
 export const DEFAULT_HIDDEN_ITEMS = ['Plants', 'Regions']
 /** Items exclusively available to Office regions. */
@@ -13,26 +13,20 @@ export const IT_ACCESS_ROLE_NAME = 'IT Access'
 
 /** FontAwesome icon class mapping for each navigation item ID. */
 export const ICONS = {
-    Archive: 'fa-archive',
     Assets: 'fa-truck',
     CRM: 'fa-address-book',
     Dashboard: 'fa-tachometer-alt',
     'Heavy Equipment': 'fa-snowplow',
-    List: 'fa-list',
     Logout: 'fa-sign-out-alt',
-    Maintenance: 'fa-wrench',
     Managers: 'fa-user-tie',
     Mixers: 'fa-truck',
     MyAccount: 'fa-user',
-    NRMCA: 'fa-certificate',
     Operators: 'fa-users',
     People: 'fa-users',
     'Pickup Trucks': 'fa-truck-pickup',
     Plan: 'fa-calendar-alt',
     Plants: 'fa-industry',
     Regions: 'fa-map-marker-alt',
-    Reporting: 'fa-file-alt',
-    Reports: 'fa-file-alt',
     Roles: 'fa-lock',
     Tools: 'fa-toolbox',
     Tractors: 'fa-tractor',
@@ -49,23 +43,17 @@ export const MENU_ITEMS = [
     { id: 'Pickup Trucks', permission: 'pickup_trucks.view', text: 'Pickup Trucks' },
     { id: 'Operators', permission: 'operators.view', text: 'Operators' },
     { id: 'Managers', permission: 'managers.view', text: 'Managers' },
-    { id: 'Reports', permission: 'reports.view', text: 'Reports' },
-    { id: 'List', permission: 'list.view', text: 'List' },
     { id: 'CRM', permission: 'plan.view', text: 'Customer Relations' },
     { id: 'Plan', permission: 'plan.view', text: 'Operations' },
     { id: 'Plants', permission: 'plants.view', text: 'Plants' },
     { id: 'Regions', permission: 'regions.view', text: 'Regions' },
-    { id: 'Roles', permission: 'roles.view', text: 'Roles' },
-    { id: 'Maintenance', permission: 'maintenance.view', text: 'Maintenance' },
-    { id: 'NRMCA', permission: 'nrmca.view', text: 'Calibrations & Certifications' }
+    { id: 'Roles', permission: 'roles.view', text: 'Roles' }
 ]
 
 /** Navigation item IDs grouped under the "Assets" dropdown. */
 export const ASSET_ITEMS = ['Mixers', 'Tractors', 'Trailers', 'Heavy Equipment', 'Pickup Trucks']
 /** Navigation item IDs grouped under the "People" dropdown. */
 export const PEOPLE_ITEMS = ['Operators', 'Managers']
-/** Navigation item IDs grouped under the "Reporting" dropdown. */
-export const REPORTING_ITEMS = ['Reports', 'List', 'Maintenance', 'NRMCA']
 /** Navigation item IDs grouped under the "Tools" dropdown. */
 export const TOOLS_ITEMS = ['Plan', 'CRM']
 /** Navigation item IDs grouped under the "Admin" category (two-level mode). */
@@ -77,7 +65,6 @@ export const CATEGORIES = [
     { icon: 'fa-toolbox', id: 'tools', items: TOOLS_ITEMS, label: 'Tools' },
     { icon: 'fa-truck', id: 'assets', items: ASSET_ITEMS, label: 'Assets' },
     { icon: 'fa-users', id: 'people', items: PEOPLE_ITEMS, label: 'People' },
-    { icon: 'fa-file-alt', id: 'reporting', items: REPORTING_ITEMS, label: 'Reporting' },
     { icon: 'fa-cog', id: 'admin', items: ADMIN_ITEMS, label: 'Admin' }
 ]
 
@@ -86,7 +73,6 @@ export const getCategoryForView = (viewId) => {
     if (!viewId || viewId === 'Dashboard') return 'dashboard'
     if (ASSET_ITEMS.includes(viewId)) return 'assets'
     if (PEOPLE_ITEMS.includes(viewId)) return 'people'
-    if (REPORTING_ITEMS.includes(viewId)) return 'reporting'
     if (TOOLS_ITEMS.includes(viewId)) return 'tools'
     if (ADMIN_ITEMS.includes(viewId)) return 'admin'
     return 'dashboard'

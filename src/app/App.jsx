@@ -11,9 +11,9 @@ import LoginView from '../views/common/login/LoginView'
 import LockedOverlay from './components/common/LockedOverlay'
 import Navigation from './components/common/Navigation'
 import OfflineOverlay from './components/common/OfflineOverlay'
+import PlantManagerReminderToast from './components/common/PlantManagerReminderToast'
 import TerminatedOverlay from './components/common/TerminatedOverlay'
 import TutorialManager from './components/common/TutorialPopup'
-import PlantManagerReminderToast from './components/common/PlantManagerReminderToast'
 import VersionUpdateBanner from './components/common/VersionUpdateBanner'
 import WebOverlay from './components/common/WebOverlay'
 import { MessagesProvider } from './context/MessagesContext'
@@ -40,10 +40,6 @@ const AppInstallPromptModal = lazyWithRetry(() => import('./components/common/Ap
 const DashboardView = lazyWithRetry(() => import('../views/common/dashboard/DashboardView'))
 const DocumentsView = lazyWithRetry(() => import('../views/tools/documents/DocumentsView'))
 const EquipmentsView = lazyWithRetry(() => import('../views/assets/equipment/EquipmentsView'))
-const ListDetailView = lazyWithRetry(() => import('../views/reporting/list/ListDetailView'))
-const ListView = lazyWithRetry(() => import('../views/reporting/list/ListView'))
-const MaintenanceView = lazyWithRetry(() => import('../views/reporting/maintenance/MaintenanceView'))
-const NRMCAView = lazyWithRetry(() => import('../views/reporting/nrmca/NRMCAView'))
 const ManagersView = lazyWithRetry(() => import('../views/people/managers/ManagersView'))
 const MixerDetailView = lazyWithRetry(() => import('../views/assets/mixers/MixerDetailView'))
 const MixersView = lazyWithRetry(() => import('../views/assets/mixers/MixersView'))
@@ -54,13 +50,12 @@ const CrmView = lazyWithRetry(() => import('../views/tools/crm/CrmView'))
 const OperationsView = lazyWithRetry(() => import('../views/tools/plan/OperationsView'))
 const PlantsView = lazyWithRetry(() => import('../views/admin/plants/PlantsView'))
 const RegionsView = lazyWithRetry(() => import('../views/admin/regions/RegionsView'))
-const ReportsView = lazyWithRetry(() => import('../views/reporting/reports/ReportsView'))
 const RolesView = lazyWithRetry(() => import('../views/admin/roles/RolesView'))
 const TractorsView = lazyWithRetry(() => import('../views/assets/tractors/TractorsView'))
 const TrailersView = lazyWithRetry(() => import('../views/assets/trailers/TrailersView'))
 const NotificationsView = lazyWithRetry(() => import('../views/common/notifications/NotificationsView'))
 /** Views only available when region type is "Office". */
-const OFFICE_VISIBLE_VIEWS = new Set(['Reports', 'Dashboard', 'Managers', 'Plants', 'Regions', 'Roles'])
+const OFFICE_VISIBLE_VIEWS = new Set(['Dashboard', 'Managers', 'Plants', 'Regions', 'Roles'])
 /** Views hidden when region type is "Aggregate". */
 const AGGREGATE_HIDDEN_VIEWS = new Set(['Mixers', 'Plants', 'Regions'])
 /** Views hidden by default (non-Office, non-Aggregate). */
@@ -74,7 +69,6 @@ function AppContent() {
     const [selectedView, setSelectedView] = useState({ initialStatusFilter: null, view: 'Dashboard' })
     const [title, setTitle] = useState('Dashboard')
     const [selectedMixer, setSelectedMixer] = useState(null)
-    const [selectedItem, setSelectedItem] = useState(null)
     const [webViewURL, setWebViewURL] = useState(null)
     const [userDisplayName, setUserDisplayName] = useState('')
     const [isGuestOnly, setIsGuestOnly] = useState(false)
@@ -195,7 +189,6 @@ function AppContent() {
             })
             setTitle(viewId === 'Guest' ? 'Access Pending' : viewId)
             setSelectedMixer((prev) => (prev && viewId !== 'Mixers' ? null : prev))
-            setSelectedItem((prev) => (prev && viewId !== 'List' ? null : prev))
         },
         [isGuestOnly]
     )
@@ -283,24 +276,6 @@ function AppContent() {
                 return <RegionsView title="Regions" />
             case 'Roles':
                 return <RolesView />
-            case 'List':
-                if (selectedItem)
-                    return (
-                        <ListDetailView
-                            key={`detail-${selectedItem}`}
-                            itemId={selectedItem}
-                            onClose={() => setSelectedItem(null)}
-                        />
-                    )
-                return <ListView key="list-view" title="Tasks List" onSelectItem={setSelectedItem} />
-            case 'Archive':
-                return <ListView title="Archived Items" showArchived />
-            case 'Reports':
-                return <ReportsView />
-            case 'Maintenance':
-                return <MaintenanceView />
-            case 'NRMCA':
-                return <NRMCAView />
             case 'MyAccount': {
                 const effectiveUserId = userId || getSessionUserId()
                 return effectiveUserId ? (
