@@ -83,7 +83,6 @@ export function DashboardAtAGlance({ alertCount, displayStats, loading = false, 
         { label: 'Allocation', value: `${allocation}%` },
         { label: 'Verified', value: `${verified}%` },
         { label: 'Operators', value: (ops.active || 0).toLocaleString() },
-        { label: 'Clocked In', value: clockedInCount.toLocaleString() },
         { label: 'Open Alerts', value: (alertCount || 0).toString() },
         { label: 'Open Issues', value: (openIssues || 0).toString() }
     ]
