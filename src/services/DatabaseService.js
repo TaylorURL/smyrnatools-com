@@ -99,7 +99,6 @@ const ALLOWED_TABLES = new Set([
     'operator_history',
     'pickup_truck_comments',
     'roles',
-    'reports',
     'notifications',
     'notification_reads',
     'documents',
