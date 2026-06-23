@@ -73,7 +73,6 @@ export const getCategoryForView = (viewId) => {
     if (!viewId || viewId === 'Dashboard') return 'dashboard'
     if (ASSET_ITEMS.includes(viewId)) return 'assets'
     if (PEOPLE_ITEMS.includes(viewId)) return 'people'
-    if (REPORTING_ITEMS.includes(viewId)) return 'reporting'
     if (TOOLS_ITEMS.includes(viewId)) return 'tools'
     if (ADMIN_ITEMS.includes(viewId)) return 'admin'
     return 'dashboard'
