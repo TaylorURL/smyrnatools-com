@@ -7,7 +7,6 @@ import {
     ASSET_ITEMS,
     CATEGORIES,
     PEOPLE_ITEMS,
-    REPORTING_ITEMS,
     TOOLS_ITEMS
 } from '../../constants/navigationConstants'
 import { useSharedMessages } from '../../context/MessagesContext'
