@@ -43,15 +43,11 @@ export const MENU_ITEMS = [
     { id: 'Pickup Trucks', permission: 'pickup_trucks.view', text: 'Pickup Trucks' },
     { id: 'Operators', permission: 'operators.view', text: 'Operators' },
     { id: 'Managers', permission: 'managers.view', text: 'Managers' },
-    { id: 'Reports', permission: 'reports.view', text: 'Reports' },
-    { id: 'List', permission: 'list.view', text: 'List' },
     { id: 'CRM', permission: 'plan.view', text: 'Customer Relations' },
     { id: 'Plan', permission: 'plan.view', text: 'Operations' },
     { id: 'Plants', permission: 'plants.view', text: 'Plants' },
     { id: 'Regions', permission: 'regions.view', text: 'Regions' },
-    { id: 'Roles', permission: 'roles.view', text: 'Roles' },
-    { id: 'Maintenance', permission: 'maintenance.view', text: 'Maintenance' },
-    { id: 'NRMCA', permission: 'nrmca.view', text: 'Calibrations & Certifications' }
+    { id: 'Roles', permission: 'roles.view', text: 'Roles' }
 ]
 
 /** Navigation item IDs grouped under the "Assets" dropdown. */
