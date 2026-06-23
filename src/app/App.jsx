@@ -278,24 +278,6 @@ function AppContent() {
                 return <RegionsView title="Regions" />
             case 'Roles':
                 return <RolesView />
-            case 'List':
-                if (selectedItem)
-                    return (
-                        <ListDetailView
-                            key={`detail-${selectedItem}`}
-                            itemId={selectedItem}
-                            onClose={() => setSelectedItem(null)}
-                        />
-                    )
-                return <ListView key="list-view" title="Tasks List" onSelectItem={setSelectedItem} />
-            case 'Archive':
-                return <ListView title="Archived Items" showArchived />
-            case 'Reports':
-                return <ReportsView />
-            case 'Maintenance':
-                return <MaintenanceView />
-            case 'NRMCA':
-                return <NRMCAView />
             case 'MyAccount': {
                 const effectiveUserId = userId || getSessionUserId()
                 return effectiveUserId ? (
