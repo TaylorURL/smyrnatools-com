@@ -86,8 +86,7 @@ export function nameLookupVariants(name: string | null | undefined): string[] {
  * parenthesized nicknames, and trailing badge numbers, then sorts the
  * remaining tokens alphabetically so "Gomez, Jose" and "Jose Gomez" both
  * reduce to `"gomez jose"`. Consumed by every Dayforce ↔ dispatch join
- * (useDayforceOperatorMetrics, useEfficiencyDayforcePunches,
- * useOperatorYardageByDay, useWeekTables, DayforceEfficiencyPage) so the
+ * (useDayforceOperatorMetrics, useOperatorYardageByDay) so the
  * surfaces agree on who's who.
  *
  *   "Gomez, Jose (Jose) 007943" → "gomez jose"
