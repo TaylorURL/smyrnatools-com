@@ -45,8 +45,10 @@ export function PersonHiringTrainingPage({ stats }) {
             {/* Period activity — filters by createdAt (hires) or
                 statusChangedAt (training / activation / termination) inside
                 the selected time range. Collapses to lifetime totals when
-                the period is all-time so the strip is always useful. */}
-            <StatGroup columns={4}>
+                the period is all-time so the strip is always useful.
+                Retention reads the current status of those same hires so
+                the funnel and its outcome live side by side. */}
+            <StatGroup columns={5}>
                 <Stat label="Hired" value={fmtInt(counts.hired)} hint={periodHint} />
                 <Stat label="Started training" value={fmtInt(counts.startedTraining)} hint={periodHint} />
                 <Stat label="Activated" value={fmtInt(counts.activated)} hint={periodHint} />
@@ -54,6 +56,15 @@ export function PersonHiringTrainingPage({ stats }) {
                     label="Terminated"
                     value={fmtInt(counts.terminated)}
                     hint={counts.noHire > 0 ? `${periodHint} · ${fmtInt(counts.noHire)} declined` : periodHint}
+                />
+                <Stat
+                    label="Retention"
+                    value={fmtScorePct(retentionRate)}
+                    hint={
+                        counts.hired > 0
+                            ? `${fmtInt(hiredRetained)} of ${fmtInt(counts.hired)} retained`
+                            : `no hires ${periodHint}`
+                    }
                 />
             </StatGroup>
 
