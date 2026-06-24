@@ -174,7 +174,6 @@ export function CrmCustomerDetail({
     onLogInteraction,
     onSaveContact,
     opportunitiesSlot,
-    plantNameByCode,
     row
 }) {
     const { user } = useAuth()
