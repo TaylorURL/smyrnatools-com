@@ -300,7 +300,6 @@ export function CustomerServiceContext({ aggregate, emptyMessage, header, orders
             )}
 
             <CustomerOrdersTable
-                colocationMap={colocationMap}
                 emptyMessage={emptyMessage}
                 orders={sortedOrders}
                 plantNameByCode={plantNameByCode}
