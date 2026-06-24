@@ -19,19 +19,6 @@ export const fmtInt = (n: number | null | undefined): string =>
     Number.isFinite(n as number) ? Math.round(n as number).toLocaleString() : '\u2014'
 export const fmtFloat = (n: number | null | undefined, dp: number = 1): string =>
     Number.isFinite(n as number) ? (n as number).toFixed(dp) : '\u2014'
-/** Yardage formatter \u2014 snaps to the nearest half-yard because production
- *  yardage is ALWAYS a whole or half (the dispatcher can't enter `4.7`
- *  yd). Any non-half decimal showing up here is floating-point drift from
- *  summation or a parser estimate artifact, not real data; snapping
- *  hides that noise instead of leaking it into the UI. `4.5 \u2192 "4.5"`,
- *  `1567.7 \u2192 "1,567.5"`, `100 \u2192 "100"`. Use this for every yardage
- *  display; counts (loads, orders, drivers) still use `fmtInt`. */
-export const fmtYards = (n: number | null | undefined): string => {
-    if (!Number.isFinite(n as number)) return '\u2014'
-    const half = Math.round((n as number) * 2) / 2
-    const whole = Math.trunc(half)
-    return half === whole ? whole.toLocaleString() : `${whole.toLocaleString()}.5`
-}
 export const fmtPct = (n: number | null | undefined): string =>
     Number.isFinite(n as number) ? `${(n as number) > 0 ? '+' : ''}${(n as number).toFixed(1)}%` : '\u2014'
 
