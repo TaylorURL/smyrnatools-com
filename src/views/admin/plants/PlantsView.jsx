@@ -366,7 +366,6 @@ function PlantsView({ title = 'Plants' }) {
                                     region={region}
                                     plantType={getPlantType(region)}
                                     managerCount={getPlantManagerIds(plant).length}
-                                    saturdayForecast={forecastsByPlant?.[code] || null}
                                     onSelect={handleSelectPlant}
                                     onManageManagers={setManagersEditPlant}
                                 />
