@@ -39,20 +39,3 @@ export const fmtRange = (start: string | null | undefined, end: string | null | 
     if (start === end) return fmtDate(start)
     return `${fmtDate(start)} \u2013 ${fmtDate(end)}`
 }
-
-export const fmtMinutesAsHHMM = (mins: number | null | undefined): string => {
-    if (!Number.isFinite(mins as number)) return '\u2014'
-    const wrapped = (((mins as number) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY
-    const h = Math.floor(wrapped / 60)
-    const m = Math.round(wrapped % 60)
-    const period = h >= 12 ? 'PM' : 'AM'
-    const display = h % 12 === 0 ? 12 : h % 12
-    return `${display}:${String(m).padStart(2, '0')} ${period}`
-}
-
-/** delta% between current/previous values. Null when either side is missing or
- *  the previous value is zero (would divide by zero). */
-export const deltaPct = (current: number | null | undefined, previous: number | null | undefined): number | null => {
-    if (!Number.isFinite(current as number) || !Number.isFinite(previous as number) || previous === 0) return null
-    return (((current as number) - (previous as number)) / (previous as number)) * 100
-}
