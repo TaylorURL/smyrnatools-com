@@ -134,7 +134,6 @@ export function ListOrDetailPane({
         return (
             <CrmCustomerDetail
                 accentColor={accentColor}
-                colocationMap={colocationMap}
                 contacts={contactsByCustomer?.[selectedRow.customer_num] || null}
                 history={historyByCustomer[selectedRow.customer_num] || null}
                 interactions={interactions}
