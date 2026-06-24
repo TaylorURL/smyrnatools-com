@@ -170,24 +170,6 @@ class UserServiceImpl {
         )
         return Array.isArray(json) ? json : []
     }
-    async updateAdditionalAssignedPlants(userId, additionalPlants) {
-        if (!userId) throw new Error(USER_ID_REQUIRED)
-        const { json } = await postUser(
-            'update-additional-plants',
-            {
-                additionalPlants: Array.isArray(additionalPlants) ? additionalPlants : [],
-                userId: resolveEntityId(userId)
-            },
-            { maxRetries: 0 }
-        )
-        return !!json
-    }
-    async getUserFirstName(userId) {
-        return fetchProfileField(userId, 'first_name')
-    }
-    async getUserLastName(userId) {
-        return fetchProfileField(userId, 'last_name')
-    }
     async getAllUsersWithProfilesAndRoles() {
         const results = await Promise.all([
             Database.from('users').select('id, email, last_login_at, created_at, updated_at'),
