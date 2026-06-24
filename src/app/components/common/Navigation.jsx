@@ -160,8 +160,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
         setShowOnlineUsers(true)
     }
 
-    const showDropPin = isMobile && canDropPin(userPermissions)
-
     const modals = (
         <>
             {showNotifications && (
@@ -188,17 +186,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                     isOpen={showOnlineUsers}
                     onClose={() => setShowOnlineUsers(false)}
                     anchorRect={onlineUsersAnchor}
-                />
-            )}
-            {dropPinModalOpen && (
-                <DropPinModal
-                    accentColor={accentColor}
-                    location={dropPinLocation}
-                    onClose={() => {
-                        setDropPinModalOpen(false)
-                        setDropPinLocation(null)
-                    }}
-                    onSaved={() => {}}
                 />
             )}
         </>
