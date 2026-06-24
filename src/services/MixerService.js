@@ -70,6 +70,12 @@ export const MixerService = {
         return base._base.getAll()
     },
 
+    /** Fetches change history for a mixer. Invoked dynamically via
+     *  HISTORY_SERVICE_MAP in useHistoryDataFetchers. */
+    getMixerHistory(mixerId, limit = null) {
+        return base._base.getHistory(mixerId, limit)
+    },
+
     getMixersByOperator(operatorId) {
         return base._base.getByOperator(operatorId)
     },
