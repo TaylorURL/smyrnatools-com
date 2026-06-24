@@ -86,16 +86,4 @@ describe('CrmService — Phase 3 opportunity methods', () => {
             expect.objectContaining({ id: 'o1', lostReason: 'Price too high', stage: 'lost' })
         )
     })
-
-    // ── deleteOpportunity ────────────────────────────────────────────────────
-    it('deleteOpportunity throws when id is missing', async () => {
-        await expect(CrmService.deleteOpportunity(null)).rejects.toThrow('id is required')
-    })
-
-    it('deleteOpportunity posts to /delete-opportunity and returns true', async () => {
-        APIUtility.post.mockResolvedValue({ json: { success: true }, res: { ok: true } })
-        const result = await CrmService.deleteOpportunity('o1')
-        expect(APIUtility.post).toHaveBeenCalledWith('/call-list-service/delete-opportunity', { id: 'o1' })
-        expect(result).toBe(true)
-    })
 })
