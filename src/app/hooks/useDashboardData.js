@@ -105,23 +105,12 @@ export function useDashboardAssets({
                         }
                     })
                 setPendingStartOperators(pending)
-                const lightDuty = ops
-                    .filter((o) => o.status === 'Light Duty')
-                    .map((o) => ({
-                        id: o.employeeId,
-                        operatorName: o.name || '',
-                        plant: o.plantCode || ''
-                    }))
-                setLightDutyOperators(lightDuty)
                 computeStats()
-                const fetchedAt = new Date()
-                setLastUpdated(fetchedAt)
                 try {
                     sessionStorage.setItem(
                         DASHBOARD_CACHE_KEY,
                         JSON.stringify({
                             equipment: allEquipmentRef.current,
-                            lastUpdated: fetchedAt.toISOString(),
                             mixers: allMixersRef.current,
                             operators: allOperatorsRef.current,
                             pickups: allPickupsRef.current,
