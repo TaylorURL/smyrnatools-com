@@ -8,7 +8,6 @@ const USER_FUNCTION = '/user-service'
 const DM_FUNCTION = '/district-manager-service'
 const PROFILES_TABLE = 'users_profiles'
 const USER_ID_REQUIRED = 'User ID is required'
-const UNKNOWN_USER = { id: 'unknown', name: 'Unknown User' }
 const DEFAULT_ROLE_NAME = 'User'
 const ALWAYS_PERMITTED = 'my_account.view'
 const ALL_REGIONS_PERMISSION = 'regions.select.all'
