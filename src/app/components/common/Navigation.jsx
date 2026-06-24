@@ -62,42 +62,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
     const regionType = preferences.selectedRegion?.type
     const regionCode = preferences.selectedRegion?.code
 
-    /** Fetch full permissions for the drop-pin gate (mobile only). */
-    useEffect(() => {
-        if (!userId || !isMobile) return undefined
-        let cancelled = false
-        UserService.getUserPermissions(userId)
-            .then((perms) => {
-                if (!cancelled) setUserPermissions(Array.isArray(perms) ? perms : [])
-            })
-            .catch(() => {
-                if (!cancelled) setUserPermissions([])
-            })
-        return () => {
-            cancelled = true
-        }
-    }, [userId, isMobile])
-
-    /** Capture GPS coords then open the pin modal. */
-    const handleDropPin = useCallback(() => {
-        if (typeof navigator === 'undefined' || !navigator.geolocation) {
-            setDropPinLocation(null)
-            setDropPinModalOpen(true)
-            return
-        }
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                setDropPinLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-                setDropPinModalOpen(true)
-            },
-            () => {
-                setDropPinLocation(null)
-                setDropPinModalOpen(true)
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-        )
-    }, [])
-
     const messagesHook = useSharedMessages()
     const combinedCount = messagesHook.unreadCount || 0
     const onlineUsersCount = useOnlineUsersCount()
