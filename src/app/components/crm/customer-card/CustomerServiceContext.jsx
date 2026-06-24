@@ -175,11 +175,8 @@ export function CustomerOrdersTable({ emptyMessage, orders }) {
                                 <td className="px-3 py-2 text-[12px] text-text-secondary tabular-nums">
                                     {fmtDate(m.date)}
                                 </td>
-                                <td className="px-3 py-2 text-[12px] text-text-primary">
-                                    <span className="font-mono text-[11px] tabular-nums text-text-tertiary mr-2">
-                                        {formatColocatedCodeLabel(m.plantCode)}
-                                    </span>
-                                    {formatColocatedPlantLabel(m.plantCode, plantNameByCode)}
+                                <td className="px-3 py-2 text-[12px] font-mono tabular-nums text-text-primary">
+                                    {formatColocatedCodeLabel(m.plantCode)}
                                 </td>
                                 <td className="px-3 py-2 text-[12px] font-semibold">
                                     <div className="flex items-center gap-1.5">
