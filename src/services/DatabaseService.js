@@ -101,7 +101,6 @@ const ALLOWED_TABLES = new Set([
     'roles',
     'notifications',
     'notification_reads',
-    'documents',
     'client_errors',
     'messages',
     'messages_decrypted',
