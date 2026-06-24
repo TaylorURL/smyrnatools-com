@@ -32,9 +32,7 @@ export default function NavigationMobile({
     standaloneItems,
     groupFlags,
     selectedView,
-    handleMenuClick,
-    showDropPin = false,
-    onDropPin = null
+    handleMenuClick
 }) {
     const headerStyle = buildHeaderStyle(accentColor)
     const dashboardItem = standaloneItems.find((i) => i.id === 'Dashboard')
