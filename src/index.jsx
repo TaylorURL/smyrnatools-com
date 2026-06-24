@@ -9,7 +9,6 @@ import packageJson from '../package.json'
 import App from './app/App'
 import { AuthProvider } from './app/context/AuthContext'
 import { ConfirmProvider } from './app/context/ConfirmContext'
-import { OperatorClockStatusProvider } from './app/context/OperatorClockStatusContext'
 import { PreferencesProvider } from './app/context/PreferencesContext'
 import { TutorialProvider } from './app/context/TutorialContext'
 import { SundayAnalyticsProvider } from './lib/sunday-analyzer'
@@ -97,17 +96,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <BrowserRouter>
             <AuthProvider>
                 <PreferencesProvider>
-                    <OperatorClockStatusProvider>
-                        <TutorialProvider>
-                            <ConfirmProvider>
-                                <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
-                                    <SundayAnalyticsProvider siteKey="sa_7bcbf8f895fbbf056ce0cbc4a8b92531">
-                                        <App />
-                                    </SundayAnalyticsProvider>
-                                </Sentry.ErrorBoundary>
-                            </ConfirmProvider>
-                        </TutorialProvider>
-                    </OperatorClockStatusProvider>
+                    <TutorialProvider>
+                        <ConfirmProvider>
+                            <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
+                                <SundayAnalyticsProvider siteKey="sa_7bcbf8f895fbbf056ce0cbc4a8b92531">
+                                    <App />
+                                </SundayAnalyticsProvider>
+                            </Sentry.ErrorBoundary>
+                        </ConfirmProvider>
+                    </TutorialProvider>
                 </PreferencesProvider>
             </AuthProvider>
         </BrowserRouter>

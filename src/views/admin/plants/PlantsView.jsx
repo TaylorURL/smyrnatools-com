@@ -2,12 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import Badge from '../../../app/components/common/Badge'
 import PlantManagersQuickEditModal from '../../../app/components/plants/PlantManagersQuickEditModal'
-import PlantSaturdayForecastBadge from '../../../app/components/plants/PlantSaturdayForecastBadge'
 import PlantsEmptyState from '../../../app/components/plants/PlantsEmptyState'
 import PlantsLoadingState from '../../../app/components/plants/PlantsLoadingState'
 import TopSection from '../../../app/components/sections/TopSection'
-import { getUpcomingSaturdayIso } from '../../../app/constants/saturdayForecastConstants'
-import { useSaturdayForecasts } from '../../../app/hooks/useSaturdayForecasts'
 import { PlantService } from '../../../services/PlantService'
 import PlantsAddView from './PlantsAddView'
 import PlantsDetailView from './PlantsDetailView'
@@ -58,7 +55,7 @@ const FILTER_SELECT_STYLE = {
 }
 
 /** Grid card — matches AssetGridCard visual rhythm (header / body grid / footer). */
-function PlantGridCard({ plant, region, plantType, managerCount, saturdayForecast, onSelect, onManageManagers }) {
+function PlantGridCard({ plant, region, plantType, managerCount, onSelect, onManageManagers }) {
     const meta = PLANT_TYPE_META[plantType] || DEFAULT_TYPE_META
     const code = getPlantCode(plant)
     const name = getPlantName(plant)
@@ -142,13 +139,6 @@ function PlantGridCard({ plant, region, plantType, managerCount, saturdayForecas
                     ))}
                 </div>
             )}
-
-            <div className="flex items-center justify-between gap-2 border-t border-border-light bg-bg-secondary px-5 py-2">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                    Sat forecast
-                </span>
-                <PlantSaturdayForecastBadge plantCode={code} forecast={saturdayForecast} />
-            </div>
 
             <div
                 className="flex border-t border-border-light"
@@ -254,10 +244,6 @@ function PlantsView({ title = 'Plants' }) {
             })
         )
     }
-    const saturdayDate = useMemo(() => getUpcomingSaturdayIso(), [])
-    const plantCodes = useMemo(() => plants.map(getPlantCode).filter(Boolean), [plants])
-    const { forecastsByPlant } = useSaturdayForecasts({ plantCodes, saturdayDate })
-
     const filteredPlants = useMemo(
         () =>
             plants.filter((plant) => {
@@ -380,7 +366,6 @@ function PlantsView({ title = 'Plants' }) {
                                     region={region}
                                     plantType={getPlantType(region)}
                                     managerCount={getPlantManagerIds(plant).length}
-                                    saturdayForecast={forecastsByPlant?.[code] || null}
                                     onSelect={handleSelectPlant}
                                     onManageManagers={setManagersEditPlant}
                                 />
@@ -471,11 +456,6 @@ function PlantsView({ title = 'Plants' }) {
                                                             aria-hidden="true"
                                                         />
                                                     </button>
-                                                    <PlantSaturdayForecastBadge
-                                                        plantCode={code}
-                                                        forecast={forecastsByPlant?.[code] || null}
-                                                        compact
-                                                    />
                                                 </div>
                                             </td>
                                         </tr>

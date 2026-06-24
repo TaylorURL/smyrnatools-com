@@ -128,25 +128,3 @@ export const getEffectiveBase = (rawBase, plantCode, plantProduction, planDate) 
     return Math.max(0, adjusted - missing)
 }
 
-/** Returns the manager-submitted operator forecast for a plant on the plan's
- *  Saturday, or null if none exists. `forecastsByPlant` is the map returned by
- *  `useSaturdayForecasts` — `{ [plantCode]: { operatorCount, ... } }`. */
-export const getForecastedOperatorCount = (forecastsByPlant, plantCode) => {
-    if (!forecastsByPlant || !plantCode) return null
-    const entry = forecastsByPlant[plantCode]
-    const value = parseInt(entry?.operatorCount, 10)
-    return Number.isFinite(value) && value >= 0 ? value : null
-}
-
-/** Resolves which value should drive the Saturday operator count for a plant.
- *  Returns a discriminated result so the UI can label its source:
- *    { source: 'override',  value }  — dispatcher typed an explicit override (always wins)
- *    { source: 'forecast',  value }  — no override yet, but a manager submitted a forecast
- *    { source: 'default',   value }  — fall back to the half-fleet default
- *  The forecast intentionally does NOT auto-apply as an override; it surfaces
- *  as a placeholder/hint so the dispatcher retains explicit authority. */
-export const resolveSaturdayHeadcount = ({ override, forecast, halfFleetDefault }) => {
-    if (override != null) return { source: 'override', value: override }
-    if (forecast != null) return { source: 'forecast', value: forecast }
-    return { source: 'default', value: halfFleetDefault }
-}

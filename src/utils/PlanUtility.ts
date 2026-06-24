@@ -72,13 +72,11 @@ export {
     adjustPoolForDate,
     getDayAdjustedBase,
     getEffectiveBase,
-    getForecastedOperatorCount,
     getMissingOperators,
     getPoolDayMultiplier,
     getSaturdayOverride,
     isClosedDay,
     isSaturday,
-    resolveSaturdayHeadcount,
     setMissingOperators,
     setSaturdayOverride
 } from './plan/planAvailability'

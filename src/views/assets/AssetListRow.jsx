@@ -1,7 +1,6 @@
 import React from 'react'
 
 import Badge from '../../app/components/common/Badge'
-import OperatorClockIndicator from '../../app/components/common/OperatorClockIndicator'
 import StarRating from '../../app/components/common/StarRating'
 import StatusHistoryBar from '../../app/components/common/StatusHistoryBar'
 
@@ -150,7 +149,6 @@ export default function AssetListRow({
                     {operator?.name ? (
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-1">
-                                <OperatorClockIndicator badge={operator.smyrnaId || operator.employeeId} />
                                 <span className="font-medium">{operator.name}</span>
                                 {copyButton(operator.name, 'Copy operator name')}
                             </div>

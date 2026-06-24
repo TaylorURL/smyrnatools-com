@@ -1,19 +1,15 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { lazy, Suspense, useState } from 'react'
+import React, { useState } from 'react'
 
 import AssetView from '../../../views/assets/AssetView'
 import { usePreferences } from '../../context/PreferencesContext'
 import TabFadeIn from '../common/TabFadeIn'
 import AssetStatisticsView from './statistics/AssetStatisticsView'
 
-const AssetWorkbookPage = lazy(() => import('./workbook/AssetWorkbookPage'))
-
 const BASE_TABS = [
     { icon: 'fa-list', id: 'list', label: 'List' },
     { icon: 'fa-chart-column', id: 'statistics', label: 'Statistics' }
 ]
-
-const WORKBOOK_TAB = { icon: 'fa-table-cells', id: 'workbook', label: 'Workbook' }
 
 /** Tab pill — matches the Operations tab bar's chrome so the asset shell
  *  feels like the same product surface. */
@@ -71,9 +67,7 @@ export default function AssetViewShell({
     const accentColor = preferences.accentColor || '#1e3a5f'
     const [activeTab, setActiveTab] = useState('list')
 
-    const tabs = config.workbookColumns
-        ? [...BASE_TABS, WORKBOOK_TAB]
-        : BASE_TABS
+    const tabs = BASE_TABS
 
     if (embedded) {
         return (
@@ -116,21 +110,6 @@ export default function AssetViewShell({
                         onSelectAsset={(row) => row?.id && onSelectItem?.(row.id)}
                         title={title || config.pluralLabel}
                     />
-                )}
-                {activeTab === 'workbook' && config.workbookColumns && (
-                    <Suspense
-                        fallback={
-                            <div className="flex-1 flex items-center justify-center p-12">
-                                <i className="fas fa-spinner fa-spin text-2xl text-text-tertiary" />
-                            </div>
-                        }
-                    >
-                        <AssetWorkbookPage
-                            columns={config.workbookColumns}
-                            config={config}
-                            title={`${title || config.pluralLabel} Workbook`}
-                        />
-                    </Suspense>
                 )}
             </TabFadeIn>
         </div>

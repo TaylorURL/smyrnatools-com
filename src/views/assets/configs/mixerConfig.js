@@ -6,7 +6,6 @@ import VerifiedUtility from '../../../utils/VerifiedUtility'
 import MixerAddView from '../mixers/MixerAddView'
 import MixerCard from '../mixers/MixerCard'
 import MixerDetailView from '../mixers/MixerDetailView'
-import { MIXER_WORKBOOK_COLUMNS } from './mixerWorkbookColumns'
 
 const mixerConfig = {
     AddView: MixerAddView,
@@ -420,10 +419,7 @@ const mixerConfig = {
     viewModeStorageKey: 'mixers_last_view_mode',
 
     // VIN search
-    vinSearchFn: (query) => MixerService.searchMixersByVinProcessed(query),
-
-    // Workbook (spreadsheet) view columns — enables the Workbook tab
-    workbookColumns: MIXER_WORKBOOK_COLUMNS
+    vinSearchFn: (query) => MixerService.searchMixersByVinProcessed(query)
 }
 
 export default mixerConfig
