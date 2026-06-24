@@ -183,14 +183,6 @@ class PlantServiceImpl {
         }
         return []
     }
-    /** Fetches a region with its full plant membership list. */
-    async getRegionWithPlants(regionCode) {
-        if (!regionCode) throw new Error('Region code is required')
-        const region = await this.fetchRegionByCode(regionCode)
-        if (!region) return null
-        const plants = await this.fetchRegionPlants(regionCode)
-        return { ...region, plants }
-    }
     /** Fetches all regions that contain a specific plant code. */
     async fetchRegionsByPlantCode(plantCode) {
         if (!plantCode) throw new Error('Plant code is required')
