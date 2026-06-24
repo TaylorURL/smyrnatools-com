@@ -6,7 +6,6 @@ import { useOpportunities } from '../useOpportunities'
 
 vi.mock('../../../services/CrmService', () => ({
     default: {
-        deleteOpportunity: vi.fn(),
         fetchOpportunities: vi.fn(),
         moveStage: vi.fn(),
         saveOpportunity: vi.fn()
