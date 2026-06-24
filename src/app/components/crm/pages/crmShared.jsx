@@ -87,7 +87,6 @@ export function FilterStrip({ isLoading, onChangeQuery, onChangeSort, query, sor
  *  `viewMode === 'list'` — passed straight through to `CrmTable`. */
 export function ListOrDetailPane({
     accentColor,
-    colocationMap,
     columns,
     contactsByCustomer,
     cooldownStartIndex,
