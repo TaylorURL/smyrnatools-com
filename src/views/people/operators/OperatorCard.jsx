@@ -1,7 +1,6 @@
 import React from 'react'
 
 import Badge from '../../../app/components/common/Badge'
-import OperatorClockIndicator from '../../../app/components/common/OperatorClockIndicator'
 import PhoneLink from '../../../app/components/common/PhoneLink'
 import StarRating from '../../../app/components/common/StarRating'
 import CardSection from '../../../app/components/sections/CardSection'
