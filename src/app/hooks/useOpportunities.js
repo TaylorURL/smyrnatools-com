@@ -10,7 +10,7 @@ import CrmService from '../../services/CrmService'
  * @param {object} [options]
  * @param {string} [options.accountId] - Load by account when set.
  * @param {boolean} [options.boardMode] - When true, fetches all open opportunities.
- * @returns {{ opportunities, isLoading, error, reload, save, move, materialize, remove }}
+ * @returns {{ opportunities, isLoading, error, save, move, materialize }}
  */
 export function useOpportunities({ accountId, boardMode } = {}) {
     const [opportunities, setOpportunities] = useState([])
