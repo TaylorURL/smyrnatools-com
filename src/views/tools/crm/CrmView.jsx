@@ -12,7 +12,6 @@ import { CrmMapPage } from '../../../app/components/crm/pages/CrmMapPage'
 import { CrmMyDeskPage } from '../../../app/components/crm/pages/CrmMyDeskPage'
 import { CrmPinsPage } from '../../../app/components/crm/pages/CrmPinsPage'
 import { CrmPipelinePage } from '../../../app/components/crm/pages/CrmPipelinePage'
-import { isDarkLikeTheme } from '../../../app/constants/themeConstants'
 import { useAuth } from '../../../app/context/AuthContext'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useCrm } from '../../../app/hooks/useCrm'
@@ -20,7 +19,7 @@ import { useCrmDashboard } from '../../../app/hooks/useCrmDashboard'
 import useCrmRoster from '../../../app/hooks/useCrmRoster'
 import CrmService from '../../../services/CrmService'
 import { UserService } from '../../../services/UserService'
-import { canEditCrm, canManageCrm } from '../../../utils/CrmRoleUtility'
+import { canManageCrm } from '../../../utils/CrmRoleUtility'
 
 /** Section ids that require the crm.manage permission. */
 const MANAGE_ONLY_SECTIONS = new Set(['team-monitor', 'settings'])
