@@ -1,6 +1,3 @@
-/** Status values selectable from the tractor detail status dropdown. */
-export const TRACTOR_STATUSES = ['Active', 'Spare', 'In Shop', 'Retired']
-
 /** Freight types selectable from the tractor detail freight dropdown. */
 export const TRACTOR_FREIGHT_TYPES = ['Cement', 'Aggregate', 'Dump Truck']
 
