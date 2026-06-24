@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react'
+import { createContext } from 'react'
 
 /**
  * @typedef {object} SundayAnalyticsApi
@@ -9,17 +9,3 @@ import { createContext, useContext } from 'react'
 
 /** @type {import('react').Context<SundayAnalyticsApi | null>} */
 export const SundayAnalyticsContext = createContext(null)
-
-/**
- * Access the analytics API. Returns a `track()` function reserved for future
- * custom events. Must be called inside a <SundayAnalyticsProvider>.
- *
- * @returns {SundayAnalyticsApi}
- */
-export function useSundayAnalytics() {
-  const api = useContext(SundayAnalyticsContext)
-  if (!api) {
-    throw new Error('useSundayAnalytics must be used within a <SundayAnalyticsProvider>')
-  }
-  return api
-}
