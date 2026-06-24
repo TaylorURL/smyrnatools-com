@@ -68,11 +68,6 @@ function compareVINs(vinA: string | null | undefined, vinB: string | null | unde
     return 0
 }
 
-async function emailIsValid(email: string): Promise<boolean> {
-    const { res, json } = await APIUtility.post(`${AUTH_FUNCTION}/email-is-valid`, { email })
-    return res.ok ? json.isValid === true : false
-}
-
 function isVIN(v: unknown): boolean {
     if (typeof v !== 'string') return false
     const vin = v.trim().toUpperCase()
