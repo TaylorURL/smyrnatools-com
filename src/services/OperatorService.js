@@ -87,11 +87,6 @@ class OperatorServiceImpl {
         if (!employeeId || !ValidationUtility.isValidUUID(employeeId)) throw new Error('Invalid Employee ID')
         return apiPostRequireSuccess(`${SERVICE_PREFIX}/delete`, { employeeId }, 'Operator was not deleted')
     }
-    /** Fetches all operators marked as trainers. */
-    async getAllTrainers() {
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/list-trainers`, {}, 'Failed to fetch trainers')
-        return (json?.data ?? []).map((op) => new Operator(op))
-    }
     /**
      * Fetches operators directly from the database with status change history enrichment.
      * Optionally filtered by region codes for scoped views.
