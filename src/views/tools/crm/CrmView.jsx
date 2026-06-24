@@ -58,7 +58,6 @@ function CrmView() {
     }, [user?.id])
 
     const canManage = canManageCrm(permissions)
-    const canEdit = canEditCrm(permissions)
 
     const [activeTab, setActiveTabRaw] = useState('work')
     const [activeSection, setActiveSection] = useState('my-desk')
