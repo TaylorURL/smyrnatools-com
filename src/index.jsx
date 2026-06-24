@@ -11,7 +11,6 @@ import { AuthProvider } from './app/context/AuthContext'
 import { ConfirmProvider } from './app/context/ConfirmContext'
 import { PreferencesProvider } from './app/context/PreferencesContext'
 import { TutorialProvider } from './app/context/TutorialContext'
-import { SundayAnalyticsProvider } from './lib/sunday-analyzer'
 import { getSessionUserId } from './services/SessionService'
 
 const SENTRY_DSN = import.meta.env.REACT_APP_SENTRY_DSN
