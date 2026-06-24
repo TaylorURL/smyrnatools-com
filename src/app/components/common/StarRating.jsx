@@ -234,7 +234,6 @@ export default function StarRating({
                 {slots.map(({ starNumber }) => (
                     <button type="button"
                         key={starNumber}
-                        type="button"
                         role="radio"
                         aria-checked={normalizedValue === starNumber}
                         aria-label={`${starNumber} star${starNumber === 1 ? '' : 's'}`}

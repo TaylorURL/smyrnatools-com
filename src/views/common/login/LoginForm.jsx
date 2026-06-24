@@ -356,7 +356,7 @@ function LoginForm() {
                         <span>{successMessage}</span>
                     </div>
                 )}
-                <button type="button"
+                <button
                     type="submit"
                     disabled={isSubmitting || loading}
                     className={`mt-1 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-accent bg-accent px-4 py-2.5 text-[13px] font-bold tracking-tight text-white transition-[filter,transform,opacity] duration-150 ease-out hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary motion-reduce:transition-none ${isSubmitting || loading ? 'cursor-not-allowed opacity-70' : ''}`}

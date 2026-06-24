@@ -84,7 +84,6 @@ export function PersonStatisticsSidebar({ accentColor, activeSection, onSelect, 
                 return (
                     <button type="button"
                         key={section.id}
-                        type="button"
                         onClick={() => onSelect(section.id)}
                         className="flex items-center gap-2.5 rounded-md border-none cursor-pointer text-left px-3 py-2 transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         style={{
@@ -114,7 +113,6 @@ export function PersonStatisticsSectionTabs({ accentColor, activeSection, onSele
                 return (
                     <button type="button"
                         key={section.id}
-                        type="button"
                         onClick={() => onSelect(section.id)}
                         className="flex items-center gap-1.5 rounded-md border-none cursor-pointer px-2.5 py-1.5 text-[12px] font-semibold shrink-0 active:scale-[0.97] transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         style={{

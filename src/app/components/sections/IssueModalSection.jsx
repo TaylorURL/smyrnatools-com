@@ -263,7 +263,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                         )
                                     })}
                                 </div>
-                                <button type="button"
+                                <button
                                     type="submit"
                                     disabled={isSubmitting || !newIssue.trim()}
                                     className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider"

@@ -208,7 +208,6 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                                         filteredRecipients.map((r) => (
                                                             <button type="button"
                                                                 key={r.id}
-                                                                type="button"
                                                                 role="option"
                                                                 aria-selected={false}
                                                                 onClick={() => {

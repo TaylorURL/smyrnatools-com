@@ -18,7 +18,6 @@ export default function AccountSideNav({ accentColor, activeId, onJump, sections
                     return (
                         <button type="button"
                             key={id}
-                            type="button"
                             onClick={() => onJump(id)}
                             className="flex items-center gap-2 px-2 py-1.5 border-none cursor-pointer text-[13px] text-left bg-transparent transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
                             style={{

@@ -125,7 +125,6 @@ function AddIssueComposer({ accentColor, onAddIssue }) {
                         return (
                             <button type="button"
                                 key={sev}
-                                type="button"
                                 onClick={() => setSeverity(sev)}
                                 className="rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.99] active:opacity-70"
                                 style={{

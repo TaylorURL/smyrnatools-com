@@ -29,7 +29,6 @@ export default function ManagerAssignmentCard({
                 <button type="button"
                     className={`operator-select-button form-control text-left ${readOnly ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                     onClick={() => !readOnly && onOpenPlantModal()}
-                    type="button"
                     disabled={readOnly}
                 >
                     <span className="block overflow-hidden text-ellipsis">{plantDisplayText}</span>
@@ -40,7 +39,6 @@ export default function ManagerAssignmentCard({
                 <button type="button"
                     className={`operator-select-button form-control text-left ${readOnly ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                     onClick={() => !readOnly && onOpenAdditionalPlantsModal()}
-                    type="button"
                     disabled={readOnly}
                 >
                     <span className="block overflow-hidden text-ellipsis">

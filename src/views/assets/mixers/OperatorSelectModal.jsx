@@ -117,7 +117,6 @@ function OperatorSelectModal({
                         {searchText && (
                             <button type="button"
                                 aria-label="Clear search"
-                                type="button"
                                 className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-bg-tertiary hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                 onClick={() => setSearchText('')}
                             >

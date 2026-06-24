@@ -58,7 +58,6 @@ function AssignmentSection({
                     <button type="button"
                         className={`operator-select-button form-control text-left ${!canEditOperator ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                         onClick={() => setShowPlantModal(true)}
-                        type="button"
                         disabled={!canEditOperator}
                     >
                         <span className="block overflow-hidden text-ellipsis">{plantDisplayText}</span>

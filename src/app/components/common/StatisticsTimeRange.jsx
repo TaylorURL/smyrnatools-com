@@ -18,7 +18,6 @@ function PeriodSelector({ accentColor, period, setPeriod }) {
                 return (
                     <button type="button"
                         key={id}
-                        type="button"
                         onClick={() => setPeriod(id)}
                         aria-pressed={isActive}
                         className="rounded text-xs font-semibold border-0 cursor-pointer px-2.5 py-1.5 transition-colors duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-tertiary motion-reduce:transition-none"

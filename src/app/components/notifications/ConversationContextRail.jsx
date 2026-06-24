@@ -160,7 +160,6 @@ export default function ConversationContextRail({
                                 return (
                                     <button type="button"
                                         key={`${type}-${meta.itemNumber || Math.random()}`}
-                                        type="button"
                                         onClick={() => isViewable && onAttachmentClick?.(type, meta)}
                                         disabled={!isViewable}
                                         className="flex items-center gap-2 rounded text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary px-2.5 py-1.5 cursor-pointer disabled:cursor-default bg-bg-primary border border-border-light active:scale-[0.97] disabled:active:scale-100"

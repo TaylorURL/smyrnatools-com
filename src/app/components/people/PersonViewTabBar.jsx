@@ -19,7 +19,6 @@ export default function PersonViewTabBar({ accentColor, activeTab, onChange }) {
                 return (
                     <button type="button"
                         key={tab.id}
-                        type="button"
                         role="tab"
                         aria-selected={active}
                         onClick={() => onChange(tab.id)}

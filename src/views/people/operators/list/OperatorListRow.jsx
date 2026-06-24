@@ -86,7 +86,6 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
                             e.stopPropagation()
                             onOpenComments(operator)
                         }}
-                        type="button"
                         title="View comments"
                         aria-label="View comments"
                         className={`${ACTION_BUTTON} relative`}
@@ -110,7 +109,6 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
                             e.stopPropagation()
                             onOpenHistory(operator)
                         }}
-                        type="button"
                         title="View history"
                         aria-label="View history"
                         className={ACTION_BUTTON}

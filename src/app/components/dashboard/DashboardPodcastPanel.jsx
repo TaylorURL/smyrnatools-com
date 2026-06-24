@@ -318,7 +318,6 @@ export default function DashboardPodcastPanel() {
                     return (
                         <button type="button"
                             key={ep.key}
-                            type="button"
                             onClick={() => setSelectedKey(ep.key)}
                             className={`text-left cursor-pointer rounded-md border px-2.5 py-2 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary ${stateClass}`}
                             title={ep.title}

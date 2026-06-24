@@ -181,7 +181,6 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                         addableCandidates.map((candidate, idx) => (
                             <button type="button"
                                 key={candidate.plantCode}
-                                type="button"
                                 disabled={disabled}
                                 onClick={() => add(candidate.plantCode)}
                                 className="flex w-full items-center gap-3 border-none bg-transparent px-4 py-2.5 text-left cursor-pointer hover:bg-bg-hover transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.97] disabled:active:scale-100"

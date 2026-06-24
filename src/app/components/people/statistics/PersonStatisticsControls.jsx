@@ -20,7 +20,6 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
                 aria-haspopup="listbox"
                 aria-expanded={open}
                 aria-label="Filter every chart and table to a single plant"
-                type="button"
             >
                 <i className="fas fa-industry text-[11px]" aria-hidden="true" />
                 <span>{selectedPlant ? `Plant · ${selectedPlant}` : 'All plants'}</span>
@@ -43,7 +42,6 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
                         }}
                         role="option"
                         aria-selected={!selectedPlant}
-                        type="button"
                     >
                         <span>All plants</span>
                         {!selectedPlant && <i className="fas fa-check text-[10px]" aria-hidden="true" />}
@@ -65,7 +63,6 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
                                 }}
                                 role="option"
                                 aria-selected={selectedPlant === code}
-                                type="button"
                             >
                                 <span className="truncate">{label}</span>
                                 {selectedPlant === code && (

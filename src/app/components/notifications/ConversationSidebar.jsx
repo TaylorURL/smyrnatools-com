@@ -202,7 +202,6 @@ export default function ConversationSidebar({
                     return (
                         <button type="button"
                             key={id}
-                            type="button"
                             onClick={() => onFilterChange?.(id)}
                             className={`inline-flex items-center gap-1 rounded text-[11px] font-semibold border cursor-pointer px-1.5 py-0.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none ${
                                 isActive ? 'force-white-text' : ''
