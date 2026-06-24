@@ -207,7 +207,6 @@ function sanitizeObject<T extends Record<string, unknown>>(o: unknown, allowed: 
 
 const ValidationUtility = {
     compareVINs,
-    emailIsValid,
     explainVIN,
     generateUUID,
     isUUID,
