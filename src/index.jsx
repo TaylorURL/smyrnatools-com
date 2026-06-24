@@ -11,7 +11,6 @@ import { AuthProvider } from './app/context/AuthContext'
 import { ConfirmProvider } from './app/context/ConfirmContext'
 import { PreferencesProvider } from './app/context/PreferencesContext'
 import { TutorialProvider } from './app/context/TutorialContext'
-import { SundayAnalyticsProvider } from './lib/sunday-analyzer'
 import { getSessionUserId } from './services/SessionService'
 
 const SENTRY_DSN = import.meta.env.REACT_APP_SENTRY_DSN
@@ -99,9 +98,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                     <TutorialProvider>
                         <ConfirmProvider>
                             <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
-                                <SundayAnalyticsProvider siteKey="sa_7bcbf8f895fbbf056ce0cbc4a8b92531">
-                                    <App />
-                                </SundayAnalyticsProvider>
+                                <App />
                             </Sentry.ErrorBoundary>
                         </ConfirmProvider>
                     </TutorialProvider>
