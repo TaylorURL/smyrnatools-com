@@ -128,7 +128,6 @@ export function useDashboardAssets({
             } finally {
                 if (!cancelled) {
                     setLoading(false)
-                    setRefreshing(false)
                     readyTimerId = setTimeout(() => setDataReady(true), 300)
                 }
             }
