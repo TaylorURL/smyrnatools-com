@@ -47,7 +47,6 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
             <td className={`${CELL_BASE} w-[10%] group-hover:bg-bg-tertiary`}>{operator.plantCode || '—'}</td>
             <td className={`${CELL_HIGHLIGHT} w-[24%] group-hover:bg-bg-tertiary`}>
                 <div className="flex items-center gap-1.5">
-                    <OperatorClockIndicator badge={operator.smyrnaId || operator.employeeId} />
                     <span className={duplicate ? 'duplicate' : ''}>{operator.name}</span>
                     <button type="button"
                         onClick={(e) => handleCopyName(e, operator.name)}
