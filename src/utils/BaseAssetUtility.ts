@@ -252,19 +252,3 @@ export function hasNoOperator(item: FleetItem): boolean {
         item.assignedOperator === 'null'
     )
 }
-
-export async function ensureSpareIfNoOperatorBase(
-    items: FleetItem[] | null,
-    updateFn: (item: FleetItem) => Promise<void>
-): Promise<FleetItem[] | null> {
-    const needsUpdate = (items || []).filter((item) => item.status === 'Active' && hasNoOperator(item))
-    for (const item of needsUpdate) {
-        try {
-            await updateFn(item)
-            item.status = 'Spare'
-        } catch (error) {
-            console.error(`Failed to set spare status for item ${item.id}:`, error)
-        }
-    }
-    return items
-}
