@@ -146,33 +146,5 @@ class OperatorServiceImpl {
         )
         return json?.data
     }
-    async fetchComments(operatorId) {
-        if (!operatorId || !ValidationUtility.isValidUUID(operatorId)) throw new Error('Invalid Operator ID')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-comments`,
-            { operatorId },
-            'Failed to fetch comments'
-        )
-        return json?.data ?? []
-    }
-    async addComment(operatorId, text, userId) {
-        if (!operatorId || !ValidationUtility.isValidUUID(operatorId)) throw new Error('Invalid Operator ID')
-        if (!text || !text.trim()) throw new Error('Comment text is required')
-        if (!userId || !ValidationUtility.isValidUUID(userId)) throw new Error('Invalid User ID')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/add-comment`,
-            {
-                operatorId,
-                text: text.trim(),
-                userId
-            },
-            'Failed to add comment'
-        )
-        return json?.data
-    }
-    async deleteComment(commentId) {
-        if (!commentId || !ValidationUtility.isValidUUID(commentId)) throw new Error('Invalid Comment ID')
-        return apiPostRequireSuccess(`${SERVICE_PREFIX}/delete-comment`, { commentId }, 'Failed to delete comment')
-    }
 }
 export const OperatorService = new OperatorServiceImpl()
