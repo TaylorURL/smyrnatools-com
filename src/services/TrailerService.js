@@ -40,10 +40,6 @@ export const TrailerService = {
     fetchTrailersWithDetails(regionCodes = null) {
         return base._base.fetchWithDetails(regionCodes)
     },
-
-    getTrailerHistory(trailerId, limit = null) {
-        return base._base.getHistory(trailerId, limit)
-    },
     /** Updates a trailer record. Coerces plain objects to Trailer instances for serialization. */
     updateTrailer(trailerId, updatedTrailer, userId, _oldTrailer) {
         const trailer = updatedTrailer instanceof Trailer ? updatedTrailer : Trailer.ensureInstance(updatedTrailer)
