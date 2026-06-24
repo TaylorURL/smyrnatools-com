@@ -140,20 +140,6 @@ class UserServiceImpl {
         const { json } = await postUser('highest-role', { userId: resolveEntityId(userId) }, { skipAuthCheck: true })
         return json
     }
-    async assignRole(userId, roleId) {
-        if (!userId || !roleId) throw new Error('User ID and role ID are required')
-        const id = resolveEntityId(userId)
-        const { json } = await postUser('assign-role', { roleId, userId: id })
-        this.userRolesCache.delete(id)
-        return !!json
-    }
-    async removeRole(userId, roleId) {
-        if (!userId || !roleId) throw new Error('User ID and role ID are required')
-        const id = resolveEntityId(userId)
-        await postUser('remove-role', { roleId, userId: id })
-        this.userRolesCache.delete(id)
-        return true
-    }
     async createRole(name, permissions = [], weight = 0) {
         if (!name) throw new Error('Role name is required')
         const { json } = await postUser('create-role', { name, permissions, weight })
@@ -163,12 +149,6 @@ class UserServiceImpl {
     async updateRole(roleId, updates) {
         if (!roleId || !updates) throw new Error('Role ID and updates are required')
         await postUser('update-role', { roleId, updates })
-        this.clearCache()
-        return true
-    }
-    async deleteRole(roleId) {
-        if (!roleId) throw new Error('Role ID is required')
-        await postUser('delete-role', { roleId })
         this.clearCache()
         return true
     }
