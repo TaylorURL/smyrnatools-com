@@ -38,7 +38,6 @@ const lazyWithRetry = (importer) =>
     )
 const AppInstallPromptModal = lazyWithRetry(() => import('./components/common/AppInstallPromptModal'))
 const DashboardView = lazyWithRetry(() => import('../views/common/dashboard/DashboardView'))
-const DocumentsView = lazyWithRetry(() => import('../views/tools/documents/DocumentsView'))
 const EquipmentsView = lazyWithRetry(() => import('../views/assets/equipment/EquipmentsView'))
 const ManagersView = lazyWithRetry(() => import('../views/people/managers/ManagersView'))
 const MixerDetailView = lazyWithRetry(() => import('../views/assets/mixers/MixerDetailView'))
@@ -284,8 +283,6 @@ function AppContent() {
                     <LoginView />
                 )
             }
-            case 'Documents':
-                return <DocumentsView />
             case 'Notifications':
                 return (
                     <NotificationsView
