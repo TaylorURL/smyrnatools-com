@@ -19,7 +19,6 @@ const ALL_REGIONS_PERMISSION = 'regions.select.all'
 const ALL_REGIONS_ROLE_WEIGHT_THRESHOLD = 70
 /** Centralized API helper for all user-service endpoints. */
 const postUser = (endpoint, body, options) => APIUtility.post(`${USER_FUNCTION}/${endpoint}`, body, options)
-const postDM = (endpoint, body, options) => APIUtility.post(`${DM_FUNCTION}/${endpoint}`, body, options)
 const resolveUser = (userId) => requireEntityId(userId, USER_ID_REQUIRED)
 const fallbackName = (userId) => `User ${userId.slice(0, 8)}`
 /**
