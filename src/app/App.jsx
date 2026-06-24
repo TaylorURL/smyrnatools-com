@@ -3,7 +3,6 @@ import { SpeedInsights } from '@vercel/speed-insights/react'
 import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
 import { Database } from '../services/DatabaseService'
-import PlanSettingsService from '../services/PlanSettingsService'
 import { getSessionUserId } from '../services/SessionService'
 import { UserService } from '../services/UserService'
 import { NetworkUtility } from '../utils/NetworkUtility'
