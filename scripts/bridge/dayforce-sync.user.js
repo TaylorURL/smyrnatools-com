@@ -1289,7 +1289,7 @@
     const backfillCompletedYear = Number(GM_getValue(BACKFILL_GM_KEY_COMPLETED_YEAR, 0)) || 0
     const backfillPending = backfillCompletedYear < new Date().getFullYear()
     log(
-        `Smyrna Dayforce Sync v1.4.0 loaded — host ${DAYFORCE_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${RMX_ORG_UNITS.length} RMX orgs. Auto-login: ${autoLoginEnabled ? 'ENABLED' : 'DISABLED — run dayforceSync.setCredentials(user, pass)'}. YTD backfill: ${backfillPending ? 'PENDING (will kick after first live sync)' : `COMPLETED for ${backfillCompletedYear}`}. Heartbeat: every ${Math.round(HEARTBEAT_INTERVAL_MS / 1000)}s. Manual triggers under window.dayforceSync`
+        `Smyrna Dayforce Sync v1.5.0 loaded — host ${DAYFORCE_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${RMX_ORG_UNITS.length} RMX orgs. Auto-login: ${autoLoginEnabled ? 'ENABLED' : 'DISABLED — run dayforceSync.setCredentials(user, pass)'}. YTD backfill: ${backfillPending ? 'PENDING (will kick after first live sync)' : `COMPLETED for ${backfillCompletedYear}`}. Heartbeat: every ${Math.round(HEARTBEAT_INTERVAL_MS / 1000)}s. Manual triggers under window.dayforceSync`
     )
 
     setTimeout(() => {
