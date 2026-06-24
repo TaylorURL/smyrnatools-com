@@ -1,7 +1,6 @@
 import React from 'react'
 
 import Badge from '../../../../app/components/common/Badge'
-import OperatorClockIndicator from '../../../../app/components/common/OperatorClockIndicator'
 import PhoneLink from '../../../../app/components/common/PhoneLink'
 import StatusHistoryBar from '../../../../app/components/common/StatusHistoryBar'
 import { renderStarsOrNA } from './operatorRatingHelpers'
