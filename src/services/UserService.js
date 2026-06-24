@@ -92,29 +92,6 @@ class UserServiceImpl {
         const userId = getSessionUserId()
         return userId ? { id: userId } : null
     }
-    async getUserById(userId) {
-        if (!userId) return UNKNOWN_USER
-        if (this.userProfileCache.has(userId)) {
-            const cached = this.userProfileCache.get(userId)
-            return {
-                email: cached.email,
-                id: userId,
-                name: cached.displayName || cached.name || fallbackName(userId)
-            }
-        }
-        const { json } = await postUser('user-by-id', { userId })
-        if (!json?.id) {
-            const basicUser = { id: userId, name: fallbackName(userId) }
-            this.userProfileCache.set(userId, basicUser)
-            return basicUser
-        }
-        this.userProfileCache.set(userId, json)
-        return {
-            email: json.email,
-            id: json.id,
-            name: json.name || json.email?.split('@')[0] || fallbackName(userId)
-        }
-    }
     async getUserDisplayName(userId) {
         if (!userId) return 'System'
         if (userId === 'anonymous') return 'Anonymous'
