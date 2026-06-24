@@ -51,7 +51,6 @@ export default function StartPageDropdown({ accentColor, onChange, value }) {
                         return (
                             <button type="button"
                                 key={id}
-                                type="button"
                                 role="option"
                                 aria-selected={isActive}
                                 onClick={() => {
