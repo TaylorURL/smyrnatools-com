@@ -292,7 +292,6 @@ export function CrmAccountsPage({
             <AccountsDetailWrapper
                 accountInteractionsByAccount={accountInteractionsByAccount}
                 accentColor={accentColor}
-                colocationMap={colocationMap}
                 columns={accountsColumns}
                 contactsByCustomer={contactsByCustomer}
                 cooldownStartIndex={cooldownStartIndex}
