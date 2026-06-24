@@ -456,11 +456,6 @@ function PlantsView({ title = 'Plants' }) {
                                                             aria-hidden="true"
                                                         />
                                                     </button>
-                                                    <PlantSaturdayForecastBadge
-                                                        plantCode={code}
-                                                        forecast={forecastsByPlant?.[code] || null}
-                                                        compact
-                                                    />
                                                 </div>
                                             </td>
                                         </tr>
