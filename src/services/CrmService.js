@@ -99,13 +99,6 @@ class CrmServiceImpl {
         return json?.data ?? null
     }
 
-    async deleteFollowup(id) {
-        if (!id) throw new Error('id is required')
-        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/delete-followup`, { id })
-        if (!res.ok) throw new Error(json?.error || 'Failed to delete follow-up')
-        return true
-    }
-
     async fetchMyDesk() {
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/my-desk`, {})
         if (!res.ok) throw new Error(json?.error || 'Failed to load desk')
