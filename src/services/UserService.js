@@ -135,19 +135,6 @@ class UserServiceImpl {
         if (permission === ALWAYS_PERMITTED) return true
         return checkPermission(userId, 'has-permission', { permission })
     }
-    async hasAnyPermission(userId, permissions) {
-        if (!permissions?.length) return false
-        return checkPermission(userId, 'has-any-permission', { permissions })
-    }
-    async hasAllPermissions(userId, permissions) {
-        if (!permissions?.length) return false
-        return checkPermission(userId, 'has-all-permissions', { permissions })
-    }
-    async getMenuVisibility(userId, requiredPermissions = {}) {
-        if (!userId) return {}
-        const { json } = await postUser('menu-visibility', { requiredPermissions, userId: resolveEntityId(userId) })
-        return json ?? {}
-    }
     async getHighestRole(userId) {
         if (!userId) return null
         const { json } = await postUser('highest-role', { userId: resolveEntityId(userId) }, { skipAuthCheck: true })
