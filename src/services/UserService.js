@@ -73,17 +73,9 @@ const throwFirstError = (results) => {
  * Handles authentication state, profiles, roles, permissions, and region access.
  */
 class UserServiceImpl {
-    userProfileCache = new Map()
     userRolesCache = new Map()
-    rolesPermissionsCache = new Map()
-    eligibleRolesCache = null
-    userPlantsCache = new Map()
     clearCache() {
-        this.userProfileCache.clear()
         this.userRolesCache.clear()
-        this.rolesPermissionsCache.clear()
-        this.eligibleRolesCache = null
-        this.userPlantsCache.clear()
     }
     async getCurrentUser() {
         const userId = getSessionUserId()
