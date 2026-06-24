@@ -131,16 +131,6 @@ class OperatorServiceImpl {
             return key || null
         })
     }
-    /** Fetches change history for a specific operator. */
-    async getOperatorHistory(operatorId, limit = null) {
-        const payload = { limit, operatorId }
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-history`,
-            payload,
-            'Failed to fetch operator history'
-        )
-        return (json?.data ?? []).map((entry) => new OperatorHistory(entry))
-    }
     /** Records a field-level change in the operator history audit trail. */
     async createHistoryEntry(operatorId, fieldName, oldValue, newValue, changedBy) {
         const json = await apiPostOrThrow(
