@@ -150,7 +150,6 @@ export function ListOrDetailPane({
                 onLogInteraction={onLogInteraction}
                 onSaveContact={saveContact}
                 opportunitiesSlot={opportunitiesSlot}
-                plantNameByCode={plantNameByCode}
                 row={selectedRow}
             />
         )
