@@ -111,21 +111,6 @@ export default function AssetViewShell({
                         title={title || config.pluralLabel}
                     />
                 )}
-                {activeTab === 'workbook' && config.workbookColumns && (
-                    <Suspense
-                        fallback={
-                            <div className="flex-1 flex items-center justify-center p-12">
-                                <i className="fas fa-spinner fa-spin text-2xl text-text-tertiary" />
-                            </div>
-                        }
-                    >
-                        <AssetWorkbookPage
-                            columns={config.workbookColumns}
-                            config={config}
-                            title={`${title || config.pluralLabel} Workbook`}
-                        />
-                    </Suspense>
-                )}
             </TabFadeIn>
         </div>
     )
