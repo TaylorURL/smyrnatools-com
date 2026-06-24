@@ -125,7 +125,6 @@ const ALLOWED_COLUMNS: Record<string, Set<string>> = {
     plants: new Set(['id', 'plant_name', 'plant_code', 'address', 'city', 'state', 'created_at', 'updated_at']),
     regions: new Set(['id', 'name', 'region_code', 'type', 'plant_codes', 'created_at', 'updated_at']),
     notifications: new Set(['id', 'user_id', 'title', 'message', 'read', 'type', 'created_at']),
-    documents: new Set(['id', 'name', 'file_path', 'file_type', 'file_size', 'uploaded_by', 'created_at', 'updated_at']),
     roles: new Set(['id', 'name', 'weight', 'permissions', 'created_at', 'updated_at']),
     users_roles: new Set(['id', 'name', 'weight', 'permissions', 'created_at', 'updated_at']),
     users_pinned_conversations: new Set(['id', 'user_id', 'conversation_id', 'created_at']),
