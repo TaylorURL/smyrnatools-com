@@ -52,9 +52,6 @@ export function useDashboardAssets({
                             allPickupsRef.current = (parsed.pickups || []).map(DashboardUtility.slimPickup)
                             allOperatorsRef.current = (parsed.operators || []).map(DashboardUtility.slimOperator)
                             computeStats()
-                            setLastUpdated(
-                                parsed.lastUpdated ? new Date(parsed.lastUpdated) : new Date(parsed.savedAt || now)
-                            )
                             setDataReady(true)
                             setLoading(false)
                         }
@@ -63,7 +60,6 @@ export function useDashboardAssets({
                     console.error('Failed to read dashboard cache from sessionStorage:', e)
                 }
             }
-            setRefreshing(true)
             try {
                 const [mix, trac, trail, equip, pick, ops] = await Promise.all([
                     MixerService.getAllMixers().catch(() => []),
