@@ -149,7 +149,6 @@ export default function AssetListRow({
                     {operator?.name ? (
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-1">
-                                <OperatorClockIndicator badge={operator.smyrnaId || operator.employeeId} />
                                 <span className="font-medium">{operator.name}</span>
                                 {copyButton(operator.name, 'Copy operator name')}
                             </div>
