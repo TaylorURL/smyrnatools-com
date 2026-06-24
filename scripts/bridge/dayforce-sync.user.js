@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Smyrna Dayforce Sync
 // @namespace    smyrna-tools
-// @version      1.4.0
-// @description  Syncs Houston RMX_TX_* timesheet bundles + raw clock punches from Dayforce (wkdus261) to Supabase every 5 minutes. Captures the session GUID + CSRF token from the live UI's own traffic, calls the same internal endpoints the timesheet view calls (ObfuscatingTimesheet/GetManagerTimesheetLoadBundle, EmployeeSelfService/TimeAndAttendance/GetManagerEmployeeRawPunches), POSTs structured JSON to the dayforce-import edge function which decodes and upserts. Manual triggers under window.dayforceSync. On session expiry navigates to the Dayforce IdP (dfid.dayforcehcm.com) and auto-submits stored credentials — fully unattended re-login. Falls back to silent-reload + banner if credentials aren't stored or MFA is enforced. On first install (or any time the GM-stored completed-year flag is older than the current year) the script runs a one-shot YTD backfill: weekly slices from Jan 1 of the current year → today, gap-checked against Supabase so existing data isn't re-fetched, resumable across reloads, throttled at 1s/week so Dayforce doesn't 429.
+// @version      1.5.0
+// @description  Syncs Houston RMX_TX_* timesheet bundles from Dayforce (wkdus261) to Supabase every 5 minutes. Captures the session GUID + CSRF token from the live UI's own traffic, calls the same internal endpoint the timesheet view calls (ObfuscatingTimesheet/GetManagerTimesheetLoadBundle), POSTs structured JSON to the dayforce-import edge function which decodes and upserts dayforce_shifts. Manual triggers under window.dayforceSync. On session expiry navigates to the Dayforce IdP (dfid.dayforcehcm.com) and auto-submits stored credentials — fully unattended re-login. Falls back to silent-reload + banner if credentials aren't stored or MFA is enforced. On first install (or any time the GM-stored completed-year flag is older than the current year) the script runs a one-shot YTD backfill: weekly slices from Jan 1 of the current year → today, gap-checked against Supabase so existing data isn't re-fetched, resumable across reloads, throttled at 1s/week so Dayforce doesn't 429.
 // @match        https://wkdus261.dayforcehcm.com/*
 // @match        https://dfid.dayforcehcm.com/*
 // @grant        GM_xmlhttpRequest
@@ -314,12 +314,6 @@
     const SYNC_WINDOW_START_MINUTES = 0
     const SYNC_WINDOW_END_MINUTES = 24 * 60
 
-    // Keys used by the obfuscated ObfuscatingTimesheet response — we don't
-    // decode here (that's the edge function's job) but we do need to know
-    // which key holds the employee array so we can fan out raw-punch
-    // queries per-employee in this cycle.
-    const TS_EMPLOYEES_KEY = 'j6'
-    const TS_DAYFORCE_EMPLOYEE_ID_KEY = 'e4'
 
     // ============================================================
     // BACKFILL CONFIG
@@ -682,48 +676,6 @@
         })
     }
 
-    // GET — used for GetUserOrg/ (no body required, plain XHR pattern)
-    function dayforceGet(path) {
-        return new Promise((resolve, reject) => {
-            const url = `${DAYFORCE_BASE}/u/${sessionGuid}${path}`
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url,
-                headers: {
-                    Accept: 'application/json, text/plain, */*',
-                    Origin: `https://${DAYFORCE_HOST}`,
-                    Referer: `https://${DAYFORCE_HOST}/MyDayforce/u/${sessionGuid}/Common/`,
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'x-csrf-token': csrfToken || ''
-                },
-                onload: (res) => {
-                    if (isSessionExpiredResponse(res)) {
-                        handleSessionExpired()
-                        reject(makeExpiredError(path, res))
-                        return
-                    }
-                    if (res.status >= 200 && res.status < 300) {
-                        try {
-                            resolve(JSON.parse(res.responseText))
-                        } catch (e) {
-                            reject(new Error(`Bad JSON from ${path}: ${e.message}`))
-                        }
-                        return
-                    }
-                    const err = new Error(`${path} returned ${res.status}: ${(res.responseText || '').slice(0, 200)}`)
-                    err.status = res.status
-                    reject(err)
-                },
-                onerror: (e) => {
-                    handleSessionExpired()
-                    const err = new Error(`network error: ${e?.error}`)
-                    err.sessionExpired = true
-                    reject(err)
-                }
-            })
-        })
-    }
-
     // ============================================================
     // SUPABASE EDGE FUNCTION
     // ============================================================
@@ -837,15 +789,6 @@
         }
     }
 
-    function buildRawPunchBody(employeeId, periodStart, periodEnd) {
-        return {
-            employeeId,
-            endDate: periodEnd,
-            isPunchCheckSumRequired: false,
-            startDate: periodStart
-        }
-    }
-
     // ============================================================
     // SESSION HEARTBEAT
     //
@@ -891,16 +834,14 @@
     }
 
     // ============================================================
-    // PER-WEEK FETCH HELPERS
+    // PER-WEEK FETCH HELPER
     //
     // Shared between the live 5-min cycle (current week) and the YTD
-    // backfill (each historical week). They preserve the same fan-out
+    // backfill (each historical week). Preserves the same fan-out
     // concurrency, cancellation token plumbing, and session-expiry
-    // propagation as the original inline implementation — extracted so
-    // backfill doesn't duplicate ~100 lines of worker logic.
+    // propagation as the original inline implementation.
     // ============================================================
     async function pullTimesheetsForWeek({ isCancelled = () => false, onProgress, periodEnd, periodStart }) {
-        const employeeIds = new Set()
         const timesheetSlices = []
         let count = 0
         let orgCursor = 0
@@ -917,13 +858,6 @@
                     )
                     if (isCancelled()) return
                     timesheetSlices.push({ bundle, orgUnitId: org.id, periodEnd, periodStart })
-                    const empList = bundle?.Result?.[TS_EMPLOYEES_KEY]
-                    if (Array.isArray(empList)) {
-                        for (const emp of empList) {
-                            const id = Number(emp?.[TS_DAYFORCE_EMPLOYEE_ID_KEY])
-                            if (Number.isFinite(id)) employeeIds.add(id)
-                        }
-                    }
                     count++
                 } catch (err) {
                     if (err?.sessionExpired) throw err
@@ -935,66 +869,13 @@
         await Promise.all(
             Array.from({ length: Math.min(WORKER_CONCURRENCY, RMX_ORG_UNITS.length) }, worker)
         )
-        return { count, employeeIds: Array.from(employeeIds), timesheetSlices }
-    }
-
-    async function pullPunchesForRange({ employeeIdList, isCancelled = () => false, onProgress, periodEnd, periodStart }) {
-        const punchSlices = []
-        let empCursor = 0
-        const worker = async () => {
-            while (true) {
-                if (isCancelled()) return
-                const idx = empCursor++
-                if (idx >= employeeIdList.length) return
-                const eid = employeeIdList[idx]
-                try {
-                    const res = await dayforcePost(
-                        '/EmployeeSelfService/TimeAndAttendance/GetManagerEmployeeRawPunches',
-                        buildRawPunchBody(eid, periodStart, periodEnd)
-                    )
-                    if (isCancelled()) return
-                    const punches = res?.Result
-                    if (Array.isArray(punches) && punches.length > 0) {
-                        punchSlices.push({ employeeId: eid, punches })
-                    }
-                } catch (err) {
-                    if (err?.sessionExpired) throw err
-                    log(`  Punch fail ${eid}: ${err.message}`)
-                }
-                if (onProgress && ((idx + 1) % 25 === 0 || idx + 1 === employeeIdList.length)) {
-                    onProgress({ count: idx + 1, total: employeeIdList.length })
-                }
-            }
-        }
-        await Promise.all(
-            Array.from({ length: Math.min(WORKER_CONCURRENCY, employeeIdList.length) }, worker)
-        )
-        return { punchSlices }
-    }
-
-    // Punches POST'd in chunks to keep request bodies under the edge
-    // function payload ceiling. 50 employees * ~5 punches each is well
-    // under 1 MB; the edge function dedupes across chunks.
-    async function postPunchesInChunks(punchSlices, isCancelled = () => false) {
-        const CHUNK = 50
-        let total = 0
-        for (let i = 0; i < punchSlices.length; i += CHUNK) {
-            if (isCancelled()) return total
-            const chunk = punchSlices.slice(i, i + CHUNK)
-            const punchRes = await postToImport({ rawPunches: chunk })
-            if (punchRes.ok) total += punchRes.body?.stats?.punches ?? 0
-            else log(`Punch import chunk failed: ${punchRes.error}`)
-        }
-        return total
+        return { count, timesheetSlices }
     }
 
     // One sync cycle:
-    //   1. Refresh org units (cheap, once per cycle)
-    //   2. For every RMX org × current week: pull timesheet bundle
-    //   3. For every employee surfaced in step 2: pull last 9 days of
-    //      raw punches (covers the current + prior week so a Sunday-edited
-    //      Saturday punch still lands)
-    //   4. POST each slice to the import edge function as soon as it's ready
+    //   1. For every RMX org × current week: pull timesheet bundle
+    //   2. POST the collected slices to the import edge function so it can
+    //      decode and upsert dayforce_shifts
     async function runSync() {
         if (syncState === 'syncing' || syncState === 'backfilling') {
             log(`Skipping tick — already ${syncState}`)
@@ -1019,22 +900,10 @@
         const cycleStart = Date.now()
         const myRunToken = ++currentRunToken
         const isCancelled = () => myRunToken !== currentRunToken
-        const results = { employees: 0, punches: 0, shifts: 0, timesheets: 0 }
+        const results = { shifts: 0, timesheets: 0 }
         updateBadge('syncing', '0%')
 
         try {
-            // -------- 1. Refresh org units --------
-            try {
-                const orgData = await dayforceGet('/Framework/Org/GetUserOrg/')
-                if (Array.isArray(orgData) && orgData.length > 0) {
-                    const orgRes = await postToImport({ orgUnits: orgData })
-                    if (!orgRes.ok) log(`Org unit sync failed: ${orgRes.error}`)
-                }
-            } catch (err) {
-                log(`Org unit refresh failed (non-fatal): ${err.message}`)
-            }
-
-            // -------- 2. Timesheets for current week --------
             const { end: weekEnd, start: weekStart } = getPayWeekRange(new Date())
             const periodStart = toDayforceDateString(weekStart)
             const periodEnd = toDayforceDateString(weekEnd)
@@ -1052,38 +921,18 @@
             if (ts.timesheetSlices.length > 0) {
                 const tsRes = await postToImport({ timesheets: ts.timesheetSlices })
                 if (tsRes.ok) {
-                    results.employees = tsRes.body?.stats?.employees ?? 0
                     results.shifts = tsRes.body?.stats?.shifts ?? 0
-                    log(`Timesheets imported: ${ts.count} bundles -> ${results.employees} employees, ${results.shifts} shifts`)
+                    log(`Timesheets imported: ${ts.count} bundles -> ${results.shifts} shifts`)
                 } else {
                     log(`Timesheet import failed: ${tsRes.error}`)
                 }
             }
             if (isCancelled()) return
 
-            // -------- 3. Per-employee raw punches (current + prior week) --------
-            const punchWindowStart = new Date(weekStart)
-            punchWindowStart.setDate(weekStart.getDate() - 7)
-            const punchStartStr = toDayforceDateString(punchWindowStart)
-            const punchEndStr = toDayforceDateString(weekEnd)
-            log(`Pulling raw punches for ${ts.employeeIds.length} employees`)
-
-            const { punchSlices } = await pullPunchesForRange({
-                employeeIdList: ts.employeeIds,
-                isCancelled,
-                onProgress: ({ count, total }) => updateBadge('syncing', `punches ${count}/${total}`),
-                periodEnd: punchEndStr,
-                periodStart: punchStartStr
-            })
-            if (isCancelled()) return
-
-            results.punches = await postPunchesInChunks(punchSlices, isCancelled)
-            log(`Raw punches imported: ${results.punches}`)
-
             lastSync = new Date()
             const elapsed = Math.round((Date.now() - cycleStart) / 1000)
             log(
-                `Cycle done in ${elapsed}s — ${results.timesheets} TS bundles, ${results.employees} employees, ${results.shifts} shifts, ${results.punches} punches`
+                `Cycle done in ${elapsed}s — ${results.timesheets} TS bundles, ${results.shifts} shifts`
             )
             updateBadge('ok')
 
@@ -1243,7 +1092,7 @@
                 `Backfill: ${weeks.length} weeks from ${weeks[0].toISOString().slice(0, 10)} -> ${weeks[weeks.length - 1].toISOString().slice(0, 10)}`
             )
 
-            const totals = { employees: 0, punches: 0, shifts: 0, timesheets: 0, weeks: 0 }
+            const totals = { shifts: 0, timesheets: 0, weeks: 0 }
 
             for (let i = 0; i < weeks.length; i++) {
                 if (isCancelled()) {
@@ -1269,39 +1118,21 @@
                     })
                     if (isCancelled()) break
 
-                    let employees = 0
                     let shifts = 0
                     if (ts.timesheetSlices.length > 0) {
                         const tsRes = await postToImport({ timesheets: ts.timesheetSlices })
                         if (tsRes.ok) {
-                            employees = tsRes.body?.stats?.employees ?? 0
                             shifts = tsRes.body?.stats?.shifts ?? 0
                         } else {
                             log(`  Backfill TS import failed: ${tsRes.error}`)
                         }
                     }
 
-                    const { punchSlices } = await pullPunchesForRange({
-                        employeeIdList: ts.employeeIds,
-                        isCancelled,
-                        onProgress: ({ count, total }) =>
-                            updateBadge('backfill', `wk ${label} punches ${count}/${total}`),
-                        periodEnd,
-                        periodStart
-                    })
-                    if (isCancelled()) break
-
-                    const punches = await postPunchesInChunks(punchSlices, isCancelled)
-
                     totals.weeks++
                     totals.timesheets += ts.count
-                    totals.employees += employees
                     totals.shifts += shifts
-                    totals.punches += punches
 
-                    log(
-                        `Backfill ${label}: ${ts.count} TS bundles, ${employees} employees, ${shifts} shifts, ${punches} punches`
-                    )
+                    log(`Backfill ${label}: ${ts.count} TS bundles, ${shifts} shifts`)
 
                     // Persist progress after each successful week so a
                     // mid-backfill reload/expiry resumes cleanly.
@@ -1320,7 +1151,7 @@
 
             const elapsedSec = Math.round((Date.now() - startedAt) / 1000)
             log(
-                `Backfill complete in ${elapsedSec}s — ${totals.weeks}/${weeks.length} weeks, ${totals.timesheets} TS bundles, ${totals.employees} employees, ${totals.shifts} shifts, ${totals.punches} punches`
+                `Backfill complete in ${elapsedSec}s — ${totals.weeks}/${weeks.length} weeks, ${totals.timesheets} TS bundles, ${totals.shifts} shifts`
             )
 
             if (totals.weeks === weeks.length) {
@@ -1458,7 +1289,7 @@
     const backfillCompletedYear = Number(GM_getValue(BACKFILL_GM_KEY_COMPLETED_YEAR, 0)) || 0
     const backfillPending = backfillCompletedYear < new Date().getFullYear()
     log(
-        `Smyrna Dayforce Sync v1.4.0 loaded — host ${DAYFORCE_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${RMX_ORG_UNITS.length} RMX orgs. Auto-login: ${autoLoginEnabled ? 'ENABLED' : 'DISABLED — run dayforceSync.setCredentials(user, pass)'}. YTD backfill: ${backfillPending ? 'PENDING (will kick after first live sync)' : `COMPLETED for ${backfillCompletedYear}`}. Heartbeat: every ${Math.round(HEARTBEAT_INTERVAL_MS / 1000)}s. Manual triggers under window.dayforceSync`
+        `Smyrna Dayforce Sync v1.5.0 loaded — host ${DAYFORCE_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${RMX_ORG_UNITS.length} RMX orgs. Auto-login: ${autoLoginEnabled ? 'ENABLED' : 'DISABLED — run dayforceSync.setCredentials(user, pass)'}. YTD backfill: ${backfillPending ? 'PENDING (will kick after first live sync)' : `COMPLETED for ${backfillCompletedYear}`}. Heartbeat: every ${Math.round(HEARTBEAT_INTERVAL_MS / 1000)}s. Manual triggers under window.dayforceSync`
     )
 
     setTimeout(() => {
