@@ -1,7 +1,7 @@
 /**
  * PlanStatisticsConstants — shared constants for the Plan Statistics
- * dashboard. Period definitions, comparison modes, chart palette, and
- * tooltip styling all live here so the analytics + view layers can pull
+ * dashboard. Period definitions, the per-day milliseconds constant, and
+ * chart tooltip styling live here so the analytics + view layers can pull
  * just what they need without dragging in the heavier compute helpers.
  */
 
