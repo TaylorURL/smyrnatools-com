@@ -149,13 +149,6 @@ class CrmServiceImpl {
         return json?.data ?? null
     }
 
-    async deleteOpportunity(id) {
-        if (!id) throw new Error('id is required')
-        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/delete-opportunity`, { id })
-        if (!res.ok) throw new Error(json?.error || 'Failed to delete opportunity')
-        return true
-    }
-
     /**
      * Geocode a batch of accounts whose lat/lng are null using the US Census geocoder.
      * @param {{ limit?: number }} [options]
