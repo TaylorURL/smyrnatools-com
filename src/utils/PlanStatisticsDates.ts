@@ -31,13 +31,6 @@ export const daysBetween = (startIso, endIso) => {
     return Math.round((b.getTime() - a.getTime()) / ONE_DAY_MS) + 1
 }
 
-/** Sundays are non-operating days for the plant — exclude them from every
- *  metric, chart, and totals row so a 7-day "Week" reads as 6 working days. */
-export const isSundayIso = (iso) => {
-    const d = parseIsoLocal(iso)
-    return d ? d.getDay() === 0 : false
-}
-
 /** Returns the Monday of the calendar week containing `date`. Sunday rolls
  *  back to the prior Monday so the work-week is always Mon–Sat. */
 export const mondayOf = (date) => {
