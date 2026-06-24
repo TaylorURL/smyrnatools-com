@@ -5,10 +5,8 @@ import { PlantService } from './PlantService'
 import { getSessionUserId } from './SessionService'
 
 const USER_FUNCTION = '/user-service'
-const DM_FUNCTION = '/district-manager-service'
 const PROFILES_TABLE = 'users_profiles'
 const USER_ID_REQUIRED = 'User ID is required'
-const UNKNOWN_USER = { id: 'unknown', name: 'Unknown User' }
 const DEFAULT_ROLE_NAME = 'User'
 const ALWAYS_PERMITTED = 'my_account.view'
 const ALL_REGIONS_PERMISSION = 'regions.select.all'
@@ -21,7 +19,6 @@ const ALL_REGIONS_PERMISSION = 'regions.select.all'
 const ALL_REGIONS_ROLE_WEIGHT_THRESHOLD = 70
 /** Centralized API helper for all user-service endpoints. */
 const postUser = (endpoint, body, options) => APIUtility.post(`${USER_FUNCTION}/${endpoint}`, body, options)
-const postDM = (endpoint, body, options) => APIUtility.post(`${DM_FUNCTION}/${endpoint}`, body, options)
 const resolveUser = (userId) => requireEntityId(userId, USER_ID_REQUIRED)
 const fallbackName = (userId) => `User ${userId.slice(0, 8)}`
 /**
@@ -76,44 +73,13 @@ const throwFirstError = (results) => {
  * Handles authentication state, profiles, roles, permissions, and region access.
  */
 class UserServiceImpl {
-    userProfileCache = new Map()
     userRolesCache = new Map()
-    rolesPermissionsCache = new Map()
-    eligibleRolesCache = null
-    userPlantsCache = new Map()
     clearCache() {
-        this.userProfileCache.clear()
         this.userRolesCache.clear()
-        this.rolesPermissionsCache.clear()
-        this.eligibleRolesCache = null
-        this.userPlantsCache.clear()
     }
     async getCurrentUser() {
         const userId = getSessionUserId()
         return userId ? { id: userId } : null
-    }
-    async getUserById(userId) {
-        if (!userId) return UNKNOWN_USER
-        if (this.userProfileCache.has(userId)) {
-            const cached = this.userProfileCache.get(userId)
-            return {
-                email: cached.email,
-                id: userId,
-                name: cached.displayName || cached.name || fallbackName(userId)
-            }
-        }
-        const { json } = await postUser('user-by-id', { userId })
-        if (!json?.id) {
-            const basicUser = { id: userId, name: fallbackName(userId) }
-            this.userProfileCache.set(userId, basicUser)
-            return basicUser
-        }
-        this.userProfileCache.set(userId, json)
-        return {
-            email: json.email,
-            id: json.id,
-            name: json.name || json.email?.split('@')[0] || fallbackName(userId)
-        }
     }
     async getUserDisplayName(userId) {
         if (!userId) return 'System'
@@ -133,16 +99,6 @@ class UserServiceImpl {
     async getAllRoles() {
         const { json } = await postUser('all-roles')
         return Array.isArray(json) ? json : []
-    }
-    async getRoleById(roleId) {
-        if (!roleId) throw new Error('Role ID is required')
-        const { json } = await postUser('role-by-id', { roleId })
-        return json
-    }
-    async getRoleByName(roleName) {
-        if (!roleName) throw new Error('Role name is required')
-        const { json } = await postUser('role-by-name', { roleName })
-        return json
     }
     async getUserRoles(userId) {
         const id = resolveUser(userId)
@@ -169,37 +125,10 @@ class UserServiceImpl {
         if (permission === ALWAYS_PERMITTED) return true
         return checkPermission(userId, 'has-permission', { permission })
     }
-    async hasAnyPermission(userId, permissions) {
-        if (!permissions?.length) return false
-        return checkPermission(userId, 'has-any-permission', { permissions })
-    }
-    async hasAllPermissions(userId, permissions) {
-        if (!permissions?.length) return false
-        return checkPermission(userId, 'has-all-permissions', { permissions })
-    }
-    async getMenuVisibility(userId, requiredPermissions = {}) {
-        if (!userId) return {}
-        const { json } = await postUser('menu-visibility', { requiredPermissions, userId: resolveEntityId(userId) })
-        return json ?? {}
-    }
     async getHighestRole(userId) {
         if (!userId) return null
         const { json } = await postUser('highest-role', { userId: resolveEntityId(userId) }, { skipAuthCheck: true })
         return json
-    }
-    async assignRole(userId, roleId) {
-        if (!userId || !roleId) throw new Error('User ID and role ID are required')
-        const id = resolveEntityId(userId)
-        const { json } = await postUser('assign-role', { roleId, userId: id })
-        this.userRolesCache.delete(id)
-        return !!json
-    }
-    async removeRole(userId, roleId) {
-        if (!userId || !roleId) throw new Error('User ID and role ID are required')
-        const id = resolveEntityId(userId)
-        await postUser('remove-role', { roleId, userId: id })
-        this.userRolesCache.delete(id)
-        return true
     }
     async createRole(name, permissions = [], weight = 0) {
         if (!name) throw new Error('Role name is required')
@@ -210,12 +139,6 @@ class UserServiceImpl {
     async updateRole(roleId, updates) {
         if (!roleId || !updates) throw new Error('Role ID and updates are required')
         await postUser('update-role', { roleId, updates })
-        this.clearCache()
-        return true
-    }
-    async deleteRole(roleId) {
-        if (!roleId) throw new Error('Role ID is required')
-        await postUser('delete-role', { roleId })
         this.clearCache()
         return true
     }
@@ -236,24 +159,6 @@ class UserServiceImpl {
             { maxRetries: 0 }
         )
         return Array.isArray(json) ? json : []
-    }
-    async updateAdditionalAssignedPlants(userId, additionalPlants) {
-        if (!userId) throw new Error(USER_ID_REQUIRED)
-        const { json } = await postUser(
-            'update-additional-plants',
-            {
-                additionalPlants: Array.isArray(additionalPlants) ? additionalPlants : [],
-                userId: resolveEntityId(userId)
-            },
-            { maxRetries: 0 }
-        )
-        return !!json
-    }
-    async getUserFirstName(userId) {
-        return fetchProfileField(userId, 'first_name')
-    }
-    async getUserLastName(userId) {
-        return fetchProfileField(userId, 'last_name')
     }
     async getAllUsersWithProfilesAndRoles() {
         const results = await Promise.all([
@@ -345,59 +250,6 @@ class UserServiceImpl {
         await postUser('delete-manager', { userId: resolveEntityId(userId) })
         this.clearCache()
         return true
-    }
-    // --- District Manager: Eligible Roles ---
-    async fetchEligibleRoles() {
-        const { json } = await postDM('fetch-eligible-roles', {})
-        this.eligibleRolesCache = json?.data ?? []
-        return this.eligibleRolesCache
-    }
-    async addEligibleRole(roleId) {
-        if (!roleId) throw new Error('Role ID is required')
-        const { res, json } = await postDM('add-eligible-role', { roleId })
-        if (!res.ok) throw new Error(json?.error || 'Failed to add eligible role')
-        this.eligibleRolesCache = null
-        return true
-    }
-    async removeEligibleRole(roleId) {
-        if (!roleId) throw new Error('Role ID is required')
-        const { res, json } = await postDM('remove-eligible-role', { roleId })
-        if (!res.ok) throw new Error(json?.error || 'Failed to remove eligible role')
-        this.eligibleRolesCache = null
-        return true
-    }
-    async isRoleEligible(roleId) {
-        if (!roleId) return false
-        if (this.eligibleRolesCache) {
-            return this.eligibleRolesCache.some((r) => r.role_id === roleId)
-        }
-        try {
-            const { json } = await postDM('is-role-eligible', { roleId })
-            return !!json?.eligible
-        } catch {
-            return false
-        }
-    }
-    // --- District Manager: User Plant Assignments ---
-    async fetchUserPlants(userId) {
-        if (!userId) throw new Error('User ID is required')
-        if (this.userPlantsCache.has(userId)) return this.userPlantsCache.get(userId)
-        const { json } = await postDM('fetch-user-plants', { userId })
-        const plants = json?.data ?? []
-        this.userPlantsCache.set(userId, plants)
-        return plants
-    }
-    async updateUserPlants(userId, plantCodes = []) {
-        if (!userId) throw new Error('User ID is required')
-        const { res, json } = await postDM('update-user-plants', { plantCodes, userId })
-        if (!res.ok) throw new Error(json?.error || 'Failed to update user plants')
-        this.userPlantsCache.delete(userId)
-        return true
-    }
-    getUserPlantCodes(userId) {
-        const cached = this.userPlantsCache.get(userId)
-        if (!cached) return []
-        return cached.map((r) => r.plant_code)
     }
 }
 export const UserService = new UserServiceImpl()

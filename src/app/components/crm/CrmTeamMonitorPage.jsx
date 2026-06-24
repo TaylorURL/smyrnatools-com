@@ -115,8 +115,6 @@ export function CrmTeamMonitorPage({ daysWindow = 30, isLoading, monitor, onChan
         return { booked, callerCount: callerIds.size, calls, willBookAgain }
     }, [sortedCallers])
 
-    const bookingRate = totals.calls > 0 ? totals.booked / totals.calls : 0
-
     return (
         <div className="flex flex-col gap-4 min-w-0 animate-fade-in-up">
             <WindowSelector activeDays={daysWindow} isLoading={isLoading} onSelect={onChangeWindow} />

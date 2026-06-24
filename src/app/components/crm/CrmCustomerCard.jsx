@@ -152,12 +152,10 @@ export function CrmCustomerCardRow({ isActive, onSelect, row }) {
  *  @param {Function} onLog              - Submit a call-outcome log (Contacts tab).
  *  @param {Function} [onSaveContact]
  *  @param {object}  [opportunitiesSlot] - React node for the Opportunities tab.
- *  @param {object}  plantNameByCode
  *  @param {object}  row                 - The CRM roster row for this customer.
  */
 export function CrmCustomerDetail({
     accentColor = DEFAULT_ACCENT,
-    colocationMap,
     contacts,
     history,
     interactions = [],
@@ -176,7 +174,6 @@ export function CrmCustomerDetail({
     onLogInteraction,
     onSaveContact,
     opportunitiesSlot,
-    plantNameByCode,
     row
 }) {
     const { user } = useAuth()
@@ -302,10 +299,8 @@ export function CrmCustomerDetail({
                 ) : (
                     <CustomerServiceContext
                         aggregate={serviceAggregate}
-                        colocationMap={colocationMap}
                         emptyMessage="No measured service history in the last 120 days."
                         orders={serviceOrders}
-                        plantNameByCode={plantNameByCode}
                     />
                 )}
             </Panel>

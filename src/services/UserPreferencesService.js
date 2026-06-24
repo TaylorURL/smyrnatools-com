@@ -47,15 +47,6 @@ class UserPreferencesService {
         if (!res.ok) throw new Error(json?.error || 'Failed to fetch accent colors')
         return json?.data ?? {}
     }
-    /** Persists the user's mixer view filter configuration. */
-    static async saveMixerFilters(userId, filters) {
-        if (!userId) throw new Error('User ID is required')
-        if (!filters) throw new Error('Filters are required')
-        const response = await APIUtility.post('/user-preferences-service/save-mixer-filters', { filters, userId })
-        if (!response.res.ok || response.json?.success !== true)
-            throw new Error(response.json?.error || 'Failed to save mixer filters')
-        return true
-    }
     /** Persists the user's last-viewed filter configuration (cross-entity). */
     static async saveLastViewedFilters(userId, filters) {
         if (!userId) throw new Error('User ID is required')

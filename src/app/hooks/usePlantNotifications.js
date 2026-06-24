@@ -168,5 +168,5 @@ export function usePlantNotifications({
         allOperatorsFullRef,
         historyRecordsRef
     ])
-    return { filterByPlantSet, plantNotifications, setPlantNotifications }
+    return { plantNotifications }
 }

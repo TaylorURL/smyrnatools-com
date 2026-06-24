@@ -36,15 +36,6 @@ class PlantServiceImpl {
         }
         return all
     }
-    /** Fetches a specific plant by code, using the cache first. */
-    async fetchPlantByCode(plantCode) {
-        if (!plantCode) throw new Error('Plant code is required')
-        const cached = this.getPlantByCode(plantCode)
-        if (cached) return cached
-        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/fetch-by-code`, { plantCode })
-        if (!res.ok) throw new Error(json?.error || 'Failed to fetch plant')
-        return json?.data ? Plant.fromRow(json.data) : null
-    }
     /** Creates a new plant and refreshes the cache. */
     async createPlant(plantCode, plantName) {
         if (!plantCode?.trim() || !plantName?.trim()) throw new Error('Plant code and name are required')
@@ -114,27 +105,6 @@ class PlantServiceImpl {
         await this.fetchAllPlants()
         return true
     }
-    /** Looks up a plant in the local cache by code. */
-    getPlantByCode(plantCode) {
-        const plant = this.allPlants.find((p) => p.plant_code === plantCode)
-        return plant ? Plant.fromRow(plant) : null
-    }
-    /** Returns a plant's display name, falling back to the code itself. */
-    getPlantName(plantCode) {
-        return this.getPlantByCode(plantCode)?.plant_name ?? plantCode
-    }
-    /** Fetches a plant with its associated region memberships. */
-    async getPlantWithRegions(plantCode) {
-        if (!plantCode) throw new Error('Plant code is required')
-        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/get-with-regions`, { plantCode })
-        if (!res.ok) throw new Error(json?.error || 'Failed to fetch plant with regions')
-        const plantRow = json?.plant || null
-        if (!plantRow) return null
-        const plant = Plant.fromRow(plantRow)
-        const regions = Array.isArray(json?.regions) ? json.regions : []
-        return { ...plant, regions }
-    }
-
     /** Fetches all regions from the API and updates the local cache. */
     async fetchRegions() {
         const { res, json } = await APIUtility.post('/region-service/fetch-regions')
@@ -157,11 +127,6 @@ class PlantServiceImpl {
     getRegionByCode(regionCode) {
         const region = this.allRegions.find((r) => r.region_code === regionCode)
         return region ? Region.fromRow(region) : null
-    }
-    /** Returns a region's display name, falling back to the code itself. */
-    getRegionName(regionCode) {
-        const r = this.getRegionByCode(regionCode)
-        return r?.regionName ?? regionCode
     }
     /** Creates a new region with a type classification and refreshes the cache. */
     async createRegion(regionCode, regionName, type) {
@@ -217,14 +182,6 @@ class PlantServiceImpl {
             await new Promise((r) => setTimeout(r, delay))
         }
         return []
-    }
-    /** Fetches a region with its full plant membership list. */
-    async getRegionWithPlants(regionCode) {
-        if (!regionCode) throw new Error('Region code is required')
-        const region = await this.fetchRegionByCode(regionCode)
-        if (!region) return null
-        const plants = await this.fetchRegionPlants(regionCode)
-        return { ...region, plants }
     }
     /** Fetches all regions that contain a specific plant code. */
     async fetchRegionsByPlantCode(plantCode) {

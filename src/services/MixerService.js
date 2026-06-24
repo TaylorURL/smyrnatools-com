@@ -1,10 +1,7 @@
 import { Mixer } from '../app/models/mixers/Mixer'
 import { MixerComment } from '../app/models/mixers/MixerComment'
 import { MixerHistory } from '../app/models/mixers/MixerHistory'
-import { MixerImage } from '../app/models/mixers/MixerImage'
-import { apiPostOrThrow, ensureSpareIfNoOperatorBase } from '../utils/BaseAssetUtility'
 import CleanupUtility from '../utils/CleanupUtility'
-import { ValidationUtility } from '../utils/ValidationUtility'
 import VerifiedUtility from '../utils/VerifiedUtility'
 import { createAssetService } from './BaseAssetService'
 
@@ -57,32 +54,8 @@ export const MixerService = {
         return base._base.delete(id)
     },
 
-    /** Sets unassigned-operator mixers to Spare status in batch. */
-    ensureSpareIfNoOperator(mixersList) {
-        return ensureSpareIfNoOperatorBase(mixersList, async (m) => {
-            await this.updateMixer(m.id, {
-                assignedOperator: null,
-                status: 'Spare',
-                updatedAt: null,
-                updatedBy: null,
-                updatedLast: null
-            })
-            m.assignedOperator = null
-            m.updatedLast = null
-            m.updatedAt = null
-            m.updatedBy = null
-        })
-    },
-
     fetchMixerById(id) {
         return base._base.fetchById(id)
-    },
-
-    /** Mixer-specific: fetches the image gallery rows attached to one mixer. */
-    async fetchMixerImages(mixerId) {
-        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-images`, { mixerId }, 'Failed to fetch mixer images')
-        return (json?.data ?? []).map(MixerImage.fromRow)
     },
 
     fetchMixers() {
@@ -97,6 +70,8 @@ export const MixerService = {
         return base._base.getAll()
     },
 
+    /** Fetches change history for a mixer. Invoked dynamically via
+     *  HISTORY_SERVICE_MAP in useHistoryDataFetchers. */
     getMixerHistory(mixerId, limit = null) {
         return base._base.getHistory(mixerId, limit)
     },

@@ -70,9 +70,3 @@ export const deltaPct = (current: number | null | undefined, previous: number | 
     if (!Number.isFinite(current as number) || !Number.isFinite(previous as number) || previous === 0) return null
     return (((current as number) - (previous as number)) / (previous as number)) * 100
 }
-
-/** Delta% color helper — retained for API stability with existing callers.
- *  Returns undefined so the rendered text falls back to the inherited theme
- *  color in light, dark, and grayed-out themes. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const deltaColor = (_pct: number | null | undefined): string | undefined => undefined

@@ -12,7 +12,6 @@ import { CrmMapPage } from '../../../app/components/crm/pages/CrmMapPage'
 import { CrmMyDeskPage } from '../../../app/components/crm/pages/CrmMyDeskPage'
 import { CrmPinsPage } from '../../../app/components/crm/pages/CrmPinsPage'
 import { CrmPipelinePage } from '../../../app/components/crm/pages/CrmPipelinePage'
-import { isDarkLikeTheme } from '../../../app/constants/themeConstants'
 import { useAuth } from '../../../app/context/AuthContext'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useCrm } from '../../../app/hooks/useCrm'
@@ -20,7 +19,7 @@ import { useCrmDashboard } from '../../../app/hooks/useCrmDashboard'
 import useCrmRoster from '../../../app/hooks/useCrmRoster'
 import CrmService from '../../../services/CrmService'
 import { UserService } from '../../../services/UserService'
-import { canEditCrm, canManageCrm } from '../../../utils/CrmRoleUtility'
+import { canManageCrm } from '../../../utils/CrmRoleUtility'
 
 /** Section ids that require the crm.manage permission. */
 const MANAGE_ONLY_SECTIONS = new Set(['team-monitor', 'settings'])
@@ -36,8 +35,6 @@ const MANAGE_ONLY_SECTIONS = new Set(['team-monitor', 'settings'])
 function CrmView() {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
-    // eslint-disable-next-line no-unused-vars
-    const isDark = isDarkLikeTheme(preferences.themeMode)
 
     const { user } = useAuth()
     const [permissions, setPermissions] = useState([])
@@ -61,7 +58,6 @@ function CrmView() {
     }, [user?.id])
 
     const canManage = canManageCrm(permissions)
-    const canEdit = canEditCrm(permissions)
 
     const [activeTab, setActiveTabRaw] = useState('work')
     const [activeSection, setActiveSection] = useState('my-desk')
@@ -268,7 +264,6 @@ function CrmView() {
                             {activeSection === 'outreach' && (
                                 <CrmOutreachPage
                                     accentColor={tone}
-                                    colocationMap={undefined}
                                     contactsByCustomer={contactsByCustomer}
                                     deleteContact={deleteContact}
                                     deleteEntry={deleteEntry}
@@ -281,7 +276,6 @@ function CrmView() {
                                     logCall={logCall}
                                     onClearSelectedCustomer={handleClearSelectedCustomer}
                                     onSelectCustomer={handleSelectCustomer}
-                                    plantNameByCode={undefined}
                                     roster={roster}
                                     rosterError={rosterError}
                                     saveContact={saveContact}
@@ -297,7 +291,6 @@ function CrmView() {
                                 <CrmAccountsPage
                                     accountInteractionsByAccount={interactionsByAccount}
                                     accentColor={tone}
-                                    colocationMap={undefined}
                                     contactsByCustomer={contactsByCustomer}
                                     deleteContact={deleteContact}
                                     deleteEntry={deleteEntry}
@@ -314,7 +307,6 @@ function CrmView() {
                                     onArchiveAccount={handleArchiveAccount}
                                     onClearSelectedCustomer={handleClearSelectedCustomer}
                                     onSelectCustomer={handleSelectCustomer}
-                                    plantNameByCode={undefined}
                                     roster={roster}
                                     rosterError={rosterError}
                                     saveContact={saveContact}

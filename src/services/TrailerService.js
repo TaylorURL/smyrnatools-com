@@ -42,7 +42,8 @@ export const TrailerService = {
     fetchTrailersWithDetails(regionCodes = null) {
         return base._base.fetchWithDetails(regionCodes)
     },
-
+    /** Fetches change history for a trailer. Invoked dynamically via
+     *  HISTORY_SERVICE_MAP in useHistoryDataFetchers. */
     getTrailerHistory(trailerId, limit = null) {
         return base._base.getHistory(trailerId, limit)
     },

@@ -84,6 +84,8 @@ export const TractorService = {
         return base._base.getAll()
     },
 
+    /** Fetches change history for a tractor. Invoked dynamically via
+     *  HISTORY_SERVICE_MAP in useHistoryDataFetchers. */
     getTractorHistory(tractorId, limit = null) {
         return base._base.getHistory(tractorId, limit)
     },

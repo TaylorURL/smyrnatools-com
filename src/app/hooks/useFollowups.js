@@ -4,8 +4,8 @@ import CrmService from '../../services/CrmService'
 
 /**
  * Manages a list of follow-ups, scoped by optional `mineOnly` flag.
- * Provides `complete` and `remove` for single-item mutations that trigger
- * a reload after completion, and `save` for creating/updating a follow-up.
+ * Provides `complete` for the single-item mutation surface CrmFollowupsPage
+ * exposes today; create/edit/delete UI is not wired in this build.
  *
  * @param {{ mineOnly?: boolean }} options
  */
@@ -47,22 +47,5 @@ export function useFollowups({ mineOnly } = {}) {
         [reload]
     )
 
-    const remove = useCallback(
-        async (id) => {
-            await CrmService.deleteFollowup(id)
-            if (mounted.current) reload()
-        },
-        [reload]
-    )
-
-    const save = useCallback(
-        async (payload) => {
-            const saved = await CrmService.saveFollowup(payload)
-            if (mounted.current) reload()
-            return saved
-        },
-        [reload]
-    )
-
-    return { complete, error, followups, isLoading, reload, remove, save }
+    return { complete, error, followups, isLoading }
 }

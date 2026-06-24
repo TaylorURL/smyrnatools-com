@@ -7,9 +7,7 @@ import { useFollowups } from '../useFollowups'
 vi.mock('../../../services/CrmService', () => ({
     default: {
         completeFollowup: vi.fn(),
-        deleteFollowup: vi.fn(),
-        fetchFollowups: vi.fn(),
-        saveFollowup: vi.fn()
+        fetchFollowups: vi.fn()
     }
 }))
 

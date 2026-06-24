@@ -6,7 +6,6 @@ import { useOpportunities } from '../useOpportunities'
 
 vi.mock('../../../services/CrmService', () => ({
     default: {
-        deleteOpportunity: vi.fn(),
         fetchOpportunities: vi.fn(),
         moveStage: vi.fn(),
         saveOpportunity: vi.fn()
@@ -41,7 +40,6 @@ describe('useOpportunities', () => {
         CrmService.fetchOpportunities.mockResolvedValue([REAL_OPP])
         CrmService.saveOpportunity.mockResolvedValue({ id: 'o2', stage: 'new', title: 'Deal B' })
         CrmService.moveStage.mockResolvedValue({ id: 'o1', stage: 'won' })
-        CrmService.deleteOpportunity.mockResolvedValue(true)
     })
 
     it('boardMode fetches all open opportunities on mount', async () => {

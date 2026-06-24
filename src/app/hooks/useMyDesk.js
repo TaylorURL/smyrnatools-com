@@ -6,13 +6,11 @@ const EMPTY_DESK = { accounts: [], followups: [], opportunities: [], recentActiv
 
 /**
  * Fetches the current user's CRM desk summary on mount.
- * Returns all four buckets (follow-ups, accounts, opportunities, recent activity)
- * plus loading/error state and a manual reload trigger.
+ * Returns the desk payload plus loading state.
  */
 export function useMyDesk() {
     const [desk, setDesk] = useState(EMPTY_DESK)
     const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState(null)
     const mounted = useRef(true)
 
     useEffect(() => {
@@ -24,12 +22,11 @@ export function useMyDesk() {
 
     const reload = useCallback(async () => {
         setIsLoading(true)
-        setError(null)
         try {
             const data = await CrmService.fetchMyDesk()
             if (mounted.current) setDesk(data ?? EMPTY_DESK)
-        } catch (err) {
-            if (mounted.current) setError(err?.message || 'Failed to load desk')
+        } catch {
+            if (mounted.current) setDesk(EMPTY_DESK)
         } finally {
             if (mounted.current) setIsLoading(false)
         }
@@ -39,5 +36,5 @@ export function useMyDesk() {
         reload()
     }, [reload])
 
-    return { desk, error, isLoading, reload }
+    return { desk, isLoading }
 }

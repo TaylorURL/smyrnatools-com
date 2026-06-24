@@ -30,26 +30,6 @@ class OperatorServiceImpl {
         const json = await apiPostOrThrow(`${SERVICE_PREFIX}/list`, {}, 'Failed to fetch operators')
         return (json?.data ?? []).map((op) => new Operator(op))
     }
-    /** Fetches only active-status operators. */
-    async fetchActiveOperators() {
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/list-active`, {}, 'Failed to fetch active operators')
-        return (json?.data ?? []).map((op) => new Operator(op))
-    }
-    /** Fetches operators assigned to a specific plant. */
-    async fetchOperatorsByPlant(plantCode) {
-        if (!plantCode) throw new Error('Plant code is required')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/list-by-plant`,
-            { plantCode },
-            'Failed to fetch operators by plant'
-        )
-        return (json?.data ?? []).map((op) => new Operator(op))
-    }
-    /** Fetches operators with tractor-driver position type. */
-    async fetchTractorOperators() {
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/list-tractor`, {}, 'Failed to fetch tractor operators')
-        return (json?.data ?? []).map((op) => new Operator(op))
-    }
     /** Fetches a single operator by employee ID, returning null if not found. */
     async getOperatorByEmployeeId(employeeId) {
         if (!employeeId || !ValidationUtility.isValidUUID(employeeId)) throw new Error('Invalid Employee ID')
@@ -108,11 +88,6 @@ class OperatorServiceImpl {
         if (!employeeId || !ValidationUtility.isValidUUID(employeeId)) throw new Error('Invalid Employee ID')
         return apiPostRequireSuccess(`${SERVICE_PREFIX}/delete`, { employeeId }, 'Operator was not deleted')
     }
-    /** Fetches all operators marked as trainers. */
-    async getAllTrainers() {
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/list-trainers`, {}, 'Failed to fetch trainers')
-        return (json?.data ?? []).map((op) => new Operator(op))
-    }
     /**
      * Fetches operators directly from the database with status change history enrichment.
      * Optionally filtered by region codes for scoped views.
@@ -139,17 +114,6 @@ class OperatorServiceImpl {
             return []
         }
     }
-    /** Fetches all plants from the database. */
-    async fetchPlants() {
-        try {
-            const { data, error } = await Database.from('plants').select('*')
-            if (error) throw error
-            return data
-        } catch (err) {
-            console.error('Failed to fetch plants:', err)
-            return []
-        }
-    }
     /** Fetches trainer-eligible operators (employee ID + name). */
     async fetchTrainers() {
         try {
@@ -161,29 +125,8 @@ class OperatorServiceImpl {
             return []
         }
     }
-    /** Fetches operators enriched with availability status based on active mixer assignments. */
-    async fetchOperatorsWithAvailability(mixers = []) {
-        const operators = await this.fetchOperators()
-        return operators.map((operator) => ({
-            ...operator,
-            isAvailable:
-                operator.status === 'Active' &&
-                !mixers.some((mixer) => mixer.assignedOperator === operator.employeeId && mixer.status === 'Active')
-        }))
-    }
-    /** Checks if an operator is currently assigned to an active mixer. */
-    isOperatorAssigned(operatorId, mixers = []) {
-        if (!operatorId || operatorId === '0') return false
-        return mixers.some((mixer) => mixer.assignedOperator === operatorId && mixer.status === 'Active')
-    }
-    /** Detects duplicate operator names for data quality alerts. */
-    getDuplicateNames(operators) {
-        return getDuplicateFieldValues(operators, (op) => {
-            const key = (op?.name || '').trim().toLowerCase()
-            return key || null
-        })
-    }
-    /** Fetches change history for a specific operator. */
+    /** Fetches change history for a specific operator. Invoked dynamically
+     *  via HISTORY_SERVICE_MAP in useHistoryDataFetchers. */
     async getOperatorHistory(operatorId, limit = null) {
         const payload = { limit, operatorId }
         const json = await apiPostOrThrow(
@@ -192,6 +135,13 @@ class OperatorServiceImpl {
             'Failed to fetch operator history'
         )
         return (json?.data ?? []).map((entry) => new OperatorHistory(entry))
+    }
+    /** Detects duplicate operator names for data quality alerts. */
+    getDuplicateNames(operators) {
+        return getDuplicateFieldValues(operators, (op) => {
+            const key = (op?.name || '').trim().toLowerCase()
+            return key || null
+        })
     }
     /** Records a field-level change in the operator history audit trail. */
     async createHistoryEntry(operatorId, fieldName, oldValue, newValue, changedBy) {
@@ -207,34 +157,6 @@ class OperatorServiceImpl {
             'Failed to create history entry'
         )
         return json?.data
-    }
-    async fetchComments(operatorId) {
-        if (!operatorId || !ValidationUtility.isValidUUID(operatorId)) throw new Error('Invalid Operator ID')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-comments`,
-            { operatorId },
-            'Failed to fetch comments'
-        )
-        return json?.data ?? []
-    }
-    async addComment(operatorId, text, userId) {
-        if (!operatorId || !ValidationUtility.isValidUUID(operatorId)) throw new Error('Invalid Operator ID')
-        if (!text || !text.trim()) throw new Error('Comment text is required')
-        if (!userId || !ValidationUtility.isValidUUID(userId)) throw new Error('Invalid User ID')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/add-comment`,
-            {
-                operatorId,
-                text: text.trim(),
-                userId
-            },
-            'Failed to add comment'
-        )
-        return json?.data
-    }
-    async deleteComment(commentId) {
-        if (!commentId || !ValidationUtility.isValidUUID(commentId)) throw new Error('Invalid Comment ID')
-        return apiPostRequireSuccess(`${SERVICE_PREFIX}/delete-comment`, { commentId }, 'Failed to delete comment')
     }
 }
 export const OperatorService = new OperatorServiceImpl()

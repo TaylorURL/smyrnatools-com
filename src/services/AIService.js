@@ -49,45 +49,6 @@ class AIServiceImpl {
     async generateHistorySummary(historyContext) {
         return this.generateContentFromPrompt('historySummary', this.formatHistoryData, historyContext)
     }
-    /**
-     * Reformats a plan's free-text notes into tidy markdown without altering
-     * meaning. Used for read-only display on the Plan dashboard — the raw
-     * notes the user typed are always what's persisted.
-     */
-    async formatPlanNotes(notes) {
-        const trimmed = (notes || '').trim()
-        if (!trimmed) return ''
-        const systemPrompt = [
-            'You are an expert markdown formatter for concrete-plant shift notes.',
-            'Input: raw notes a dispatcher typed — usually messy, short-form, with abbreviations and imperfect grammar.',
-            'Output: ONLY rich GitHub-flavored markdown (no code fences, no preamble, no closing commentary).',
-            '',
-            'Hard rules:',
-            '- Preserve every fact, time, plant code, name, number, and intent exactly.',
-            '- Do NOT invent information, add opinions, disclaimers, or sign-offs.',
-            '- Fix obvious spelling, capitalization, and punctuation.',
-            '- Never wrap the whole reply in code fences.',
-            '',
-            'Styling guidance — use the FULL markdown toolbox when it aids clarity:',
-            '- `##` / `###` headings to group topics (Weather, Dispatch, Plant Notes, QC, Safety, etc.) when multiple topics are present.',
-            '- Bulleted lists (`- `) for parallel items; nested bullets with 2-space indent when relevant.',
-            '- Numbered lists for ordered steps or priorities.',
-            '- Task checkboxes `- [ ]` for action items the crew must do; `- [x]` for completed items.',
-            '- `**bold**` for critical callouts (plant closures, delays, safety), `*italic*` for emphasis.',
-            '- `> ` blockquotes for warnings or important standing instructions.',
-            '- `---` horizontal rule to separate clearly distinct sections.',
-            '- Inline `` `code` `` for truck numbers, mix codes, plant codes, or exact identifiers.',
-            '- Tables (pipe syntax) when data is clearly tabular (e.g. plant → start time → notes).',
-            '',
-            'Brevity: if the raw note is one sentence, return one polished sentence. Do not pad short notes into huge documents.'
-        ].join('\n')
-        const result = await this.callAPI(systemPrompt, trimmed, {
-            model: FAST_MODEL,
-            temperature: 0.2
-        })
-        if (!result?.content) return null
-        return result.content.replace(/^```(?:markdown|md)?\s*|\s*```$/g, '').trim()
-    }
     /** Formats asset history data (status changes, cleanliness trends, service records) for AI analysis. */
     formatHistoryData(ctx) {
         const parts = [

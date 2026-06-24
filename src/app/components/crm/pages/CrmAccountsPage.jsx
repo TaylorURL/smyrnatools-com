@@ -24,7 +24,6 @@ import { FilterStrip, ListOrDetailPane } from './crmShared'
 export function CrmAccountsPage({
     accountInteractionsByAccount,
     accentColor,
-    colocationMap,
     contactsByCustomer,
     deleteContact,
     deleteEntry,
@@ -41,7 +40,6 @@ export function CrmAccountsPage({
     onArchiveAccount,
     onClearSelectedCustomer,
     onSelectCustomer,
-    plantNameByCode,
     roster,
     rosterError,
     saveContact,
@@ -294,7 +292,6 @@ export function CrmAccountsPage({
             <AccountsDetailWrapper
                 accountInteractionsByAccount={accountInteractionsByAccount}
                 accentColor={accentColor}
-                colocationMap={colocationMap}
                 columns={accountsColumns}
                 contactsByCustomer={contactsByCustomer}
                 cooldownStartIndex={cooldownStartIndex}
@@ -316,7 +313,6 @@ export function CrmAccountsPage({
                 onClearSelection={onClearSelectedCustomer}
                 onSelectCustomer={onSelectCustomer}
                 opportunitiesSlot={opportunitiesSlot}
-                plantNameByCode={plantNameByCode}
                 rosterError={rosterError}
                 saveContact={saveContact}
                 savingContactFor={savingContactFor}

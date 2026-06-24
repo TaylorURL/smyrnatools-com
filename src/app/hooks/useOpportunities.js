@@ -10,7 +10,7 @@ import CrmService from '../../services/CrmService'
  * @param {object} [options]
  * @param {string} [options.accountId] - Load by account when set.
  * @param {boolean} [options.boardMode] - When true, fetches all open opportunities.
- * @returns {{ opportunities, isLoading, error, reload, save, move, materialize, remove }}
+ * @returns {{ opportunities, isLoading, error, save, move, materialize }}
  */
 export function useOpportunities({ accountId, boardMode } = {}) {
     const [opportunities, setOpportunities] = useState([])
@@ -97,13 +97,5 @@ export function useOpportunities({ accountId, boardMode } = {}) {
         [load]
     )
 
-    const remove = useCallback(
-        async (id) => {
-            await CrmService.deleteOpportunity(id)
-            if (mounted.current) load()
-        },
-        [load]
-    )
-
-    return { error, isLoading, materialize, move, opportunities, reload: load, remove, save }
+    return { error, isLoading, materialize, move, opportunities, save }
 }

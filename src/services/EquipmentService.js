@@ -48,6 +48,8 @@ export const EquipmentService = {
     getAllEquipments() {
         return base._base.getAll()
     },
+    /** Fetches change history for equipment. Invoked dynamically via
+     *  HISTORY_SERVICE_MAP in useHistoryDataFetchers. */
     getEquipmentHistory(equipmentId, limit = null) {
         return base._base.getHistory(equipmentId, limit)
     },

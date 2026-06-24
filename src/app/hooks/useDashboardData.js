@@ -29,11 +29,8 @@ export function useDashboardAssets({
     const [loading, setLoading] = useState(true)
     const [dataReady, setDataReady] = useState(false)
     const [error, setError] = useState('')
-    const [lastUpdated, setLastUpdated] = useState(null)
     const [trainingOperators, setTrainingOperators] = useState([])
     const [pendingStartOperators, setPendingStartOperators] = useState([])
-    const [lightDutyOperators, setLightDutyOperators] = useState([])
-    const [refreshing, setRefreshing] = useState(false)
     const allOperatorsFullRef = useRef([])
     const initialLoadRef = useRef(true)
     useEffect(() => {
@@ -55,9 +52,6 @@ export function useDashboardAssets({
                             allPickupsRef.current = (parsed.pickups || []).map(DashboardUtility.slimPickup)
                             allOperatorsRef.current = (parsed.operators || []).map(DashboardUtility.slimOperator)
                             computeStats()
-                            setLastUpdated(
-                                parsed.lastUpdated ? new Date(parsed.lastUpdated) : new Date(parsed.savedAt || now)
-                            )
                             setDataReady(true)
                             setLoading(false)
                         }
@@ -66,7 +60,6 @@ export function useDashboardAssets({
                     console.error('Failed to read dashboard cache from sessionStorage:', e)
                 }
             }
-            setRefreshing(true)
             try {
                 const [mix, trac, trail, equip, pick, ops] = await Promise.all([
                     MixerService.getAllMixers().catch(() => []),
@@ -112,23 +105,12 @@ export function useDashboardAssets({
                         }
                     })
                 setPendingStartOperators(pending)
-                const lightDuty = ops
-                    .filter((o) => o.status === 'Light Duty')
-                    .map((o) => ({
-                        id: o.employeeId,
-                        operatorName: o.name || '',
-                        plant: o.plantCode || ''
-                    }))
-                setLightDutyOperators(lightDuty)
                 computeStats()
-                const fetchedAt = new Date()
-                setLastUpdated(fetchedAt)
                 try {
                     sessionStorage.setItem(
                         DASHBOARD_CACHE_KEY,
                         JSON.stringify({
                             equipment: allEquipmentRef.current,
-                            lastUpdated: fetchedAt.toISOString(),
                             mixers: allMixersRef.current,
                             operators: allOperatorsRef.current,
                             pickups: allPickupsRef.current,
@@ -146,7 +128,6 @@ export function useDashboardAssets({
             } finally {
                 if (!cancelled) {
                     setLoading(false)
-                    setRefreshing(false)
                     readyTimerId = setTimeout(() => setDataReady(true), 300)
                 }
             }
@@ -170,12 +151,8 @@ export function useDashboardAssets({
         allOperatorsFullRef,
         dataReady,
         error,
-        lastUpdated,
-        lightDutyOperators,
         loading,
         pendingStartOperators,
-        refreshing,
-        setRefreshing,
         trainingOperators
     }
 }

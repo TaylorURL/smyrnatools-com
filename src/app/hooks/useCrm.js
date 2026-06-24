@@ -6,8 +6,6 @@ import CrmService from '../../services/CrmService'
  *  per-account interaction cache with optimistic interaction logging. */
 export function useCrm({ scope = 'all' } = {}) {
     const [roster, setRoster] = useState([])
-    const [isLoadingRoster, setIsLoadingRoster] = useState(true)
-    const [rosterError, setRosterError] = useState(null)
     const [interactionsByAccount, setInteractionsByAccount] = useState({})
     const mounted = useRef(true)
 
@@ -19,15 +17,12 @@ export function useCrm({ scope = 'all' } = {}) {
     }, [])
 
     const loadRoster = useCallback(async () => {
-        setIsLoadingRoster(true)
-        setRosterError(null)
         try {
             const data = await CrmService.fetchRoster({ includeActive: true, scope })
             if (mounted.current) setRoster(data)
-        } catch (err) {
-            if (mounted.current) setRosterError(err?.message || 'Failed to load accounts')
-        } finally {
-            if (mounted.current) setIsLoadingRoster(false)
+        } catch {
+            /* roster failures fall back to an empty list — surfaced via the
+             * useCrmRoster path which owns user-visible error state. */
         }
     }, [scope])
 
@@ -61,11 +56,8 @@ export function useCrm({ scope = 'all' } = {}) {
 
     return {
         interactionsByAccount,
-        isLoadingRoster,
         loadInteractions,
         logInteraction,
-        reloadRoster: loadRoster,
-        roster,
-        rosterError
+        roster
     }
 }

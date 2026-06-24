@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 
 import { fmtDate, fmtInt } from '../../../../utils/PlanStatisticsFormatUtility'
-import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../utils/PlantColocationUtility'
+import { formatColocatedCodeLabel } from '../../../../utils/PlantColocationUtility'
 import Badge from '../../common/Badge'
 import ScorePercent from './ScorePercent'
 import ServiceTierBreakdown from './ServiceTierBreakdown'
@@ -135,7 +135,7 @@ export function VerdictTrail({ orders }) {
 /** Per-order verdict table. Reused by Customer Lookup and the Call List
  *  detail so dispatchers see the same row breakdown wherever they look
  *  up a customer. */
-export function CustomerOrdersTable({ colocationMap, emptyMessage, orders, plantNameByCode }) {
+export function CustomerOrdersTable({ emptyMessage, orders }) {
     if (!orders || orders.length === 0) {
         return (
             <div className="text-[12px] py-4 text-text-tertiary">
@@ -175,11 +175,8 @@ export function CustomerOrdersTable({ colocationMap, emptyMessage, orders, plant
                                 <td className="px-3 py-2 text-[12px] text-text-secondary tabular-nums">
                                     {fmtDate(m.date)}
                                 </td>
-                                <td className="px-3 py-2 text-[12px] text-text-primary">
-                                    <span className="font-mono text-[11px] tabular-nums text-text-tertiary mr-2">
-                                        {formatColocatedCodeLabel(m.plantCode, colocationMap)}
-                                    </span>
-                                    {formatColocatedPlantLabel(m.plantCode, plantNameByCode, colocationMap)}
+                                <td className="px-3 py-2 text-[12px] font-mono tabular-nums text-text-primary">
+                                    {formatColocatedCodeLabel(m.plantCode)}
                                 </td>
                                 <td className="px-3 py-2 text-[12px] font-semibold">
                                     <div className="flex items-center gap-1.5">
@@ -244,7 +241,7 @@ export function CustomerOrdersTable({ colocationMap, emptyMessage, orders, plant
  *  context (customer name, last pour date, close button) makes sense in
  *  their surface. Pass null to skip the header — the Call List already
  *  has its own customer header above the context block. */
-export function CustomerServiceContext({ aggregate, colocationMap, emptyMessage, header, orders, plantNameByCode }) {
+export function CustomerServiceContext({ aggregate, emptyMessage, header, orders }) {
     const sortedOrders = useMemo(() => {
         if (!orders) return []
         return [...orders].sort((a, b) => {
@@ -299,12 +296,7 @@ export function CustomerServiceContext({ aggregate, colocationMap, emptyMessage,
                 </div>
             )}
 
-            <CustomerOrdersTable
-                colocationMap={colocationMap}
-                emptyMessage={emptyMessage}
-                orders={sortedOrders}
-                plantNameByCode={plantNameByCode}
-            />
+            <CustomerOrdersTable emptyMessage={emptyMessage} orders={sortedOrders} />
         </div>
     )
 }
