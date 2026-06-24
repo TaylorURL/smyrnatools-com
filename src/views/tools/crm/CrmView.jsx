@@ -35,8 +35,6 @@ const MANAGE_ONLY_SECTIONS = new Set(['team-monitor', 'settings'])
 function CrmView() {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
-    // eslint-disable-next-line no-unused-vars
-    const isDark = isDarkLikeTheme(preferences.themeMode)
 
     const { user } = useAuth()
     const [permissions, setPermissions] = useState([])
