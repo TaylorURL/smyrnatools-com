@@ -1,4 +1,5 @@
 import { Operator } from '../app/models/operators/Operator'
+import { OperatorHistory } from '../app/models/operators/OperatorHistory'
 import {
     apiPost,
     apiPostOrThrow,
