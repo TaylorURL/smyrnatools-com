@@ -834,16 +834,14 @@
     }
 
     // ============================================================
-    // PER-WEEK FETCH HELPERS
+    // PER-WEEK FETCH HELPER
     //
     // Shared between the live 5-min cycle (current week) and the YTD
-    // backfill (each historical week). They preserve the same fan-out
+    // backfill (each historical week). Preserves the same fan-out
     // concurrency, cancellation token plumbing, and session-expiry
-    // propagation as the original inline implementation — extracted so
-    // backfill doesn't duplicate ~100 lines of worker logic.
+    // propagation as the original inline implementation.
     // ============================================================
     async function pullTimesheetsForWeek({ isCancelled = () => false, onProgress, periodEnd, periodStart }) {
-        const employeeIds = new Set()
         const timesheetSlices = []
         let count = 0
         let orgCursor = 0
@@ -860,13 +858,6 @@
                     )
                     if (isCancelled()) return
                     timesheetSlices.push({ bundle, orgUnitId: org.id, periodEnd, periodStart })
-                    const empList = bundle?.Result?.[TS_EMPLOYEES_KEY]
-                    if (Array.isArray(empList)) {
-                        for (const emp of empList) {
-                            const id = Number(emp?.[TS_DAYFORCE_EMPLOYEE_ID_KEY])
-                            if (Number.isFinite(id)) employeeIds.add(id)
-                        }
-                    }
                     count++
                 } catch (err) {
                     if (err?.sessionExpired) throw err
@@ -878,57 +869,7 @@
         await Promise.all(
             Array.from({ length: Math.min(WORKER_CONCURRENCY, RMX_ORG_UNITS.length) }, worker)
         )
-        return { count, employeeIds: Array.from(employeeIds), timesheetSlices }
-    }
-
-    async function pullPunchesForRange({ employeeIdList, isCancelled = () => false, onProgress, periodEnd, periodStart }) {
-        const punchSlices = []
-        let empCursor = 0
-        const worker = async () => {
-            while (true) {
-                if (isCancelled()) return
-                const idx = empCursor++
-                if (idx >= employeeIdList.length) return
-                const eid = employeeIdList[idx]
-                try {
-                    const res = await dayforcePost(
-                        '/EmployeeSelfService/TimeAndAttendance/GetManagerEmployeeRawPunches',
-                        buildRawPunchBody(eid, periodStart, periodEnd)
-                    )
-                    if (isCancelled()) return
-                    const punches = res?.Result
-                    if (Array.isArray(punches) && punches.length > 0) {
-                        punchSlices.push({ employeeId: eid, punches })
-                    }
-                } catch (err) {
-                    if (err?.sessionExpired) throw err
-                    log(`  Punch fail ${eid}: ${err.message}`)
-                }
-                if (onProgress && ((idx + 1) % 25 === 0 || idx + 1 === employeeIdList.length)) {
-                    onProgress({ count: idx + 1, total: employeeIdList.length })
-                }
-            }
-        }
-        await Promise.all(
-            Array.from({ length: Math.min(WORKER_CONCURRENCY, employeeIdList.length) }, worker)
-        )
-        return { punchSlices }
-    }
-
-    // Punches POST'd in chunks to keep request bodies under the edge
-    // function payload ceiling. 50 employees * ~5 punches each is well
-    // under 1 MB; the edge function dedupes across chunks.
-    async function postPunchesInChunks(punchSlices, isCancelled = () => false) {
-        const CHUNK = 50
-        let total = 0
-        for (let i = 0; i < punchSlices.length; i += CHUNK) {
-            if (isCancelled()) return total
-            const chunk = punchSlices.slice(i, i + CHUNK)
-            const punchRes = await postToImport({ rawPunches: chunk })
-            if (punchRes.ok) total += punchRes.body?.stats?.punches ?? 0
-            else log(`Punch import chunk failed: ${punchRes.error}`)
-        }
-        return total
+        return { count, timesheetSlices }
     }
 
     // One sync cycle:
