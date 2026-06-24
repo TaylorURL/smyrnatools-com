@@ -84,11 +84,14 @@ function AppContent() {
     useEffect(() => {
         sessionStorage.removeItem(CHUNK_RELOAD_KEY)
     }, [])
-    // Navigate to user's preferred start page once preferences load
+    // Navigate to user's preferred start page once preferences load. If the
+    // stored page references a view that no longer exists (e.g. legacy
+    // 'Plan' / Operations after retirement), fall back to Dashboard rather
+    // than dropping the user on a broken "coming soon" placeholder.
     useEffect(() => {
         if (startPageAppliedRef.current || preferencesLoading || !userId || !rolesLoaded || isGuestOnly) return
         const page = preferences.startPage
-        if (page && page !== 'Dashboard') {
+        if (page && page !== 'Dashboard' && VALID_START_PAGE_IDS.has(page)) {
             setSelectedView({ initialStatusFilter: null, view: page })
         }
         startPageAppliedRef.current = true
