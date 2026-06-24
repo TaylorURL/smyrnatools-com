@@ -84,10 +84,6 @@ export const TractorService = {
         return base._base.getAll()
     },
 
-    getTractorHistory(tractorId, limit = null) {
-        return base._base.getHistory(tractorId, limit)
-    },
-
     getTractorsByOperator(operatorId) {
         return base._base.getByOperator(operatorId)
     },
