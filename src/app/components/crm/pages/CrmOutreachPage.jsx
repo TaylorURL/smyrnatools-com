@@ -170,7 +170,6 @@ export function CrmOutreachPage({
                 logCall={logCall}
                 onClearSelection={onClearSelectedCustomer}
                 onSelectCustomer={onSelectCustomer}
-                plantNameByCode={plantNameByCode}
                 rosterError={rosterError}
                 saveContact={saveContact}
                 savingContactFor={savingContactFor}
