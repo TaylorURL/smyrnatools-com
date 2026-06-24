@@ -3,10 +3,9 @@ import APIUtility from './APIUtility'
  * Input validation primitives: VIN format checking with detailed error explanations,
  * natural VIN sorting, UUID validation, string/ID requirement guards, positive-integer
  * parsing, allowlist-based object property sanitization, edge-function-backed authentication
- * helpers (email validation, password strength, name normalization), and server-side
+ * helpers (password strength, name normalization), and server-side
  * UUID operations (generation, format validation, sanitization).
  */
-const AUTH_FUNCTION = '/auth-service'
 const USER_UTILITY_FUNCTION = '/user-utility'
 
 interface VINPart {
@@ -66,11 +65,6 @@ function compareVINs(vinA: string | null | undefined, vinB: string | null | unde
         }
     }
     return 0
-}
-
-async function emailIsValid(email: string): Promise<boolean> {
-    const { res, json } = await APIUtility.post(`${AUTH_FUNCTION}/email-is-valid`, { email })
-    return res.ok ? json.isValid === true : false
 }
 
 function isVIN(v: unknown): boolean {
@@ -207,7 +201,6 @@ function sanitizeObject<T extends Record<string, unknown>>(o: unknown, allowed: 
 
 const ValidationUtility = {
     compareVINs,
-    emailIsValid,
     explainVIN,
     generateUUID,
     isUUID,

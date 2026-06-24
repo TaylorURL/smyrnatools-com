@@ -2,16 +2,7 @@
  * Determines whether an asset is currently verified by checking that
  * the last verification timestamp is more recent than the most recent
  * Monday at 5 PM CST and that no updates occurred after verification.
- *
- * Also provides due-date severity using Central Time zone awareness.
- * Returns "Past Due" (error) or "Due" (warning) based on the Friday 10 AM CT
- * through Monday 5 PM CT past-due window.
  */
-
-interface DueSeverityResult {
-    severity: 'error' | 'warning'
-    titlePhase: 'Past Due' | 'Due'
-}
 
 const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const CENTRAL_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
@@ -21,36 +12,9 @@ const CENTRAL_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
     timeZone: 'America/Chicago',
     weekday: 'short'
 }
-const FRIDAY_INDEX = 5
-const SATURDAY_INDEX = 6
-const SUNDAY_INDEX = 0
-const MONDAY_INDEX = 1
-const PAST_DUE_FRIDAY_HOUR = 10
 const PAST_DUE_MONDAY_CUTOFF_HOUR = 17
 
-function isPastDue(): boolean {
-    const parts = new Intl.DateTimeFormat('en-US', CENTRAL_TIME_FORMAT_OPTIONS).formatToParts(new Date())
-    const partMap = Object.fromEntries(parts.map(({ type, value }) => [type, value]))
-    const dayIndex = WEEKDAY_NAMES.indexOf(partMap.weekday)
-    const hour = parseInt(partMap.hour, 10)
-    return (
-        (dayIndex === FRIDAY_INDEX && hour >= PAST_DUE_FRIDAY_HOUR) ||
-        dayIndex === SATURDAY_INDEX ||
-        dayIndex === SUNDAY_INDEX ||
-        (dayIndex === MONDAY_INDEX && hour < PAST_DUE_MONDAY_CUTOFF_HOUR)
-    )
-}
-
-export function buildDueSeverity(): DueSeverityResult {
-    const pastDue = isPastDue()
-    return {
-        severity: pastDue ? 'error' : 'warning',
-        titlePhase: pastDue ? 'Past Due' : 'Due'
-    }
-}
-
 const VerifiedUtility = {
-    buildDueSeverity,
     isVerified(
         updatedLast: string | null | undefined,
         updatedAt: string,
