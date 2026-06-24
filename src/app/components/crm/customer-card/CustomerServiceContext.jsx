@@ -296,11 +296,7 @@ export function CustomerServiceContext({ aggregate, emptyMessage, header, orders
                 </div>
             )}
 
-            <CustomerOrdersTable
-                emptyMessage={emptyMessage}
-                orders={sortedOrders}
-                plantNameByCode={plantNameByCode}
-            />
+            <CustomerOrdersTable emptyMessage={emptyMessage} orders={sortedOrders} />
         </div>
     )
 }
