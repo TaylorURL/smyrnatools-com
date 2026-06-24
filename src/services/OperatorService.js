@@ -113,17 +113,6 @@ class OperatorServiceImpl {
             return []
         }
     }
-    /** Fetches all plants from the database. */
-    async fetchPlants() {
-        try {
-            const { data, error } = await Database.from('plants').select('*')
-            if (error) throw error
-            return data
-        } catch (err) {
-            console.error('Failed to fetch plants:', err)
-            return []
-        }
-    }
     /** Fetches trainer-eligible operators (employee ID + name). */
     async fetchTrainers() {
         try {
