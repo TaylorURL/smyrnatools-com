@@ -873,12 +873,9 @@
     }
 
     // One sync cycle:
-    //   1. Refresh org units (cheap, once per cycle)
-    //   2. For every RMX org × current week: pull timesheet bundle
-    //   3. For every employee surfaced in step 2: pull last 9 days of
-    //      raw punches (covers the current + prior week so a Sunday-edited
-    //      Saturday punch still lands)
-    //   4. POST each slice to the import edge function as soon as it's ready
+    //   1. For every RMX org × current week: pull timesheet bundle
+    //   2. POST the collected slices to the import edge function so it can
+    //      decode and upsert dayforce_shifts
     async function runSync() {
         if (syncState === 'syncing' || syncState === 'backfilling') {
             log(`Skipping tick — already ${syncState}`)
@@ -903,22 +900,10 @@
         const cycleStart = Date.now()
         const myRunToken = ++currentRunToken
         const isCancelled = () => myRunToken !== currentRunToken
-        const results = { employees: 0, punches: 0, shifts: 0, timesheets: 0 }
+        const results = { shifts: 0, timesheets: 0 }
         updateBadge('syncing', '0%')
 
         try {
-            // -------- 1. Refresh org units --------
-            try {
-                const orgData = await dayforceGet('/Framework/Org/GetUserOrg/')
-                if (Array.isArray(orgData) && orgData.length > 0) {
-                    const orgRes = await postToImport({ orgUnits: orgData })
-                    if (!orgRes.ok) log(`Org unit sync failed: ${orgRes.error}`)
-                }
-            } catch (err) {
-                log(`Org unit refresh failed (non-fatal): ${err.message}`)
-            }
-
-            // -------- 2. Timesheets for current week --------
             const { end: weekEnd, start: weekStart } = getPayWeekRange(new Date())
             const periodStart = toDayforceDateString(weekStart)
             const periodEnd = toDayforceDateString(weekEnd)
@@ -936,38 +921,18 @@
             if (ts.timesheetSlices.length > 0) {
                 const tsRes = await postToImport({ timesheets: ts.timesheetSlices })
                 if (tsRes.ok) {
-                    results.employees = tsRes.body?.stats?.employees ?? 0
                     results.shifts = tsRes.body?.stats?.shifts ?? 0
-                    log(`Timesheets imported: ${ts.count} bundles -> ${results.employees} employees, ${results.shifts} shifts`)
+                    log(`Timesheets imported: ${ts.count} bundles -> ${results.shifts} shifts`)
                 } else {
                     log(`Timesheet import failed: ${tsRes.error}`)
                 }
             }
             if (isCancelled()) return
 
-            // -------- 3. Per-employee raw punches (current + prior week) --------
-            const punchWindowStart = new Date(weekStart)
-            punchWindowStart.setDate(weekStart.getDate() - 7)
-            const punchStartStr = toDayforceDateString(punchWindowStart)
-            const punchEndStr = toDayforceDateString(weekEnd)
-            log(`Pulling raw punches for ${ts.employeeIds.length} employees`)
-
-            const { punchSlices } = await pullPunchesForRange({
-                employeeIdList: ts.employeeIds,
-                isCancelled,
-                onProgress: ({ count, total }) => updateBadge('syncing', `punches ${count}/${total}`),
-                periodEnd: punchEndStr,
-                periodStart: punchStartStr
-            })
-            if (isCancelled()) return
-
-            results.punches = await postPunchesInChunks(punchSlices, isCancelled)
-            log(`Raw punches imported: ${results.punches}`)
-
             lastSync = new Date()
             const elapsed = Math.round((Date.now() - cycleStart) / 1000)
             log(
-                `Cycle done in ${elapsed}s — ${results.timesheets} TS bundles, ${results.employees} employees, ${results.shifts} shifts, ${results.punches} punches`
+                `Cycle done in ${elapsed}s — ${results.timesheets} TS bundles, ${results.shifts} shifts`
             )
             updateBadge('ok')
 
