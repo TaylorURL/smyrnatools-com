@@ -253,7 +253,6 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                         return (
                                                             <button type="button"
                                                                 key={mgr.id}
-                                                                type="button"
                                                                 role="option"
                                                                 aria-selected={isSelected}
                                                                 onClick={() => {

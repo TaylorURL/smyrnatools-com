@@ -112,7 +112,6 @@ export function AssetStatisticsSidebar({ accentColor, activeSection, onSelect, s
                 return (
                     <button type="button"
                         key={section.id}
-                        type="button"
                         onClick={() => onSelect(section.id)}
                         aria-current={active ? 'page' : undefined}
                         aria-label={`${section.label}. ${section.description}`}
@@ -142,7 +141,6 @@ export function AssetStatisticsSectionTabs({ accentColor, activeSection, onSelec
                 return (
                     <button type="button"
                         key={section.id}
-                        type="button"
                         onClick={() => onSelect(section.id)}
                         aria-current={active ? 'page' : undefined}
                         aria-label={`${section.label}. ${section.description}`}

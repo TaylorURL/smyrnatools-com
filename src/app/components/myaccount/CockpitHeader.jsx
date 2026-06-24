@@ -100,7 +100,6 @@ export default function CockpitHeader({
                     return (
                         <button type="button"
                             key={id}
-                            type="button"
                             role="tab"
                             aria-selected={isActive}
                             onClick={() => onChangeTab(id)}

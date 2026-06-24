@@ -63,7 +63,6 @@ export default function EquipmentBasicInfoSection({
                     <button type="button"
                         className={`operator-select-button form-control text-left ${!canEditEquipment ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                         onClick={() => canEditEquipment && setShowPlantModal(true)}
-                        type="button"
                         disabled={!canEditEquipment}
                     >
                         <span className="block truncate">{plantDisplayText}</span>

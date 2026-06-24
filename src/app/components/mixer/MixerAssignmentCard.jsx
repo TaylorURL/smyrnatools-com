@@ -37,7 +37,6 @@ export default function MixerAssignmentCard({
                 <button type="button"
                     className={`${FIELD_BUTTON_BASE} ${plantDisabled ? DISABLED_FIELD_CLASSES : ''}`}
                     onClick={() => canEditMixer && onOpenPlantModal()}
-                    type="button"
                     disabled={plantDisabled}
                 >
                     <span className="block truncate">{plantDisplayText}</span>
@@ -49,7 +48,6 @@ export default function MixerAssignmentCard({
                     <button type="button"
                         className={`${FIELD_BUTTON_BASE} ${operatorDisabled ? DISABLED_FIELD_CLASSES : ''}`}
                         onClick={onOpenOperatorModal}
-                        type="button"
                         disabled={operatorDisabled}
                     >
                         <span className="block truncate">
@@ -62,7 +60,6 @@ export default function MixerAssignmentCard({
                                 className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                 aria-label="Unassign Operator"
                                 onClick={onUnassignOperator}
-                                type="button"
                             >
                                 Unassign Operator
                             </button>
@@ -72,7 +69,6 @@ export default function MixerAssignmentCard({
                                     className={UNDO_BUTTON_CLASSES}
                                     aria-label="Undo Unassign"
                                     onClick={onUndoUnassignOperator}
-                                    type="button"
                                 >
                                     Undo
                                 </button>

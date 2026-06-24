@@ -410,7 +410,6 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                             <button type="button"
                                 className={`operator-select-button form-control text-left ${!canEditPickup ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                                 onClick={() => setShowPlantModal(true)}
-                                type="button"
                                 disabled={!canEditPickup}
                             >
                                 <span className="block truncate">{plantDisplayText}</span>

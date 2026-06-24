@@ -157,7 +157,6 @@ function LoginView() {
                     <div className="m-auto flex w-full max-w-md flex-col items-center px-6 py-12 animate-fade-in motion-reduce:animate-none">
                         <button type="button"
                             ref={gateButtonRef}
-                            type="button"
                             onClick={reveal}
                             aria-expanded={isRevealed}
                             aria-controls="portal-landing"

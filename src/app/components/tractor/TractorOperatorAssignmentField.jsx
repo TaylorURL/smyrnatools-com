@@ -92,7 +92,6 @@ function TractorOperatorAssignmentField({
                 <button type="button"
                     className={`operator-select-button form-control text-left active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none ${plantDisabled ? DISABLED_FIELD_CLASSES : ''}`}
                     onClick={() => canEditTractor && setShowPlantModal(true)}
-                    type="button"
                     disabled={plantDisabled}
                 >
                     <span className="block truncate">{plantDisplayText}</span>
@@ -109,7 +108,6 @@ function TractorOperatorAssignmentField({
                                 setShowOperatorModal(true)
                             }
                         }}
-                        type="button"
                         disabled={operatorDisabled}
                     >
                         <span className="block truncate">
@@ -122,7 +120,6 @@ function TractorOperatorAssignmentField({
                                 className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                 aria-label="Unassign Operator"
                                 onClick={handleUnassign}
-                                type="button"
                             >
                                 Unassign Operator
                             </button>
@@ -132,7 +129,6 @@ function TractorOperatorAssignmentField({
                                     className={UNDO_BUTTON_CLASSES}
                                     aria-label="Undo Unassign"
                                     onClick={handleUndoUnassign}
-                                    type="button"
                                 >
                                     Undo
                                 </button>

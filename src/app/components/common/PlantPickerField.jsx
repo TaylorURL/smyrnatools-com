@@ -31,7 +31,6 @@ function PlantPickerField({
                 </label>
                 <button type="button"
                     id={htmlFor}
-                    type="button"
                     onClick={openPicker}
                     aria-label={accessibleLabel}
                     aria-haspopup="dialog"

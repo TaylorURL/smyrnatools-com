@@ -168,7 +168,6 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
                     pickerResults.map((user) => (
                         <button type="button"
                             key={user.id}
-                            type="button"
                             role="option"
                             aria-selected={false}
                             onMouseDown={(event) => {

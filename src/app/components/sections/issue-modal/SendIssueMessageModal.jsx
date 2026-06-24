@@ -249,7 +249,6 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                                         return (
                                                             <button type="button"
                                                                 key={mgr.id}
-                                                                type="button"
                                                                 onClick={() => {
                                                                     setSelectedManager(mgr)
                                                                     setManagerDropdownOpen(false)

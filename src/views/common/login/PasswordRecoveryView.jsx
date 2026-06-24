@@ -84,7 +84,7 @@ function PasswordRecoveryView({ onBackToLogin }) {
                                     <span>{message}</span>
                                 </div>
                             )}
-                            <button type="button"
+                            <button
                                 type="submit"
                                 className="w-full py-3 bg-[#1e3a5f] text-white font-semibold rounded-lg transition-[filter,transform,opacity] duration-150 ease-out motion-reduce:transition-none flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e3a5f]/50 focus-visible:ring-offset-2"
                                 disabled={submitting}
