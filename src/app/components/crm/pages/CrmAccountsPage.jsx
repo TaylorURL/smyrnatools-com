@@ -313,7 +313,6 @@ export function CrmAccountsPage({
                 onClearSelection={onClearSelectedCustomer}
                 onSelectCustomer={onSelectCustomer}
                 opportunitiesSlot={opportunitiesSlot}
-                plantNameByCode={plantNameByCode}
                 rosterError={rosterError}
                 saveContact={saveContact}
                 savingContactFor={savingContactFor}
