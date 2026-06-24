@@ -29,11 +29,8 @@ export function useDashboardAssets({
     const [loading, setLoading] = useState(true)
     const [dataReady, setDataReady] = useState(false)
     const [error, setError] = useState('')
-    const [lastUpdated, setLastUpdated] = useState(null)
     const [trainingOperators, setTrainingOperators] = useState([])
     const [pendingStartOperators, setPendingStartOperators] = useState([])
-    const [lightDutyOperators, setLightDutyOperators] = useState([])
-    const [refreshing, setRefreshing] = useState(false)
     const allOperatorsFullRef = useRef([])
     const initialLoadRef = useRef(true)
     useEffect(() => {
