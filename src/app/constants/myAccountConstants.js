@@ -20,10 +20,14 @@ export const START_PAGE_OPTIONS = [
     { icon: 'fa-truck', id: 'Tractors' },
     { icon: 'fa-trailer', id: 'Trailers' },
     { icon: 'fa-hard-hat', id: 'Operators' },
-    { icon: 'fa-calendar-days', id: 'Plan' },
     { icon: 'fa-cogs', id: 'Heavy Equipment' },
     { icon: 'fa-truck-pickup', id: 'Pickup Trucks' }
 ]
+
+/** Set of valid start-page view IDs — used to fall back to Dashboard when a
+ *  user's stored start page references a removed view (e.g. legacy 'Plan'
+ *  after Operations was retired). */
+export const VALID_START_PAGE_IDS = new Set(START_PAGE_OPTIONS.map((opt) => opt.id))
 
 export const ACCENT_PRESETS = [
     { color: '#2A3163', name: 'Navy' },

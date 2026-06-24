@@ -3,7 +3,6 @@ import { SpeedInsights } from '@vercel/speed-insights/react'
 import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
 import { Database } from '../services/DatabaseService'
-import PlanSettingsService from '../services/PlanSettingsService'
 import { getSessionUserId } from '../services/SessionService'
 import { UserService } from '../services/UserService'
 import { NetworkUtility } from '../utils/NetworkUtility'
@@ -16,6 +15,7 @@ import TerminatedOverlay from './components/common/TerminatedOverlay'
 import TutorialManager from './components/common/TutorialPopup'
 import VersionUpdateBanner from './components/common/VersionUpdateBanner'
 import WebOverlay from './components/common/WebOverlay'
+import { VALID_START_PAGE_IDS } from './constants/myAccountConstants'
 import { MessagesProvider } from './context/MessagesContext'
 import { usePreferences } from './context/PreferencesContext'
 import { useTutorial } from './context/TutorialContext'
@@ -46,7 +46,6 @@ const MyAccountView = lazyWithRetry(() => import('../views/common/myaccount/MyAc
 const OperatorsView = lazyWithRetry(() => import('../views/people/operators/OperatorsView'))
 const PickupTrucksView = lazyWithRetry(() => import('../views/assets/pickup-trucks/PickupTrucksView'))
 const CrmView = lazyWithRetry(() => import('../views/tools/crm/CrmView'))
-const OperationsView = lazyWithRetry(() => import('../views/tools/plan/OperationsView'))
 const PlantsView = lazyWithRetry(() => import('../views/admin/plants/PlantsView'))
 const RegionsView = lazyWithRetry(() => import('../views/admin/regions/RegionsView'))
 const RolesView = lazyWithRetry(() => import('../views/admin/roles/RolesView'))
@@ -85,11 +84,14 @@ function AppContent() {
     useEffect(() => {
         sessionStorage.removeItem(CHUNK_RELOAD_KEY)
     }, [])
-    // Navigate to user's preferred start page once preferences load
+    // Navigate to user's preferred start page once preferences load. If the
+    // stored page references a view that no longer exists (e.g. legacy
+    // 'Plan' / Operations after retirement), fall back to Dashboard rather
+    // than dropping the user on a broken "coming soon" placeholder.
     useEffect(() => {
         if (startPageAppliedRef.current || preferencesLoading || !userId || !rolesLoaded || isGuestOnly) return
         const page = preferences.startPage
-        if (page && page !== 'Dashboard') {
+        if (page && page !== 'Dashboard' && VALID_START_PAGE_IDS.has(page)) {
             setSelectedView({ initialStatusFilter: null, view: page })
         }
         startPageAppliedRef.current = true
@@ -120,15 +122,6 @@ function AppContent() {
         window.addEventListener('region-changed', handleRegionChange)
         return () => window.removeEventListener('region-changed', handleRegionChange)
     }, [selectedView])
-    // Hydrate Plan / Operations runtime constants from the per-region
-    // `plan_settings` row whenever the active region changes. Fire-and-forget
-    // — the service swallows errors so a settings outage falls back to the
-    // baked-in defaults baked into the constants modules.
-    useEffect(() => {
-        const regionCode = preferences?.selectedRegion?.code
-        if (!userId || !regionCode) return
-        PlanSettingsService.loadAndHydrate(regionCode)
-    }, [userId, preferences?.selectedRegion?.code])
     useEffect(() => {
         if (!userId || rolesLoaded) return
         let cancelled = false
@@ -292,8 +285,6 @@ function AppContent() {
                 )
             case 'CRM':
                 return <CrmView />
-            case 'Plan':
-                return <OperationsView title="My Operations" />
             default:
                 return (
                     <div className="relative mx-auto my-8 flex h-[70vh] w-full max-w-[600px] flex-col items-center justify-center overflow-x-hidden rounded-xl bg-bg-primary p-8 text-center shadow-md">

@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
-import { SERVICE_TIER_META } from '../../../../../utils/PlanUtility'
-import Badge from '../../../common/Badge'
+import { fmtInt } from '../../../../utils/PlanStatisticsFormatUtility'
+import { SERVICE_TIER_META } from '../../../../utils/PlanUtility'
+import Badge from '../../common/Badge'
 
 /* The three "bad" tiers, in worsening order. `good` is intentionally
  * omitted because this component renders the breakdown of the BAD
