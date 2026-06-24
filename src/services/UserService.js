@@ -5,7 +5,6 @@ import { PlantService } from './PlantService'
 import { getSessionUserId } from './SessionService'
 
 const USER_FUNCTION = '/user-service'
-const DM_FUNCTION = '/district-manager-service'
 const PROFILES_TABLE = 'users_profiles'
 const USER_ID_REQUIRED = 'User ID is required'
 const DEFAULT_ROLE_NAME = 'User'
