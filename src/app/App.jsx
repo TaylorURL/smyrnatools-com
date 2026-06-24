@@ -283,8 +283,6 @@ function AppContent() {
                     <LoginView />
                 )
             }
-            case 'Documents':
-                return <DocumentsView />
             case 'Notifications':
                 return (
                     <NotificationsView
