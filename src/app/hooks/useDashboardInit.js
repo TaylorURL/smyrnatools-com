@@ -223,7 +223,6 @@ export function useDashboardInit({ plantSetRef, preferences }) {
         dashboardRegionCode,
         dashboardRegionName,
         hasAllRegionsPermission,
-        isPlantManager,
         onRefresh,
         permittedRegions,
         plantModalOpen,
@@ -235,13 +234,10 @@ export function useDashboardInit({ plantSetRef, preferences }) {
         setDashboardPlant,
         setPlantModalOpen,
         setRefreshKey,
-        setRefreshing,
         totalAggregateLocations,
         totalPlantsExcludingAggregate,
         totalRegionsExcludingOffice,
         userAdditionalPlants,
-        userPlantCode,
-        userRoleName,
-        userRoleWeight
+        userPlantCode
     }
 }
