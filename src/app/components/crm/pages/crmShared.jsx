@@ -107,7 +107,6 @@ export function ListOrDetailPane({
     onLogInteraction,
     onSelectCustomer,
     opportunitiesSlot,
-    plantNameByCode,
     rosterError,
     saveContact,
     savingContactFor,
