@@ -314,12 +314,6 @@
     const SYNC_WINDOW_START_MINUTES = 0
     const SYNC_WINDOW_END_MINUTES = 24 * 60
 
-    // Keys used by the obfuscated ObfuscatingTimesheet response — we don't
-    // decode here (that's the edge function's job) but we do need to know
-    // which key holds the employee array so we can fan out raw-punch
-    // queries per-employee in this cycle.
-    const TS_EMPLOYEES_KEY = 'j6'
-    const TS_DAYFORCE_EMPLOYEE_ID_KEY = 'e4'
 
     // ============================================================
     // BACKFILL CONFIG
