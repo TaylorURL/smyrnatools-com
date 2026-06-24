@@ -5,7 +5,6 @@
  * Pure functions. No DOM, no React. Mirror the Schedule tab's headline
  * styling so cross-tab numbers always read the same.
  */
-const MINUTES_PER_DAY = 24 * 60
 
 /** ISO `YYYY-MM-DD` -> local-zone `Date` (no UTC drift). Returns null when
  *  the input is empty or malformed. */
