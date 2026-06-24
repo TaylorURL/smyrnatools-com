@@ -66,6 +66,7 @@ export default function DashboardView() {
         userPlantCode,
         refreshKey
     } = useDashboardInit({ plantSetRef, preferences })
+    void refreshing
     const myPlantCodesSet = useMemo(() => {
         if (!userPlantCode && !userAdditionalPlants.length) return null
         const codes = new Set()
