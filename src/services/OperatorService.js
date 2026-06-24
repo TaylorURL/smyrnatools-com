@@ -124,21 +124,6 @@ class OperatorServiceImpl {
             return []
         }
     }
-    /** Fetches operators enriched with availability status based on active mixer assignments. */
-    async fetchOperatorsWithAvailability(mixers = []) {
-        const operators = await this.fetchOperators()
-        return operators.map((operator) => ({
-            ...operator,
-            isAvailable:
-                operator.status === 'Active' &&
-                !mixers.some((mixer) => mixer.assignedOperator === operator.employeeId && mixer.status === 'Active')
-        }))
-    }
-    /** Checks if an operator is currently assigned to an active mixer. */
-    isOperatorAssigned(operatorId, mixers = []) {
-        if (!operatorId || operatorId === '0') return false
-        return mixers.some((mixer) => mixer.assignedOperator === operatorId && mixer.status === 'Active')
-    }
     /** Detects duplicate operator names for data quality alerts. */
     getDuplicateNames(operators) {
         return getDuplicateFieldValues(operators, (op) => {
