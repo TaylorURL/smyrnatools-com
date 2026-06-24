@@ -54,11 +54,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [openDropdown, setOpenDropdown] = useState(null)
 
-    // Drop-a-pin state
-    const [userPermissions, setUserPermissions] = useState([])
-    const [dropPinLocation, setDropPinLocation] = useState(null)
-    const [dropPinModalOpen, setDropPinModalOpen] = useState(false)
-
     const isMobile = useIsMobile()
     const isTablet = useIsTablet()
     const accentColor = useAccentColor()
