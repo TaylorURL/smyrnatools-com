@@ -17,7 +17,6 @@ import { FilterStrip, ListOrDetailPane } from './crmShared'
  *  strip) so the detail owns the page. */
 export function CrmOutreachPage({
     accentColor,
-    colocationMap,
     contactsByCustomer,
     deleteContact,
     deleteEntry,
@@ -30,7 +29,6 @@ export function CrmOutreachPage({
     logCall,
     onClearSelectedCustomer,
     onSelectCustomer,
-    plantNameByCode,
     roster,
     rosterError,
     saveContact,
