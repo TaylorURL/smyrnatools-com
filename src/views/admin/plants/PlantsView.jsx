@@ -55,7 +55,7 @@ const FILTER_SELECT_STYLE = {
 }
 
 /** Grid card — matches AssetGridCard visual rhythm (header / body grid / footer). */
-function PlantGridCard({ plant, region, plantType, managerCount, saturdayForecast, onSelect, onManageManagers }) {
+function PlantGridCard({ plant, region, plantType, managerCount, onSelect, onManageManagers }) {
     const meta = PLANT_TYPE_META[plantType] || DEFAULT_TYPE_META
     const code = getPlantCode(plant)
     const name = getPlantName(plant)
