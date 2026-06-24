@@ -36,15 +36,6 @@ class PlantServiceImpl {
         }
         return all
     }
-    /** Fetches a specific plant by code, using the cache first. */
-    async fetchPlantByCode(plantCode) {
-        if (!plantCode) throw new Error('Plant code is required')
-        const cached = this.getPlantByCode(plantCode)
-        if (cached) return cached
-        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/fetch-by-code`, { plantCode })
-        if (!res.ok) throw new Error(json?.error || 'Failed to fetch plant')
-        return json?.data ? Plant.fromRow(json.data) : null
-    }
     /** Creates a new plant and refreshes the cache. */
     async createPlant(plantCode, plantName) {
         if (!plantCode?.trim() || !plantName?.trim()) throw new Error('Plant code and name are required')
