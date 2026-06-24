@@ -48,9 +48,6 @@ export const EquipmentService = {
     getAllEquipments() {
         return base._base.getAll()
     },
-    getEquipmentHistory(equipmentId, limit = null) {
-        return base._base.getHistory(equipmentId, limit)
-    },
     updateEquipment(equipmentId, equipment, userId) {
         return base._base.update(equipmentId, equipment, userId)
     },
