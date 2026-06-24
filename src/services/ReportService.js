@@ -1,9 +1,6 @@
 import CacheUtility from '../utils/CacheUtility'
 import { Database } from './DatabaseService'
-import { PlantService } from './PlantService'
-import { UserService } from './UserService'
 
-const TTL_SHORT = 5 * 60 * 1000
 const TTL_MED = 10 * 60 * 1000
 /** Sorts plants by plant_code numerically, falling back to string comparison. */
 function sortPlants(plants) {
@@ -17,43 +14,10 @@ function sortPlants(plants) {
         })
 }
 /**
- * Plant and mixer-roster fetching utilities shared by the Dashboard and
- * Plan/Planner views (plant lists, per-user plant scoping, active mixer
- * operator counts) with light caching.
+ * Plant fetching utility shared by the Dashboard view (sorted plant list)
+ * with light caching.
  */
 class ReportServiceImpl {
-    /** Fetches active mixer operator counts (assigned + unassigned) grouped by plant code. */
-    async fetchActiveMixerCountsByPlant(plantCodes = []) {
-        if (!plantCodes || plantCodes.length === 0) return {}
-        const [mixersResult, operatorsResult] = await Promise.all([
-            Database.from('mixers')
-                .select('assigned_plant, assigned_operator')
-                .eq('status', 'Active')
-                .in('assigned_plant', plantCodes),
-            Database.from('operators')
-                .select('employee_id, plant_code')
-                .eq('status', 'Active')
-                .eq('position', 'Mixer Operator')
-                .in('plant_code', plantCodes)
-        ])
-        const counts = {}
-        plantCodes.forEach((code) => {
-            counts[code] = 0
-        })
-        if (mixersResult.error || !Array.isArray(mixersResult.data)) return counts
-        const assignedOperatorIds = new Set()
-        mixersResult.data.forEach((m) => {
-            if (m.assigned_operator) assignedOperatorIds.add(m.assigned_operator)
-        })
-        if (!operatorsResult.error && Array.isArray(operatorsResult.data)) {
-            operatorsResult.data.forEach((op) => {
-                if (op.plant_code && counts[op.plant_code] !== undefined) {
-                    counts[op.plant_code]++
-                }
-            })
-        }
-        return counts
-    }
     /** Fetches all plants sorted by code with a 10-minute cache. The
      *  Plan → Planner tab consumes `latitude` / `longitude` from these
      *  rows to anchor each plant marker to its real location on the
@@ -74,45 +38,6 @@ class ReportServiceImpl {
         const plants = !error && Array.isArray(data) ? sortPlants(data) : []
         CacheUtility.set(cacheKey, plants, TTL_MED)
         return plants
-    }
-    /**
-     * Fetches plants accessible to a user based on their profile plant
-     * and region memberships, with a 5-minute cache.
-     */
-    async fetchPlantsForUser(userId) {
-        if (!userId) return []
-        const cacheKey = `plants:user:${userId}`
-        const cached = CacheUtility.get(cacheKey)
-        if (cached) return cached
-        const basePlants = await this.fetchPlantsSorted()
-        try {
-            const userPlant = await UserService.getUserPlant(userId)
-            if (!userPlant) {
-                CacheUtility.set(cacheKey, [], TTL_SHORT)
-                return []
-            }
-            const regions = await PlantService.fetchRegionsByPlantCode(userPlant)
-            const regionCodes = Array.isArray(regions) ? regions.map((r) => r.regionCode).filter(Boolean) : []
-            if (regionCodes.length === 0) {
-                CacheUtility.set(cacheKey, [], TTL_SHORT)
-                return []
-            }
-            const results = await Promise.all(regionCodes.map((rc) => PlantService.fetchRegionPlants(rc)))
-            const allowedCodes = new Set()
-            results.forEach((list) => {
-                const listArr = list || []
-                listArr.forEach((rp) => {
-                    const c = rp.plantCode || rp.plant_code
-                    if (c) allowedCodes.add(String(c).trim())
-                })
-            })
-            const filtered = basePlants.filter((p) => allowedCodes.has(String(p.plant_code).trim()))
-            CacheUtility.set(cacheKey, filtered, TTL_SHORT)
-            return filtered
-        } catch {
-            CacheUtility.set(cacheKey, [], TTL_SHORT)
-            return []
-        }
     }
 }
 export const ReportService = new ReportServiceImpl()
