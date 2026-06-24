@@ -789,15 +789,6 @@
         }
     }
 
-    function buildRawPunchBody(employeeId, periodStart, periodEnd) {
-        return {
-            employeeId,
-            endDate: periodEnd,
-            isPunchCheckSumRequired: false,
-            startDate: periodStart
-        }
-    }
-
     // ============================================================
     // SESSION HEARTBEAT
     //
