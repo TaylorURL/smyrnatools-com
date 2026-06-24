@@ -67,9 +67,7 @@ export default function AssetViewShell({
     const accentColor = preferences.accentColor || '#1e3a5f'
     const [activeTab, setActiveTab] = useState('list')
 
-    const tabs = config.workbookColumns
-        ? [...BASE_TABS, WORKBOOK_TAB]
-        : BASE_TABS
+    const tabs = BASE_TABS
 
     if (embedded) {
         return (
