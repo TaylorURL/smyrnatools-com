@@ -23,7 +23,6 @@ const ACRONYMS = new Set([
     'QA',
     'QC',
     'ERP',
-    'CRM',
     'GPS',
     'VIN',
     'SKU',
