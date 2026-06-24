@@ -24,7 +24,6 @@ import { FilterStrip, ListOrDetailPane } from './crmShared'
 export function CrmAccountsPage({
     accountInteractionsByAccount,
     accentColor,
-    colocationMap,
     contactsByCustomer,
     deleteContact,
     deleteEntry,
@@ -41,7 +40,6 @@ export function CrmAccountsPage({
     onArchiveAccount,
     onClearSelectedCustomer,
     onSelectCustomer,
-    plantNameByCode,
     roster,
     rosterError,
     saveContact,
