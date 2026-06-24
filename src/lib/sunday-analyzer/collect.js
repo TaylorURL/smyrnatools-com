@@ -18,17 +18,17 @@ export function collectPageview(siteKey) {
   const { location, document, navigator, screen } = window
   const params = new URLSearchParams(location.search)
   return {
-    siteKey,
-    sessionId: resolveSessionId(),
     path: `${location.pathname}${location.search}`,
-    referrer: document.referrer || null,
-    utmSource: utm(params, 'utm_source'),
-    utmMedium: utm(params, 'utm_medium'),
-    utmCampaign: utm(params, 'utm_campaign'),
-    utmTerm: utm(params, 'utm_term'),
-    utmContent: utm(params, 'utm_content'),
-    screen: screen ? `${screen.width}x${screen.height}` : null,
     language: navigator.language || null,
+    referrer: document.referrer || null,
+    screen: screen ? `${screen.width}x${screen.height}` : null,
+    sessionId: resolveSessionId(),
+    siteKey,
     userAgent: navigator.userAgent || null,
+    utmCampaign: utm(params, 'utm_campaign'),
+    utmContent: utm(params, 'utm_content'),
+    utmMedium: utm(params, 'utm_medium'),
+    utmSource: utm(params, 'utm_source'),
+    utmTerm: utm(params, 'utm_term'),
   }
 }

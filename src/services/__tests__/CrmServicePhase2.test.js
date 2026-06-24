@@ -5,15 +5,15 @@ import CrmService from '../CrmService'
 
 vi.mock('../../utils/APIUtility', () => ({ default: { post: vi.fn() } }))
 
-const ok = (data) => ({ res: { ok: true }, json: { data } })
-const fail = (error) => ({ res: { ok: false }, json: { error } })
+const ok = (data) => ({ json: { data }, res: { ok: true } })
+const fail = (error) => ({ json: { error }, res: { ok: false } })
 
 describe('CrmService — Phase 2 methods', () => {
     beforeEach(() => vi.clearAllMocks())
 
     // ── fetchMyDesk ──────────────────────────────────────────────────────────
     it('fetchMyDesk posts to /my-desk and returns the bundle', async () => {
-        const bundle = { followups: [{ id: 'f1' }], accounts: [], opportunities: [], recentActivity: [] }
+        const bundle = { accounts: [], followups: [{ id: 'f1' }], opportunities: [], recentActivity: [] }
         APIUtility.post.mockResolvedValue(ok(bundle))
 
         const result = await CrmService.fetchMyDesk()
@@ -34,7 +34,7 @@ describe('CrmService — Phase 2 methods', () => {
     })
 
     it('saveFollowup posts and returns the saved row', async () => {
-        const row = { id: 'fu1', title: 'Call back', status: 'open' }
+        const row = { id: 'fu1', status: 'open', title: 'Call back' }
         APIUtility.post.mockResolvedValue(ok(row))
 
         const result = await CrmService.saveFollowup({ accountId: 'a1', title: 'Call back' })

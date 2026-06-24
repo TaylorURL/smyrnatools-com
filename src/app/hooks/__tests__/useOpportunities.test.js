@@ -6,40 +6,40 @@ import { useOpportunities } from '../useOpportunities'
 
 vi.mock('../../../services/CrmService', () => ({
     default: {
+        deleteOpportunity: vi.fn(),
         fetchOpportunities: vi.fn(),
-        saveOpportunity: vi.fn(),
         moveStage: vi.fn(),
-        deleteOpportunity: vi.fn()
+        saveOpportunity: vi.fn()
     }
 }))
 
-const REAL_OPP = { id: 'o1', title: 'Deal A', stage: 'new', account_id: 'a1' }
+const REAL_OPP = { account_id: 'a1', id: 'o1', stage: 'new', title: 'Deal A' }
 const VIRTUAL_OPP = {
-    id: 'virtual:prospect:a2',
-    virtual: true,
     account_id: 'a2',
     account_name: 'Prospect Co',
-    title: 'Prospect Opportunity',
-    stage: 'new',
+    id: 'virtual:prospect:a2',
     owner_user_id: 'u1',
-    source: 'prospect'
+    source: 'prospect',
+    stage: 'new',
+    title: 'Prospect Opportunity',
+    virtual: true
 }
 const VIRTUAL_WON_OPP = {
-    id: 'virtual:order:a3',
-    virtual: true,
     account_id: 'a3',
     account_name: 'New Customer',
-    title: 'Order Opportunity',
-    stage: 'won',
+    id: 'virtual:order:a3',
     owner_user_id: 'u1',
-    source: 'order'
+    source: 'order',
+    stage: 'won',
+    title: 'Order Opportunity',
+    virtual: true
 }
 
 describe('useOpportunities', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         CrmService.fetchOpportunities.mockResolvedValue([REAL_OPP])
-        CrmService.saveOpportunity.mockResolvedValue({ id: 'o2', title: 'Deal B', stage: 'new' })
+        CrmService.saveOpportunity.mockResolvedValue({ id: 'o2', stage: 'new', title: 'Deal B' })
         CrmService.moveStage.mockResolvedValue({ id: 'o1', stage: 'won' })
         CrmService.deleteOpportunity.mockResolvedValue(true)
     })
@@ -97,10 +97,10 @@ describe('useOpportunities', () => {
         expect(CrmService.moveStage).not.toHaveBeenCalled()
         expect(CrmService.saveOpportunity).toHaveBeenCalledWith({
             accountId: 'a2',
-            title: 'Prospect Opportunity',
-            stage: 'contacted',
             ownerUserId: 'u1',
-            source: 'prospect'
+            source: 'prospect',
+            stage: 'contacted',
+            title: 'Prospect Opportunity'
         })
         expect(CrmService.fetchOpportunities).toHaveBeenCalledTimes(1)
     })
@@ -118,10 +118,10 @@ describe('useOpportunities', () => {
         expect(CrmService.moveStage).not.toHaveBeenCalled()
         expect(CrmService.saveOpportunity).toHaveBeenCalledWith({
             accountId: 'a3',
-            title: 'Order Opportunity',
-            stage: 'won',
             ownerUserId: 'u1',
-            source: 'order'
+            source: 'order',
+            stage: 'won',
+            title: 'Order Opportunity'
         })
         expect(CrmService.fetchOpportunities).toHaveBeenCalledTimes(1)
     })

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import CrmService from '../../services/CrmService'
 
-const EMPTY_DESK = { followups: [], accounts: [], opportunities: [], recentActivity: [] }
+const EMPTY_DESK = { accounts: [], followups: [], opportunities: [], recentActivity: [] }
 
 /**
  * Fetches the current user's CRM desk summary on mount.

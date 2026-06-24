@@ -5,7 +5,7 @@ const SERVICE_PREFIX = 'call-list-service'
 /** Client wrapper for the CRM endpoints on the call-list-service edge function. */
 class CrmServiceImpl {
     async fetchRoster({ scope = 'all', includeActive = false } = {}) {
-        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/roster`, { scope, includeActive })
+        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/roster`, { includeActive, scope })
         if (!res.ok) throw new Error(json?.error || 'Failed to load accounts')
         return Array.isArray(json?.data) ? json.data : []
     }
@@ -21,12 +21,12 @@ class CrmServiceImpl {
         if (!name) throw new Error('name is required')
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/save-account`, {
             id,
-            name,
             lifecycleStage,
-            tags,
-            phone,
+            name,
             notes,
-            salesRepUserId
+            phone,
+            salesRepUserId,
+            tags
         })
         if (!res.ok) throw new Error(json?.error || 'Failed to save account')
         return json?.data ?? null
@@ -37,11 +37,11 @@ class CrmServiceImpl {
         if (!interactionType) throw new Error('interactionType is required')
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/log-interaction`, {
             accountId,
-            interactionType,
-            roleLens,
-            outcome,
             comment,
-            occurredAt
+            interactionType,
+            occurredAt,
+            outcome,
+            roleLens
         })
         if (!res.ok) throw new Error(json?.error || 'Failed to log interaction')
         return json?.data ?? null
@@ -58,8 +58,8 @@ class CrmServiceImpl {
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/followups-list`, {
             accountId,
             assignedTo,
-            status,
-            mineOnly
+            mineOnly,
+            status
         })
         if (!res.ok) throw new Error(json?.error || 'Failed to load follow-ups')
         return Array.isArray(json?.data) ? json.data : []
@@ -78,15 +78,15 @@ class CrmServiceImpl {
     } = {}) {
         if (!title) throw new Error('title is required')
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/save-followup`, {
-            id,
             accountId,
-            title,
+            assignedTo,
             details,
             dueAt,
-            assignedTo,
-            status,
+            id,
             snoozeUntil,
-            sourceInteractionId
+            sourceInteractionId,
+            status,
+            title
         })
         if (!res.ok) throw new Error(json?.error || 'Failed to save follow-up')
         return json?.data ?? null
@@ -109,7 +109,7 @@ class CrmServiceImpl {
     async fetchMyDesk() {
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/my-desk`, {})
         if (!res.ok) throw new Error(json?.error || 'Failed to load desk')
-        return json?.data ?? { followups: [], accounts: [], opportunities: [], recentActivity: [] }
+        return json?.data ?? { accounts: [], followups: [], opportunities: [], recentActivity: [] }
     }
 
     async bulkAssignSalesReps(assignments) {
@@ -124,8 +124,8 @@ class CrmServiceImpl {
     async fetchOpportunities({ accountId, ownerUserId, openOnly } = {}) {
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/opportunities-list`, {
             accountId,
-            ownerUserId,
-            openOnly
+            openOnly,
+            ownerUserId
         })
         if (!res.ok) throw new Error(json?.error || 'Failed to load opportunities')
         return Array.isArray(json?.data) ? json.data : []
@@ -134,15 +134,15 @@ class CrmServiceImpl {
     async saveOpportunity({ id, accountId, title, stage, ownerUserId, expectedClose, notes, lostReason, source } = {}) {
         if (!title) throw new Error('title is required')
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/save-opportunity`, {
-            id,
             accountId,
-            title,
-            stage,
-            ownerUserId,
             expectedClose,
-            notes,
+            id,
             lostReason,
-            source
+            notes,
+            ownerUserId,
+            source,
+            stage,
+            title
         })
         if (!res.ok) throw new Error(json?.error || 'Failed to save opportunity')
         return json?.data ?? null
@@ -151,7 +151,7 @@ class CrmServiceImpl {
     async moveStage(id, stage, lostReason) {
         if (!id) throw new Error('id is required')
         if (!stage) throw new Error('stage is required')
-        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/move-stage`, { id, stage, lostReason })
+        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/move-stage`, { id, lostReason, stage })
         if (!res.ok) throw new Error(json?.error || 'Failed to move stage')
         return json?.data ?? null
     }
@@ -171,7 +171,7 @@ class CrmServiceImpl {
     async geocodeAccounts({ limit = 15 } = {}) {
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/geocode-accounts`, { limit })
         if (!res.ok) throw new Error(json?.error || 'Failed to geocode accounts')
-        return json?.data ?? { geocoded: 0, failed: 0, remaining: 0 }
+        return json?.data ?? { failed: 0, geocoded: 0, remaining: 0 }
     }
 
     /**
@@ -183,11 +183,11 @@ class CrmServiceImpl {
             throw new Error('lat and lng must be finite numbers')
         }
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/save-pin`, {
-            lat,
-            lng,
-            comment,
             accountId,
-            label
+            comment,
+            label,
+            lat,
+            lng
         })
         if (!res.ok) throw new Error(json?.error || 'Failed to save pin')
         return json?.data ?? null
@@ -199,7 +199,7 @@ class CrmServiceImpl {
      * @returns {Promise<Array>}
      */
     async fetchPins({ mineOnly = false, limit = 200 } = {}) {
-        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/pins-list`, { mineOnly, limit })
+        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/pins-list`, { limit, mineOnly })
         if (!res.ok) throw new Error(json?.error || 'Failed to load pins')
         return Array.isArray(json?.data) ? json.data : []
     }

@@ -18,11 +18,11 @@ const RED = '#ef4444'
 
 const TYPE_ICON = {
     call: 'fa-phone',
-    site_visit: 'fa-location-dot',
-    meeting: 'fa-handshake',
     email: 'fa-envelope',
-    text: 'fa-message',
-    note: 'fa-note-sticky'
+    meeting: 'fa-handshake',
+    note: 'fa-note-sticky',
+    site_visit: 'fa-location-dot',
+    text: 'fa-message'
 }
 
 /** Short relative-time label ("3d", "2h", "now") from an ISO timestamp. */
@@ -71,7 +71,7 @@ function Row({ children, label, meta, value }) {
 function MiniBar({ color, pct }) {
     return (
         <span className="h-1.5 w-14 rounded-full bg-bg-tertiary overflow-hidden shrink-0" aria-hidden="true">
-            <span className="block h-full rounded-full" style={{ width: `${Math.max(6, pct)}%`, background: color }} />
+            <span className="block h-full rounded-full" style={{ background: color, width: `${Math.max(6, pct)}%` }} />
         </span>
     )
 }
@@ -129,9 +129,9 @@ export function CrmMyDeskPage({ accentColor, dashboard, desk, error, isDeskLoadi
 function PipelinePanel({ accentColor, isLoading, pipeline }) {
     const total = pipeline.realOpenTotal
     const stages = [
-        { id: 'new', label: 'New', count: pipeline.byStage.new, op: 1 },
-        { id: 'contacted', label: 'Contacted', count: pipeline.byStage.contacted, op: 0.62 },
-        { id: 'quoted', label: 'Quoted', count: pipeline.byStage.quoted, op: 0.34 }
+        { count: pipeline.byStage.new, id: 'new', label: 'New', op: 1 },
+        { count: pipeline.byStage.contacted, id: 'contacted', label: 'Contacted', op: 0.62 },
+        { count: pipeline.byStage.quoted, id: 'quoted', label: 'Quoted', op: 0.34 }
     ]
     return (
         <Panel
@@ -158,9 +158,9 @@ function PipelinePanel({ accentColor, isLoading, pipeline }) {
                                         key={s.id}
                                         className="h-full"
                                         style={{
-                                            width: `${(s.count / total) * 100}%`,
                                             background: accentColor,
-                                            opacity: s.op
+                                            opacity: s.op,
+                                            width: `${(s.count / total) * 100}%`
                                         }}
                                         title={`${s.label}: ${s.count}`}
                                     />
@@ -365,7 +365,7 @@ function CallersPanel({ accentColor, isLoading, leaderboard }) {
                         >
                             <span
                                 className="absolute inset-y-0 left-0 rounded"
-                                style={{ width: `${(r.totalCalls / max) * 100}%`, background: `${accentColor}0f` }}
+                                style={{ background: `${accentColor}0f`, width: `${(r.totalCalls / max) * 100}%` }}
                                 aria-hidden="true"
                             />
                             <span

@@ -46,29 +46,6 @@
     "supabase:functions:delete": "node scripts/supabase.js functions delete",
     "supabase:functions:delete:local": "node scripts/rm-function.js"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ],
-    "rules": {
-      "react/prop-types": "off",
-      "no-empty": [
-        "error",
-        {
-          "allowEmptyCatch": true
-        }
-      ],
-      "no-unused-vars": [
-        "warn",
-        {
-          "argsIgnorePattern": "^_",
-          "varsIgnorePattern": "^_"
-        }
-      ],
-      "no-useless-catch": "off"
-    }
-  },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@sentry/vite-plugin": "^2.22.6",

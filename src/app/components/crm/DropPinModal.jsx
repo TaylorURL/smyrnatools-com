@@ -95,7 +95,7 @@ export function DropPinModal({ accentColor, location, onClose, onSaved }) {
         setIsSaving(true)
         setSaveError(null)
         try {
-            const savedPin = await CrmService.savePin({ lat: location.lat, lng: location.lng, comment })
+            const savedPin = await CrmService.savePin({ comment, lat: location.lat, lng: location.lng })
             onSaved(savedPin)
             onClose()
         } catch (err) {

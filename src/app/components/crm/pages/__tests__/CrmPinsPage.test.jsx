@@ -14,7 +14,7 @@ vi.mock('../../../../context/AuthContext', () => ({
 // Mock Leaflet — jsdom cannot run canvas/WebGL
 vi.mock('leaflet', () => {
     const layerGroup = { addTo: vi.fn(), clearLayers: vi.fn() }
-    const tileLayer = { addTo: vi.fn(), _url: '' }
+    const tileLayer = { _url: '', addTo: vi.fn() }
     const marker = { addTo: vi.fn(), bindPopup: vi.fn().mockReturnThis() }
     return {
         default: {
@@ -49,23 +49,23 @@ import CrmService from '../../../../../services/CrmService'
 import { CrmPinsPage } from '../CrmPinsPage'
 
 const PIN_A = {
-    id: 'p1',
-    lat: 35.1,
-    lng: -89.5,
     comment: 'Pothole by driveway',
+    created_at: '2026-05-28T10:00:00Z',
     created_by: 'u1',
     created_by_name: 'Alice',
-    created_at: '2026-05-28T10:00:00Z'
+    id: 'p1',
+    lat: 35.1,
+    lng: -89.5
 }
 
 const PIN_B = {
-    id: 'p2',
-    lat: 35.2,
-    lng: -89.6,
     comment: 'Road edge crumbling',
+    created_at: '2026-05-27T09:30:00Z',
     created_by: 'u2',
     created_by_name: 'Bob',
-    created_at: '2026-05-27T09:30:00Z'
+    id: 'p2',
+    lat: 35.2,
+    lng: -89.6
 }
 
 beforeEach(() => vi.clearAllMocks())

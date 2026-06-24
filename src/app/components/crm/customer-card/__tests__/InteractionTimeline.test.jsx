@@ -9,12 +9,12 @@ describe('InteractionTimeline', () => {
             <InteractionTimeline
                 interactions={[
                     {
-                        id: 'i1',
-                        interaction_type: 'site_visit',
-                        role_lens: 'plant',
                         comment: 'Checked the pour',
                         created_by_name: 'Jane',
-                        occurred_at: '2026-05-20T12:00:00Z'
+                        id: 'i1',
+                        interaction_type: 'site_visit',
+                        occurred_at: '2026-05-20T12:00:00Z',
+                        role_lens: 'plant'
                     }
                 ]}
             />

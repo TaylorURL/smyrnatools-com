@@ -26,9 +26,9 @@ import { CrmPipelinePage } from '../CrmPipelinePage'
 const ACCOUNT_ID = 'acct-drawer-001'
 
 const makeOpp = (overrides = {}) => ({
-    id: 'opp-001',
     account_id: ACCOUNT_ID,
     account_name: 'Drawer Test Co',
+    id: 'opp-001',
     stage: 'new',
     title: 'Test deal',
     ...overrides
@@ -49,11 +49,11 @@ const mockHookReturn = (overrides = {}) => ({
 const makeAccountPayload = () => ({
     account: {
         id: ACCOUNT_ID,
-        name: 'Drawer Test Co',
         lifecycle_stage: 'customer',
+        name: 'Drawer Test Co',
+        phone: null,
         plant_codes: [],
-        sales_rep_user_id: null,
-        phone: null
+        sales_rep_user_id: null
     },
     contacts: [],
     interactions: []

@@ -43,7 +43,7 @@ describe('DropPinModal', () => {
     })
 
     it('calls CrmService.savePin with the location and typed comment, then onSaved and onClose', async () => {
-        const savedPin = { id: 'p1', lat: 35.1234, lng: -89.5678, comment: 'pothole ahead' }
+        const savedPin = { comment: 'pothole ahead', id: 'p1', lat: 35.1234, lng: -89.5678 }
         CrmService.savePin.mockResolvedValue(savedPin)
 
         const onSaved = vi.fn()
@@ -58,9 +58,9 @@ describe('DropPinModal', () => {
 
         await waitFor(() =>
             expect(CrmService.savePin).toHaveBeenCalledWith({
+                comment: 'pothole ahead',
                 lat: 35.1234,
-                lng: -89.5678,
-                comment: 'pothole ahead'
+                lng: -89.5678
             })
         )
         expect(onSaved).toHaveBeenCalledWith(savedPin)

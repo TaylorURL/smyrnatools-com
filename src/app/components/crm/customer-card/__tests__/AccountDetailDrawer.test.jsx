@@ -16,22 +16,22 @@ const ACCOUNT_ID = 'acct-001'
 const makeFetchPayload = (overrides = {}) => ({
     account: {
         id: ACCOUNT_ID,
-        name: 'Acme Paving',
         lifecycle_stage: 'customer',
+        name: 'Acme Paving',
+        phone: null,
         plant_codes: ['101'],
         sales_rep_user_id: null,
-        phone: null,
         ...overrides.account
     },
     contacts: overrides.contacts ?? [
         {
-            id: 'c1',
             contact_name: 'Jane Doe',
-            label: 'Office',
-            phone_display: '555-1234',
-            phone_digits: '5551234',
             email: null,
-            is_primary: true
+            id: 'c1',
+            is_primary: true,
+            label: 'Office',
+            phone_digits: '5551234',
+            phone_display: '555-1234'
         }
     ],
     interactions: overrides.interactions ?? []

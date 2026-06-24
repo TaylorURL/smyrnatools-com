@@ -64,10 +64,10 @@ export function useOpportunities({ accountId, boardMode } = {}) {
             if (opp.virtual) {
                 await CrmService.saveOpportunity({
                     accountId: opp.account_id,
-                    title: opp.title,
-                    stage: targetStage,
                     ownerUserId: opp.owner_user_id,
-                    source: opp.source
+                    source: opp.source,
+                    stage: targetStage,
+                    title: opp.title
                 })
             } else {
                 await CrmService.moveStage(opp.id, targetStage, lostReason)
@@ -87,10 +87,10 @@ export function useOpportunities({ accountId, boardMode } = {}) {
         async (opp) => {
             await CrmService.saveOpportunity({
                 accountId: opp.account_id,
-                title: opp.title,
-                stage: opp.stage,
                 ownerUserId: opp.owner_user_id,
-                source: opp.source
+                source: opp.source,
+                stage: opp.stage,
+                title: opp.title
             })
             if (mounted.current) load()
         },

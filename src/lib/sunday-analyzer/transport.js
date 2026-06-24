@@ -21,10 +21,10 @@ export function sendHit(apiUrl, payload) {
 
   if (typeof fetch === 'function') {
     fetch(apiUrl, {
-      method: 'POST',
       body,
-      keepalive: true,
       headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      keepalive: true,
+      method: 'POST',
     }).catch(() => {
       // Analytics is best-effort; a dropped hit must never surface to the host app.
     })

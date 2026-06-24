@@ -14,23 +14,23 @@ import { useOpportunities } from '../../../../hooks/useOpportunities'
 import { CrmPipelinePage } from '../CrmPipelinePage'
 
 const makeVirtualOpp = (overrides = {}) => ({
-    id: 'virtual:prospect:a1',
-    virtual: true,
     account_id: 'a1',
     account_name: 'Dormant Co',
-    title: 'Suggested outreach',
-    stage: 'new',
+    id: 'virtual:prospect:a1',
     owner_user_id: 'u1',
     source: 'prospect',
+    stage: 'new',
+    title: 'Suggested outreach',
+    virtual: true,
     ...overrides
 })
 
 const makeRealOpp = (overrides = {}) => ({
-    id: 'real-uuid-001',
     account_id: 'a2',
     account_name: 'Active Corp',
-    title: 'Active deal',
+    id: 'real-uuid-001',
     stage: 'new',
+    title: 'Active deal',
     ...overrides
 })
 
@@ -99,7 +99,7 @@ describe('CrmPipelinePage — virtual / suggested cards', () => {
     it('a virtual won card renders a "Confirm won" button instead of move chips', () => {
         useOpportunities.mockReturnValue(
             mockHookReturn({
-                opportunities: [makeVirtualOpp({ stage: 'won', id: 'virtual:order:a1' })]
+                opportunities: [makeVirtualOpp({ id: 'virtual:order:a1', stage: 'won' })]
             })
         )
         render(<CrmPipelinePage accentColor="#2563eb" />)
@@ -111,14 +111,14 @@ describe('CrmPipelinePage — virtual / suggested cards', () => {
 
     it('"Confirm won" button calls materialize with the full opp object', () => {
         const materialize = vi.fn()
-        const opp = makeVirtualOpp({ stage: 'won', id: 'virtual:order:a1', source: 'order' })
+        const opp = makeVirtualOpp({ id: 'virtual:order:a1', source: 'order', stage: 'won' })
         useOpportunities.mockReturnValue(mockHookReturn({ materialize, opportunities: [opp] }))
         render(<CrmPipelinePage accentColor="#2563eb" />)
 
         fireEvent.click(screen.getByRole('button', { name: /confirm won/i }))
 
         expect(materialize).toHaveBeenCalledWith(
-            expect.objectContaining({ virtual: true, stage: 'won', source: 'order' })
+            expect.objectContaining({ source: 'order', stage: 'won', virtual: true })
         )
     })
 
