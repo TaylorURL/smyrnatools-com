@@ -128,11 +128,6 @@ class PlantServiceImpl {
         const region = this.allRegions.find((r) => r.region_code === regionCode)
         return region ? Region.fromRow(region) : null
     }
-    /** Returns a region's display name, falling back to the code itself. */
-    getRegionName(regionCode) {
-        const r = this.getRegionByCode(regionCode)
-        return r?.regionName ?? regionCode
-    }
     /** Creates a new region with a type classification and refreshes the cache. */
     async createRegion(regionCode, regionName, type) {
         if (!regionCode?.trim() || !regionName?.trim()) throw new Error('Region code and name are required')
