@@ -151,12 +151,8 @@ export function useDashboardAssets({
         allOperatorsFullRef,
         dataReady,
         error,
-        lastUpdated,
-        lightDutyOperators,
         loading,
         pendingStartOperators,
-        refreshing,
-        setRefreshing,
         trainingOperators
     }
 }
