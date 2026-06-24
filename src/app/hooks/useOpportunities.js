@@ -97,13 +97,5 @@ export function useOpportunities({ accountId, boardMode } = {}) {
         [load]
     )
 
-    const remove = useCallback(
-        async (id) => {
-            await CrmService.deleteOpportunity(id)
-            if (mounted.current) load()
-        },
-        [load]
-    )
-
-    return { error, isLoading, materialize, move, opportunities, reload: load, remove, save }
+    return { error, isLoading, materialize, move, opportunities, save }
 }
