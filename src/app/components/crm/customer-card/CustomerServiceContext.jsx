@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 
 import { fmtDate, fmtInt } from '../../../../utils/PlanStatisticsFormatUtility'
-import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../utils/PlantColocationUtility'
+import { formatColocatedCodeLabel } from '../../../../utils/PlantColocationUtility'
 import Badge from '../../common/Badge'
 import ScorePercent from './ScorePercent'
 import ServiceTierBreakdown from './ServiceTierBreakdown'
