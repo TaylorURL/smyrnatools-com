@@ -291,7 +291,6 @@ function CrmView() {
                                 <CrmAccountsPage
                                     accountInteractionsByAccount={interactionsByAccount}
                                     accentColor={tone}
-                                    colocationMap={undefined}
                                     contactsByCustomer={contactsByCustomer}
                                     deleteContact={deleteContact}
                                     deleteEntry={deleteEntry}
@@ -308,7 +307,6 @@ function CrmView() {
                                     onArchiveAccount={handleArchiveAccount}
                                     onClearSelectedCustomer={handleClearSelectedCustomer}
                                     onSelectCustomer={handleSelectCustomer}
-                                    plantNameByCode={undefined}
                                     roster={roster}
                                     rosterError={rosterError}
                                     saveContact={saveContact}
