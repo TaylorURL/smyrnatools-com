@@ -206,8 +206,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                     groupFlags={groupFlags}
                     selectedView={selectedView}
                     handleMenuClick={handleMenuClick}
-                    showDropPin={showDropPin}
-                    onDropPin={handleDropPin}
                 >
                     {children}
                 </NavigationMobile>
