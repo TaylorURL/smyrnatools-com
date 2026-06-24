@@ -264,7 +264,6 @@ function CrmView() {
                             {activeSection === 'outreach' && (
                                 <CrmOutreachPage
                                     accentColor={tone}
-                                    colocationMap={undefined}
                                     contactsByCustomer={contactsByCustomer}
                                     deleteContact={deleteContact}
                                     deleteEntry={deleteEntry}
@@ -277,7 +276,6 @@ function CrmView() {
                                     logCall={logCall}
                                     onClearSelectedCustomer={handleClearSelectedCustomer}
                                     onSelectCustomer={handleSelectCustomer}
-                                    plantNameByCode={undefined}
                                     roster={roster}
                                     rosterError={rosterError}
                                     saveContact={saveContact}
