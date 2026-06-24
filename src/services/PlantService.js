@@ -105,27 +105,6 @@ class PlantServiceImpl {
         await this.fetchAllPlants()
         return true
     }
-    /** Looks up a plant in the local cache by code. */
-    getPlantByCode(plantCode) {
-        const plant = this.allPlants.find((p) => p.plant_code === plantCode)
-        return plant ? Plant.fromRow(plant) : null
-    }
-    /** Returns a plant's display name, falling back to the code itself. */
-    getPlantName(plantCode) {
-        return this.getPlantByCode(plantCode)?.plant_name ?? plantCode
-    }
-    /** Fetches a plant with its associated region memberships. */
-    async getPlantWithRegions(plantCode) {
-        if (!plantCode) throw new Error('Plant code is required')
-        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/get-with-regions`, { plantCode })
-        if (!res.ok) throw new Error(json?.error || 'Failed to fetch plant with regions')
-        const plantRow = json?.plant || null
-        if (!plantRow) return null
-        const plant = Plant.fromRow(plantRow)
-        const regions = Array.isArray(json?.regions) ? json.regions : []
-        return { ...plant, regions }
-    }
-
     /** Fetches all regions from the API and updates the local cache. */
     async fetchRegions() {
         const { res, json } = await APIUtility.post('/region-service/fetch-regions')
