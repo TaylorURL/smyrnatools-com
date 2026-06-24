@@ -241,7 +241,7 @@ export function CustomerOrdersTable({ emptyMessage, orders }) {
  *  context (customer name, last pour date, close button) makes sense in
  *  their surface. Pass null to skip the header — the Call List already
  *  has its own customer header above the context block. */
-export function CustomerServiceContext({ aggregate, emptyMessage, header, orders, plantNameByCode }) {
+export function CustomerServiceContext({ aggregate, emptyMessage, header, orders }) {
     const sortedOrders = useMemo(() => {
         if (!orders) return []
         return [...orders].sort((a, b) => {
