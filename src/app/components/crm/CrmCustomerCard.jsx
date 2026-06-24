@@ -157,7 +157,6 @@ export function CrmCustomerCardRow({ isActive, onSelect, row }) {
  */
 export function CrmCustomerDetail({
     accentColor = DEFAULT_ACCENT,
-    colocationMap,
     contacts,
     history,
     interactions = [],
