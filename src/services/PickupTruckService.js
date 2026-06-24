@@ -26,6 +26,11 @@ export const PickupTruckService = {
     create(pickup, userId) {
         return base._base.create(pickup, userId)
     },
+    /** Fetches change history for a pickup. Invoked dynamically via
+     *  HISTORY_SERVICE_MAP in useHistoryDataFetchers. */
+    fetchHistory(pickupId, limit = null) {
+        return base._base.getHistory(pickupId, limit)
+    },
     getAll() {
         return base._base.getAll()
     },
