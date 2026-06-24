@@ -1,6 +1,5 @@
 import Trailer from '../app/models/trailers/Trailer'
 import { TrailerComment } from '../app/models/trailers/TrailerComment'
-import { TrailerHistory } from '../app/models/trailers/TrailerHistory'
 import { createAssetService } from './BaseAssetService'
 
 const base = createAssetService({
