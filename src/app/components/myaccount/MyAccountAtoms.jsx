@@ -46,7 +46,7 @@ export function SubtleButton({ children, danger = false, disabled = false, icon,
     const subtleClasses =
         'bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:ring-accent'
     return (
-        <button type="button"
+        <button
             type={type}
             onClick={onClick}
             disabled={disabled}
