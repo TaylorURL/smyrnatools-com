@@ -84,7 +84,6 @@ export const getSessionJwt = () => currentJwt
 export const getJwtExpiresAt = () => currentJwtExpiresAt
 export const getSessionUserId = () => currentSessionUserId
 export const getSessionId = () => currentSessionId
-export const hasActiveSession = () => Boolean(currentSessionUserId)
 
 /**
  * Body fields recognised by `requireAuthenticated` on every edge function.
