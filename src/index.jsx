@@ -96,17 +96,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <BrowserRouter>
             <AuthProvider>
                 <PreferencesProvider>
-                    <OperatorClockStatusProvider>
-                        <TutorialProvider>
-                            <ConfirmProvider>
-                                <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
-                                    <SundayAnalyticsProvider siteKey="sa_7bcbf8f895fbbf056ce0cbc4a8b92531">
-                                        <App />
-                                    </SundayAnalyticsProvider>
-                                </Sentry.ErrorBoundary>
-                            </ConfirmProvider>
-                        </TutorialProvider>
-                    </OperatorClockStatusProvider>
+                    <TutorialProvider>
+                        <ConfirmProvider>
+                            <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
+                                <SundayAnalyticsProvider siteKey="sa_7bcbf8f895fbbf056ce0cbc4a8b92531">
+                                    <App />
+                                </SundayAnalyticsProvider>
+                            </Sentry.ErrorBoundary>
+                        </ConfirmProvider>
+                    </TutorialProvider>
                 </PreferencesProvider>
             </AuthProvider>
         </BrowserRouter>
