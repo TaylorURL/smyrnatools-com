@@ -676,48 +676,6 @@
         })
     }
 
-    // GET — used for GetUserOrg/ (no body required, plain XHR pattern)
-    function dayforceGet(path) {
-        return new Promise((resolve, reject) => {
-            const url = `${DAYFORCE_BASE}/u/${sessionGuid}${path}`
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url,
-                headers: {
-                    Accept: 'application/json, text/plain, */*',
-                    Origin: `https://${DAYFORCE_HOST}`,
-                    Referer: `https://${DAYFORCE_HOST}/MyDayforce/u/${sessionGuid}/Common/`,
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'x-csrf-token': csrfToken || ''
-                },
-                onload: (res) => {
-                    if (isSessionExpiredResponse(res)) {
-                        handleSessionExpired()
-                        reject(makeExpiredError(path, res))
-                        return
-                    }
-                    if (res.status >= 200 && res.status < 300) {
-                        try {
-                            resolve(JSON.parse(res.responseText))
-                        } catch (e) {
-                            reject(new Error(`Bad JSON from ${path}: ${e.message}`))
-                        }
-                        return
-                    }
-                    const err = new Error(`${path} returned ${res.status}: ${(res.responseText || '').slice(0, 200)}`)
-                    err.status = res.status
-                    reject(err)
-                },
-                onerror: (e) => {
-                    handleSessionExpired()
-                    const err = new Error(`network error: ${e?.error}`)
-                    err.sessionExpired = true
-                    reject(err)
-                }
-            })
-        })
-    }
-
     // ============================================================
     // SUPABASE EDGE FUNCTION
     // ============================================================
