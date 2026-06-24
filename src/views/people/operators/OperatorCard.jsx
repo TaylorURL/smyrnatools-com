@@ -47,12 +47,7 @@ function OperatorCard({
         <CardSection
             item={operator}
             itemType="Operator"
-            itemNumber={
-                <span className="inline-flex items-center gap-1.5">
-                    <OperatorClockIndicator badge={operator.smyrnaId || operator.employeeId} size="md" />
-                    {operator.name}
-                </span>
-            }
+            itemNumber={operator.name}
             onSelect={onSelect ? () => onSelect(operator) : undefined}
             statusColor={statusColor}
         >
