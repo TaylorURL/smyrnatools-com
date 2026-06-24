@@ -6,7 +6,6 @@ import VerifiedUtility from '../../../utils/VerifiedUtility'
 import MixerAddView from '../mixers/MixerAddView'
 import MixerCard from '../mixers/MixerCard'
 import MixerDetailView from '../mixers/MixerDetailView'
-import { MIXER_WORKBOOK_COLUMNS } from './mixerWorkbookColumns'
 
 const mixerConfig = {
     AddView: MixerAddView,
