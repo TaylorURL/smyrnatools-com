@@ -18,7 +18,7 @@ describe('CrmSettingsPage', () => {
     })
 
     it('calls CrmService.geocodeAccounts when the button is clicked', async () => {
-        CrmService.geocodeAccounts.mockResolvedValue({ geocoded: 3, failed: 0, remaining: 0 })
+        CrmService.geocodeAccounts.mockResolvedValue({ failed: 0, geocoded: 3, remaining: 0 })
 
         render(<CrmSettingsPage accentColor="#1e3a5f" />)
         fireEvent.click(screen.getByRole('button', { name: /geocode accounts/i }))
@@ -27,7 +27,7 @@ describe('CrmSettingsPage', () => {
     })
 
     it('shows success summary after all accounts are geocoded', async () => {
-        CrmService.geocodeAccounts.mockResolvedValue({ geocoded: 3, failed: 0, remaining: 0 })
+        CrmService.geocodeAccounts.mockResolvedValue({ failed: 0, geocoded: 3, remaining: 0 })
 
         render(<CrmSettingsPage accentColor="#1e3a5f" />)
         fireEvent.click(screen.getByRole('button', { name: /geocode accounts/i }))
@@ -36,7 +36,7 @@ describe('CrmSettingsPage', () => {
     })
 
     it('shows failure count in the summary when some addresses could not be geocoded', async () => {
-        CrmService.geocodeAccounts.mockResolvedValue({ geocoded: 2, failed: 1, remaining: 0 })
+        CrmService.geocodeAccounts.mockResolvedValue({ failed: 1, geocoded: 2, remaining: 0 })
 
         render(<CrmSettingsPage accentColor="#1e3a5f" />)
         fireEvent.click(screen.getByRole('button', { name: /geocode accounts/i }))
@@ -55,8 +55,8 @@ describe('CrmSettingsPage', () => {
 
     it('loops until remaining reaches 0', async () => {
         CrmService.geocodeAccounts
-            .mockResolvedValueOnce({ geocoded: 5, failed: 0, remaining: 5 })
-            .mockResolvedValueOnce({ geocoded: 5, failed: 0, remaining: 0 })
+            .mockResolvedValueOnce({ failed: 0, geocoded: 5, remaining: 5 })
+            .mockResolvedValueOnce({ failed: 0, geocoded: 5, remaining: 0 })
 
         render(<CrmSettingsPage accentColor="#1e3a5f" />)
         fireEvent.click(screen.getByRole('button', { name: /geocode accounts/i }))

@@ -21,8 +21,8 @@ import { Stat } from '../ui/Panel'
 import { CrmPanel as Panel, CrmStatGroup as StatGroup } from './CrmSection'
 import { AccountDetailBody } from './customer-card/AccountDetailBody'
 import { ContactsSection } from './customer-card/ContactsSection'
-import { CustomerServiceContext, CustomerServiceContextSkeleton } from './customer-card/CustomerServiceContext'
 import { CustomerPresenceBanner } from './customer-card/CustomerPresenceBanner'
+import { CustomerServiceContext, CustomerServiceContextSkeleton } from './customer-card/CustomerServiceContext'
 import { HistoryEntries } from './customer-card/HistoryEntries'
 
 export {

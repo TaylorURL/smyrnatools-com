@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest'
 // branches (empty state / non-empty state) without a real map.
 vi.mock('leaflet', () => {
     const layerGroup = { addTo: vi.fn(), clearLayers: vi.fn() }
-    const tileLayer = { addTo: vi.fn(), _url: '' }
+    const tileLayer = { _url: '', addTo: vi.fn() }
     const marker = { addTo: vi.fn(), bindPopup: vi.fn().mockReturnThis() }
     return {
         default: {
@@ -41,12 +41,12 @@ import { CrmMapPage } from '../CrmMapPage'
 
 const rosterWithNoCoords = [
     { account_id: 'a1', customer_name: 'Alpha Corp', lifecycle_stage: 'active' },
-    { account_id: 'a2', customer_name: 'Beta LLC', lifecycle_stage: 'prospect', lat: null, lng: null }
+    { account_id: 'a2', customer_name: 'Beta LLC', lat: null, lifecycle_stage: 'prospect', lng: null }
 ]
 
 const rosterWithCoords = [
-    { account_id: 'a3', customer_name: 'Gamma Inc', lifecycle_stage: 'customer', lat: 36.17, lng: -86.78 },
-    { account_id: 'a4', customer_name: 'Delta Co', lifecycle_stage: 'active', lat: 35.46, lng: -86.46 }
+    { account_id: 'a3', customer_name: 'Gamma Inc', lat: 36.17, lifecycle_stage: 'customer', lng: -86.78 },
+    { account_id: 'a4', customer_name: 'Delta Co', lat: 35.46, lifecycle_stage: 'active', lng: -86.46 }
 ]
 
 describe('CrmMapPage', () => {

@@ -9,7 +9,7 @@ describe('CrmService', () => {
     beforeEach(() => vi.clearAllMocks())
 
     it('fetchRoster posts scope and returns data array', async () => {
-        APIUtility.post.mockResolvedValue({ res: { ok: true }, json: { data: [{ account_id: 'a1' }] } })
+        APIUtility.post.mockResolvedValue({ json: { data: [{ account_id: 'a1' }] }, res: { ok: true } })
         const rows = await CrmService.fetchRoster({ scope: 'my-sales' })
         expect(APIUtility.post).toHaveBeenCalledWith(
             '/call-list-service/roster',
@@ -20,8 +20,8 @@ describe('CrmService', () => {
 
     it('logInteraction validates accountId then posts', async () => {
         await expect(CrmService.logInteraction({ interactionType: 'call' })).rejects.toThrow('accountId')
-        APIUtility.post.mockResolvedValue({ res: { ok: true }, json: { data: { id: 'i1' } } })
-        const row = await CrmService.logInteraction({ accountId: 'a1', interactionType: 'meeting', comment: 'hi' })
+        APIUtility.post.mockResolvedValue({ json: { data: { id: 'i1' } }, res: { ok: true } })
+        const row = await CrmService.logInteraction({ accountId: 'a1', comment: 'hi', interactionType: 'meeting' })
         expect(APIUtility.post).toHaveBeenCalledWith(
             '/call-list-service/log-interaction',
             expect.objectContaining({ accountId: 'a1', interactionType: 'meeting' })

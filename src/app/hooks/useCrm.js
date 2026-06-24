@@ -22,7 +22,7 @@ export function useCrm({ scope = 'all' } = {}) {
         setIsLoadingRoster(true)
         setRosterError(null)
         try {
-            const data = await CrmService.fetchRoster({ scope, includeActive: true })
+            const data = await CrmService.fetchRoster({ includeActive: true, scope })
             if (mounted.current) setRoster(data)
         } catch (err) {
             if (mounted.current) setRosterError(err?.message || 'Failed to load accounts')
@@ -60,12 +60,12 @@ export function useCrm({ scope = 'all' } = {}) {
     }, [])
 
     return {
-        roster,
-        isLoadingRoster,
-        rosterError,
-        reloadRoster: loadRoster,
         interactionsByAccount,
+        isLoadingRoster,
         loadInteractions,
-        logInteraction
+        logInteraction,
+        reloadRoster: loadRoster,
+        roster,
+        rosterError
     }
 }

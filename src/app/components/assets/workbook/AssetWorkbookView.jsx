@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 
-import { usePreferences } from '../../../context/PreferencesContext'
-import { createWorkbook } from '../../../../utils/ExportWorkbook'
 import { uploadWorkbookToFiles } from '../../../../lib/sunday-files/uploadToFiles'
+import { createWorkbook } from '../../../../utils/ExportWorkbook'
+import { usePreferences } from '../../../context/PreferencesContext'
 
 const SORT_ASC = 'asc'
 const SORT_DESC = 'desc'
@@ -223,10 +223,10 @@ export default function AssetWorkbookView({ columns, data, loading, lookups, tit
             const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
 
             await uploadWorkbookToFiles(blob, filename, { folder: 'Workbooks' })
-            setExportMessage({ text: `${filename} uploaded to Files`, isError: false })
+            setExportMessage({ isError: false, text: `${filename} uploaded to Files` })
             setTimeout(() => setExportMessage(null), 5000)
         } catch (err) {
-            setExportMessage({ text: err.message || 'Export failed', isError: true })
+            setExportMessage({ isError: true, text: err.message || 'Export failed' })
             setTimeout(() => setExportMessage(null), 8000)
         } finally {
             setExporting(false)

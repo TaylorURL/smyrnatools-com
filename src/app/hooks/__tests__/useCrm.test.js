@@ -6,11 +6,11 @@ import { useCrm } from '../useCrm'
 
 vi.mock('../../../services/CrmService', () => ({
     default: {
-        fetchRoster: vi.fn(),
         fetchAccount: vi.fn(),
-        saveAccount: vi.fn(),
+        fetchInteractions: vi.fn(),
+        fetchRoster: vi.fn(),
         logInteraction: vi.fn(),
-        fetchInteractions: vi.fn()
+        saveAccount: vi.fn()
     }
 }))
 
@@ -25,7 +25,7 @@ describe('useCrm', () => {
     it('loads the scoped roster on mount', async () => {
         const { result } = renderHook(() => useCrm({ scope: 'all' }))
         await waitFor(() => expect(result.current.roster).toHaveLength(1))
-        expect(CrmService.fetchRoster).toHaveBeenCalledWith({ scope: 'all', includeActive: true })
+        expect(CrmService.fetchRoster).toHaveBeenCalledWith({ includeActive: true, scope: 'all' })
     })
 
     it('optimistically prepends a logged interaction', async () => {

@@ -51,7 +51,7 @@ function buildPopupHtml(row) {
         : ''
     const name = String(row.customer_name ?? row.name ?? 'Unknown').replace(
         /[&<>"']/g,
-        (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+        (c) => ({ '"': '&quot;', '&': '&amp;', "'": '&#39;', '<': '&lt;', '>': '&gt;' })[c]
     )
     return `<div style="font-size:12.5px;font-weight:600;color:var(--text-primary);line-height:1.3;">${name}</div>${badgeHtml}`
 }

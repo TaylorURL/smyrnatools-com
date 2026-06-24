@@ -18,7 +18,7 @@ vi.mock('../crmShared', () => ({
                 {/* Expose log button so we can assert the handler is threaded through */}
                 <button
                     type="button"
-                    onClick={() => onLogInteraction?.({ interactionType: 'call', roleLens: 'general', comment: null })}
+                    onClick={() => onLogInteraction?.({ comment: null, interactionType: 'call', roleLens: 'general' })}
                 >
                     Log interaction
                 </button>
@@ -55,17 +55,17 @@ vi.mock('../../../../hooks/useCrmViewMode', () => ({
 const ROSTER = [
     {
         account_id: 'a1',
-        customer_num: 'C1',
         customer_name: 'Acme Corp',
-        pouring_status: 'active',
+        customer_num: 'C1',
+        days_since_last_pour: 10,
         last_call_at: null,
-        days_since_last_pour: 10
+        pouring_status: 'active'
     }
 ]
 
 const baseProps = {
-    accountInteractionsByAccount: { a1: [] },
     accentColor: '#2563eb',
+    accountInteractionsByAccount: { a1: [] },
     colocationMap: {},
     contactsByCustomer: {},
     deleteContact: vi.fn(),
@@ -104,12 +104,12 @@ describe('CrmAccountsPage — CRM interactions panel', () => {
     it('threads the interactions array into the detail pane', () => {
         const interactions = [
             {
-                id: 'i1',
-                interaction_type: 'call',
-                role_lens: 'general',
                 comment: 'test',
                 created_by_name: 'Jane',
-                occurred_at: '2026-05-20T12:00:00Z'
+                id: 'i1',
+                interaction_type: 'call',
+                occurred_at: '2026-05-20T12:00:00Z',
+                role_lens: 'general'
             }
         ]
         render(

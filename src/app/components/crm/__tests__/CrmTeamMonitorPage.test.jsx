@@ -16,31 +16,31 @@ vi.mock('../../../../utils/CrmRosterUtility', () => ({
 import { CrmTeamMonitorPage } from '../CrmTeamMonitorPage'
 
 const ROW_ALICE = {
-    created_by: 'u1',
-    user_name: 'Alice',
-    total_calls: 42,
     booked: 10,
-    will_book_again: 5,
+    created_by: 'u1',
+    last_call_at: new Date(Date.now() - 2 * 86_400_000).toISOString(),
     no_answer: 8,
     not_interested: 3,
     note: 2,
-    unique_customers: 15,
     opportunities_won: 2,
-    last_call_at: new Date(Date.now() - 2 * 86_400_000).toISOString()
+    total_calls: 42,
+    unique_customers: 15,
+    user_name: 'Alice',
+    will_book_again: 5
 }
 
 const ROW_BOB = {
-    created_by: 'u2',
-    user_name: 'Bob',
-    total_calls: 18,
     booked: 4,
-    will_book_again: 3,
+    created_by: 'u2',
+    last_call_at: new Date(Date.now() - 30 * 86_400_000).toISOString(),
     no_answer: 5,
     not_interested: 1,
     note: 0,
-    unique_customers: 9,
     opportunities_won: 0,
-    last_call_at: new Date(Date.now() - 30 * 86_400_000).toISOString()
+    total_calls: 18,
+    unique_customers: 9,
+    user_name: 'Bob',
+    will_book_again: 3
 }
 
 const MONITOR_WITH_ROWS = { rows: [ROW_ALICE, ROW_BOB] }

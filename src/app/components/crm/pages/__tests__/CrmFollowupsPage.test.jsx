@@ -31,19 +31,21 @@ afterEach(() => {
 })
 
 const OVERDUE_FOLLOWUP = {
-    id: 'f1',
-    title: 'Call back Acme',
     account_name: 'Acme Corp',
-    due_at: '2026-05-01T12:00:00Z', // well in the past
-    status: 'open'
+    due_at: '2026-05-01T12:00:00Z',
+    id: 'f1',
+    // well in the past
+status: 'open', 
+    title: 'Call back Acme'
 }
 
 const UPCOMING_FOLLOWUP = {
-    id: 'f2',
-    title: 'Send proposal',
     account_name: 'Beta Paving',
-    due_at: '2026-06-10T12:00:00Z', // future
-    status: 'open'
+    due_at: '2026-06-10T12:00:00Z',
+    id: 'f2',
+    // future
+status: 'open', 
+    title: 'Send proposal'
 }
 
 describe('CrmFollowupsPage — list / cards toggle', () => {

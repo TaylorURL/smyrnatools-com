@@ -90,8 +90,8 @@ vi.mock('../../../../app/components/crm/pages/CrmFollowupsPage', () => ({
 }))
 
 vi.mock('../../../../app/components/crm/CrmPages', () => ({
-    CrmActivityPage: () => <div data-testid="page-activity">Activity</div>,
     CrmAccountsPage: () => <div data-testid="page-accounts">Accounts</div>,
+    CrmActivityPage: () => <div data-testid="page-activity">Activity</div>,
     CrmOutreachPage: () => <div data-testid="page-outreach">Outreach</div>
 }))
 

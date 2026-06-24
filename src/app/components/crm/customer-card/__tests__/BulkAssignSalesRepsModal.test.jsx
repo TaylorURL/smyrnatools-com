@@ -16,8 +16,8 @@ import { UserService } from '../../../../../services/UserService'
 import { BulkAssignSalesRepsModal } from '../BulkAssignSalesRepsModal'
 
 const USERS = [
-    { id: 'u1', firstName: 'Jane', lastName: 'Smith', email: 'jane@test.com', roleWeight: 10 },
-    { id: 'u2', firstName: 'John', lastName: 'Doe', email: 'john@test.com', roleWeight: 10 }
+    { email: 'jane@test.com', firstName: 'Jane', id: 'u1', lastName: 'Smith', roleWeight: 10 },
+    { email: 'john@test.com', firstName: 'John', id: 'u2', lastName: 'Doe', roleWeight: 10 }
 ]
 
 describe('BulkAssignSalesRepsModal', () => {

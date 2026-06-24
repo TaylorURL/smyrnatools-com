@@ -5,8 +5,8 @@ import CrmService from '../CrmService'
 
 vi.mock('../../utils/APIUtility', () => ({ default: { post: vi.fn() } }))
 
-const ok = (data) => ({ res: { ok: true }, json: { data } })
-const fail = (error) => ({ res: { ok: false }, json: { error } })
+const ok = (data) => ({ json: { data }, res: { ok: true } })
+const fail = (error) => ({ json: { error }, res: { ok: false } })
 
 describe('CrmService — Phase 3 opportunity methods', () => {
     beforeEach(() => vi.clearAllMocks())
@@ -25,7 +25,7 @@ describe('CrmService — Phase 3 opportunity methods', () => {
     })
 
     it('fetchOpportunities returns empty array when data is null', async () => {
-        APIUtility.post.mockResolvedValue({ res: { ok: true }, json: { data: null } })
+        APIUtility.post.mockResolvedValue({ json: { data: null }, res: { ok: true } })
         const rows = await CrmService.fetchOpportunities()
         expect(rows).toEqual([])
     })
@@ -42,7 +42,7 @@ describe('CrmService — Phase 3 opportunity methods', () => {
     })
 
     it('saveOpportunity posts to /save-opportunity and returns the row', async () => {
-        const row = { id: 'o1', title: 'New deal', stage: 'new' }
+        const row = { id: 'o1', stage: 'new', title: 'New deal' }
         APIUtility.post.mockResolvedValue(ok(row))
 
         const result = await CrmService.saveOpportunity({ accountId: 'a1', title: 'New deal' })
@@ -83,7 +83,7 @@ describe('CrmService — Phase 3 opportunity methods', () => {
         await CrmService.moveStage('o1', 'lost', 'Price too high')
         expect(APIUtility.post).toHaveBeenCalledWith(
             '/call-list-service/move-stage',
-            expect.objectContaining({ id: 'o1', stage: 'lost', lostReason: 'Price too high' })
+            expect.objectContaining({ id: 'o1', lostReason: 'Price too high', stage: 'lost' })
         )
     })
 
@@ -93,7 +93,7 @@ describe('CrmService — Phase 3 opportunity methods', () => {
     })
 
     it('deleteOpportunity posts to /delete-opportunity and returns true', async () => {
-        APIUtility.post.mockResolvedValue({ res: { ok: true }, json: { success: true } })
+        APIUtility.post.mockResolvedValue({ json: { success: true }, res: { ok: true } })
         const result = await CrmService.deleteOpportunity('o1')
         expect(APIUtility.post).toHaveBeenCalledWith('/call-list-service/delete-opportunity', { id: 'o1' })
         expect(result).toBe(true)

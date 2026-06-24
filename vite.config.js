@@ -67,10 +67,9 @@ export default defineConfig(({ mode }) => {
             environment: 'jsdom',
             setupFiles: ['./src/setupTests.js'],
             css: false,
-            // TODO: tests excluded below use Jest-specific patterns
+            // Tests excluded below use Jest-specific patterns
             // (jest.doMock + require, deep provider-tree assumptions). Port
-            // them to vitest's vi.mock / dynamic import patterns and re-enable.
-            // Tracked in TECH_DEBT.md.
+            // them to vitest's vi.mock / dynamic import patterns to re-enable.
             exclude: [
                 '**/node_modules/**',
                 '**/build/**',
@@ -82,8 +81,7 @@ export default defineConfig(({ mode }) => {
                 'src/services/__tests__/DatabaseService.test.js',
                 'src/utils/__tests__/APIUtility.test.js',
                 'src/views/__tests__/LoginView.test.jsx',
-                'src/views/__tests__/MixersView.test.jsx',
-                'src/views/__tests__/ReportsSubmitView.test.jsx'
+                'src/views/__tests__/MixersView.test.jsx'
             ]
         }
     }

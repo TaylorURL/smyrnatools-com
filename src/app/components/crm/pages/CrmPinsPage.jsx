@@ -32,7 +32,7 @@ function makePinIcon(accentColor) {
 function escapeHtml(text) {
     return String(text ?? '').replace(
         /[&<>"']/g,
-        (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+        (c) => ({ '"': '&quot;', '&': '&amp;', "'": '&#39;', '<': '&lt;', '>': '&gt;' })[c]
     )
 }
 

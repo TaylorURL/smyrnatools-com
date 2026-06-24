@@ -7,12 +7,12 @@
  */
 const COLOR_BY_TIER = {
     admin: 'var(--status-danger)',
-    executive: 'var(--status-warning)',
-    manager: 'var(--accent)',
-    specialist: 'var(--status-shop)',
-    field: 'var(--status-active)',
     entry: 'var(--status-spare)',
-    inactive: 'var(--text-tertiary)'
+    executive: 'var(--status-warning)',
+    field: 'var(--status-active)',
+    inactive: 'var(--text-tertiary)',
+    manager: 'var(--accent)',
+    specialist: 'var(--status-shop)'
 }
 
 function tierForWeight(weight) {

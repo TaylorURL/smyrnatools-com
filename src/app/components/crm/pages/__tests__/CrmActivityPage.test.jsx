@@ -31,29 +31,29 @@ import { CrmActivityPage } from '../CrmActivityPage'
 const EARLIER_DATE = '2020-01-15T10:00:00Z'
 
 const CALL_ENTRY = {
+    comment: 'Scheduled a pour',
+    contact_name: null,
+    created_at: EARLIER_DATE,
+    created_by: 'user-1',
+    created_by_name: 'Alice',
+    customer_name: 'Acme Corp',
+    customer_num: 'C1',
     id: 'e1',
     interaction_type: 'call',
-    outcome: 'booked',
-    customer_num: 'C1',
-    customer_name: 'Acme Corp',
-    contact_name: null,
-    comment: 'Scheduled a pour',
-    created_by_name: 'Alice',
-    created_by: 'user-1',
-    created_at: EARLIER_DATE
+    outcome: 'booked'
 }
 
 const SITE_VISIT_ENTRY = {
+    comment: 'Reviewed the job site',
+    contact_name: null,
+    created_at: EARLIER_DATE,
+    created_by: 'user-2',
+    created_by_name: 'Bob',
+    customer_name: 'Beta Paving',
+    customer_num: 'C2',
     id: 'e2',
     interaction_type: 'site_visit',
-    outcome: 'note',
-    customer_num: 'C2',
-    customer_name: 'Beta Paving',
-    contact_name: null,
-    comment: 'Reviewed the job site',
-    created_by_name: 'Bob',
-    created_by: 'user-2',
-    created_at: EARLIER_DATE
+    outcome: 'note'
 }
 
 const baseProps = {

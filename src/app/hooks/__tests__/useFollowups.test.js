@@ -6,16 +6,16 @@ import { useFollowups } from '../useFollowups'
 
 vi.mock('../../../services/CrmService', () => ({
     default: {
-        fetchFollowups: vi.fn(),
         completeFollowup: vi.fn(),
         deleteFollowup: vi.fn(),
+        fetchFollowups: vi.fn(),
         saveFollowup: vi.fn()
     }
 }))
 
 const FOLLOWUPS = [
-    { id: 'f1', title: 'Call back Acme', status: 'open', due_at: '2026-01-01T12:00:00Z' },
-    { id: 'f2', title: 'Send proposal', status: 'open', due_at: null }
+    { due_at: '2026-01-01T12:00:00Z', id: 'f1', status: 'open', title: 'Call back Acme' },
+    { due_at: null, id: 'f2', status: 'open', title: 'Send proposal' }
 ]
 
 describe('useFollowups', () => {

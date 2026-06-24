@@ -32,14 +32,14 @@ export async function uploadWorkbookToFiles(blob, filename, { folder = null, sou
     const { data: fileRow, error: insertError } = await sundayMyClient
         .from('sunday_files')
         .insert({
-            user_id: TRENTON_USER_ID,
-            name: filename,
-            storage_path: storagePath,
+            folder,
             mime_type: XLSX_MIME_TYPE,
+            name: filename,
+            public_url: publicUrl,
             size_bytes: blob.size,
             source,
-            folder,
-            public_url: publicUrl,
+            storage_path: storagePath,
+            user_id: TRENTON_USER_ID,
         })
         .select()
         .single()

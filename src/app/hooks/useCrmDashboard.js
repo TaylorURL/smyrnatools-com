@@ -7,29 +7,29 @@ import { useMyDesk } from './useMyDesk'
 const STALE_CALL_DAYS = 30
 
 const EMPTY_DASHBOARD = {
-    roster: {
-        total: 0,
-        customers: 0,
-        prospects: 0,
-        dormant: 0,
-        neverCalledOrStale: 0,
-        longestDormant: []
-    },
-    pipeline: {
-        realOpenTotal: 0,
-        virtualTotal: 0,
-        byStage: { new: 0, contacted: 0, quoted: 0 }
-    },
-    teamFollowups: {
-        overdue: [],
-        dueToday: [],
-        upcoming: []
-    },
     activity: {
         interactionsLast7d: 0,
         recentFeed: []
     },
-    leaderboard: []
+    leaderboard: [],
+    pipeline: {
+        byStage: { contacted: 0, new: 0, quoted: 0 },
+        realOpenTotal: 0,
+        virtualTotal: 0
+    },
+    roster: {
+        customers: 0,
+        dormant: 0,
+        longestDormant: [],
+        neverCalledOrStale: 0,
+        prospects: 0,
+        total: 0
+    },
+    teamFollowups: {
+        dueToday: [],
+        overdue: [],
+        upcoming: []
+    }
 }
 
 /**
@@ -68,7 +68,7 @@ export function useCrmDashboard() {
 
             if (!mounted.current) return
 
-            setDashboard(aggregateDashboard({ roster, opps, followups, activity, leaderboardResult }))
+            setDashboard(aggregateDashboard({ activity, followups, leaderboardResult, opps, roster }))
         } catch (err) {
             if (mounted.current) setError(err?.message || 'Failed to load overview data')
         } finally {
@@ -110,8 +110,8 @@ export function aggregateDashboard({ roster, opps, followups, activity, leaderbo
         .slice(0, 5)
         .map((r) => ({
             accountId: r.account_id ?? r.id,
-            name: r.customer_name ?? r.name ?? 'Unknown',
-            daysDormant: r.days_since_last_pour ?? 0
+            daysDormant: r.days_since_last_pour ?? 0,
+            name: r.customer_name ?? r.name ?? 'Unknown'
         }))
 
     // --- Pipeline KPIs ---
@@ -123,7 +123,7 @@ export function aggregateDashboard({ roster, opps, followups, activity, leaderbo
             if (stage in acc) acc[stage] += 1
             return acc
         },
-        { new: 0, contacted: 0, quoted: 0 }
+        { contacted: 0, new: 0, quoted: 0 }
     )
 
     // --- Follow-ups ---
@@ -157,8 +157,8 @@ export function aggregateDashboard({ roster, opps, followups, activity, leaderbo
     // --- Leaderboard ---
     const leaderboard = (leaderboardResult?.rows ?? []).slice(0, 3).map((row) => ({
         name: row.user_name ?? row.name ?? 'Unknown',
-        totalCalls: row.total_calls ?? row.call_count ?? 0,
-        opportunitiesWon: row.opportunities_won ?? 0
+        opportunitiesWon: row.opportunities_won ?? 0,
+        totalCalls: row.total_calls ?? row.call_count ?? 0
     }))
 
     return {

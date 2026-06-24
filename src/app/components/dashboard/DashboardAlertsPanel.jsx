@@ -11,31 +11,31 @@ const STAGGER_MS = 40
  *  disagreeing on what "warning" looks like. */
 const SEVERITY_CONFIG = {
     danger: {
+        chipBg: 'bg-status-danger/10',
+        chipText: 'text-status-danger',
         icon: 'fas fa-circle-exclamation',
+        iconColor: 'text-status-danger',
         label: 'Critical',
         stripe: 'bg-status-danger',
-        tint: 'bg-status-danger/[0.045]',
-        iconColor: 'text-status-danger',
-        chipBg: 'bg-status-danger/10',
-        chipText: 'text-status-danger'
-    },
-    warning: {
-        icon: 'fas fa-triangle-exclamation',
-        label: 'Warning',
-        stripe: 'bg-status-warning',
-        tint: 'bg-status-warning/[0.035]',
-        iconColor: 'text-status-warning',
-        chipBg: 'bg-status-warning/10',
-        chipText: 'text-status-warning'
+        tint: 'bg-status-danger/[0.045]'
     },
     info: {
+        chipBg: 'bg-bg-hover',
+        chipText: 'text-text-secondary',
         icon: 'fas fa-circle-info',
+        iconColor: 'text-text-tertiary',
         label: 'Info',
         stripe: 'bg-border-medium',
-        tint: '',
-        iconColor: 'text-text-tertiary',
-        chipBg: 'bg-bg-hover',
-        chipText: 'text-text-secondary'
+        tint: ''
+    },
+    warning: {
+        chipBg: 'bg-status-warning/10',
+        chipText: 'text-status-warning',
+        icon: 'fas fa-triangle-exclamation',
+        iconColor: 'text-status-warning',
+        label: 'Warning',
+        stripe: 'bg-status-warning',
+        tint: 'bg-status-warning/[0.035]'
     }
 }
 
@@ -219,7 +219,7 @@ export default function DashboardAlertsPanel({
             acc[row.severity] = (acc[row.severity] || 0) + 1
             return acc
         },
-        { danger: 0, warning: 0, info: 0 }
+        { danger: 0, info: 0, warning: 0 }
     )
 
     const visibleRows = expanded ? allRows : allRows.slice(0, COLLAPSED_LIMIT)

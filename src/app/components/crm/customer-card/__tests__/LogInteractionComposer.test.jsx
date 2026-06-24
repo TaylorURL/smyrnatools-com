@@ -11,9 +11,9 @@ describe('LogInteractionComposer', () => {
         fireEvent.click(screen.getByRole('button', { name: /log interaction/i }))
         expect(onSubmit).toHaveBeenCalledWith(
             expect.objectContaining({
+                comment: 'Met on site',
                 interactionType: 'call',
-                roleLens: 'sales',
-                comment: 'Met on site'
+                roleLens: 'sales'
             })
         )
     })

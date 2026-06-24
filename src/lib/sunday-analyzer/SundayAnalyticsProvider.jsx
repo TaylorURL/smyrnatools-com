@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { SundayAnalyticsContext } from './context'
-import { DEFAULT_API_URL } from './constants'
+
 import { collectPageview } from './collect'
-import { sendHit } from './transport'
+import { DEFAULT_API_URL } from './constants'
+import { SundayAnalyticsContext } from './context'
 import { subscribeToRouteChanges } from './history'
+import { sendHit } from './transport'
 
 /**
  * SundayAnalyticsProvider — drop-in, router-agnostic pageview tracking.

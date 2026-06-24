@@ -5,8 +5,8 @@ import CrmService from '../CrmService'
 
 vi.mock('../../utils/APIUtility', () => ({ default: { post: vi.fn() } }))
 
-const ok = (data) => ({ res: { ok: true }, json: { data } })
-const fail = (error) => ({ res: { ok: false }, json: { error } })
+const ok = (data) => ({ json: { data }, res: { ok: true } })
+const fail = (error) => ({ json: { error }, res: { ok: false } })
 
 describe('CrmService — pin methods', () => {
     beforeEach(() => vi.clearAllMocks())
@@ -31,14 +31,14 @@ describe('CrmService — pin methods', () => {
     })
 
     it('savePin posts to /save-pin and returns the data row', async () => {
-        const pinRow = { id: 'p1', lat: 35.1234, lng: -89.5678, comment: 'job note', created_by: 'u1' }
+        const pinRow = { comment: 'job note', created_by: 'u1', id: 'p1', lat: 35.1234, lng: -89.5678 }
         APIUtility.post.mockResolvedValue(ok(pinRow))
 
-        const result = await CrmService.savePin({ lat: 35.1234, lng: -89.5678, comment: 'job note' })
+        const result = await CrmService.savePin({ comment: 'job note', lat: 35.1234, lng: -89.5678 })
 
         expect(APIUtility.post).toHaveBeenCalledWith(
             '/call-list-service/save-pin',
-            expect.objectContaining({ lat: 35.1234, lng: -89.5678, comment: 'job note' })
+            expect.objectContaining({ comment: 'job note', lat: 35.1234, lng: -89.5678 })
         )
         expect(result).toEqual(pinRow)
     })
@@ -57,7 +57,7 @@ describe('CrmService — pin methods', () => {
 
         expect(APIUtility.post).toHaveBeenCalledWith(
             '/call-list-service/pins-list',
-            expect.objectContaining({ mineOnly: false, limit: 200 })
+            expect.objectContaining({ limit: 200, mineOnly: false })
         )
         expect(rows).toHaveLength(2)
     })
@@ -65,16 +65,16 @@ describe('CrmService — pin methods', () => {
     it('fetchPins passes mineOnly and limit through', async () => {
         APIUtility.post.mockResolvedValue(ok([]))
 
-        await CrmService.fetchPins({ mineOnly: true, limit: 50 })
+        await CrmService.fetchPins({ limit: 50, mineOnly: true })
 
         expect(APIUtility.post).toHaveBeenCalledWith(
             '/call-list-service/pins-list',
-            expect.objectContaining({ mineOnly: true, limit: 50 })
+            expect.objectContaining({ limit: 50, mineOnly: true })
         )
     })
 
     it('fetchPins returns empty array when data is null', async () => {
-        APIUtility.post.mockResolvedValue({ res: { ok: true }, json: { data: null } })
+        APIUtility.post.mockResolvedValue({ json: { data: null }, res: { ok: true } })
         const rows = await CrmService.fetchPins()
         expect(rows).toEqual([])
     })
@@ -87,7 +87,7 @@ describe('CrmService — pin methods', () => {
     })
 
     it('deletePin posts to /delete-pin and returns true', async () => {
-        APIUtility.post.mockResolvedValue({ res: { ok: true }, json: { success: true } })
+        APIUtility.post.mockResolvedValue({ json: { success: true }, res: { ok: true } })
         const result = await CrmService.deletePin('p1')
         expect(APIUtility.post).toHaveBeenCalledWith('/call-list-service/delete-pin', { id: 'p1' })
         expect(result).toBe(true)
