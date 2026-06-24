@@ -11,7 +11,6 @@ const base = createAssetService({
     historyTable: 'trailers_history',
     idColumn: 'trailer_id',
     issuesTable: 'trailers_maintenance',
-    parseHistoryRow: TrailerHistory.fromApiFormat,
     parseRow: (row) => (row ? Trailer.fromApiFormat(row) : null),
     servicePrefix: '/trailer-service'
 })
