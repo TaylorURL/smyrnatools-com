@@ -16,25 +16,6 @@ export const PLAN_STATS_PERIODS = [
     { id: 'custom', label: 'Custom', span: null }
 ]
 
-export const PLAN_STATS_COMPARISONS = [
-    { id: 'none', label: 'Off' },
-    { id: 'previous', label: 'Previous period' },
-    { id: 'lastYear', label: 'Last year' }
-]
-
-export const PLAN_STATS_FALLBACK_SERIES_COLORS = [
-    '#0ea5e9',
-    '#8b5cf6',
-    '#16a34a',
-    '#d97706',
-    '#dc2626',
-    '#ec4899',
-    '#06b6d4',
-    '#84cc16',
-    '#f97316',
-    '#6366f1'
-]
-
 export const PLAN_STATS_CHART_TOOLTIP_STYLE = {
     background: 'var(--bg-primary)',
     border: '1px solid var(--border-light)',
