@@ -45,7 +45,6 @@ const MixersView = lazyWithRetry(() => import('../views/assets/mixers/MixersView
 const MyAccountView = lazyWithRetry(() => import('../views/common/myaccount/MyAccountView'))
 const OperatorsView = lazyWithRetry(() => import('../views/people/operators/OperatorsView'))
 const PickupTrucksView = lazyWithRetry(() => import('../views/assets/pickup-trucks/PickupTrucksView'))
-const CrmView = lazyWithRetry(() => import('../views/tools/crm/CrmView'))
 const PlantsView = lazyWithRetry(() => import('../views/admin/plants/PlantsView'))
 const RegionsView = lazyWithRetry(() => import('../views/admin/regions/RegionsView'))
 const RolesView = lazyWithRetry(() => import('../views/admin/roles/RolesView'))
