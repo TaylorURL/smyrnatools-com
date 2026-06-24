@@ -110,16 +110,6 @@ class UserServiceImpl {
         const { json } = await postUser('all-roles')
         return Array.isArray(json) ? json : []
     }
-    async getRoleById(roleId) {
-        if (!roleId) throw new Error('Role ID is required')
-        const { json } = await postUser('role-by-id', { roleId })
-        return json
-    }
-    async getRoleByName(roleName) {
-        if (!roleName) throw new Error('Role name is required')
-        const { json } = await postUser('role-by-name', { roleName })
-        return json
-    }
     async getUserRoles(userId) {
         const id = resolveUser(userId)
         if (this.userRolesCache.has(id)) return this.userRolesCache.get(id)
