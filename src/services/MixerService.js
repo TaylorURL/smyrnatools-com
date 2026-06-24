@@ -1,10 +1,7 @@
 import { Mixer } from '../app/models/mixers/Mixer'
 import { MixerComment } from '../app/models/mixers/MixerComment'
 import { MixerHistory } from '../app/models/mixers/MixerHistory'
-import { MixerImage } from '../app/models/mixers/MixerImage'
-import { apiPostOrThrow, ensureSpareIfNoOperatorBase } from '../utils/BaseAssetUtility'
 import CleanupUtility from '../utils/CleanupUtility'
-import { ValidationUtility } from '../utils/ValidationUtility'
 import VerifiedUtility from '../utils/VerifiedUtility'
 import { createAssetService } from './BaseAssetService'
 
