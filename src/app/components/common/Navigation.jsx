@@ -1,7 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
-import { UserService } from '../../../services/UserService'
-import { canDropPin } from '../../../utils/CrmRoleUtility'
 import {
     ADMIN_ITEMS,
     ASSET_ITEMS,
@@ -22,7 +20,6 @@ import {
     useMobileDrawerOutsideClose,
     useTwoLevelUnderline
 } from '../../hooks/useNavigationLayout'
-import { DropPinModal } from '../crm/DropPinModal'
 import NavigationMobile from './navigation/NavigationMobile'
 import NavigationTopBar from './navigation/NavigationTopBar'
 import NavigationTwoLevel from './navigation/NavigationTwoLevel'
