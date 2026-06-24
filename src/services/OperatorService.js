@@ -125,6 +125,17 @@ class OperatorServiceImpl {
             return []
         }
     }
+    /** Fetches change history for a specific operator. Invoked dynamically
+     *  via HISTORY_SERVICE_MAP in useHistoryDataFetchers. */
+    async getOperatorHistory(operatorId, limit = null) {
+        const payload = { limit, operatorId }
+        const json = await apiPostOrThrow(
+            `${SERVICE_PREFIX}/fetch-history`,
+            payload,
+            'Failed to fetch operator history'
+        )
+        return (json?.data ?? []).map((entry) => new OperatorHistory(entry))
+    }
     /** Detects duplicate operator names for data quality alerts. */
     getDuplicateNames(operators) {
         return getDuplicateFieldValues(operators, (op) => {
