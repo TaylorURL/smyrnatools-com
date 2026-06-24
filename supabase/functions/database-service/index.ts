@@ -29,7 +29,6 @@ const ALLOWED_TABLES = new Set([
     'roles',
     'users_roles',
     'notifications',
-    'documents',
     'users_pinned_conversations'
 ])
 
