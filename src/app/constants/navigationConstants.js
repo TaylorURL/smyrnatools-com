@@ -41,7 +41,6 @@ export const MENU_ITEMS = [
     { id: 'Pickup Trucks', permission: 'pickup_trucks.view', text: 'Pickup Trucks' },
     { id: 'Operators', permission: 'operators.view', text: 'Operators' },
     { id: 'Managers', permission: 'managers.view', text: 'Managers' },
-    { id: 'CRM', permission: 'plan.view', text: 'Customer Relations' },
     { id: 'Plants', permission: 'plants.view', text: 'Plants' },
     { id: 'Regions', permission: 'regions.view', text: 'Regions' },
     { id: 'Roles', permission: 'roles.view', text: 'Roles' }
