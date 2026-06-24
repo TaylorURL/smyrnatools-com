@@ -29,26 +29,6 @@ class OperatorServiceImpl {
         const json = await apiPostOrThrow(`${SERVICE_PREFIX}/list`, {}, 'Failed to fetch operators')
         return (json?.data ?? []).map((op) => new Operator(op))
     }
-    /** Fetches only active-status operators. */
-    async fetchActiveOperators() {
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/list-active`, {}, 'Failed to fetch active operators')
-        return (json?.data ?? []).map((op) => new Operator(op))
-    }
-    /** Fetches operators assigned to a specific plant. */
-    async fetchOperatorsByPlant(plantCode) {
-        if (!plantCode) throw new Error('Plant code is required')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/list-by-plant`,
-            { plantCode },
-            'Failed to fetch operators by plant'
-        )
-        return (json?.data ?? []).map((op) => new Operator(op))
-    }
-    /** Fetches operators with tractor-driver position type. */
-    async fetchTractorOperators() {
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/list-tractor`, {}, 'Failed to fetch tractor operators')
-        return (json?.data ?? []).map((op) => new Operator(op))
-    }
     /** Fetches a single operator by employee ID, returning null if not found. */
     async getOperatorByEmployeeId(employeeId) {
         if (!employeeId || !ValidationUtility.isValidUUID(employeeId)) throw new Error('Invalid Employee ID')
