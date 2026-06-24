@@ -149,7 +149,6 @@ export function CrmOutreachPage({
             )}
             <ListOrDetailPane
                 accentColor={accentColor}
-                colocationMap={colocationMap}
                 columns={outreachColumns}
                 contactsByCustomer={contactsByCustomer}
                 deleteContact={deleteContact}
