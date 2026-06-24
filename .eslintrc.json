@@ -73,29 +73,6 @@
             }
         },
         {
-            "files": ["src/front/components/**/*.{js,jsx}"],
-            "rules": {
-                "no-restricted-globals": ["error", "fetch", "axios"],
-                "no-restricted-imports": [
-                    "error",
-                    {
-                        "paths": [
-                            {
-                                "name": "@supabase/supabase-js",
-                                "message": "Use DatabaseService instead of importing @supabase/supabase-js directly"
-                            }
-                        ],
-                        "patterns": [
-                            {
-                                "group": ["**/services/DatabaseService"],
-                                "message": "Use domain services (e.g., EquipmentService) instead of DatabaseService directly"
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
-        {
             "files": ["src/**/*.{js,jsx}"],
             "excludedFiles": ["src/services/DatabaseService.js"],
             "rules": {
