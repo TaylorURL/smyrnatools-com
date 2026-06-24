@@ -7,14 +7,13 @@ export const DEFAULT_HIDDEN_ITEMS = ['Plants', 'Regions']
 /** Items exclusively available to Office regions. */
 export const OFFICE_ONLY_ITEMS = ['Roles']
 /** Items visible only to users holding the IT Access role, regardless of permission. */
-export const IT_ACCESS_ONLY_ITEMS = ['CRM']
+export const IT_ACCESS_ONLY_ITEMS = []
 /** Role name that grants access to IT-restricted navigation items. */
 export const IT_ACCESS_ROLE_NAME = 'IT Access'
 
 /** FontAwesome icon class mapping for each navigation item ID. */
 export const ICONS = {
     Assets: 'fa-truck',
-    CRM: 'fa-address-book',
     Dashboard: 'fa-tachometer-alt',
     'Heavy Equipment': 'fa-snowplow',
     Logout: 'fa-sign-out-alt',
@@ -42,7 +41,6 @@ export const MENU_ITEMS = [
     { id: 'Pickup Trucks', permission: 'pickup_trucks.view', text: 'Pickup Trucks' },
     { id: 'Operators', permission: 'operators.view', text: 'Operators' },
     { id: 'Managers', permission: 'managers.view', text: 'Managers' },
-    { id: 'CRM', permission: 'plan.view', text: 'Customer Relations' },
     { id: 'Plants', permission: 'plants.view', text: 'Plants' },
     { id: 'Regions', permission: 'regions.view', text: 'Regions' },
     { id: 'Roles', permission: 'roles.view', text: 'Roles' }
@@ -53,7 +51,7 @@ export const ASSET_ITEMS = ['Mixers', 'Tractors', 'Trailers', 'Heavy Equipment',
 /** Navigation item IDs grouped under the "People" dropdown. */
 export const PEOPLE_ITEMS = ['Operators', 'Managers']
 /** Navigation item IDs grouped under the "Tools" dropdown. */
-export const TOOLS_ITEMS = ['CRM']
+export const TOOLS_ITEMS = []
 /** Navigation item IDs grouped under the "Admin" category (two-level mode). */
 export const ADMIN_ITEMS = ['Plants', 'Regions', 'Roles']
 
