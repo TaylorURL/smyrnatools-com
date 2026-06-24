@@ -1092,7 +1092,7 @@
                 `Backfill: ${weeks.length} weeks from ${weeks[0].toISOString().slice(0, 10)} -> ${weeks[weeks.length - 1].toISOString().slice(0, 10)}`
             )
 
-            const totals = { employees: 0, punches: 0, shifts: 0, timesheets: 0, weeks: 0 }
+            const totals = { shifts: 0, timesheets: 0, weeks: 0 }
 
             for (let i = 0; i < weeks.length; i++) {
                 if (isCancelled()) {
@@ -1118,39 +1118,21 @@
                     })
                     if (isCancelled()) break
 
-                    let employees = 0
                     let shifts = 0
                     if (ts.timesheetSlices.length > 0) {
                         const tsRes = await postToImport({ timesheets: ts.timesheetSlices })
                         if (tsRes.ok) {
-                            employees = tsRes.body?.stats?.employees ?? 0
                             shifts = tsRes.body?.stats?.shifts ?? 0
                         } else {
                             log(`  Backfill TS import failed: ${tsRes.error}`)
                         }
                     }
 
-                    const { punchSlices } = await pullPunchesForRange({
-                        employeeIdList: ts.employeeIds,
-                        isCancelled,
-                        onProgress: ({ count, total }) =>
-                            updateBadge('backfill', `wk ${label} punches ${count}/${total}`),
-                        periodEnd,
-                        periodStart
-                    })
-                    if (isCancelled()) break
-
-                    const punches = await postPunchesInChunks(punchSlices, isCancelled)
-
                     totals.weeks++
                     totals.timesheets += ts.count
-                    totals.employees += employees
                     totals.shifts += shifts
-                    totals.punches += punches
 
-                    log(
-                        `Backfill ${label}: ${ts.count} TS bundles, ${employees} employees, ${shifts} shifts, ${punches} punches`
-                    )
+                    log(`Backfill ${label}: ${ts.count} TS bundles, ${shifts} shifts`)
 
                     // Persist progress after each successful week so a
                     // mid-backfill reload/expiry resumes cleanly.
@@ -1169,7 +1151,7 @@
 
             const elapsedSec = Math.round((Date.now() - startedAt) / 1000)
             log(
-                `Backfill complete in ${elapsedSec}s — ${totals.weeks}/${weeks.length} weeks, ${totals.timesheets} TS bundles, ${totals.employees} employees, ${totals.shifts} shifts, ${totals.punches} punches`
+                `Backfill complete in ${elapsedSec}s — ${totals.weeks}/${weeks.length} weeks, ${totals.timesheets} TS bundles, ${totals.shifts} shifts`
             )
 
             if (totals.weeks === weeks.length) {
