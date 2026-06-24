@@ -140,13 +140,6 @@ function PlantGridCard({ plant, region, plantType, managerCount, onSelect, onMan
                 </div>
             )}
 
-            <div className="flex items-center justify-between gap-2 border-t border-border-light bg-bg-secondary px-5 py-2">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                    Sat forecast
-                </span>
-                <PlantSaturdayForecastBadge plantCode={code} forecast={saturdayForecast} />
-            </div>
-
             <div
                 className="flex border-t border-border-light"
                 onClick={(event) => event.stopPropagation()}
