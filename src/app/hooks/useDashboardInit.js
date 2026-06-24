@@ -184,46 +184,29 @@ export function useDashboardInit({ plantSetRef, preferences }) {
     }, [dashboardRegionCode])
     useEffect(() => {
         let cancelled = false
-        async function checkPlantManagerRole() {
+        async function loadProfilePlant() {
             try {
                 const { data: sessionData } = await Database.auth.getSession()
                 const uid = sessionData?.session?.user?.id || getSessionUserId() || ''
                 if (!uid || cancelled) return
-                const [roles, weight, profileData, highestRole, additionalPlants] = await Promise.all([
-                    UserService.getUserRoles(uid),
+                const [weight, profileData, additionalPlants] = await Promise.all([
                     UserService.getUserWeight(uid),
                     Database.from('users_profiles').select('plant_code').eq('id', uid).maybeSingle(),
-                    UserService.getHighestRole(uid).catch(() => null),
                     UserService.getAdditionalAssignedPlants(uid).catch(() => [])
                 ])
-                const isPM = roles?.some(
-                    (r) =>
-                        r?.name?.toLowerCase().includes('plant manager') ||
-                        r?.name?.toLowerCase().includes('pm') ||
-                        r?.name?.toLowerCase() === 'plant_manager'
-                )
-                if (!cancelled) {
-                    setIsPlantManager(isPM)
-                    setUserRoleWeight(weight || 0)
-                    setUserRoleName(highestRole?.name || '')
-                    setUserPlantCode(profileData?.data?.plant_code || '')
-                    setUserAdditionalPlants(Array.isArray(additionalPlants) ? additionalPlants : [])
-                    if (weight < 50 && profileData?.data?.plant_code) {
-                        setDashboardPlant(profileData.data.plant_code)
-                        plantSetRef.current = new Set([profileData.data.plant_code])
-                    }
+                if (cancelled) return
+                setUserPlantCode(profileData?.data?.plant_code || '')
+                setUserAdditionalPlants(Array.isArray(additionalPlants) ? additionalPlants : [])
+                if (weight < 50 && profileData?.data?.plant_code) {
+                    setDashboardPlant(profileData.data.plant_code)
+                    plantSetRef.current = new Set([profileData.data.plant_code])
                 }
             } catch (e) {
-                console.error('Failed to check plant manager role:', e)
-                if (!cancelled) {
-                    setIsPlantManager(false)
-                    setUserRoleWeight(0)
-                    setUserRoleName('')
-                    setUserPlantCode('')
-                }
+                console.error('Failed to load user profile plant:', e)
+                if (!cancelled) setUserPlantCode('')
             }
         }
-        checkPlantManagerRole()
+        loadProfilePlant()
         return () => {
             cancelled = true
         }
