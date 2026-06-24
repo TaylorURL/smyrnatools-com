@@ -135,7 +135,7 @@ export function VerdictTrail({ orders }) {
 /** Per-order verdict table. Reused by Customer Lookup and the Call List
  *  detail so dispatchers see the same row breakdown wherever they look
  *  up a customer. */
-export function CustomerOrdersTable({ colocationMap, emptyMessage, orders, plantNameByCode }) {
+export function CustomerOrdersTable({ emptyMessage, orders, plantNameByCode }) {
     if (!orders || orders.length === 0) {
         return (
             <div className="text-[12px] py-4 text-text-tertiary">
