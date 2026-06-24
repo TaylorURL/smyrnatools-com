@@ -3,7 +3,7 @@ import APIUtility from './APIUtility'
  * Input validation primitives: VIN format checking with detailed error explanations,
  * natural VIN sorting, UUID validation, string/ID requirement guards, positive-integer
  * parsing, allowlist-based object property sanitization, edge-function-backed authentication
- * helpers (email validation, password strength, name normalization), and server-side
+ * helpers (password strength, name normalization), and server-side
  * UUID operations (generation, format validation, sanitization).
  */
 const USER_UTILITY_FUNCTION = '/user-utility'
