@@ -6,7 +6,6 @@ import APIUtility from './APIUtility'
  * helpers (email validation, password strength, name normalization), and server-side
  * UUID operations (generation, format validation, sanitization).
  */
-const AUTH_FUNCTION = '/auth-service'
 const USER_UTILITY_FUNCTION = '/user-utility'
 
 interface VINPart {
