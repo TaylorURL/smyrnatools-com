@@ -152,7 +152,6 @@ export function CrmCustomerCardRow({ isActive, onSelect, row }) {
  *  @param {Function} onLog              - Submit a call-outcome log (Contacts tab).
  *  @param {Function} [onSaveContact]
  *  @param {object}  [opportunitiesSlot] - React node for the Opportunities tab.
- *  @param {object}  plantNameByCode
  *  @param {object}  row                 - The CRM roster row for this customer.
  */
 export function CrmCustomerDetail({
