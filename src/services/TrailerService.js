@@ -1,5 +1,6 @@
 import Trailer from '../app/models/trailers/Trailer'
 import { TrailerComment } from '../app/models/trailers/TrailerComment'
+import { TrailerHistory } from '../app/models/trailers/TrailerHistory'
 import { createAssetService } from './BaseAssetService'
 
 const base = createAssetService({
@@ -11,6 +12,7 @@ const base = createAssetService({
     historyTable: 'trailers_history',
     idColumn: 'trailer_id',
     issuesTable: 'trailers_maintenance',
+    parseHistoryRow: TrailerHistory.fromApiFormat,
     parseRow: (row) => (row ? Trailer.fromApiFormat(row) : null),
     servicePrefix: '/trailer-service'
 })
