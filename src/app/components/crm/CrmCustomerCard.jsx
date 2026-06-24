@@ -301,7 +301,6 @@ export function CrmCustomerDetail({
                         aggregate={serviceAggregate}
                         emptyMessage="No measured service history in the last 120 days."
                         orders={serviceOrders}
-                        plantNameByCode={plantNameByCode}
                     />
                 )}
             </Panel>
