@@ -122,15 +122,6 @@ function AppContent() {
         window.addEventListener('region-changed', handleRegionChange)
         return () => window.removeEventListener('region-changed', handleRegionChange)
     }, [selectedView])
-    // Hydrate Plan / Operations runtime constants from the per-region
-    // `plan_settings` row whenever the active region changes. Fire-and-forget
-    // — the service swallows errors so a settings outage falls back to the
-    // baked-in defaults baked into the constants modules.
-    useEffect(() => {
-        const regionCode = preferences?.selectedRegion?.code
-        if (!userId || !regionCode) return
-        PlanSettingsService.loadAndHydrate(regionCode)
-    }, [userId, preferences?.selectedRegion?.code])
     useEffect(() => {
         if (!userId || rolesLoaded) return
         let cancelled = false
