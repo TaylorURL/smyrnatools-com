@@ -54,32 +54,8 @@ export const MixerService = {
         return base._base.delete(id)
     },
 
-    /** Sets unassigned-operator mixers to Spare status in batch. */
-    ensureSpareIfNoOperator(mixersList) {
-        return ensureSpareIfNoOperatorBase(mixersList, async (m) => {
-            await this.updateMixer(m.id, {
-                assignedOperator: null,
-                status: 'Spare',
-                updatedAt: null,
-                updatedBy: null,
-                updatedLast: null
-            })
-            m.assignedOperator = null
-            m.updatedLast = null
-            m.updatedAt = null
-            m.updatedBy = null
-        })
-    },
-
     fetchMixerById(id) {
         return base._base.fetchById(id)
-    },
-
-    /** Mixer-specific: fetches the image gallery rows attached to one mixer. */
-    async fetchMixerImages(mixerId) {
-        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-images`, { mixerId }, 'Failed to fetch mixer images')
-        return (json?.data ?? []).map(MixerImage.fromRow)
     },
 
     fetchMixers() {
@@ -92,10 +68,6 @@ export const MixerService = {
 
     getAllMixers() {
         return base._base.getAll()
-    },
-
-    getMixerHistory(mixerId, limit = null) {
-        return base._base.getHistory(mixerId, limit)
     },
 
     getMixersByOperator(operatorId) {
