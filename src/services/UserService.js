@@ -261,58 +261,5 @@ class UserServiceImpl {
         this.clearCache()
         return true
     }
-    // --- District Manager: Eligible Roles ---
-    async fetchEligibleRoles() {
-        const { json } = await postDM('fetch-eligible-roles', {})
-        this.eligibleRolesCache = json?.data ?? []
-        return this.eligibleRolesCache
-    }
-    async addEligibleRole(roleId) {
-        if (!roleId) throw new Error('Role ID is required')
-        const { res, json } = await postDM('add-eligible-role', { roleId })
-        if (!res.ok) throw new Error(json?.error || 'Failed to add eligible role')
-        this.eligibleRolesCache = null
-        return true
-    }
-    async removeEligibleRole(roleId) {
-        if (!roleId) throw new Error('Role ID is required')
-        const { res, json } = await postDM('remove-eligible-role', { roleId })
-        if (!res.ok) throw new Error(json?.error || 'Failed to remove eligible role')
-        this.eligibleRolesCache = null
-        return true
-    }
-    async isRoleEligible(roleId) {
-        if (!roleId) return false
-        if (this.eligibleRolesCache) {
-            return this.eligibleRolesCache.some((r) => r.role_id === roleId)
-        }
-        try {
-            const { json } = await postDM('is-role-eligible', { roleId })
-            return !!json?.eligible
-        } catch {
-            return false
-        }
-    }
-    // --- District Manager: User Plant Assignments ---
-    async fetchUserPlants(userId) {
-        if (!userId) throw new Error('User ID is required')
-        if (this.userPlantsCache.has(userId)) return this.userPlantsCache.get(userId)
-        const { json } = await postDM('fetch-user-plants', { userId })
-        const plants = json?.data ?? []
-        this.userPlantsCache.set(userId, plants)
-        return plants
-    }
-    async updateUserPlants(userId, plantCodes = []) {
-        if (!userId) throw new Error('User ID is required')
-        const { res, json } = await postDM('update-user-plants', { plantCodes, userId })
-        if (!res.ok) throw new Error(json?.error || 'Failed to update user plants')
-        this.userPlantsCache.delete(userId)
-        return true
-    }
-    getUserPlantCodes(userId) {
-        const cached = this.userPlantsCache.get(userId)
-        if (!cached) return []
-        return cached.map((r) => r.plant_code)
-    }
 }
 export const UserService = new UserServiceImpl()
