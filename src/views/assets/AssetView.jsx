@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import EmbeddedViewModal from '../../app/components/dashboard/EmbeddedViewModal'
+import { exportAssetDataSheet } from '../../app/components/modules/export/data/AssetDataExport'
 import { exportAssetIssuesSheet } from '../../app/components/modules/export/issues/AssetIssuesExport'
 import AssetListSkeleton from '../../app/components/ui/AssetListSkeleton'
 import { usePreferences } from '../../app/context/PreferencesContext'
