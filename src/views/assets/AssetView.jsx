@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import EmbeddedViewModal from '../../app/components/dashboard/EmbeddedViewModal'
+import { exportAssetDataSheet } from '../../app/components/modules/export/data/AssetDataExport'
 import { exportAssetIssuesSheet } from '../../app/components/modules/export/issues/AssetIssuesExport'
 import AssetListSkeleton from '../../app/components/ui/AssetListSkeleton'
 import { usePreferences } from '../../app/context/PreferencesContext'
@@ -14,6 +15,7 @@ import { PlantService } from '../../services/PlantService'
 import { UserService } from '../../services/UserService'
 import AssetListRow from './AssetListRow'
 import AssetModals from './AssetModals'
+import { getAssetExportColumns } from './configs/assetExportColumns'
 import AssetMainContent from './parts/AssetMainContent'
 import AssetSidePanel from './parts/AssetSidePanel'
 import AssetTopSection from './parts/AssetTopSection'
@@ -83,6 +85,7 @@ function AssetView({
     const [selectedId, setSelectedId] = useState(null)
     const [showAddSheet, setShowAddSheet] = useState(false)
     const [isExportingIssues, setIsExportingIssues] = useState(false)
+    const [isExportingData, setIsExportingData] = useState(false)
     const [embeddedModal, setEmbeddedModal] = useState(null)
 
     const isWideViewport = useIsWideViewport()
@@ -183,6 +186,26 @@ function AssetView({
             return String(opPlant) === String(filters.selectedPlant)
         })
     }, [data.operators, filters.selectedPlant, data.regionPlantCodes, config.recapConfig])
+
+    const exportColumns = useMemo(() => getAssetExportColumns(config.key), [config.key])
+
+    async function handleExportData() {
+        if (!exportColumns) return
+        setIsExportingData(true)
+        try {
+            await exportAssetDataSheet({
+                assetType: config.exportConfig.assetType,
+                columns: exportColumns,
+                context: { operators: data.operators, plants: data.plants, tractors: data.tractors },
+                pluralLabel: config.pluralLabel,
+                rows: filteredResult.filtered
+            })
+        } catch (err) {
+            console.error('Export data failed:', err)
+        } finally {
+            setIsExportingData(false)
+        }
+    }
 
     async function handleExportIssues() {
         setIsExportingIssues(true)
@@ -291,9 +314,13 @@ function AssetView({
                                 config={config}
                                 data={data}
                                 filters={filters}
+                                canExportData={!!exportColumns}
                                 forwardedRef={headerRef}
+                                isExportDataDisabled={isExportingData || filteredResult.filtered.length === 0}
+                                isExportingData={isExportingData}
                                 isExportingIssues={isExportingIssues}
                                 onAddClick={() => setShowAddSheet(true)}
+                                onExportData={handleExportData}
                                 onExportIssues={handleExportIssues}
                                 onOpenEmbeddedOperators={handleOpenEmbeddedOperators}
                                 onOpenRecap={() => modalsRef.current?.openRecap()}

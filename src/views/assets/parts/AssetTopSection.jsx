@@ -13,13 +13,17 @@ const STATUS_PILL_MAP = { Active: 'Active', Shop: 'In Shop', Spare: 'Spare' }
  */
 export default function AssetTopSection({
     badge,
+    canExportData,
     canShowOperatorBadge,
     config,
     data,
     filters,
     forwardedRef,
+    isExportDataDisabled,
+    isExportingData,
     isExportingIssues,
     onAddClick,
+    onExportData,
     onExportIssues,
     onOpenEmbeddedOperators,
     onOpenRecap,
@@ -31,9 +35,13 @@ export default function AssetTopSection({
 }) {
     const customActions = (
         <AssetTopActions
+            canExportData={canExportData}
             config={config}
+            isExportDataDisabled={isExportDataDisabled}
             isExportDisabled={isExportingIssues || data.items.length === 0}
+            isExportingData={isExportingData}
             isExportingIssues={isExportingIssues}
+            onExportData={onExportData}
             onExportIssues={onExportIssues}
             onOpenRecap={onOpenRecap}
         />
