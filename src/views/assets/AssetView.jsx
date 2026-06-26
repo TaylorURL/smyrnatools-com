@@ -187,6 +187,26 @@ function AssetView({
         })
     }, [data.operators, filters.selectedPlant, data.regionPlantCodes, config.recapConfig])
 
+    const exportColumns = useMemo(() => getAssetExportColumns(config.key), [config.key])
+
+    async function handleExportData() {
+        if (!exportColumns) return
+        setIsExportingData(true)
+        try {
+            await exportAssetDataSheet({
+                assetType: config.exportConfig.assetType,
+                columns: exportColumns,
+                context: { operators: data.operators, plants: data.plants, tractors: data.tractors },
+                pluralLabel: config.pluralLabel,
+                rows: filteredResult.filtered
+            })
+        } catch (err) {
+            console.error('Export data failed:', err)
+        } finally {
+            setIsExportingData(false)
+        }
+    }
+
     async function handleExportIssues() {
         setIsExportingIssues(true)
         try {
