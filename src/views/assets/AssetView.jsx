@@ -314,9 +314,13 @@ function AssetView({
                                 config={config}
                                 data={data}
                                 filters={filters}
+                                canExportData={!!exportColumns}
                                 forwardedRef={headerRef}
+                                isExportDataDisabled={isExportingData || filteredResult.filtered.length === 0}
+                                isExportingData={isExportingData}
                                 isExportingIssues={isExportingIssues}
                                 onAddClick={() => setShowAddSheet(true)}
+                                onExportData={handleExportData}
                                 onExportIssues={handleExportIssues}
                                 onOpenEmbeddedOperators={handleOpenEmbeddedOperators}
                                 onOpenRecap={() => modalsRef.current?.openRecap()}
