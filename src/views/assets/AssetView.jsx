@@ -85,6 +85,7 @@ function AssetView({
     const [selectedId, setSelectedId] = useState(null)
     const [showAddSheet, setShowAddSheet] = useState(false)
     const [isExportingIssues, setIsExportingIssues] = useState(false)
+    const [isExportingData, setIsExportingData] = useState(false)
     const [embeddedModal, setEmbeddedModal] = useState(null)
 
     const isWideViewport = useIsWideViewport()
