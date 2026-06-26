@@ -26,6 +26,12 @@ export const PickupTruckService = {
     create(pickup, userId) {
         return base._base.create(pickup, userId)
     },
+    /** Fetches all pickups enriched with comment/issue counts and status history.
+     *  Consumed generically by useAssetData as `service.fetchAll(codes)` when the
+     *  config has no `fetchItems` override. */
+    fetchAll(regionCodes = null) {
+        return base._base.fetchWithDetails(regionCodes)
+    },
     /** Fetches change history for a pickup. Invoked dynamically via
      *  HISTORY_SERVICE_MAP in useHistoryDataFetchers. */
     fetchHistory(pickupId, limit = null) {
