@@ -812,10 +812,9 @@ Deno.serve(async (req) => {
                     { onConflict: 'id' }
                 )
                 if (error) return errorResponse('Failed to create session', headers, 500)
-                /* JWT minting is optional: this project moved to Supabase's
-                 * asymmetric (JWKS) auth, so a JWT signed with
-                 * SUPABASE_JWT_SECRET isn't accepted by PostgREST anyway
-                 * (see migrations/20260504_rollback_jwt_lockdown.sql).
+                /* JWT minting is optional: this project uses Supabase's
+                 * asymmetric (JWKS) auth, so a JWT signed with the symmetric
+                 * SUPABASE_JWT_SECRET isn't accepted by PostgREST anyway.
                  * Session auth runs entirely off the users_sessions row
                  * via X-User-Id / X-Session-Id headers. If the secret is
                  * configured we still mint a JWT for forward-compatibility,
