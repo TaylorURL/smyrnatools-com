@@ -17,7 +17,7 @@
 .env.production.local
 .env
 .commitmsg
-.idea
+.idea/
 .run
 *.log
 
@@ -27,18 +27,16 @@ yarn-error.log*
 !/supabase/functions/
 /.github/instructions.md
 public/changelog.txt
-.claude/worktrees/
-.claude/skills/
+.claude/
 .agents/
 .bot/
 skills-lock.json
 badge-designs.html
 
 # local agent/editor config (never publish)
-/.claude/
-.idea/
 .vscode/
 *.iml
+.fleet/
 *.sql
 
 # Secrets and local tooling state — never commit
