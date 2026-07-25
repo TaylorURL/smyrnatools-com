@@ -1,34 +1,35 @@
-name: Claude Remote Edit
+name: Remote Edit
 
 on:
   issues:
     types: [ opened ]
 
 jobs:
-  claude-edit:
-    # Only run when opened by the repo owner or has the "claude" label
+  remote-edit:
+    # Only run when opened by the repo owner or the issue carries the "remote-edit" label
     if: >
       github.actor == 'bradley-t-t' ||
-      contains(github.event.issue.labels.*.name, 'claude')
+      contains(github.event.issue.labels.*.name, 'remote-edit')
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     permissions:
       contents: write
       issues: write
+      pull-requests: write
       id-token: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: production
+          ref: develop
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Configure Git for GitHub packages
@@ -37,7 +38,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Claude Code
+      - name: Apply the requested changes
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -67,20 +68,27 @@ jobs:
             echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Commit and push
+      - name: Open a pull request against develop
         if: steps.changes.outputs.has_changes == 'true'
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
         run: |
-          git config user.name "claude-bot"
-          git config user.email "claude-bot@users.noreply.github.com"
+          branch="issue-${ISSUE_NUMBER}"
+          git config user.name "bradley-t-t"
+          git config user.email "bradley-t-t@users.noreply.github.com"
+          git checkout -b "$branch"
           git add -A
-          git commit -m "${{ github.event.issue.title }}
+          git commit -m "$ISSUE_TITLE" -m "Closes #${ISSUE_NUMBER}"
+          git push origin "$branch"
+          url=$(gh pr create --base develop --head "$branch" \
+            --title "$ISSUE_TITLE" --body "Closes #${ISSUE_NUMBER}")
+          echo "url=$url" >> $GITHUB_OUTPUT
+          gh pr merge "$branch" --auto --squash
 
-          Automated edit via Claude Code from issue #${{ github.event.issue.number }}
-
-          Co-Authored-By: Claude <noreply@anthropic.com>"
-          git push origin production
-
-      - name: Comment and close issue on success
+      - name: Comment with the pull request
         if: steps.changes.outputs.has_changes == 'true'
         uses: actions/github-script@v7
         with:
@@ -89,13 +97,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: '✅ Changes committed and pushed to `production`. Vercel deployment should start shortly.'
-            });
-            await github.rest.issues.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              state: 'closed'
+              body: 'Opened ${{ steps.pr.outputs.url }} against `develop` with auto-merge enabled. It will land once CI passes.'
             });
 
       - name: Comment on no changes
@@ -107,7 +109,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: '⚠️ Claude processed the request but no file changes were made.'
+              body: 'The request was processed but no file changes were made.'
             });
 
       - name: Comment on failure
@@ -119,5 +121,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: '❌ Claude edit failed. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.'
+              body: 'The remote edit failed. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.'
             });
