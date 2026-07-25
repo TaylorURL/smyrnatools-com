@@ -49,13 +49,6 @@ const resolveInitialViewMode = ({ embedded, preferences }) => {
 }
 
 /**
- * Main list/grid view for the operator roster. Handles data fetching,
- * database realtime subscriptions for live INSERT/UPDATE/DELETE,
- * region-scoped plant filtering, name/ID search, status and position
- * filtering, sortable columns, operator ratings export, and drill-down
- * into OperatorDetailView. Falls back to a 1-hour localStorage cache
- * on API failure.
- *
  * @param {string} [title] - Page heading (defaults to "Operator Roster").
  * @param {Function} [onSelectOperator] - Optional external callback when an operator is selected.
  * @param {string} [initialStatusFilter] - Pre-set status filter on mount.

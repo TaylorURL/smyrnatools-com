@@ -1,8 +1,4 @@
-/* PlanUtility — barrel re-export.
- *
- * The Plan/Operations scheduling subsystem was retired; the only helper
- * still consumed by live code is:
- *   - getTodayDate (src/utils/plan/planTime) — CST "today" anchor
- */
+/* Barrel kept so existing `PlanUtility` imports resolve; getTodayDate is the
+ * only helper behind it that anything still calls. */
 
 export { getTodayDate } from './plan/planTime'

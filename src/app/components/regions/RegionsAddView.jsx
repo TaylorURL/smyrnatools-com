@@ -11,8 +11,6 @@ const SELECT_CLS =
     'h-11 w-full cursor-pointer rounded-xl bg-bg-secondary border border-border-light text-text-primary text-sm px-4 pr-10 appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[length:1rem_1rem] bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2024%2024%27%20stroke%3D%27currentColor%27%3E%3Cpath%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%272%27%20d%3D%27M19%209l-7%207-7-7%27%2F%3E%3C%2Fsvg%3E")] hover:border-border-medium focus:outline-none focus-visible:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 [color-scheme:light] dark:[color-scheme:dark]'
 
 /**
- * Modal form for creating a new region with code, name, and type fields.
- * Validates required fields and handles duplicate key errors gracefully.
  * @param {Object} props
  * @param {Function} props.onClose - Closes the add view.
  * @param {Function} props.onRegionAdded - Called with the new region after successful creation.

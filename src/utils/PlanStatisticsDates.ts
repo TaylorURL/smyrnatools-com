@@ -1,9 +1,3 @@
-/**
- * PlanStatisticsDates — pure date helpers for the Plan Statistics
- * analytics graph. ISO parsing and calendar-boundary calculations (week /
- * month / quarter / year). No fetching, no React, no business logic —
- * just calendar math.
- */
 import { parseIsoLocal } from './PlanStatisticsFormatUtility'
 
 import { ONE_DAY_MS } from './PlanStatisticsConstants'

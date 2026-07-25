@@ -7,9 +7,9 @@ import {
 } from '../../views/people/operators/list/operatorRealtimeMapper'
 
 /**
- * Subscribes to database realtime changes on the operators table so the list
- * reflects INSERT/UPDATE/DELETE events without refetching. The setOperators
- * callback receives the same immutable updater shape used previously.
+ * Applies INSERT/UPDATE/DELETE events to the list in place, so an edit made
+ * elsewhere shows up without a refetch. `setOperators` is called with an
+ * immutable updater.
  */
 export default function useOperatorsRealtime(setOperators) {
     useEffect(() => {

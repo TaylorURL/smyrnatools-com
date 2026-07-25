@@ -5,10 +5,6 @@ import { PlantService } from '../../services/PlantService'
 import { UserService } from '../../services/UserService'
 
 /**
- * Loads equipment + plants and exposes the editable form state. Centralizes
- * change tracking against the originally loaded values, the region-scoped
- * plant allowlist, and the comments/issues fetch effect.
- *
  * @param {string} equipmentId - Equipment ID to load.
  * @param {object} preferences - Preferences context (used for selected region).
  * @returns {object} Form state, setters, derived data, and load status.

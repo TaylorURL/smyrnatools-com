@@ -51,10 +51,6 @@ function buildFilename(assetType) {
 }
 
 /**
- * Generates and downloads a clean, professional .xlsx of an asset type's
- * tracked data. Generic over asset type — the per-type column layout
- * (`{ header, type, get }[]`) and lookup `context` are supplied by the caller.
- *
  * @param {Object} params
  * @param {string} params.assetType - Singular label, e.g. "Mixer".
  * @param {string} [params.pluralLabel] - Plural label for the summary line.

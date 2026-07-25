@@ -16,9 +16,6 @@ const SECONDARY_BUTTON_CLASSES =
     'px-4 py-3 bg-bg-tertiary hover:bg-bg-hover text-text-primary border border-border-light font-semibold rounded-md transition-colors duration-150 text-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none'
 
 /**
- * Portal-rendered modal shell for role/permission management dialogs.
- * Provides a branded header, close button, ESC handling, and renders children as the body.
- *
  * @param {Object} props
  * @param {boolean} props.isOpen - Controls modal visibility.
  * @param {Function} props.onClose - Closes the modal.

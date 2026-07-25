@@ -19,10 +19,8 @@ const hydrateFromCache = (setOperators, fetchCommentCounts) => {
 }
 
 /**
- * Data-fetching hook for OperatorsView. Owns operators/plants/trainers/mixers/
- * tractors/regionPlantCodes/isLoading state and exposes the same loader
- * functions the view previously declared inline. Behavior — including the
- * 1-hour localStorage cache fallback for operators — is unchanged.
+ * Owns every fetch OperatorsView needs, including the 1-hour localStorage
+ * cache the operators list falls back to when the network is unavailable.
  */
 export default function useOperatorsData(regionCode) {
     const [operators, setOperators] = useState([])

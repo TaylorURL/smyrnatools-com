@@ -1,9 +1,3 @@
-/**
- * PlanStatisticsRange — period selector math for the Plan Statistics
- * dashboard. Builds the current + comparison ISO ranges, advances the
- * anchor by one calendar unit at a time, and labels each window in the
- * format the period selector expects.
- */
 import { fmtRange, parseIsoLocal } from './PlanStatisticsFormatUtility'
 import { getTodayDate } from './PlanUtility'
 

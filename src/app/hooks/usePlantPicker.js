@@ -10,10 +10,6 @@ const byPlantCodeNumeric = (a, b) => {
 }
 
 /**
- * Shared plant-picker state for asset Add views. Centralizes the plant list,
- * selection, modal open/close, optional region-scoped filtering, and the
- * display string for the picker button.
- *
  * @param {Object} args
  * @param {Object[]} [args.plants] - Plant records when the parent supplies them
  *                                   (Tractor/Trailer/Equipment Add views).

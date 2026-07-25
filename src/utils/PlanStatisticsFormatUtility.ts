@@ -1,7 +1,4 @@
 /**
- * PlanStatisticsFormatUtility — display formatters for the Plan Statistics
- * dashboard. Numbers, percentages, time strings, and date ranges.
- *
  * Pure functions. No DOM, no React. Mirror the Schedule tab's headline
  * styling so cross-tab numbers always read the same.
  */

@@ -8,8 +8,6 @@ async function fetchDeployedVersion() {
     return data.version ?? null
 }
 /**
- * Polls /release.json every 1 minute and signals when the deployed version
- * has changed since the page was first loaded.
  * @returns {{ hasUpdate: boolean, dismiss: () => void }}
  */
 export function useVersionCheck() {

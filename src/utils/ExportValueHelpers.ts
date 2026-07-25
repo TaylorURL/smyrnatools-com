@@ -9,7 +9,6 @@ import { resolveChangeColor } from './ExportExcelStyles'
  */
 
 /**
- * Coerce nullish or empty values to a safe default.
  * @param {*} value - Raw form/report value
  * @param {boolean} isNumeric - true → coerce to Number (default 0); false → keep as string (default '')
  */

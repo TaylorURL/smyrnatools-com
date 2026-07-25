@@ -20,11 +20,6 @@ import { Mixer } from '../../../app/models/mixers/Mixer'
 import { MixerService } from '../../../services/MixerService'
 
 /**
- * Full detail/edit view for a single mixer record. Handles loading, saving,
- * verification (with missing-field modal), deletion, operator assignment/
- * unassignment, region-scoped plant transfer, In Shop sub-status tracking,
- * and sub-modals for comments, issues, and history.
- *
  * @param {string} mixerId - ID of the mixer record to display.
  * @param {Function} onClose - Callback to return to the list view.
  */

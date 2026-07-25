@@ -18,9 +18,7 @@
 ;(function () {
     'use strict'
 
-    // ============================================================
     // CONFIG
-    // ============================================================
     // Secrets are NOT hardcoded. Set them once per install via the browser
     // console: GM_setValue('SUPABASE_SERVICE_KEY', '...') etc. — or use the
     // Tampermonkey storage editor. They never live in source control.
@@ -63,7 +61,7 @@
     // Dispatch server auth. The seat_token / connection_id pair is bound to
     // a user account on the server side via POST /token (OAuth2-style
     // client_credentials grant). Seats expire after ~12h of inactivity,
-    // which is why we keep credentials here — when the API starts rejecting
+    // which is why the credentials are kept in GM storage — when the API rejects
     // calls with 401/403, the script re-runs /token with these creds and a
     // freshly minted seat_token, then resumes sync without any human touch.
     const DATABASE = GM_getValue('DISPATCH_DATABASE', 'SmyrnaTX')
@@ -187,9 +185,7 @@
         }
     ]
 
-    // ============================================================
     // STATE
-    // ============================================================
     let seatToken = null // captured from the UI's own API calls, or minted by reauthenticate()
     // The dispatch UI does not send an Authorization header — only seat_token.
     // We still capture Authorization in case a future server build requires it,
@@ -315,7 +311,6 @@
         return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`
     }
 
-    // ============================================================
     // TOKEN INTERCEPTION
     // The UI sends seat_token with every API call. We monkey-patch XHR
     // and fetch so we can steal the current token as the UI uses it.
@@ -323,7 +318,6 @@
     // from the previous statement; an IIFE starting with `(` would be
     // parsed as a call against `sleep` and the interceptor would never
     // install.
-    // ============================================================
     function installTokenInterceptor() {
         // XHR interception
         const origSetHeader = XMLHttpRequest.prototype.setRequestHeader
@@ -383,9 +377,7 @@
     }
     installTokenInterceptor()
 
-    // ============================================================
     // DISPATCH API CALLS (via GM_xmlhttpRequest to bypass CORS)
-    // ============================================================
     function buildDispatchHeaders(extra = {}) {
         // The UI sends seat_token + form_id + database (empty); Authorization
         // is not part of normal traffic. We only include Authorization when
@@ -454,7 +446,7 @@
 
     // Re-runs the OAuth2 client_credentials grant the dispatch UI uses on
     // its login page. Mints a fresh seat_token + connection_id, POSTs them
-    // to /token along with the hardcoded service-account credentials, and
+    // to /token along with the service-account credentials from GM storage, and
     // — on success — replaces the module-level seatToken so all subsequent
     // GM_xmlhttpRequest calls carry a live seat.
     function reauthenticate() {
@@ -595,13 +587,11 @@
         return true
     }
 
-    // ============================================================
     // AUTO-LOGIN ON /security/login
     // After a reload-for-reauth, we usually land on the dispatch UI's
     // login page. The page doesn't fire any captureable XHRs until a user
     // submits the form, so the script would otherwise stall here forever.
     // We fill the credentials and click submit ourselves.
-    // ============================================================
     function isOnLoginPage() {
         const path = (window.location && window.location.pathname) || ''
         return /security\/login/i.test(path) || /\/login(\b|\/|$)/i.test(path)
@@ -803,9 +793,7 @@
         throw new Error(`Timed out waiting for ${path}`)
     }
 
-    // ============================================================
     // SUPABASE STORAGE
-    // ============================================================
     // Lists every object under a prefix (paginated, 1000 per page). Supabase
     // storage list is non-recursive, so each prefix must be listed separately.
     // Returns a Set of full storage paths (prefix + name).
@@ -905,9 +893,7 @@
         })
     }
 
-    // ============================================================
     // SYNC FLOW
-    // ============================================================
     function isoDate(d) {
         const y = d.getFullYear()
         const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -1258,9 +1244,7 @@
         })
     }
 
-    // ============================================================
     // STATUS BADGE
-    // ============================================================
     let badge
     function ensureBadge() {
         if (badge || !document.body) return
@@ -1308,9 +1292,7 @@
         }
     }
 
-    // ============================================================
     // KICKOFF
-    // ============================================================
     log(
         `Smyrna Dispatch Sync v2.15.1 loaded - host ${DISPATCH_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${PLANT_IDS.length} plants, active window 00:00–17:30 CT, daily full refresh at ${DAILY_FULL_REFRESH_HOUR_CT}:00 CT, completeness check + retry on truncated reports, current-year backfill, multi-strategy auto re-auth (captured seat → fresh seat → page reload + auto-login), manual triggers under smyrnaSync (unsafeWindow-attached)`
     )
@@ -1338,7 +1320,6 @@
         setInterval(tickFullRefreshTrigger, 60_000)
     }, 1000)
 
-    // ============================================================
     // MANUAL DEVTOOLS TRIGGERS
     // Exposed so the bridge operator can test the full-refresh flow
     // without waiting for 18:00 CT. Bypasses time-of-day and "already
@@ -1357,7 +1338,6 @@
     //   smyrnaSync.clearFullRefreshMark()— clear today's "ran" marker so
     //                                      the 1-min tick re-fires it
     //   smyrnaSync.status()              — print current state snapshot
-    // ============================================================
     const pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window
     pageWindow.smyrnaSync = {
         clearFullRefreshMark() {

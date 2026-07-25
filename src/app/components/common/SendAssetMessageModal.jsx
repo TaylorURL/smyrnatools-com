@@ -8,7 +8,6 @@ import { usePreferences } from '../../context/PreferencesContext'
 import UserAvatar from './UserAvatar'
 
 /**
- * Modal for sending an asset as a message attachment to a team member.
  * @param {object} props.item - The asset item being sent
  * @param {string} props.itemNumber - Display identifier (truck #, trailer #, etc.)
  * @param {string} props.itemType - Asset type label ("Tractor", "Trailer", etc.)

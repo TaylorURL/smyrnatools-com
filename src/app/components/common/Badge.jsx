@@ -1,7 +1,7 @@
 import React from 'react'
 
 /**
- * Unified Badge — Dot + Text treatment (mockup #08, Linear-style).
+ * One badge identity for the whole app.
  *
  * Every badge across the app shares one visual identity:
  *   - Neutral theme-tracking body (`bg-bg-tertiary` + `text-text-primary`).
@@ -18,9 +18,9 @@ import React from 'react'
  *
  * What varies per call site is only the tone (or custom dot colour) and
  * optionally the size (xs–lg). The `weight`, `uppercase`, `dot`,
- * `variant`, and `style` background/color overrides are accepted but
- * intentionally consumed-and-ignored — they're back-compat with the ~290
- * existing call sites and would otherwise let visual drift creep back in.
+ * `variant`, and `style` background/color overrides are accepted and then
+ * deliberately ignored — they exist so the many existing call sites keep
+ * compiling, not so callers can re-introduce visual drift.
  *
  * Common patterns:
  *   <Badge tone="success">Active</Badge>
@@ -101,13 +101,10 @@ const SIZE_STYLES = {
 }
 
 /**
- * Shape map is retained for back-compat with the ~290 existing call sites
- * (which still pass `shape="pill"` / `shape="square"` / etc.), but the
- * actual rendered radius is locked to `rounded` (4px) via `!rounded` in
- * the base classes below. The Dot + Text design picked from mockup #08
- * specifies a 4px radius for every badge, so allowing per-callsite
- * variation was the source of the "some are pill, some are square, some
- * are rounded-md" inconsistency the user kept catching.
+ * Every entry maps to `rounded` on purpose. Call sites still pass
+ * `shape="pill"` / `"square"` / etc., but the rendered radius is locked to
+ * 4px via `!rounded` in the base classes below — honouring the shape prop is
+ * exactly how badges drifted into three different radii across the app.
  */
 const SHAPE_CLS = {
     pill: 'rounded',

@@ -1,15 +1,14 @@
 import { resolveSessionId } from './session'
 
-/** Read a UTM param, returning null when absent so the server stores null. */
+// Empty and absent both become null so the server never stores blank strings.
 function utm(params, key) {
   const value = params.get(key)
   return value && value.trim() ? value.trim() : null
 }
 
 /**
- * Build the pageview payload for the current document state. Captures path
- * (+search), referrer, parsed UTM params, screen size, language, and the raw
- * user-agent (parsed server-side into browser/os/device).
+ * The raw user-agent is sent as-is; browser/os/device parsing happens
+ * server-side so the client bundle stays free of a UA-parsing table.
  *
  * @param {string} siteKey - the public site key from analytics_sites
  * @returns {Record<string, unknown>} the hit payload
