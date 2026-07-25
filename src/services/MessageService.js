@@ -156,7 +156,6 @@ const MessageService = {
     },
 
     /**
-     * Sends an encrypted message to a recipient.
      * @param {string} senderId - Session or users table ID of the sender
      * @param {string} recipientId - Users table ID of the recipient
      * @param {string} subject - Message subject line

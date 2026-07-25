@@ -15,8 +15,6 @@ import { IssueRowSkeleton } from './issue-modal/IssueModalSkeletons'
 import SendIssueMessageModal from './issue-modal/SendIssueMessageModal'
 
 /**
- * Issue tracker for an asset or person.
- *
  * @param {Object}   props
  * @param {string}   props.itemId
  * @param {string}   props.itemNumber

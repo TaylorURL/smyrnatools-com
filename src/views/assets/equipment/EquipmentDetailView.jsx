@@ -10,11 +10,6 @@ import EquipmentMaintenanceSection from './detail/EquipmentMaintenanceSection'
 import EquipmentVerificationSection from './detail/EquipmentVerificationSection'
 
 /**
- * Full detail/edit view for a single equipment record. Handles loading,
- * saving, verification, deletion, region transfer, and unsaved-change
- * protection. Renders sub-modals for comments, issues, history, plant
- * selection, and verification requirements.
- *
  * @param {string} equipmentId - ID of the equipment record to display.
  * @param {Function} onClose - Callback to return to the list view.
  * @param {Function} [onSaved] - Optional callback fired after a successful save/verify with the updated record.

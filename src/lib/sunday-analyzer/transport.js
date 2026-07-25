@@ -1,11 +1,10 @@
 /**
- * Fire one hit to the ingest endpoint. Prefers navigator.sendBeacon so the
- * request survives page unloads; falls back to fetch({keepalive:true}) when
- * sendBeacon is unavailable.
+ * sendBeacon first so the hit survives an unload; keepalive fetch covers
+ * browsers without it.
  *
- * The body is sent as a `text/plain` Blob so it stays a CORS-"simple" request
- * (no preflight) — the ingest function JSON-parses the text body regardless of
- * content-type. We never read the response, so an opaque beacon result is fine.
+ * The body goes out as text/plain rather than JSON to keep it a CORS-simple
+ * request — a preflight would be dropped during unload. The ingest function
+ * parses the text as JSON regardless of content-type.
  *
  * @param {string} apiUrl - the ingest endpoint
  * @param {Record<string, unknown>} payload - the hit payload

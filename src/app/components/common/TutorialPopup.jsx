@@ -26,9 +26,6 @@ const TUTORIALS = {
     }
 }
 /**
- * Positioned popup overlay that highlights a target DOM element and displays
- * contextual guidance. Uses an SVG mask to create a spotlight effect around the target,
- * with a pulsing border and directional arrow.
  * @param {Object} props
  * @param {string} props.tutorialId - Key into the TUTORIALS registry.
  * @param {Function} props.onDismiss - Callback invoked when the user clicks "Got it".

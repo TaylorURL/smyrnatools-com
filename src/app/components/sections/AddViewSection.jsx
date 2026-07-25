@@ -6,9 +6,6 @@ import { UserService } from '../../../services/UserService'
 import ErrorMessage from '../common/ErrorMessage'
 
 /**
- * Portal-rendered modal wrapper for add/create forms.
- * Checks user permissions (assets.add / list.add) before rendering the form.
- * Handles duplicate key errors with user-friendly messages.
  * @param {Object} props
  * @param {string} props.title - Modal header title.
  * @param {Function} props.onClose - Closes the modal.

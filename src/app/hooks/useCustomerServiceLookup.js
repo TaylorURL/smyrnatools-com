@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
 
-/* The dispatch data pipeline that powered per-customer service verdicts
- * (DispatchDataService + dispatch-data-service edge function) was removed
- * when the Operations Plan tool was retired. The Call List customer card
- * still renders the <CustomerServiceContext> panel, which gracefully
- * shows its "No measured service history" empty state when this hook
- * returns no orders. Until a replacement data source is wired up, this
- * hook is a no-op that yields the empty shape the panel expects. */
+/* Deliberate no-op: there is no data source behind per-customer service
+ * verdicts right now. It returns the empty shape <CustomerServiceContext>
+ * expects, so the Call List card falls through to its "No measured service
+ * history" state instead of erroring. Wire a real source in here when one
+ * exists — no caller needs to change. */
 
 const EMPTY_STATE = {
     aggregate: null,

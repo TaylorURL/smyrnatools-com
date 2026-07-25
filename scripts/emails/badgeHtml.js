@@ -1,5 +1,6 @@
 /**
- * Server-side badge HTML renderer — Dot + Text treatment (mockup #08).
+ * Server-side twin of the app's Badge component — keep the dot/text
+ * treatment here in step with src/app/components/common/Badge.jsx.
  *
  * Mirrors the React `<Badge />` component (`src/app/components/common/
  * Badge.jsx`) exactly so email-rendered badges share the same visual

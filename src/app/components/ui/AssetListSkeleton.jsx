@@ -123,8 +123,6 @@ function SkeletonTaskGroup({ rowCount, compact }) {
 }
 
 /**
- * Skeleton placeholder for the ListView (task list) while data loads.
- * Renders grouped shimmer cards matching the status-grouped task layout.
  * @param {number} [groupCount=3] - Number of skeleton groups to render.
  */
 export function TaskListSkeleton({ groupCount = 3 }) {

@@ -8,7 +8,6 @@ import {
 } from '../../../../utils/ExportUtility'
 
 /**
- * Initializes an Excel workbook with optional logo and subject metadata.
  * @param {Object} [options]
  * @param {string} [options.subject] - Workbook subject property.
  * @param {boolean} [options.skipLogo] - Skips logo loading when true.
@@ -24,7 +23,6 @@ export async function initExport(options = {}) {
     return { ExcelLib, logoBase64, wb }
 }
 /**
- * Adds a worksheet to the workbook with grid lines hidden.
  * @param {Object} wb - ExcelJS workbook.
  * @param {string} sheetName - Tab label for the new sheet.
  * @param {Object} [options] - Optional columns and defaultRowHeight.

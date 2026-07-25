@@ -14,7 +14,6 @@ const PREFS_FUNCTION = '/user-preferences-service'
  */
 const PreferencesContext = createContext()
 /**
- * Hook to access user preferences (filters, region, theme).
  * @throws If used outside PreferencesProvider.
  */
 export function usePreferences() {

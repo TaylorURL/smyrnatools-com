@@ -18,11 +18,6 @@ const SELECT_CLS =
     'h-11 w-full cursor-pointer rounded-xl bg-bg-secondary border border-border-light text-text-primary text-sm px-4 pr-10 appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[length:1rem_1rem] bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2024%2024%27%20stroke%3D%27currentColor%27%3E%3Cpath%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%272%27%20d%3D%27M19%209l-7%207-7-7%27%2F%3E%3C%2Fsvg%3E")] hover:border-border-medium focus:outline-none focus-visible:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 [color-scheme:light] dark:[color-scheme:dark]'
 
 /**
- * Slide-in form for creating a new operator record. Supports name, phone,
- * plant assignment (region-scoped), status (with permission-gated Training/
- * Pending Start options), position, trainer assignment, and CDL automatic
- * restriction. Warns on duplicate operator names before saving.
- *
  * @param {Object[]} plants - Available plant records for the plant picker.
  * @param {Object[]} [operators] - Existing operators used for duplicate-name detection.
  * @param {Function} onClose - Callback to dismiss the add view.

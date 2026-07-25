@@ -62,9 +62,6 @@ export function ConfirmProvider({ children }) {
 }
 
 /**
- * Returns a function that opens the confirmation dialog and resolves to
- * `true` when the user confirms or `false` when they cancel.
- *
  * @example
  *   const confirm = useConfirm()
  *   if (!(await confirm({ title: 'Delete report?', variant: 'danger' }))) return

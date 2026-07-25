@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Subscribes to a min-width media query and returns true when the viewport
- * matches. Defaults to the Tailwind `lg` breakpoint (1024px) — the threshold
- * at which the asset/people list views can fit a side panel next to the table
- * without crowding the columns.
- *
  * @param {number} [minWidth=1024] Pixel width that flips the result to true.
  * @returns {boolean}
  */

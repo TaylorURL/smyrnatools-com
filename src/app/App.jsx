@@ -57,10 +57,6 @@ const OFFICE_VISIBLE_VIEWS = new Set(['Dashboard', 'Managers', 'Plants', 'Region
 const AGGREGATE_HIDDEN_VIEWS = new Set(['Mixers', 'Plants', 'Regions'])
 /** Views hidden by default (non-Office, non-Aggregate). */
 const DEFAULT_HIDDEN_VIEWS = new Set(['Plants', 'Regions'])
-/**
- * Main application shell managing authentication state, view routing,
- * region-based view filtering, role checks, and offline/terminated overlays.
- */
 function AppContent() {
     const [userId, setUserId] = useState(null)
     const [selectedView, setSelectedView] = useState({ initialStatusFilter: null, view: 'Dashboard' })
@@ -323,10 +319,6 @@ function AppContent() {
         </div>
     )
 }
-/**
- * Root application component wrapping AppContent with global providers,
- * analytics, speed insights, install prompt, and tutorial manager.
- */
 function App() {
     const { hasUpdate, dismiss } = useVersionCheck()
     useEffect(() => {
