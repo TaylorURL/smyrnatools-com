@@ -3,8 +3,6 @@
  */
 const UserUtility = {
     /**
-     * Extracts up to two-letter initials from a display name.
-     * Returns '?' for missing, 'Unknown', or 'Loading...' names.
      * @param name
      * @returns Uppercase initials (e.g. "JD" for "John Doe").
      */

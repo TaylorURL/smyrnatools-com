@@ -6,11 +6,6 @@ import { TractorService } from '../../services/TractorService'
 import { UserService } from '../../services/UserService'
 
 /**
- * Loads a tractor record and all dependent lists (operators, plants, other
- * tractors), seeds the editable form fields, tracks original values for
- * dirty-state detection, computes region-scoped plant filtering, and watches
- * for unsaved changes to enable the beforeunload prompt.
- *
  * @param {string} tractorId
  * @param {object} preferences - From PreferencesContext, used for region scope.
  */

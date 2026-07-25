@@ -17,8 +17,6 @@ const VIEW_CONFIG = {
     trailers: { component: TrailersView, icon: 'fa-truck', title: 'Trailers' }
 }
 /**
- * Full-screen modal that embeds an asset or operator list view from the dashboard.
- * Allows quick drill-down into a specific view with an optional pre-applied search filter.
  * @param {Object} props
  * @param {'equipment'|'mixers'|'operators'|'tractors'|'trailers'} props.embeddedView - Key selecting which view to render.
  * @param {string} [props.embeddedViewSearch] - Initial search string passed to the embedded view.

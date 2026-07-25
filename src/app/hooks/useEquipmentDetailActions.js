@@ -6,10 +6,6 @@ import { PlantService } from '../../services/PlantService'
 import { UserService } from '../../services/UserService'
 
 /**
- * Save / delete / verify / region-transfer action handlers for the equipment
- * detail view. Wraps the data hook state and orchestrates the various
- * persistence flows while keeping the UI free of business rules.
- *
  * @param {object} state - Return value of {@link useEquipmentDetail}.
  * @param {string} equipmentId - Equipment ID being edited.
  * @param {Function} onClose - Closes the detail view.

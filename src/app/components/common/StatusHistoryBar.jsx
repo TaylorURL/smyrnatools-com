@@ -30,10 +30,6 @@ const FALLBACK_STATUS_COLOR = 'var(--text-tertiary)'
 
 const resolveStatusColor = (status) => STATUS_COLOR_VAR[status] || FALLBACK_STATUS_COLOR
 /**
- * Animated horizontal bar that visualizes the percentage of time an asset
- * has spent in each status since creation.
- * Fetches status change history from the corresponding database history table
- * and renders proportional colored segments with a hover tooltip breakdown.
  * @param {Object} props
  * @param {string} props.itemId - Primary key of the asset record.
  * @param {'mixer'|'tractor'|'trailer'|'equipment'|'pickup-truck'|'operator'} props.itemType - Asset type used to resolve the history table.

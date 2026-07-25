@@ -5,10 +5,6 @@ import VerificationCardSection from '../../../../app/components/sections/Verific
 import { Equipment } from '../../../../app/models/equipment/Equipment'
 
 /**
- * Maps the equipment record to the color tokens used by the verification card
- * to indicate "verified", "outdated due to recent edits", and "outdated due
- * to a new week".
- *
  * @param {object} equipment - Equipment record.
  * @returns {string} CSS variable for the active state color.
  */

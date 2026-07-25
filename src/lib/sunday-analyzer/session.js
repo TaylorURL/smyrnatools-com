@@ -1,6 +1,5 @@
 import { SESSION_INACTIVITY_MS, SESSION_STORAGE_KEY } from './constants'
 
-/** Cryptographically-random session id, with a non-crypto fallback. */
 function createSessionId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
   return `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
@@ -27,9 +26,8 @@ function writeDescriptor(descriptor) {
 }
 
 /**
- * Resolve the current cookieless session id, rolling it after 30 minutes of
- * inactivity. Each call refreshes the last-activity timestamp, so an active
- * session never expires mid-visit.
+ * Every call bumps lastActivity, so the id only rolls after a genuine gap in
+ * traffic — an active session never expires mid-visit.
  *
  * @returns {string} the active session id
  */

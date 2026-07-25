@@ -25,9 +25,6 @@ const VARIANT_CONFIG = {
 }
 
 /**
- * Styled confirmation dialog rendered as a portal overlay.
- * Replaces native window.confirm() with a themed modal.
- *
  * @param {boolean} isOpen - Whether the dialog is visible.
  * @param {Function} onConfirm - Called when the user confirms.
  * @param {Function} onCancel - Called when the user cancels or clicks the backdrop.

@@ -43,8 +43,6 @@ const formatDate = (dateString) => {
 }
 
 /**
- * Comment thread for an asset or person.
- *
  * @param {Object}   props
  * @param {string}   props.itemId       - DB id of the parent record.
  * @param {string}   props.itemNumber   - Human-readable identifier (truck #, name, etc.).

@@ -5,11 +5,6 @@ const MAX_DISPLACEMENT_PX = 8
 const LERP_SPEED = 0.08
 const RESET_LERP_SPEED = 0.1
 /**
- * Makes nav items magnetically gravitate toward the mouse cursor when it
- * enters a proximity radius. Each registered element smoothly displaces
- * toward the pointer using a requestAnimationFrame lerp loop, and springs
- * back when the cursor leaves range.
- *
  * @returns {{
  *   registerElement: (el: HTMLElement | null) => void,
  *   handleMouseMove: (e: MouseEvent) => void,

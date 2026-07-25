@@ -5,9 +5,6 @@ import { PlantService } from '../../../services/PlantService'
 import DetailViewSection from '../sections/DetailViewSection'
 
 /**
- * Detail/edit view for a single region.
- * Allows editing the region name, type, and associated plants via a searchable plant picker.
- * Supports save, cancel, and delete actions.
  * @param {Object} props
  * @param {Object} props.region - Region object with region_code, region_name, and type.
  * @param {Function} props.onClose - Navigates back to the region list.

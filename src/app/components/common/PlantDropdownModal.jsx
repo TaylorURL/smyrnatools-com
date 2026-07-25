@@ -37,9 +37,6 @@ const computeDistrictGroups = (plants) => {
 }
 
 /**
- * Portal modal for selecting one or more plants from a searchable list.
- * Supports single-select (auto-closes on pick) and multi-select (checkbox) modes.
- *
  * @param {Object} props
  * @param {boolean} props.isOpen
  * @param {Function} props.onClose

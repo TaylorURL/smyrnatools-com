@@ -1,9 +1,10 @@
 const LOCATION_CHANGE_EVENT = 'sa:locationchange'
 
 /**
- * Subscribe to SPA route changes in a router-agnostic way by patching the
- * History API (pushState/replaceState) and listening for popstate. The patched
- * methods emit a synthetic event so multiple subscribers can coexist.
+ * Patching the History API is what keeps this router-agnostic — pushState and
+ * replaceState fire no native event. The patches broadcast a synthetic event
+ * rather than calling onChange directly so several subscribers can coexist on
+ * one set of patched methods.
  *
  * @param {() => void} onChange - invoked after every navigation
  * @returns {() => void} unsubscribe — restores the original History methods

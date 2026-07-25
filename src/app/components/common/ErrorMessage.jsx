@@ -1,9 +1,6 @@
 import React from 'react'
 
 /**
- * Inline error chip used across forms and async actions. Icon + message + optional dismiss.
- * Token-driven, theme-aware, gently fades + slides in on mount.
- *
  * @param {Object} props
  * @param {string} props.message - Error message to display. Renders nothing if falsy.
  * @param {Function} [props.onDismiss] - Optional callback to dismiss the error; shows close button when provided.

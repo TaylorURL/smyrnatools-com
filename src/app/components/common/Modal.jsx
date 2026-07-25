@@ -2,9 +2,6 @@ import React, { useEffect } from 'react'
 import ReactDOM from 'react-dom'
 
 /**
- * Reusable modal dialog with header, backdrop-close, ESC handling, body scroll lock, and scrollable content area.
- * Backdrop fades in; container pops in via spring easing. Reduced-motion users get a static reveal.
- *
  * @param {Object} props
  * @param {React.ReactNode} props.children - Modal body content (use ModalBody, ModalSummary, etc.).
  * @param {Function} props.onClose - Callback invoked when the backdrop, close button, or ESC closes the modal.
@@ -67,7 +64,6 @@ export default function Modal({ children, onClose, title, titleIcon, footer, max
 }
 
 /**
- * Summary strip rendered below the modal header, displaying key metrics in a grid.
  * @param {Object} props
  * @param {React.ReactNode} props.children - ModalSummaryItem elements.
  */
@@ -80,7 +76,6 @@ export function ModalSummary({ children }) {
 }
 
 /**
- * Individual metric card used inside ModalSummary.
  * @param {Object} props
  * @param {string} props.label - Uppercase label text.
  * @param {string|number} props.value - Primary display value.
@@ -98,7 +93,6 @@ export function ModalSummaryItem({ label, value, valueClassName = '' }) {
 }
 
 /**
- * Scrollable content wrapper for modal body sections.
  * @param {Object} props
  * @param {React.ReactNode} props.children
  */

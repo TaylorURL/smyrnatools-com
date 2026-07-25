@@ -1,6 +1,5 @@
-/** Bare plant code label. Previously joined co-located sibling codes with
- *  "/" but no live caller ever supplied the colocation map that made that
- *  branch fire, so the helper now just trims the code. */
+/** Just trims the code. The colocation map that would join sibling codes with
+ *  "/" is never supplied by any caller, so that branch was dead. */
 export function formatColocatedCodeLabel(primaryCode: string | null | undefined): string {
     return String(primaryCode ?? '').trim()
 }

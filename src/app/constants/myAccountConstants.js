@@ -24,9 +24,8 @@ export const START_PAGE_OPTIONS = [
     { icon: 'fa-truck-pickup', id: 'Pickup Trucks' }
 ]
 
-/** Set of valid start-page view IDs — used to fall back to Dashboard when a
- *  user's stored start page references a removed view (e.g. legacy 'Plan'
- *  after Operations was retired). */
+/** Membership check for a user's stored start page; anything not in here falls
+ *  back to Dashboard rather than landing on a view that no longer exists. */
 export const VALID_START_PAGE_IDS = new Set(START_PAGE_OPTIONS.map((opt) => opt.id))
 
 export const ACCENT_PRESETS = [
