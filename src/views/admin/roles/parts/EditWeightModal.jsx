@@ -7,7 +7,6 @@ import RoleModal, {
     RoleTextInput
 } from '../../../../app/components/ui/RoleModal'
 
-/** Modal for editing role weight. */
 const EditWeightModal = ({ role, onClose, onSave }) => {
     const [weight, setWeight] = useState(role?.weight || 0)
     if (!role) return null

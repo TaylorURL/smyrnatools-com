@@ -149,7 +149,6 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                 className="flex max-h-[76vh] w-96 flex-col overflow-hidden rounded border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
                 <div className="flex shrink-0 items-center justify-between border-b border-border-light px-3 py-2">
                     <div className="flex items-center gap-2">
                         <div
@@ -194,7 +193,6 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                     </div>
                 </div>
 
-                {/* Body */}
                 <div className="flex-1 overflow-y-auto bg-bg-primary">
                     {loading ? (
                         <div>
@@ -286,7 +284,6 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                     )}
                 </div>
 
-                {/* Footer */}
                 <div className="shrink-0 border-t border-border-light">
                     <button type="button"
                         onClick={onViewAll}

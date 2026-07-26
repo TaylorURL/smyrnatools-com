@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 /*
- * ─────────────────────────────────────────────────────────────────────────────
  * This file contains only:
  *   1. Tailwind layer directives (@tailwind base/components/utilities).
  *   2. CSS custom properties (theme tokens) — these cannot be expressed as
@@ -21,10 +20,9 @@
  *
  * No bespoke layout/animation CSS lives here — animations are defined in
  * tailwind.config.js and consumed via animate-* utilities.
- * ─────────────────────────────────────────────────────────────────────────────
  */
 
-/* ── Theme tokens ─────────────────────────────────────────────────────────── */
+/* Theme tokens */
 
 :root {
     /* Tells browsers to render native form elements (checkboxes, radios,
@@ -119,7 +117,7 @@ html.dark {
     --success: #22c55e;
 }
 
-/* ── "Grayed Out" theme ──────────────────────────────────────────────────────
+/* "Grayed Out" theme
  * A medium-gray surface variant. Sits clearly between Light (white) and
  * Dark (black) — the user reads this as "gray theme", not "dark theme",
  * so the palette leans noticeably lighter than the dark token block.
@@ -162,7 +160,7 @@ html.theme-transitioning *::after {
         box-shadow 0.4s ease !important;
 }
 
-/* ── @layer base — minimal native-element resets Tailwind preflight misses ── */
+/* @layer base — minimal native-element resets Tailwind preflight misses */
 
 @layer base {
     html,
@@ -271,7 +269,7 @@ html.theme-transitioning *::after {
     }
 }
 
-/* ── @layer components — composed badges, cards, status pills ─────────────── */
+/* @layer components — composed badges, cards, status pills */
 
 @layer components {
     .metric-card {
@@ -340,7 +338,7 @@ html.theme-transitioning *::after {
     }
 
     /*
-     * ── Add-view form scaffolding ────────────────────────────────────────────
+     * Add-view form scaffolding
      * Composed via @apply where it maps cleanly to utilities; raw declarations
      * for properties that have no Tailwind equivalent (background-image SVG
      * chevrons, etc). Consumed by every Add* form (MixerAddView, TractorAddView,
@@ -522,7 +520,7 @@ html.theme-transitioning *::after {
     }
 
     /*
-     * ── DetailViewSection legacy shell ───────────────────────────────────────
+     * DetailViewSection legacy shell
      * Plan-tab-style: flat 1px borders, 6px radius, no shadows, dense padding.
      * Consumed by every *DetailView (MixerDetailView, TractorDetailView, …)
      * and by DetailViewSection itself. Accent-coloured rules read
@@ -1273,7 +1271,6 @@ html.theme-transitioning *::after {
 }
 
 /*
- * ─────────────────────────────────────────────────────────────────────────────
  * Dark-mode legacy palette shim
  *
  * Below: dark-mode overrides for raw Tailwind palette utilities still in use
@@ -1284,10 +1281,8 @@ html.theme-transitioning *::after {
  *
  * Long-term plan: convert each consumer to the semantic tokens or use Tailwind
  * `dark:` variants, then delete the corresponding override here.
- * ─────────────────────────────────────────────────────────────────────────────
  */
 
-/* Surfaces */
 html.dark .bg-white {
     background-color: #1a1a1a;
 }
@@ -1353,7 +1348,6 @@ html.dark .bg-slate-300 {
     background-color: #3c3c3c;
 }
 
-/* Hover */
 html.dark .hover\:bg-gray-50:hover {
     background-color: #242424;
 }
@@ -1382,7 +1376,6 @@ html.dark .hover\:bg-white:hover {
     background-color: #202020;
 }
 
-/* Text */
 html.dark .text-gray-900 {
     color: #fafafa;
 }
@@ -1439,7 +1432,6 @@ html.dark .text-slate-300 {
     color: #3d3d3d;
 }
 
-/* Borders */
 html.dark .border-gray-100 {
     border-color: #363636;
 }
@@ -1476,7 +1468,6 @@ html.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
     border-color: #424242;
 }
 
-/* Rings */
 html.dark .ring-gray-100 {
     --tw-ring-color: #363636;
 }
@@ -1485,7 +1476,6 @@ html.dark .ring-gray-200 {
     --tw-ring-color: #424242;
 }
 
-/* Alerts */
 html.dark .bg-red-50 {
     background-color: #2a1a1a;
 }
@@ -1530,7 +1520,6 @@ html.dark .bg-indigo-50 {
     background-color: #1e1a2a;
 }
 
-/* Accent text */
 html.dark .text-emerald-600 {
     color: #34d399;
 }
@@ -1543,7 +1532,6 @@ html.dark .text-indigo-600 {
     color: #a5b4fc;
 }
 
-/* Alert borders */
 html.dark .border-red-200 {
     border-color: #451a1a;
 }
@@ -1564,7 +1552,6 @@ html.dark .border-amber-200 {
     border-color: #45381a;
 }
 
-/* Placeholder text */
 html.dark .placeholder-gray-400::placeholder {
     color: #4d4d4d;
 }
@@ -1573,7 +1560,6 @@ html.dark .placeholder-gray-500::placeholder {
     color: #5c5c5c;
 }
 
-/* Shadows */
 html.dark .shadow-sm {
     --tw-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
@@ -1594,7 +1580,6 @@ html.dark .shadow-xl {
     --tw-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
 }
 
-/* Form inputs */
 html.dark input,
 html.dark select,
 html.dark textarea {
@@ -2021,7 +2006,7 @@ html.dark .trainer-badge {
     color: var(--text-primary);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
+/*
  * "Grayed Out" theme — surface re-mapping
  *
  * The dark shim above repaints every raw color utility (bg-white, bg-gray-50,
@@ -2032,22 +2017,16 @@ html.dark .trainer-badge {
  * via specificity, and the cascade order (later rules win on ties) keeps the
  * map deterministic.
  *
- * Palette anchors (see also the theme-token block above):
- *   --bg-primary:   #4a4f5c   (main surface)
- *   --bg-secondary: #424754
- *   --bg-tertiary:  #3a3f4b
- *   --bg-hover:     #565b69
- *   --border-light: #5d6271
- *   --border-medium:#6d7381
- *   --border-dark:  #7a8090
+ * The palette itself lives in the `html.dark.theme-grayed` token block above;
+ * it is deliberately not repeated here, because a second copy of the hex
+ * values only ever drifts away from the first.
  *
  * Anything not listed here either reads from the token block (already
  * grayed) or stays the same as the dark theme on purpose (semantic
  * badges, accents, etc.).
- * ───────────────────────────────────────────────────────────────────────── */
+  */
 
-/* Surfaces — whites / gray-N / slate-N. Palette matches the token block:
- * primary #5b6270, secondary #565d6b, tertiary #515663, hover #6a7180. */
+/* Surfaces — whites / gray-N / slate-N, remapped onto the grayed tokens. */
 html.dark.theme-grayed .bg-white {
     background-color: #5b6270;
 }
@@ -2115,7 +2094,6 @@ html.dark.theme-grayed .dark\:bg-gray-900 {
     background-color: #515663;
 }
 
-/* Gradients */
 html.dark.theme-grayed .from-slate-50 {
     --tw-gradient-from: #565d6b var(--tw-gradient-from-position);
     --tw-gradient-to: rgb(86 93 107 / 0) var(--tw-gradient-to-position);
@@ -2125,7 +2103,6 @@ html.dark.theme-grayed .to-slate-100 {
     --tw-gradient-to: #515663 var(--tw-gradient-to-position);
 }
 
-/* Hover */
 html.dark.theme-grayed .hover\:bg-gray-50:hover,
 html.dark.theme-grayed .hover\:bg-slate-50:hover {
     background-color: #565d6b;
@@ -2368,7 +2345,7 @@ html.dark.theme-grayed textarea:-webkit-autofill {
     caret-color: var(--text-primary);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
+/*
  * Site-wide badge text — always white.
  *
  * Badges across the app use varied patterns: named classes
@@ -2392,7 +2369,7 @@ html.dark.theme-grayed textarea:-webkit-autofill {
  * `border-radius: 999`, or one of the named badge classes. Same shape
  * the previous theme-aware rule used — we're just changing the color
  * from `var(--text-primary)` to `#ffffff`.
- * ───────────────────────────────────────────────────────────────────────── */
+  */
 
 .rounded-full[style*='color: #'],
 .rounded-full[style*='color:#'],

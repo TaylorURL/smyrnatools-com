@@ -37,7 +37,6 @@ export function MobileMenuItem({ item, isActive, onClick, accentColor = '#1e3a5f
     )
 }
 
-/** Region <select> for the mobile drawer. */
 export function MobileRegionSelect({ regionCode, permittedRegions, onChange }) {
     return (
         <div className="mb-5">

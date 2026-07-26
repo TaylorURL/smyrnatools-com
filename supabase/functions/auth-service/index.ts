@@ -48,7 +48,7 @@ const RESET_PASSWORD_MESSAGE = 'If an account exists for this email, a new passw
 const DEFAULT_BASE_FILTERS = { searchText: '', selectedPlant: '', statusFilter: '', viewMode: 'grid' }
 const DEFAULT_ROLE_FILTERS = { roleFilter: '', searchText: '', selectedPlant: '', viewMode: 'grid' }
 
-// ── Persistent rate limiting (database-backed) ──────────────────────
+// Persistent rate limiting (database-backed)
 const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_MAX_ATTEMPTS = 5
 const RATE_LIMIT_TABLE = 'rate_limits'
@@ -85,7 +85,7 @@ function getRateLimitKey(req: Request, identifier: string): string {
     return `${ip}:${identifier}`
 }
 
-// ── Session-based auth for protected operations ────────────────────────
+// Session-based auth for protected operations
 const SESSIONS_TABLE = 'users_sessions'
 const ELEVATED_WEIGHT_THRESHOLD = 75
 
@@ -241,7 +241,6 @@ Deno.serve(async (req) => {
         const supabase = createSupabaseClient(req)
 
         switch (endpoint) {
-            // ── Authentication ────────────────────────────────────────
 
             case 'sign-in': {
                 const { email, password, browser, os, device, userAgent } = await req.json()
@@ -484,8 +483,6 @@ Deno.serve(async (req) => {
                 )
             }
 
-            // ── Session Management ────────────────────────────────────
-
             case 'restore-session': {
                 const body = await req.json()
                 const cookies = readSessionCookies(req)
@@ -551,8 +548,6 @@ Deno.serve(async (req) => {
                 }
             }
 
-            // ── Profile ───────────────────────────────────────────────
-
             case 'load-profile': {
                 const body = await req.json()
                 const { userId } = body
@@ -599,8 +594,6 @@ Deno.serve(async (req) => {
                     headers
                 )
             }
-
-            // ── Credential Updates ────────────────────────────────────
 
             case 'update-email': {
                 const body = await req.json()
@@ -675,8 +668,6 @@ Deno.serve(async (req) => {
                 return jsonResponse({ success: true }, headers)
             }
 
-            // ── Password Reset ────────────────────────────────────────
-
             case 'reset-password': {
                 const { email } = await req.json()
                 const genericResponse = jsonResponse({ message: RESET_PASSWORD_MESSAGE }, headers)
@@ -741,8 +732,6 @@ Deno.serve(async (req) => {
                 return genericResponse
             }
 
-            // ── Auth Utilities ────────────────────────────────────────
-
             case 'password-strength': {
                 const { password } = await req.json()
                 if (!password || password.length < 10) return jsonResponse({ value: 'weak' }, headers)
@@ -760,8 +749,6 @@ Deno.serve(async (req) => {
                 if (!name) return errorResponse('Name is required', headers, 400)
                 return jsonResponse({ normalizedName: normalizeName(name) }, headers)
             }
-
-            // ── Admin Operations ─────────────────────────────────────
 
             case 'admin-update-password': {
                 const body = await req.json()
@@ -787,8 +774,6 @@ Deno.serve(async (req) => {
                     .catch(() => {})
                 return jsonResponse({ success: true }, headers)
             }
-
-            // ── Session Management ────────────────────────────────────
 
             case 'create-session': {
                 const body = await req.json()

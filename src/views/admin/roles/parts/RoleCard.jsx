@@ -143,10 +143,8 @@ const RoleCard = ({
                 />
             </button>
 
-            {/* Expanded content */}
             {isExpanded && (
                 <div className="border-t border-border-light animate-fade-in motion-reduce:animate-none">
-                    {/* Actions bar */}
                     <div className="flex items-center gap-2 border-b border-border-light bg-bg-secondary px-5 py-3">
                         {hasITAccess && (
                             <>
@@ -216,7 +214,6 @@ const RoleCard = ({
                         </div>
                     </div>
 
-                    {/* Add permission inline */}
                     {addingPerm && (
                         <div className="flex items-center gap-2 border-b border-border-light bg-accent/5 px-5 py-3 animate-fade-slide-in motion-reduce:animate-none">
                             <input

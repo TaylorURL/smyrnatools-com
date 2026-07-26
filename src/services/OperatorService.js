@@ -83,7 +83,6 @@ class OperatorServiceImpl {
         const json = await apiPostOrThrow(`${SERVICE_PREFIX}/update`, { operator: update }, 'Failed to update operator')
         return new Operator(json?.data)
     }
-    /** Deletes an operator by employee ID. */
     async deleteOperator(employeeId) {
         if (!employeeId || !ValidationUtility.isValidUUID(employeeId)) throw new Error('Invalid Employee ID')
         return apiPostRequireSuccess(`${SERVICE_PREFIX}/delete`, { employeeId }, 'Operator was not deleted')

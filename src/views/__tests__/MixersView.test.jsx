@@ -3,8 +3,6 @@ import React from 'react'
 
 import MixersView from '../assets/mixers/MixersView'
 
-// --- Mocks ---
-
 const MOCK_MIXERS = [
     {
         assignedOperator: 'op-1',

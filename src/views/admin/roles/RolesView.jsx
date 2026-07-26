@@ -151,7 +151,6 @@ function RolesView() {
             />
 
             <div className="px-3 py-4 sm:px-4 md:px-6 lg:px-8">
-                {/* Alerts */}
                 {message && (
                     <div
                         role="status"
@@ -173,7 +172,6 @@ function RolesView() {
                     </div>
                 )}
 
-                {/* Role cards */}
                 <div className="space-y-3">
                     {sortedRoles.map((role) => (
                         <RoleCard

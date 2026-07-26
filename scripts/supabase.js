@@ -95,8 +95,6 @@ function tryNpx(args) {
     return spawnSync('npx', ['-y', 'supabase', ...args], { stdio: 'inherit', env: process.env })
 }
 
-// --- Entry point: resolve CLI binary and forward all arguments ---
-
 const args = process.argv.slice(2)
 let bin = findSupabase()
 let result

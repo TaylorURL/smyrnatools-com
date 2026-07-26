@@ -23,7 +23,6 @@ const pickupTruckConfig = {
     // Add button label in TopSection
     addButtonLabel: 'Add Pickup',
 
-    // --- Card (grid view) ---
     cardConfig: {
         getStatusColor: (item, statusColors) => statusColors[item.status] || 'var(--accent)',
         itemNumber: (item) => item.assigned || 'Not Assigned',
@@ -92,7 +91,6 @@ const pickupTruckConfig = {
         }
     ],
 
-    // Empty state
     emptyState: {
         addLabel: 'Add Pickup Truck',
         icon: 'fa-truck-pickup',
@@ -147,7 +145,6 @@ const pickupTruckConfig = {
     // Identity
     key: 'pickup-truck',
 
-    // --- List view columns ---
     listConfig: {
         colWidths: ['12%', '12%', '12%', '8%', '18%', '15%', '10%', '13%'],
         columns: [
