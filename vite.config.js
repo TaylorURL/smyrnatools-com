@@ -73,10 +73,10 @@ export default defineConfig(({ mode }) => {
             exclude: [
                 '**/node_modules/**',
                 '**/build/**',
-                // Tooling checkouts under .claude/ mirror the whole repo, so
-                // vitest's default glob finds a second copy of every test and
-                // runs it twice — including ones the exact-path excludes below
-                // are meant to skip. Drop the tree wholesale.
+                // Local tooling leaves a mirrored checkout of the repo in
+                // this ignored directory. The default glob walks into it and
+                // finds a second copy of every test — including the ones the
+                // exact-path excludes below are meant to skip.
                 '**/.claude/**',
                 'src/services/__tests__/DatabaseService.test.js',
                 'src/utils/__tests__/APIUtility.test.js',

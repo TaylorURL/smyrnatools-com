@@ -36,7 +36,6 @@ const AuthContext = createContext()
 export function useAuth() {
     return useContext(AuthContext)
 }
-// ── Private session helpers ───────────────────────────────────────────
 function clearAllSessionData() {
     sessionStorage.removeItem(SESSION_STORAGE_KEYS.CACHED_PLANTS)
     sessionStorage.removeItem(SESSION_STORAGE_KEYS.USER_ROLE)
@@ -84,7 +83,6 @@ async function whoami() {
         return null
     }
 }
-// ── Provider ──────────────────────────────────────────────────────────
 /**
  * Authentication provider that wraps the app and supplies auth state and methods.
  * Restores sessions on mount, manages DB session records, and lazy-loads user profiles after sign-in.

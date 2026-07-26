@@ -1,6 +1,6 @@
 /**
- * sendBeacon first so the hit survives an unload; keepalive fetch covers
- * browsers without it.
+ * sendBeacon first so the hit survives an unload; the keepalive fetch covers
+ * browsers without it as well as beacons the browser refuses to queue.
  *
  * The body goes out as text/plain rather than JSON to keep it a CORS-simple
  * request — a preflight would be dropped during unload. The ingest function

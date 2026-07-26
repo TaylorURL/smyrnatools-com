@@ -4,8 +4,6 @@ import React from 'react'
 
 import LoginView from '../common/login/LoginView'
 
-// --- Mocks ---
-
 const mockSignIn = jest.fn()
 const mockSignUp = jest.fn()
 

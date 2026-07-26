@@ -126,7 +126,6 @@ export default function ConversationContextRail({
     return (
         <aside className="hidden xl:flex shrink-0 flex-col w-[280px] overflow-y-auto bg-bg-primary border-l border-border-light">
             <div className="flex flex-col gap-3.5 p-3.5">
-                {/* Profile card */}
                 <div className="flex flex-col items-center gap-2 rounded p-4 text-center bg-bg-secondary border border-border-light">
                     <UserAvatar
                         name={displayName}
@@ -144,7 +143,6 @@ export default function ConversationContextRail({
                     </div>
                 </div>
 
-                {/* Shared assets */}
                 <ContextSection icon="fa-paperclip" label="Shared assets" count={sharedAssets.length}>
                     {sharedAssets.length === 0 ? (
                         <ContextEmpty>No assets referenced in this thread yet.</ContextEmpty>
@@ -181,7 +179,6 @@ export default function ConversationContextRail({
                     )}
                 </ContextSection>
 
-                {/* Activity */}
                 <ContextSection icon="fa-chart-line" label="Activity">
                     <div className="grid grid-cols-2 gap-2">
                         <ContextStat label="Sent" value={stats.sent} />
@@ -191,7 +188,6 @@ export default function ConversationContextRail({
                     </div>
                 </ContextSection>
 
-                {/* Quick actions */}
                 <ContextSection icon="fa-bolt" label="Quick actions">
                     <div className="flex flex-col gap-1.5">
                         <ContextActionButton

@@ -1,6 +1,6 @@
 import { ValidationUtility } from '../ValidationUtility'
 
-// --- Pure / synchronous methods only (async methods hit edge functions) ---
+// Pure / synchronous methods only (async methods hit edge functions)
 
 describe('ValidationUtility', () => {
     describe('isVIN', () => {

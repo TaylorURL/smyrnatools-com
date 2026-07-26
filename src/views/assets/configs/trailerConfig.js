@@ -153,7 +153,6 @@ const trailerConfig = {
         updated_last: 'updatedLast'
     },
 
-    // Refetch on detail close
     refetchOnDetailClose: true,
 
     searchFields: (item, query, { tractors, exactMatch }) => {

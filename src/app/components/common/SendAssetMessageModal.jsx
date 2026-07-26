@@ -111,7 +111,6 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                 className="w-full max-w-[460px] max-h-[85vh] flex flex-col overflow-hidden rounded-2xl bg-bg-secondary animate-[popIn_220ms_cubic-bezier(0.23,1,0.32,1)_both] motion-reduce:animate-none"
                 style={{ boxShadow: '0 16px 40px rgba(0, 0, 0, 0.25)' }}
             >
-                {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-border-light">
                     <span className="text-base font-semibold text-text-primary">Send {itemType}</span>
                     <button type="button"
@@ -140,7 +139,6 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                         </div>
                     ) : (
                         <>
-                            {/* Asset info */}
                             <div className="flex items-center gap-3 rounded-lg px-3.5 py-3 mb-4 bg-bg-primary border border-border-light">
                                 <span className="text-sm font-semibold text-text-primary">{itemNumber || 'N/A'}</span>
                                 <span className="text-xs text-text-secondary">{itemType}</span>
@@ -149,7 +147,6 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                 </span>
                             </div>
 
-                            {/* Recipient */}
                             <label className="block text-xs font-semibold mb-1.5 text-text-secondary">Send to</label>
                             {loading ? (
                                 <div
@@ -211,7 +208,6 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                             className="absolute left-0 right-0 mt-1 rounded-lg overflow-hidden flex flex-col z-10 bg-bg-primary border border-border-light"
                                             style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: '260px' }}
                                         >
-                                            {/* Search */}
                                             <div className="px-2.5 py-2 border-b border-border-light">
                                                 <div className="relative">
                                                     <i className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] pointer-events-none text-text-secondary" />
@@ -307,7 +303,6 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                 </div>
                             )}
 
-                            {/* Message */}
                             <label className="block text-xs font-semibold mb-1.5 text-text-secondary">
                                 Message <span className="font-normal">(optional)</span>
                             </label>
@@ -327,7 +322,6 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                 </div>
                             )}
 
-                            {/* Send */}
                             <button type="button"
                                 onClick={handleSend}
                                 disabled={disabled}

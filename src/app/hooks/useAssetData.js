@@ -18,7 +18,6 @@ export default function useAssetData({
 }) {
     const { service } = config
 
-    // --- Core state ---
     const [allItems, setAllItems] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [isRegionLoading, setIsRegionLoading] = useState(false)
@@ -36,7 +35,7 @@ export default function useAssetData({
     const regionCodeRef = useRef(preferences.selectedRegion?.code)
     regionCodeRef.current = preferences.selectedRegion?.code
 
-    // --- Attach isVerified to item ---
+    // Attach isVerified to item
     const attachIsVerified = useCallback(
         (obj) => {
             if (!obj || !config.attachIsVerified) return obj
@@ -45,7 +44,6 @@ export default function useAssetData({
         [config]
     )
 
-    // --- Load comment/issue counts ---
     const loadDetailCounts = useCallback(
         async (itemsList) => {
             if (!itemsList?.length) return
@@ -71,7 +69,6 @@ export default function useAssetData({
         [config.hasVinSearch, config.singularLabel, service]
     )
 
-    // --- Verification check ---
     const runVerificationCheck = useCallback(
         async (itemsToCheck) => {
             if (!config.verification?.cleanupCheck || !itemsToCheck?.length) return
@@ -91,7 +88,6 @@ export default function useAssetData({
         [config, loadDetailCounts, service]
     )
 
-    // --- Data fetching ---
     const fetchAllItems = useCallback(
         async (codes) => {
             try {
@@ -130,7 +126,7 @@ export default function useAssetData({
         [config, loadDetailCounts, runVerificationCheck, service]
     )
 
-    // --- Fetch operators (with comment counts for inline badges) ---
+    // Fetch operators (with comment counts for inline badges)
     const fetchOperators = useCallback(async () => {
         if (!config.hasOperatorAssignment) return
         try {
@@ -150,7 +146,7 @@ export default function useAssetData({
         }
     }, [config.hasOperatorAssignment])
 
-    // --- Fetch tractors (for Trailer lookup) ---
+    // Fetch tractors (for Trailer lookup)
     const fetchTractors = useCallback(async () => {
         if (!config.hasTractorAssignment) return
         try {
@@ -161,7 +157,7 @@ export default function useAssetData({
         }
     }, [config])
 
-    // --- Fetch plants (enriched with district data from the region) ---
+    // Fetch plants (enriched with district data from the region)
     const fetchPlants = useCallback(async (codes) => {
         try {
             const regionCode = regionCodeRef.current
@@ -178,7 +174,6 @@ export default function useAssetData({
         }
     }, [])
 
-    // --- Realtime subscription ---
     const handleRealtimeUpdate = useCallback(
         (eventType, data) => {
             const updateItemInList = (setter) => {
@@ -232,7 +227,6 @@ export default function useAssetData({
         return () => Database.removeChannel(channel)
     }, [config.channelName, config.singularLabel, config.tableName, handleRealtimeUpdate])
 
-    // --- Main data load ---
     useEffect(() => {
         async function fetchAllData() {
             setIsLoading(true)
@@ -251,7 +245,6 @@ export default function useAssetData({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [preferences])
 
-    // --- Region plant codes ---
     useEffect(() => {
         let cancelled = false
         async function loadAllowedPlants() {
@@ -281,7 +274,7 @@ export default function useAssetData({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [preferences.selectedRegion?.code])
 
-    // --- VIN search (Mixer, Tractor) ---
+    // VIN search (Mixer, Tractor)
     useEffect(() => {
         if (!config.hasVinSearch || !config.vinSearchFn) return
 

@@ -54,7 +54,6 @@ Deno.serve(async (req) => {
         const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', { auth: { autoRefreshToken: false, persistSession: false } })
 
         switch (endpoint) {
-            // --- Eligible Roles ---
 
             case 'fetch-eligible-roles': {
                 const auth = await requireAuthenticated(supabase, req, headers)
@@ -109,8 +108,6 @@ Deno.serve(async (req) => {
                 if (error) return errorResponse('Failed to check eligibility', headers, 400)
                 return jsonResponse({ eligible: !!data }, headers)
             }
-
-            // --- User Plant Assignments ---
 
             case 'fetch-user-plants': {
                 const auth = await requireAuthenticated(supabase, req, headers)

@@ -120,7 +120,6 @@ const AssetModals = forwardRef(function AssetModals(
 
     return (
         <>
-            {/* Add View */}
             {showAddSheet && (
                 <AddView
                     onClose={() => setShowAddSheet(false)}
@@ -135,7 +134,6 @@ const AssetModals = forwardRef(function AssetModals(
                 />
             )}
 
-            {/* Comment Modal */}
             {modals.comment && (
                 <CommentModalSection
                     itemId={modalItemId}
@@ -146,7 +144,6 @@ const AssetModals = forwardRef(function AssetModals(
                 />
             )}
 
-            {/* Issue Modal */}
             {modals.issue && (
                 <IssueModalSection
                     itemId={modalItemId}
@@ -157,7 +154,6 @@ const AssetModals = forwardRef(function AssetModals(
                 />
             )}
 
-            {/* Asset History Modal */}
             {modals.history && selectedItemForHistory && (
                 <HistoryViewSection
                     item={selectedItemForHistory}
@@ -166,7 +162,6 @@ const AssetModals = forwardRef(function AssetModals(
                 />
             )}
 
-            {/* Operator Comment Modal */}
             {modals.operatorComment && operatorModalTarget && (
                 <CommentModalSection
                     itemId={operatorModalTarget.employeeId}
@@ -180,7 +175,6 @@ const AssetModals = forwardRef(function AssetModals(
                 />
             )}
 
-            {/* Operator History Modal */}
             {modals.operatorHistory && operatorModalTarget && (
                 <HistoryViewSection
                     item={operatorModalTarget}
@@ -192,7 +186,6 @@ const AssetModals = forwardRef(function AssetModals(
                 />
             )}
 
-            {/* Verification Modal */}
             {verification.showVerifyModal && verification.verifyItem && config.verification && (
                 <VerificationRequirementsModal
                     assignedOperator={verification.verifyItem.assignedOperator}
@@ -227,7 +220,6 @@ const AssetModals = forwardRef(function AssetModals(
                 />
             )}
 
-            {/* Send Asset Message Modal */}
             {modals.sendMessage && sendMessageTarget && (
                 <SendAssetMessageModal
                     item={sendMessageTarget.item}
