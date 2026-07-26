@@ -39,12 +39,10 @@ function CardSection({
             className={`relative bg-bg-primary border border-border-light rounded-card shadow-card overflow-hidden mb-6 transition-[colors,transform,box-shadow] duration-200 motion-reduce:transition-none ${onSelect ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] active:opacity-80' : ''}`}
             {...cardProps}
         >
-            {/* Status color bar */}
             <div
                 className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg z-10"
                 style={{ background: statusColor }}
             />
-            {/* Verification flag */}
             {isVerified !== undefined && (
                 <div
                     className="absolute right-3 top-4 z-[5] text-xl drop-shadow-md"

@@ -92,7 +92,6 @@ Deno.serve(async (req) => {
         const supabase = createSupabaseClient()
 
         switch (endpoint) {
-            // ── Reads ───────────────────────────────────────────────
             case 'list': {
                 const body = await parseBody(req)
                 const { regionCode, status, plantCode } = body || {}
@@ -140,7 +139,6 @@ Deno.serve(async (req) => {
                 return jsonResponse({ data: data ?? [] }, headers)
             }
 
-            // ── Mutations ───────────────────────────────────────────
             case 'create': {
                 const body = await parseBody(req)
                 const { userId } = body || {}

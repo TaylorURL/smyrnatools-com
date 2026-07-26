@@ -36,7 +36,6 @@ function getRowDelay(index) {
     return Math.round(total)
 }
 
-/** Minimal row icon button — 20px tap target, no chrome, hover brightness. */
 const RowIconButton = ({ icon, title, onClick }) => (
     <button type="button"
         onClick={onClick}
@@ -49,10 +48,10 @@ const RowIconButton = ({ icon, title, onClick }) => (
 )
 
 /**
- * Asset list — dense, single-line rows on a solid `var(--bg-primary)`
- * surface with hairline dividers. Tightened from the previous version:
- * cell padding 1.5/2.5 (was 2/3), 12px body (was 12.5px), 9.5px status
- * pills, 5×5 row icons. Hover darkens the row to `var(--bg-tertiary)`.
+ * Asset list. Rows are deliberately dense and single-line: a plant's fleet runs
+ * to hundreds of assets, and anything taller turns scanning the list into
+ * scrolling it. Padding, type size and pill size are all tuned together — grow
+ * one and the row height goes with it.
  */
 function ListViewModeSection({
     filteredItems,

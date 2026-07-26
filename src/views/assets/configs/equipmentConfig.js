@@ -240,7 +240,6 @@ const equipmentConfig = {
         year_made: 'yearMade'
     },
 
-    // Refetch on detail close
     refetchOnDetailClose: true,
 
     searchFields: (item, query, { exactMatch }) => {
@@ -252,7 +251,6 @@ const equipmentConfig = {
 
     searchPlaceholder: 'Search by identifying number or equipment type...',
 
-    // Equipment selects full object
     selectsFullObject: true,
 
     service: EquipmentService,

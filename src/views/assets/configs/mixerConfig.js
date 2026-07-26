@@ -98,7 +98,6 @@ const mixerConfig = {
     // Duplicate detection - none for mixer
     duplicateChecks: [],
 
-    // Empty state
     emptyState: {
         addLabel: 'Add Mixer',
         icon: 'fa-truck',
@@ -114,14 +113,12 @@ const mixerConfig = {
     // Custom fetch method
     fetchItems: (codes) => MixerService.fetchMixersWithDetails(codes),
 
-    // Filter persistence
     filterPersistence: {
         filterKey: 'mixerFilters',
         resetFnKey: 'resetMixerFilters',
         updateFnKey: 'updateMixerFilter'
     },
 
-    // Modal identifier
     getModalIdentifier: (item) => item.truckNumber || 'Unknown',
 
     gridCardFields: [
@@ -250,7 +247,6 @@ const mixerConfig = {
         headerLabels: ['Plant', 'Truck #', 'Status', 'Operator', 'Cleanliness', 'Hours', 'VIN', 'Verified', 'More']
     },
 
-    // Operator config
     operatorConfig: {
         assignedField: 'assignedOperator',
         position: 'Mixer Operator',
@@ -259,7 +255,6 @@ const mixerConfig = {
 
     pluralLabel: 'Mixers',
 
-    // Post-fetch cleanup
     postFetchCleanup: (items) => MixerService.cleanupNullOperators(items),
 
     // Primary identifier
@@ -287,7 +282,6 @@ const mixerConfig = {
         year: 'year'
     },
 
-    // Recap config
     recapConfig: {
         operatorPosition: 'Mixer Operator'
     },
@@ -316,7 +310,6 @@ const mixerConfig = {
     // Select stores full object (MixerDetailView needs .id extracted)
     selectsFullObject: false,
 
-    // Service
     service: MixerService,
 
     singularLabel: 'Mixer',
@@ -334,7 +327,6 @@ const mixerConfig = {
         Verified: null
     },
 
-    // Special status filters
     specialStatusFilters: {
         'Down In Yard': (item) => item.status === 'In Shop' && item.shopStatus === 'down_in_yard',
         'In Shop': (item) => item.status === 'In Shop' && (item.shopStatus === 'in_shop' || !item.shopStatus),
@@ -418,7 +410,6 @@ const mixerConfig = {
     // localStorage key for view-mode persistence
     viewModeStorageKey: 'mixers_last_view_mode',
 
-    // VIN search
     vinSearchFn: (query) => MixerService.searchMixersByVinProcessed(query)
 }
 

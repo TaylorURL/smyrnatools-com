@@ -60,8 +60,6 @@ class BaseAssetService {
         this.allowedHistoryFields = config.allowedHistoryFields || null
     }
 
-    // ── Row parsing helpers ───────────────────────────────────────────
-
     /** Parses and (optionally) enriches a single row. Returns null for falsy input. */
     _hydrate(row) {
         if (!row) return null
@@ -72,8 +70,6 @@ class BaseAssetService {
     _hydrateList(rows) {
         return (rows ?? []).map((row) => this._hydrate(row))
     }
-
-    // ── Core CRUD ─────────────────────────────────────────────────────
 
     /** Fetches all entities (no enrichment by default — call sites that need it should map themselves). */
     async getAll() {
@@ -155,8 +151,6 @@ class BaseAssetService {
         return this._hydrate(json?.data)
     }
 
-    // ── Search & filter ───────────────────────────────────────────────
-
     /** VIN search — uppercases the query and returns parsed (un-enriched) rows. */
     async searchByVin(query) {
         if (!query?.trim()) throw new Error('Search query is required')
@@ -189,8 +183,6 @@ class BaseAssetService {
             regionCodes
         })
     }
-
-    // ── Comments ──────────────────────────────────────────────────────
 
     async fetchComments(entityId) {
         ValidationUtility.requireUUID(entityId, `${this.entityName} ID is required`)
@@ -225,8 +217,6 @@ class BaseAssetService {
         ValidationUtility.requireUUID(commentId, 'Comment ID is required')
         return apiPostRequireSuccess(`${this.servicePrefix}/delete-comment`, { commentId }, 'Failed to delete comment')
     }
-
-    // ── Issues ────────────────────────────────────────────────────────
 
     async fetchIssues(entityId) {
         ValidationUtility.requireUUID(entityId, `${this.entityName} ID is required`)
@@ -264,8 +254,6 @@ class BaseAssetService {
         return apiPostRequireSuccess(`${this.servicePrefix}/delete-issue`, { issueId }, 'Failed to delete issue')
     }
 
-    // ── Bulk counts ───────────────────────────────────────────────────
-
     async fetchAllCommentsCounts(entityIds) {
         return fetchAllCountsFromTable(this.commentsTable, this.idColumn, entityIds)
     }
@@ -273,8 +261,6 @@ class BaseAssetService {
     async fetchAllIssuesCounts(entityIds) {
         return fetchAllOpenIssueCountsFromTable(this.issuesTable, this.idColumn, entityIds)
     }
-
-    // ── History ───────────────────────────────────────────────────────
 
     /**
      * Fetches change history for one entity, optionally limited. History rows
