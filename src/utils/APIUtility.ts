@@ -19,7 +19,6 @@ const PUBLIC_AUTH_PATHS = new Set([
     '/auth-service/sign-in',
     '/auth-service/sign-up',
     '/auth-service/sign-out',
-    '/auth-service/create-session',
     '/auth-service/validate-session',
     '/auth-service/restore-session',
     '/auth-service/refresh-token',
@@ -105,9 +104,8 @@ const APIUtility = {
          * X-Session-Id and `__sessionUserId` / `__sessionId`) only get
          * populated when SessionService has in-memory credentials — which
          * happens on the localhost-dev path where cookies can't cross
-         * origins, and during the transition window when older clients
-         * still call `create-session` to seed memory. In production the
-         * cookie alone authenticates every call. */
+         * origins, seeded by the sign-in response. In production the cookie
+         * alone authenticates every call. */
         const credentials = getSessionCredentials()
         const hasMemoryCredentials = Boolean(credentials.__sessionUserId && credentials.__sessionId)
         const hasSessionSignal = hasMemoryCredentials || hasAuthFlagCookie()
