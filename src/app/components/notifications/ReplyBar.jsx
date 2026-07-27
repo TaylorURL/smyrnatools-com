@@ -16,7 +16,8 @@ export default function ReplyBar({ accentColor, onSend, otherName }) {
         try {
             await onSend(text)
         } catch {
-            /* empty */
+            // onSend surfaces its own error; this only has to stop the throw from
+            // leaving the composer stuck in the sending state.
         }
         setSending(false)
         textareaRef.current?.focus()

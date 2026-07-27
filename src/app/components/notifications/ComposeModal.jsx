@@ -41,7 +41,8 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                 const list = await MessageService.getRegionalRecipients(regionCode)
                 if (!cancelled) setRecipients(list)
             } catch {
-                /* empty */
+                // Leave the recipient list empty — the compose form still works
+                // with a manually chosen recipient.
             }
             if (!cancelled) setLoadingRecipients(false)
         }

@@ -20,7 +20,6 @@ const pickupTruckConfig = {
     // Detail/Add views (still type-specific, unchanged)
     DetailView: PickupTrucksDetailView,
 
-    // Add button label in TopSection
     addButtonLabel: 'Add Pickup',
 
     cardConfig: {
@@ -97,7 +96,6 @@ const pickupTruckConfig = {
         title: 'No Pickup Trucks Found'
     },
 
-    // Export issues configuration
     exportConfig: {
         assetType: 'Pickup Truck',
         identifierField: 'assigned'
@@ -129,10 +127,8 @@ const pickupTruckConfig = {
 
     hasTractorAssignment: false,
 
-    // Feature flags
     hasVerification: false,
 
-    // History modal type string
     historyType: 'pickup-truck',
 
     icon: 'fa-truck-pickup',
@@ -142,7 +138,6 @@ const pickupTruckConfig = {
     // Label used in CommentModalSection / IssueModalSection
     itemTypeLabel: 'Pickup Truck',
 
-    // Identity
     key: 'pickup-truck',
 
     listConfig: {
@@ -241,7 +236,6 @@ const pickupTruckConfig = {
         )
     },
 
-    // Search bar
     searchPlaceholder: 'Search by VIN, make, model, year, or name...',
 
     // Service (unchanged — still the concrete class)
@@ -249,7 +243,6 @@ const pickupTruckConfig = {
 
     singularLabel: 'Pickup Truck',
 
-    // Sorting
     sortMappings: SORT_MAPPINGS,
 
     // Pseudo-status filters that aren't simple status === value checks
@@ -275,15 +268,12 @@ const pickupTruckConfig = {
         Stationary: 'var(--status-stationary)'
     },
 
-    // Status dropdown options (filter bar)
     statusOptions: ['All Statuses', 'Active', 'Stationary', 'Spare', 'In Shop', 'Retired', 'Sold', 'Over 300k Miles'],
 
-    // Database / realtime
     tableName: 'pickup_trucks',
 
     viewClassName: 'pickup-trucks-view',
 
-    // localStorage key for view-mode persistence
     viewModeStorageKey: 'pickup_trucks_last_view_mode'
 }
 

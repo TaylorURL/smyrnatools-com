@@ -94,7 +94,6 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
 
     return (
         <div className="flex flex-col gap-4">
-            {/* ── Selected siblings ─────────────────────────────────── */}
             <div className="flex flex-col gap-2">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
                     Currently co-located with
@@ -141,7 +140,6 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                 )}
             </div>
 
-            {/* ── Add a sibling plant (existing plant row) ──────────── */}
             <div className="flex flex-col gap-2">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
                     Add a sibling plant

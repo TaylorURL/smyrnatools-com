@@ -101,7 +101,6 @@ const tractorConfig = {
 
     hasTractorAssignment: false,
 
-    // Feature flags
     hasVerification: true,
 
     hasVinSearch: true,

@@ -93,7 +93,6 @@ const trailerConfig = {
 
     hasTractorAssignment: true,
 
-    // Feature flags
     hasVerification: false,
 
     hasVinSearch: false,
