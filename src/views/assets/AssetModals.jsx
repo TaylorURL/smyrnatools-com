@@ -232,7 +232,6 @@ const AssetModals = forwardRef(function AssetModals(
                 />
             )}
 
-            {/* Recap Modal (Mixer) */}
             {config.hasRecap && (
                 <RecapModalSection
                     isAllPlants={!selectedPlant}

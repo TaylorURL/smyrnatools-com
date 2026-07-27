@@ -200,17 +200,14 @@ async function notifyGuestLoginIfApplicable(
 }
 
 /**
- * Lightweight caller identity check for bootstrap-phase endpoints where
- * no session row exists yet (sign-in doesn't create one). Extracts the
- * caller's userId from cookies, headers, or body fallback fields and
- * returns it — or null if no identity signal is present. Does NOT
- * validate against the sessions table, so this is weaker than
- * requireAuthenticated — use only for endpoints that verify ownership
- * via other means (e.g. matching body.userId to the caller).
+ * Reads the session id the caller presented, in the same precedence order as
+ * requireSession: HttpOnly cookie first, then the header/body fallbacks used
+ * by the localhost-dev path. Only meaningful after requireAuthenticated has
+ * confirmed the id belongs to a live session.
  */
-function extractCallerUserId(req: Request, body?: any): string | null {
+function presentedSessionId(req: Request, body?: any): string | null {
     const cookies = readSessionCookies(req)
-    return cookies.userId || req.headers.get('x-user-id') || body?.__sessionUserId || null
+    return cookies.sessionId || req.headers.get('x-session-id') || body?.__sessionId || null
 }
 
 async function requireElevatedCaller(supabase: any, req: Request, headers: any, body?: any): Promise<Response | null> {
@@ -484,30 +481,15 @@ Deno.serve(async (req) => {
             }
 
             case 'restore-session': {
-                const body = await req.json()
-                const cookies = readSessionCookies(req)
-                const userId = body.userId || cookies.userId || req.headers.get('x-user-id')
-                if (!userId) return jsonResponse({ success: false }, headers)
-
-                const sessionId =
-                    body.sessionId ||
-                    body.__sessionId ||
-                    cookies.sessionId ||
-                    req.headers.get('x-session-id')
-
-                if (sessionId) {
-                    const { data: sessionData } = await supabase
-                        .from(SESSIONS_TABLE)
-                        .select('id, last_active')
-                        .eq('id', sessionId)
-                        .eq('user_id', userId)
-                        .maybeSingle()
-                    if (!sessionData) return jsonResponse({ success: false }, headers)
-                    const lastActive = new Date(sessionData.last_active)
-                    const expiry = new Date()
-                    expiry.setDate(expiry.getDate() - SESSION_EXPIRY_DAYS)
-                    if (lastActive < expiry) return jsonResponse({ success: false }, headers)
-                }
+                const body = await req.json().catch(() => ({}))
+                /* The restored identity comes from the caller's live session
+                 * row — never from the request body. Trusting a body/header
+                 * userId here would hand any caller another user's email and
+                 * profile just by naming their id. */
+                const restoreAuth = await requireAuthenticated(supabase, req, headers, body)
+                if (restoreAuth instanceof Response) return jsonResponse({ success: false }, headers)
+                const userId = restoreAuth
+                const sessionId = presentedSessionId(req, body)
 
                 const timeoutPromise = new Promise((_, reject) =>
                     setTimeout(() => reject(new Error('Session restore timed out')), SESSION_RESTORE_TIMEOUT)
@@ -552,9 +534,9 @@ Deno.serve(async (req) => {
                 const body = await req.json()
                 const { userId } = body
                 if (!userId) return errorResponse('User ID required', headers, 400)
-                const callerUserId = extractCallerUserId(req, body)
-                if (!callerUserId || callerUserId !== userId)
-                    return errorResponse('Unauthorized', headers, 401)
+                const callerUserId = await requireAuthenticated(supabase, req, headers, body)
+                if (callerUserId instanceof Response) return callerUserId
+                if (callerUserId !== userId) return errorResponse('Forbidden', headers, 403)
 
                 const { data: profileData, error } = await supabase
                     .from(PROFILES_TABLE)
@@ -775,40 +757,13 @@ Deno.serve(async (req) => {
                 return jsonResponse({ success: true }, headers)
             }
 
-            case 'create-session': {
-                const body = await req.json()
-                const { userId, sessionId, browser, os, device, userAgent } = body
-                if (!userId || !sessionId) return errorResponse('userId and sessionId are required', headers, 400)
-                const callerCreate = extractCallerUserId(req, body)
-                if (!callerCreate || callerCreate !== userId)
-                    return errorResponse('Unauthorized', headers, 401)
-                const now = nowISO()
-                const { error } = await supabase.from('users_sessions').upsert(
-                    {
-                        id: sessionId,
-                        user_id: userId,
-                        browser: browser || null,
-                        os: os || null,
-                        device: device || null,
-                        user_agent: userAgent || null,
-                        created_at: now,
-                        last_active: now
-                    },
-                    { onConflict: 'id' }
-                )
-                if (error) return errorResponse('Failed to create session', headers, 500)
-                /* JWT minting is optional: this project uses Supabase's
-                 * asymmetric (JWKS) auth, so a JWT signed with the symmetric
-                 * SUPABASE_JWT_SECRET isn't accepted by PostgREST anyway.
-                 * Session auth runs entirely off the users_sessions row
-                 * via X-User-Id / X-Session-Id headers. If the secret is
-                 * configured we still mint a JWT for forward-compatibility,
-                 * but its absence is no longer a hard failure. */
-                const jwtSecret = (Deno.env.get('SUPABASE_JWT_SECRET') ?? Deno.env.get('JWT_SECRET'))
-                if (!jwtSecret) return jsonResponse({ success: true }, headers)
-                const jwt = await mintSessionJwt(userId, sessionId, jwtSecret, JWT_TTL_SECONDS)
-                return jsonResponse({ success: true, jwt, expiresIn: JWT_TTL_SECONDS }, headers)
-            }
+            /* `create-session` is deliberately gone. It let the caller name
+             * both the user id and the session id it wanted, and the only
+             * "authorisation" was that the two attacker-supplied values
+             * matched — so anyone who knew a user id could mint a working
+             * session for that account. Sessions are now issued solely by
+             * `sign-in` / `sign-up`, which generate the id server-side after
+             * verifying the password. */
 
             case 'refresh-token': {
                 const { userId, sessionId } = await req.json()
@@ -832,7 +787,7 @@ Deno.serve(async (req) => {
                     .eq('id', sessionId)
                     .then(() => {})
                     .catch(() => {})
-                /* Optional JWT mint — see notes on create-session. */
+                /* Optional JWT mint — see notes on sign-in. */
                 const jwtSecret = (Deno.env.get('SUPABASE_JWT_SECRET') ?? Deno.env.get('JWT_SECRET'))
                 if (!jwtSecret) return jsonResponse({ success: true }, headers)
                 const jwt = await mintSessionJwt(userId, sessionId, jwtSecret, JWT_TTL_SECONDS)
@@ -843,8 +798,8 @@ Deno.serve(async (req) => {
                 const body = await req.json()
                 const { sessionId } = body
                 if (!sessionId) return errorResponse('sessionId is required', headers, 400)
-                const callerDelete = extractCallerUserId(req, body)
-                if (!callerDelete) return errorResponse('Unauthorized', headers, 401)
+                const callerDelete = await requireAuthenticated(supabase, req, headers, body)
+                if (callerDelete instanceof Response) return callerDelete
                 await supabase
                     .from(SESSIONS_TABLE)
                     .delete()
@@ -874,22 +829,16 @@ Deno.serve(async (req) => {
             }
 
             case 'whoami': {
-                const cookies = readSessionCookies(req)
-                const userId = cookies.userId || req.headers.get('x-user-id')
-                if (!userId) return errorResponse('Not authenticated', headers, 401)
-                const sessionId = cookies.sessionId || req.headers.get('x-session-id')
+                const body = await req.json().catch(() => ({}))
+                /* A user id on its own proves nothing — it has to come with a
+                 * session id that still resolves to a live row, or this
+                 * endpoint would confirm any identity a caller cared to
+                 * assert and the client would render the app signed in. */
+                const whoamiAuth = await requireAuthenticated(supabase, req, headers, body)
+                if (whoamiAuth instanceof Response) return whoamiAuth
+                const userId = whoamiAuth
+                const sessionId = presentedSessionId(req, body)
                 if (sessionId) {
-                    const { data: sess } = await supabase
-                        .from(SESSIONS_TABLE)
-                        .select('id, last_active')
-                        .eq('id', sessionId)
-                        .eq('user_id', userId)
-                        .maybeSingle()
-                    if (!sess) return errorResponse('Not authenticated', headers, 401)
-                    const lastActive = new Date(sess.last_active)
-                    const expiry = new Date()
-                    expiry.setDate(expiry.getDate() - SESSION_EXPIRY_DAYS)
-                    if (lastActive < expiry) return errorResponse('Session expired', headers, 401)
                     /* Sliding window — bump server-side last_active AND
                      * re-issue the cookies with a fresh Max-Age. The
                      * AuthContext visibility probe hits this endpoint

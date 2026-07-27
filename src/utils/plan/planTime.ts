@@ -1,8 +1,9 @@
 import { PLAN_TIME_ZONE } from '../../app/constants/planConstants'
 
-/* ── CST anchored calendar helper ────────────────────────────────────────
- *  Smyrna's operations run on Central time regardless of where the
- *  dispatcher (or developer) is sitting, so "today" is resolved in CST. */
+/*
+ * Smyrna's operations run on Central time regardless of where the dispatcher
+ * (or developer) is sitting, so "today" is always resolved in CST.
+ */
 
 const CST_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat('en-CA', {
     day: '2-digit',

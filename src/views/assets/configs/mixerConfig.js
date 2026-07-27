@@ -13,20 +13,16 @@ const mixerConfig = {
     // Card config - uses MixerCard directly
     CardComponent: MixerCard,
 
-    // Detail/Add views
     DetailView: MixerDetailView,
 
-    // Add button label in TopSection
     addButtonLabel: 'Add Mixer',
 
-    // Add view props
     addViewCallbackProp: 'onMixerAdded',
 
     addViewPassesOperators: true,
 
     addViewPassesPlants: true,
 
-    // Attach isVerified method to each item
     attachIsVerified: (obj) => {
         if (!obj) return obj
         obj.isVerified = function () {
@@ -104,7 +100,6 @@ const mixerConfig = {
         title: 'No Mixers Found'
     },
 
-    // Export issues configuration
     exportConfig: {
         assetType: 'Mixer',
         identifierField: 'truckNumber'
@@ -164,12 +159,10 @@ const mixerConfig = {
 
     hasTractorAssignment: false,
 
-    // Feature flags
     hasVerification: true,
 
     hasVinSearch: true,
 
-    // History modal type string
     historyType: 'mixer',
 
     icon: 'fa-truck',
@@ -179,7 +172,6 @@ const mixerConfig = {
     // Label used in CommentModalSection / IssueModalSection
     itemTypeLabel: 'Mixer',
 
-    // Identity
     key: 'mixer',
 
     // List view columns
@@ -257,12 +249,10 @@ const mixerConfig = {
 
     postFetchCleanup: (items) => MixerService.cleanupNullOperators(items),
 
-    // Primary identifier
     primaryField: 'truckNumber',
 
     primaryLabel: 'Truck #',
 
-    // Realtime INSERT/UPDATE field mapping
     realtimeFieldMap: {
         assigned_operator: 'assignedOperator',
         assigned_plant: 'assignedPlant',
@@ -304,7 +294,6 @@ const mixerConfig = {
         return truckMatch || operatorMatch || vinMatch
     },
 
-    // Search bar
     searchPlaceholder: 'Search by truck or operator...',
 
     // Select stores full object (MixerDetailView needs .id extracted)
@@ -314,7 +303,6 @@ const mixerConfig = {
 
     singularLabel: 'Mixer',
 
-    // Sorting
     sortMappings: {
         Cleanliness: 'cleanlinessRating',
         Hours: 'hours',
@@ -358,7 +346,6 @@ const mixerConfig = {
         Spare: 'var(--status-spare)'
     },
 
-    // Status dropdown options (filter bar)
     statusOptions: [
         'All Statuses',
         'Active',
@@ -375,7 +362,6 @@ const mixerConfig = {
         'Open Issues'
     ],
 
-    // Database / realtime
     tableName: 'mixers',
 
     // Verification config
@@ -407,7 +393,6 @@ const mixerConfig = {
 
     viewClassName: 'mixers-view',
 
-    // localStorage key for view-mode persistence
     viewModeStorageKey: 'mixers_last_view_mode',
 
     vinSearchFn: (query) => MixerService.searchMixersByVinProcessed(query)
