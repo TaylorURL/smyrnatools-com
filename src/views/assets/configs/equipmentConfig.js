@@ -131,7 +131,6 @@ const equipmentConfig = {
 
     hasTractorAssignment: false,
 
-    // Feature flags
     hasVerification: true,
 
     hasVinSearch: false,

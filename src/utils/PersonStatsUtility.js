@@ -291,7 +291,7 @@ const personRow = (person, extras = {}) => ({
  *  read the full region+plant pool; period-bound counts / lists filter by
  *  lifecycle event date against `isWithinRange`. */
 export const computeHiringTraining = ({ isWithinRange, perPlant, regionPlantScopedItems }) => {
-    /* ── Snapshot lists (region+plant scope, no date filter) ───────── */
+    /* Snapshot lists: region+plant scope, no date filter. */
 
     const pendingStarts = regionPlantScopedItems
         .filter((person) => person.status === 'Pending Start')
@@ -354,7 +354,7 @@ export const computeHiringTraining = ({ isWithinRange, perPlant, regionPlantScop
         .map((row) => ({ active: row.active, code: row.code, name: row.name }))
         .slice(0, 10)
 
-    /* ── Period-bound counts + lists ──────────────────────────────── */
+    /* Period-bound counts and lists. */
 
     const isInPeriod = isWithinRange ? isWithinRange : () => true
     const periodActive = !!isWithinRange
