@@ -29,6 +29,7 @@ yarn-error.log*
 /.github/instructions.md
 public/changelog.txt
 .claude/
+CLAUDE.md
 .agents/
 .bot/
 skills-lock.json
@@ -48,3 +49,4 @@ badge-designs.html
 *.pfx
 id_rsa
 id_ed25519
+supabase/.temp/
