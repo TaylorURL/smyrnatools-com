@@ -1,7 +1,8 @@
 /**
  * Maps raw database realtime payloads into the camelCase shape used by the
- * operators list state. Kept identical to the original inline mappers so live
- * INSERT/UPDATE behaviour does not change.
+ * operators list state. Realtime rows arrive as the table's own snake_case
+ * columns rather than through the service layer, so they need converting before
+ * they can sit alongside rows the list already holds.
  */
 
 const nowIso = () => new Date().toISOString()
