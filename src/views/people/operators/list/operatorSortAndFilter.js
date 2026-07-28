@@ -1,8 +1,8 @@
 /**
  * Pure derivation: filter the operators list by search/plant/region/status/
  * position, then sort with a manual default ordering or by the chosen column.
- * Behavior is byte-for-byte identical to the original inline IIFE in
- * OperatorsView so live re-renders produce the same order and matches.
+ * Kept free of component state so a realtime row arriving mid-session re-derives
+ * the same order it would have had on a cold load.
  */
 
 const STATUS_VALUES = ['Active', 'Light Duty', 'Pending Start', 'Training', 'Terminated', 'No Hire']
