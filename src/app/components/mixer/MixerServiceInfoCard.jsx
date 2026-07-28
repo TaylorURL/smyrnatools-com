@@ -7,7 +7,8 @@ import DetailViewSection from '../sections/DetailViewSection'
 
 const formatDate = (date) => (date ? DateUtility.toLocalDateString(date) : '')
 
-/** Service Date + Hours + Chip Date. Hidden help text matches the original. */
+/** Service Date + Hours + Chip Date. Service is judged on the 180-day default
+ *  while the chip date gets its own shorter window. */
 export default function MixerServiceInfoCard({
     canEditMixer,
     hours,

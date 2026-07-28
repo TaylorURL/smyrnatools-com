@@ -291,7 +291,11 @@ function countActiveOperatorsInScope(
 
 /**
  * Returns true if a date exceeds the given day threshold from today.
- * Mixer/Tractor/Equipment default to 180 days; Trailer uses 90; Chip checks use 90.
+ *
+ * The threshold is the caller's to supply — nothing here knows what kind of
+ * asset it is looking at. Mixer/Tractor/Equipment rely on the 180-day default;
+ * trailer and chip checks are expected to pass 90 explicitly, so a call site
+ * that omits it silently gets the slower 180-day rule instead.
  */
 function isServiceOverdue(serviceDate: string | null | undefined, thresholdDays = 180): boolean {
     if (!serviceDate) return false
@@ -304,8 +308,8 @@ function isServiceOverdue(serviceDate: string | null | undefined, thresholdDays 
 }
 
 /**
- * Returns the number of items whose service date exceeds the threshold.
- * Defaults to 180 days (override to 90 for trailers).
+ * Counts items whose service date is past the threshold, reading the date from
+ * whichever field is named so chip dates can be counted the same way.
  */
 function getNeedServiceCount(items: AssetRow[], serviceDateField = 'lastServiceDate', thresholdDays = 180): number {
     if (!Array.isArray(items)) return 0
