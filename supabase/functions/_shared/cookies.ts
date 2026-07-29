@@ -70,8 +70,10 @@ export function buildClearSessionCookieHeaders(): string[] {
 }
 
 /**
- * Parses the request's Cookie header into a plain map. Returns null for
- * either credential when the cookie is missing. Values are URL-decoded.
+ * Pulls just the session credentials out of the request's Cookie header. Either
+ * field is null when its cookie is absent, so callers always get the pair and
+ * decide for themselves what a half-present session means. Values are
+ * URL-decoded, falling back to the raw text if the encoding is malformed.
  */
 export function readSessionCookies(req: Request): { userId: string | null; sessionId: string | null } {
     const raw = req.headers.get('cookie') ?? ''
