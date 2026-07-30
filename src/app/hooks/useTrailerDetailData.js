@@ -67,9 +67,9 @@ export function useRegionPlantCodes(selectedRegionCode) {
 }
 
 /**
- * Loads the comments and maintenance issues belonging to the trailer. Used by
- * the (unused) email-export helper; preserved to keep parity with the
- * original view.
+ * Loads the comments and maintenance issues belonging to the trailer. The data
+ * feeds buildTrailerExportEmail; TrailerDetailView calls this without binding
+ * the return value, so today the fetch happens and the result goes nowhere.
  */
 export function useTrailerCommentsAndIssues(trailer, trailerId) {
     const [comments, setComments] = useState([])
