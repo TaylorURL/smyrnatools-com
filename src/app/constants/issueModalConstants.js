@@ -2,8 +2,8 @@
  * Severity styling tokens for the issue modal. `fg` carries the saturated
  * accent used by non-pill accents (e.g. the left-border on the send-issue
  * modal card). `icon` is the FontAwesome glyph rendered inside the pill.
- * Pill backgrounds now flow through the unified `<Badge />` component via
- * `SEVERITY_TO_TONE` below.
+ * Pill backgrounds come from the shared `<Badge />` component instead, mapped
+ * by `SEVERITY_TO_TONE` below.
  *
  * Severity follows the universal red → amber → green ramp:
  *   High   = danger (red)   — needs immediate attention
