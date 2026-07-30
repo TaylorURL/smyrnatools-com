@@ -371,20 +371,16 @@ Deno.serve(async (req) => {
                     return errorResponse('Profile creation failed', headers, 500)
                 }
 
-                /* Side effects — non-fatal. Earlier, this was a single
-                 * `Promise.all` that threw on any failure; a schema drift
-                 * in `users_preferences` (e.g. a column missing from the
-                 * upsert payload that doesn't exist in the table yet) would
-                 * 500 the entire sign-up after the user row was already
-                 * inserted, leaving an orphaned account and a generic
-                 * "Internal server error" on the client. Switching to
-                 * `Promise.allSettled` lets the user creation succeed; the
-                 * preference row is auto-created on first save by the
-                 * PreferencesContext, and the Guest role can be assigned
-                 * by an admin if it didn't land here. Failures are logged
-                 * so they show up in the function dashboard, and surface
-                 * as a non-blocking `warnings` array on the response so
-                 * the client can flag them later. */
+                /* Side effects, deliberately non-fatal. The user and profile
+                 * rows are already written by this point, so a rejection here
+                 * must not fail the sign-up — `Promise.all` would 500 the
+                 * request and leave an orphaned account behind, which is what
+                 * schema drift in `users_preferences` (a column in the upsert
+                 * payload that the table does not have) produces. Neither
+                 * result is load-bearing: PreferencesContext creates the
+                 * preference row on first save, and an admin can assign the
+                 * Guest role. Failures are logged for the function dashboard
+                 * and returned as a non-blocking `warnings` array. */
                 const sideEffectResults = await Promise.allSettled([
                     supabase
                         .from(PREFERENCES_TABLE)

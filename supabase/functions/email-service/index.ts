@@ -600,7 +600,8 @@ Deno.serve(async (req) => {
                     finalCcList = []
                 }
 
-                // 9. Build email from template (after debug redirect so debugInfo is available)
+                // Build the email body last, so the debug redirect above has already
+                // produced debugInfo for the template to annotate.
                 const { subject, html, text } = buildReportSubmittedEmail({
                     submitterName,
                     reportTitle,

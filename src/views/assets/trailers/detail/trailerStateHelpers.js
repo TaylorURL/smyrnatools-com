@@ -157,7 +157,8 @@ export async function saveTrailerWithOverrides({ trailer, current, overrideValue
 
 /**
  * Builds a mailto: payload summarizing the trailer + comments + open issues.
- * Unused by the current UI; preserved for parity with the original file.
+ * Nothing renders it today — it is kept as the ready-made export for whichever
+ * surface wires up a "send this trailer" action.
  */
 export function buildTrailerExportEmail(trailer, plants, tractors, comments, issues) {
     if (!trailer) return null
