@@ -57,6 +57,7 @@ Running a ready-mix operation means tracking hundreds of moving assets, an opera
 | Styling | Tailwind CSS 3 — light / dark / gray themes via semantic tokens, no plain CSS |
 | Backend | Supabase — Postgres, Auth, Storage, Deno edge functions |
 | Charts & maps | Recharts · Leaflet |
+| Icons | Font Awesome Free |
 | Export | ExcelJS · jsPDF |
 | Monitoring | Sentry · Vercel Analytics + Speed Insights |
 | Testing | Vitest + Testing Library |
@@ -132,7 +133,8 @@ flowchart LR
 smyrnatools-com/
 ├── public/                 Logos, favicon, PWA manifest + service worker
 ├── docs/                   Operational reference data (workflow definitions)
-├── scripts/                Dev/ops helpers — Supabase CLI wrapper, CalVer, email templates
+├── scripts/                Dev/ops helpers — Supabase CLI wrapper, CalVer, email templates,
+│                           dispatch-sync userscript
 ├── supabase/functions/     Deno edge functions (deployed individually) — all database writes
 └── src/
     ├── index.jsx           Entry — Sentry init, context providers, root <App/>
