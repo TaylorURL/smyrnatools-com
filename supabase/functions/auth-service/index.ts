@@ -599,11 +599,27 @@ Deno.serve(async (req) => {
 
             case 'update-password': {
                 const body = await req.json()
-                const { password, userId } = body
+                const { password, currentPassword, userId } = body
                 if (!userId) return errorResponse('No authenticated user', headers, 401)
                 const authPwd = await requireAuthenticated(supabase, req, headers, body)
                 if (authPwd instanceof Response) return authPwd
                 if (authPwd !== userId) return errorResponse('Forbidden', headers, 403)
+                /* A live session alone is not enough to set a new password. Whoever holds a
+                   stolen session cookie could otherwise lock the real owner out permanently,
+                   so the current password is re-checked here rather than only in the UI. */
+                if (!currentPassword) return errorResponse('Current password is required', headers, 400)
+                const { data: current, error: currentErr } = await supabase
+                    .from(USERS_TABLE)
+                    .select('password_hash, salt')
+                    .eq('id', userId)
+                    .single()
+                if (currentErr || !current) return errorResponse('User not found', headers, 404)
+                const { valid: currentValid } = await verifyPassword(
+                    currentPassword,
+                    current.salt,
+                    current.password_hash
+                )
+                if (!currentValid) return errorResponse('Current password is incorrect', headers, 401)
                 if (validatePasswordStrength(password).value === 'weak')
                     return errorResponse('Weak password', headers, 400)
                 const salt = generateSalt()
