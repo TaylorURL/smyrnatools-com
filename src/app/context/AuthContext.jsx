@@ -15,10 +15,9 @@ import { SESSION_STORAGE_KEYS } from '../constants/authConstants'
 const AUTH_FUNCTION = '/auth-service'
 
 /* Re-mint the session JWT when it has less than this many seconds of life
- * left. With a 1h server-side TTL and a 10-minute floor we get ~5 silent
- * refreshes per active hour, well under the rate the auth-service can
- * handle and small enough that a tab waking from sleep almost always still
- * holds a usable token. */
+ * left. Against the auth-service's 1h TTL that is roughly one silent refresh
+ * per active hour, and the 10-minute margin is wide enough that a tab waking
+ * from sleep almost always still holds a usable token. */
 const JWT_REFRESH_FLOOR_SECONDS = 600
 const JWT_REFRESH_INTERVAL_MS = 60 * 1000
 /* Visibility wake-up probe throttle. Tab focus / visibility events fire
@@ -68,7 +67,8 @@ async function refreshJwtIfPossible() {
 
 /**
  * Asks the server who the cookie identifies. Returns the userId on success
- * or null. AuthContext uses this in place of the old localStorage probe.
+ * or null. The server is the only thing that can answer this — the cookie is
+ * HttpOnly, so the client can see that one exists but never what it holds.
  */
 async function whoami() {
     const hasMemory = Boolean(getSessionUserId())
@@ -152,7 +152,7 @@ export function AuthProvider({ children }) {
     /* Silent token refresh — only runs when a JWT was actually minted at
      * login (which requires SUPABASE_JWT_SECRET on the edge function side).
      * If no JWT is present we skip entirely; the app falls through to the
-     * anon key like it always has, and we don't spam refresh-token. */
+     * anon key, and we don't spam refresh-token. */
     useEffect(() => {
         const tick = () => {
             const existingJwt = getSessionJwt()

@@ -114,12 +114,12 @@ async function isValidUUID(uuid: string): Promise<boolean> {
  *  trim. Mirrors `normalizeName` on the server (`auth-helpers.ts`) so the
  *  values sent to `/auth-service/sign-up` match what the server validates.
  *
- *  Originally a network round-trip to `/auth-service/normalize-name`. That
- *  was fragile — any failure (preflight, transient 5xx, network blip)
- *  silently returned an empty string and the sign-up call below would
- *  reject with "All fields are required". Inlining the logic kills the
- *  failure mode and removes a pointless round-trip; the server still
- *  enforces the same shape on the actual sign-up request. */
+ *  Kept local rather than calling `/auth-service/normalize-name`: any
+ *  failure there (preflight, transient 5xx, network blip) yields an empty
+ *  string, and the sign-up call below then rejects with "All fields are
+ *  required" for a name the user typed correctly. The server enforces the
+ *  same shape on the sign-up request itself, so nothing is lost by not
+ *  asking it twice. */
 function normalizeName(name: string): string {
     const trimmed = String(name || '').trim()
     if (!trimmed) return ''
@@ -135,11 +135,10 @@ function optionalString(v: unknown): string | typeof v {
  *  client-side strength meter reads the same scale the server uses to
  *  accept or reject the password on the actual sign-up request.
  *
- *  Originally a network round-trip to `/auth-service/password-strength`.
- *  When the call failed (preflight, anon-key, transient 5xx) the helper
- *  silently returned 'weak', making the meter show weak forever even on
- *  a genuinely strong password. Inlining the scoring removes the failure
- *  mode; the server still re-validates on submit.
+ *  Kept local rather than calling `/auth-service/password-strength`: any
+ *  failure there (preflight, anon-key, transient 5xx) yields 'weak', which
+ *  pins the meter at weak even for a genuinely strong password. The server
+ *  re-validates on submit.
  *
  *  Scoring keeps the server's exact thresholds:
  *    score < 4 → weak, score 4 → medium, score >= 5 → strong. */
