@@ -48,7 +48,8 @@ const RESET_PASSWORD_MESSAGE = 'If an account exists for this email, a new passw
 const DEFAULT_BASE_FILTERS = { searchText: '', selectedPlant: '', statusFilter: '', viewMode: 'grid' }
 const DEFAULT_ROLE_FILTERS = { roleFilter: '', searchText: '', selectedPlant: '', viewMode: 'grid' }
 
-// Persistent rate limiting (database-backed)
+// Rate-limit state lives in the database because edge invocations share no
+// memory — an in-process counter would reset on every cold start.
 const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_MAX_ATTEMPTS = 5
 const RATE_LIMIT_TABLE = 'rate_limits'
@@ -57,7 +58,7 @@ async function isRateLimited(key: string, supabase: any): Promise<boolean> {
     const now = new Date()
     const windowStart = new Date(now.getTime() - RATE_LIMIT_WINDOW_MS).toISOString()
     try {
-        // Clean up expired entries and count recent attempts in one flow
+        // No scheduled job prunes this table, so each check clears what it can.
         await supabase.from(RATE_LIMIT_TABLE).delete().lt('expires_at', now.toISOString())
         const { count, error } = await supabase
             .from(RATE_LIMIT_TABLE)
@@ -67,7 +68,6 @@ async function isRateLimited(key: string, supabase: any): Promise<boolean> {
         if (error) return false // Fail open if database is unavailable
         const currentCount = count ?? 0
         if (currentCount >= RATE_LIMIT_MAX_ATTEMPTS) return true
-        // Record this attempt
         await supabase.from(RATE_LIMIT_TABLE).insert({
             key,
             created_at: now.toISOString(),
@@ -599,11 +599,27 @@ Deno.serve(async (req) => {
 
             case 'update-password': {
                 const body = await req.json()
-                const { password, userId } = body
+                const { password, currentPassword, userId } = body
                 if (!userId) return errorResponse('No authenticated user', headers, 401)
                 const authPwd = await requireAuthenticated(supabase, req, headers, body)
                 if (authPwd instanceof Response) return authPwd
                 if (authPwd !== userId) return errorResponse('Forbidden', headers, 403)
+                /* A live session alone is not enough to set a new password. Whoever holds a
+                   stolen session cookie could otherwise lock the real owner out permanently,
+                   so the current password is re-checked here rather than only in the UI. */
+                if (!currentPassword) return errorResponse('Current password is required', headers, 400)
+                const { data: current, error: currentErr } = await supabase
+                    .from(USERS_TABLE)
+                    .select('password_hash, salt')
+                    .eq('id', userId)
+                    .single()
+                if (currentErr || !current) return errorResponse('User not found', headers, 404)
+                const { valid: currentValid } = await verifyPassword(
+                    currentPassword,
+                    current.salt,
+                    current.password_hash
+                )
+                if (!currentValid) return errorResponse('Current password is incorrect', headers, 401)
                 if (validatePasswordStrength(password).value === 'weak')
                     return errorResponse('Weak password', headers, 400)
                 const salt = generateSalt()
@@ -753,13 +769,12 @@ Deno.serve(async (req) => {
                 return jsonResponse({ success: true }, headers)
             }
 
-            /* `create-session` is deliberately gone. It let the caller name
-             * both the user id and the session id it wanted, and the only
-             * "authorisation" was that the two attacker-supplied values
-             * matched — so anyone who knew a user id could mint a working
-             * session for that account. Sessions are now issued solely by
-             * `sign-in` / `sign-up`, which generate the id server-side after
-             * verifying the password. */
+            /* There is deliberately no action here that mints a session from a
+             * caller-supplied user id and session id. Matching two values the
+             * caller chose is not authorisation — it would let anyone who knew
+             * a user id mint a working session for that account. Sessions are
+             * issued only by `sign-in` / `sign-up`, which generate the id
+             * server-side after verifying the password. */
 
             case 'refresh-token': {
                 const { userId, sessionId } = await req.json()
