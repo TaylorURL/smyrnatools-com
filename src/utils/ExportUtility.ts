@@ -1,11 +1,9 @@
 /**
- * Barrel for the Excel export pipeline. The original monolithic ExportUtility
- * was split into topical modules so each file stays under ~400 lines and
- * change-percent formatting, plant sorting, styling, and worksheet layout all
- * live in their own concern.
- *
- * Importers continue to import from `utils/ExportUtility` — every symbol the
- * old file exported is re-exported here.
+ * Barrel for the Excel export pipeline. The pipeline is split by concern —
+ * constants, cell styling, plant sorting, value/change-percent formatting,
+ * workbook assembly, worksheet layout — and every one of those modules is
+ * re-exported here, so callers import the whole surface from this one path
+ * and moving a symbol between modules never touches an import site.
  */
 
 export * from './ExportConstants'
