@@ -338,8 +338,10 @@ export function AuthProvider({ children }) {
         setUser((cu) => ({ ...cu, email: newEmail.trim().toLowerCase() }))
         return true
     }, [])
-    const updatePassword = useCallback(async (userId, newPassword) => {
+    /** The current password goes with the new one — the edge function re-checks it. */
+    const updatePassword = useCallback(async (userId, newPassword, currentPassword) => {
         const { res, json } = await APIUtility.post(`${AUTH_FUNCTION}/update-password`, {
+            currentPassword,
             password: newPassword,
             userId
         })

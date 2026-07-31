@@ -136,7 +136,7 @@ function MyAccountView({ onSelectView, userId }) {
             const uid = userId || getSessionUserId()
             if (!uid) throw new Error('No active session')
             await verifyPassword(uid, currentPassword)
-            await authUpdatePassword(uid, newPassword)
+            await authUpdatePassword(uid, newPassword, currentPassword)
             setCurrentPassword('')
             setNewPassword('')
             setConfirmPassword('')
