@@ -17,8 +17,8 @@ const SESSIONS_TABLE = 'users_sessions'
 /**
  * Rolling inactivity window. A session stays valid as long as it has been
  * touched (any authenticated edge function call updates `last_active`) within
- * this many days. Bumped 7 → 30 in 2026.22 so users who use the app once or
- * twice a month don't have to re-authenticate from scratch.
+ * this many days. Wide enough that someone who opens the app once or twice a
+ * month is not forced to re-authenticate from scratch.
  */
 export const SESSION_EXPIRY_DAYS = 30
 
