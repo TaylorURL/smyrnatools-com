@@ -798,7 +798,6 @@ Deno.serve(async (req) => {
                         const verifiedDmIds = (dmPerms || []).map((p: any) => p.user_id)
 
                         if (verifiedDmIds.length > 0) {
-                            // Check preferences
                             const { data: prefs } = await supabase
                                 .from('users_preferences')
                                 .select('user_id, accept_comment_emails')

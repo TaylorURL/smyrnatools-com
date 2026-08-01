@@ -68,7 +68,6 @@ const equipmentConfig = {
     emptyState: { addLabel: 'Add Equipment', icon: 'fa-snowplow', title: 'No Equipment Found' },
     exportConfig: { assetType: 'Equipment', identifierField: 'identifyingNumber' },
 
-    // Extra type filter (equipment type dropdown)
     extraTypeFilter: {
         allLabel: 'All Types',
         label: 'Equipment type filter',

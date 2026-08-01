@@ -17,7 +17,6 @@ const SORT_MAPPINGS = {
 const pickupTruckConfig = {
     AddView: PickupTrucksAddView,
 
-    // Detail/Add views (still type-specific, unchanged)
     DetailView: PickupTrucksDetailView,
 
     addButtonLabel: 'Add Pickup',
@@ -66,7 +65,6 @@ const pickupTruckConfig = {
 
     defaultSortFields: { numberField: 'assigned', statusField: 'status' },
 
-    // Prop name for passing the selected ID to DetailView
     detailIdProp: 'pickupId',
 
     // Duplicate detection sets (computed once from full item list)
@@ -135,7 +133,6 @@ const pickupTruckConfig = {
 
     iconGradient: 'linear-gradient(135deg, #374151, #6b7280)',
 
-    // Label used in CommentModalSection / IssueModalSection
     itemTypeLabel: 'Pickup Truck',
 
     key: 'pickup-truck',
@@ -238,7 +235,6 @@ const pickupTruckConfig = {
 
     searchPlaceholder: 'Search by VIN, make, model, year, or name...',
 
-    // Service (unchanged — still the concrete class)
     service: PickupTruckService,
 
     singularLabel: 'Pickup Truck',

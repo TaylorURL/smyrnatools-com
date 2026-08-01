@@ -10,7 +10,6 @@ import MixerDetailView from '../mixers/MixerDetailView'
 const mixerConfig = {
     AddView: MixerAddView,
 
-    // Card config - uses MixerCard directly
     CardComponent: MixerCard,
 
     DetailView: MixerDetailView,
@@ -88,10 +87,8 @@ const mixerConfig = {
 
     defaultSortFields: { numberField: 'truckNumber', statusField: 'status' },
 
-    // Prop name for passing the selected ID to DetailView
     detailIdProp: 'mixerId',
 
-    // Duplicate detection - none for mixer
     duplicateChecks: [],
 
     emptyState: {
@@ -105,7 +102,6 @@ const mixerConfig = {
         identifierField: 'truckNumber'
     },
 
-    // Custom fetch method
     fetchItems: (codes) => MixerService.fetchMixersWithDetails(codes),
 
     filterPersistence: {
@@ -169,12 +165,10 @@ const mixerConfig = {
 
     iconGradient: 'linear-gradient(135deg, #1e3a5f, #3b82f6)',
 
-    // Label used in CommentModalSection / IssueModalSection
     itemTypeLabel: 'Mixer',
 
     key: 'mixer',
 
-    // List view columns
     listConfig: {
         colWidths: ['9%', '11%', '11%', '15%', '11%', '8%', '14%', '11%', '10%'],
         columns: [
@@ -364,7 +358,6 @@ const mixerConfig = {
 
     tableName: 'mixers',
 
-    // Verification config
     verification: {
         cleanupCheck: (items, operators) =>
             CleanupUtility.verificationCheck(items, MixerService.updateMixer, 'mixer', operators),

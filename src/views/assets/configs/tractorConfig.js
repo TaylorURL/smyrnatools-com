@@ -183,7 +183,6 @@ const tractorConfig = {
         year: 'year'
     },
 
-    // When detail view closes, refetch data
     refetchOnDetailClose: true,
 
     searchFields: (item, query, { operators, exactMatch }) => {
