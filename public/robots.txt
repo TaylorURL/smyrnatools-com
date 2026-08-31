@@ -1,0 +1,27 @@
+# Smyrna Tools is a sign-in gated internal application. The sign-in page at /
+# and the privacy, terms, and contact pages are the only publicly reachable
+# pages; every screen holding data requires an account.
+
+User-agent: *
+Disallow:
+
+Sitemap: https://www.smyrnatools.com/sitemap.xml
+
+# What this site holds is operational data belonging to Smyrna Ready Mix. It is
+# not offered for model training or for retrieval-augmented answering, so the
+# crawlers that collect for those purposes are refused by name.
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /

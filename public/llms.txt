@@ -1,0 +1,29 @@
+# Smyrna Tools
+
+> Smyrna Tools is the internal operations application for Smyrna Ready Mix, a concrete
+> ready-mix producer. It covers plants, fleet assets, personnel, productivity, and
+> efficiency across regions. An account is required to use it.
+
+The sign-in page at the site root, the privacy policy, the terms of use, and the contact
+page are the only publicly reachable pages. Every screen that holds data sits behind
+authentication, so no plant, fleet, personnel, or reporting content is publicly readable
+or indexable.
+
+Crawling for model training and retrieval-augmented answering is refused in robots.txt for
+GPTBot, Google-Extended, ClaudeBot, PerplexityBot, and CCBot.
+
+## Public pages
+
+- [Sign in](https://www.smyrnatools.com/): Sign-in for Smyrna Ready Mix staff, alongside
+  links to the company site and the fleet telematics platform.
+- [Privacy Policy](https://www.smyrnatools.com/privacy): What the application records about
+  the people using it, where it is held, and who can see it.
+- [Terms of Use](https://www.smyrnatools.com/terms): The conditions attached to an account,
+  covering roles, operational records, exports, and how access ends.
+- [Contact Us](https://www.smyrnatools.com/contact): Where to take a question about access,
+  a fault in the application, or the company itself.
+
+## Related sites
+
+- [Smyrna Ready Mix](https://smyrnareadymix.com): The company site, covering concrete
+  services, plant locations, and how customers request an order.

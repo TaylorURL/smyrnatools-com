@@ -1,0 +1,53 @@
+-- Removes the edge functions the application no longer reaches, and the hourly
+-- pg_net prune that duplicated pg_net's own.
+--
+-- Six functions were deployed with no caller anywhere in this repository:
+--
+--   report-notify                 the reporting notifier, left behind when the
+--                                 reporting tables went in
+--                                 20260623_drop_deprecated_reporting_tables.sql.
+--                                 It also read `region_plants`, a name this
+--                                 database has never had -- the table is
+--                                 `regions_plants` -- so its region filter had
+--                                 been returning nothing for as long as it ran.
+--   send-incoming-hires-emails    last deployed from a checkout path that no
+--                                 longer exists on any machine.
+--   document-service              insert and delete against `documents`; the
+--                                 app has no Documents view to call it.
+--   district-manager-service      superseded by `plants.manager_user_ids`, added
+--                                 in 20260515_add_plants_manager_user_ids.sql.
+--                                 Every one of its endpoints read
+--                                 `district_manager_plants` or
+--                                 `district_manager_eligible_roles`, neither of
+--                                 which exists, so all seven answered 400.
+--   auth-utility, auth-context    superseded by auth-service, which is what the
+--                                 app posts to.
+--
+-- The same dead table was read in two live places in email-service, where the
+-- error was discarded rather than raised: notify-report-submitted and
+-- notify-comment-added both built their District Manager recipient list from
+-- `district_manager_plants` and got an empty list every time. A broken table and
+-- a plant with no managers assigned looked identical, so the mail sent with the
+-- District Managers silently missing. Both now read `plants.manager_user_ids`
+-- and narrow it by the District Manager role. Twelve plants carry a manager in
+-- that column today.
+--
+-- DATA SAFETY: the source of all six was archived before they were deleted, to
+-- ~/Archives/smyrna-tools-backup-2026-08-29/edge-functions on the workstation.
+-- The three that still had source in this repository are also recoverable from
+-- git history; the three that did not are archived as their deployed bundles.
+-- No table is dropped here and no row is removed.
+
+-- The hourly pg-net-vacuum job deleted from net._http_response in one unbounded
+-- statement: 2,891 runs averaging 8.7 seconds, worst case 68 seconds, each
+-- holding a connection while everything else queued behind it. pg_net's own
+-- background worker already prunes that table continuously in bounded batches,
+-- which is the 14.2M-call statement beside it averaging 4.4 milliseconds. The
+-- job was doing again, slowly, what the extension does for itself.
+--
+-- Unscheduled by name so this is idempotent, and so a database that never had
+-- the job is not an error. The weekly vacuum of the same table stays: pruning
+-- rows and reclaiming the space they occupied are different jobs.
+select cron.unschedule(jobname)
+    from cron.job
+    where jobname = 'pg-net-vacuum';

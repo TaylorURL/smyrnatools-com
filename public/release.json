@@ -1,0 +1,8 @@
+{
+  "version": "2026.35.45",
+  "projectName": "smyrnatools.com",
+  "branch": "production",
+  "cleanLogs": true,
+  "cleanCss": true,
+  "hooks": {}
+}

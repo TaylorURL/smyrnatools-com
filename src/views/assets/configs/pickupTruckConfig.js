@@ -1,0 +1,273 @@
+import { PickupTruckService } from '../../../services/PickupTruckService'
+import { ValidationUtility } from '../../../utils/ValidationUtility'
+import PickupTrucksAddView from '../pickup-trucks/PickupTrucksAddView'
+import PickupTrucksDetailView from '../pickup-trucks/PickupTrucksDetailView'
+
+const SORT_MAPPINGS = {
+    Assigned: 'assigned',
+    'Make & Model': null,
+    Mileage: 'mileage',
+    More: null,
+    Plant: 'assignedPlant',
+    Status: 'status',
+    VIN: 'vin',
+    Year: 'year'
+}
+
+const pickupTruckConfig = {
+    AddView: PickupTrucksAddView,
+
+    DetailView: PickupTrucksDetailView,
+
+    addButtonLabel: 'Add Pickup',
+
+    cardConfig: {
+        getStatusColor: (item, statusColors) => statusColors[item.status] || 'var(--accent)',
+        itemNumber: (item) => item.assigned || 'Not Assigned',
+        rows: [
+            {
+                getValue: (item) => item.vin || 'Unknown',
+                getWarning: (item, duplicates) =>
+                    duplicates.duplicateVINs?.has(
+                        String(item.vin || '')
+                            .trim()
+                            .toUpperCase()
+                            .replace(/\s+/g, '')
+                    ),
+                label: 'VIN',
+                type: 'textWithWarning',
+                warningTitle: 'Duplicate VIN'
+            },
+            { getValue: (item) => item.make || 'Unknown', label: 'Make' },
+            { getValue: (item) => item.model || 'Unknown', label: 'Model' },
+            { getValue: (item) => item.year || 'Unknown', label: 'Year' },
+            {
+                getValue: (item) => (typeof item.mileage === 'number' ? item.mileage.toLocaleString() : 'Unknown'),
+                getWarning: (item) => typeof item.mileage === 'number' && item.mileage > 300000,
+                label: 'Mileage',
+                type: 'numberWithWarning',
+                warningTitle: 'High mileage'
+            }
+        ]
+    },
+
+    channelName: 'pickup-trucks-realtime-changes',
+
+    customSortComparators: {
+        Assigned: (a, b) => (parseFloat(a.assigned) || 0) - (parseFloat(b.assigned) || 0),
+        'Make & Model': (a, b) => {
+            const aVal = `${a.make || ''} ${a.model || ''}`.trim().toLowerCase()
+            const bVal = `${b.make || ''} ${b.model || ''}`.trim().toLowerCase()
+            return aVal.localeCompare(bVal)
+        },
+        VIN: (a, b) => ValidationUtility.compareVINs(a.vin, b.vin)
+    },
+
+    defaultSortFields: { numberField: 'assigned', statusField: 'status' },
+
+    detailIdProp: 'pickupId',
+
+    duplicateChecks: [
+        {
+            compute: (items) => PickupTruckService.getDuplicateVINs(items),
+            key: 'duplicateVINs',
+            normalize: (item) =>
+                String(item.vin || '')
+                    .trim()
+                    .toUpperCase()
+                    .replace(/\s+/g, '')
+        },
+        {
+            compute: (items) => PickupTruckService.getDuplicateAssigned(items),
+            key: 'duplicateAssigned',
+            normalize: (item) =>
+                String(item.assigned || '')
+                    .trim()
+                    .toLowerCase()
+        }
+    ],
+
+    emptyState: {
+        addLabel: 'Add Pickup Truck',
+        icon: 'fa-truck-pickup',
+        title: 'No Pickup Trucks Found'
+    },
+
+    exportConfig: {
+        assetType: 'Pickup Truck',
+        identifierField: 'assigned'
+    },
+
+    getModalIdentifier: (item) => item.assigned || item.vin || 'Unknown',
+
+    gridCardFields: [
+        { getValue: (item) => item.vin || 'Unknown', label: 'VIN', type: 'monospace' },
+        { getValue: (item) => `${item.make || ''} ${item.model || ''}`.trim() || 'Unknown', label: 'Make & Model' },
+        { getValue: (item) => item.year || 'Unknown', label: 'Year' },
+        {
+            getValue: (item) => (typeof item.mileage === 'number' ? item.mileage.toLocaleString() : 'Unknown'),
+            getWarning: (item) => (typeof item.mileage === 'number' && item.mileage > 300000 ? 'HIGH' : null),
+            label: 'Mileage'
+        }
+    ],
+
+    hasEmbeddedMode: false,
+
+    hasFilterPersistence: false,
+
+    hasOperatorAssignment: false,
+
+    hasRecap: false,
+
+    hasShopSubStatuses: false,
+
+    hasTractorAssignment: false,
+
+    hasVerification: false,
+
+    historyType: 'pickup-truck',
+
+    icon: 'fa-truck-pickup',
+
+    itemTypeLabel: 'Pickup Truck',
+
+    key: 'pickup-truck',
+
+    listConfig: {
+        colWidths: ['12%', '12%', '12%', '8%', '18%', '15%', '10%', '13%'],
+        columns: [
+            { key: 'assignedPlant', label: 'Plant', width: '12%' },
+            { key: 'status', label: 'Status', type: 'status', width: '12%' },
+            {
+                duplicateKey: 'duplicateAssigned',
+                key: 'assigned',
+                label: 'Assigned',
+                normalize: (item) =>
+                    String(item.assigned || '')
+                        .trim()
+                        .toLowerCase(),
+                type: 'textWithWarning',
+                warningTitle: 'Assigned to multiple pickups',
+                width: '12%'
+            },
+            { key: 'year', label: 'Year', width: '8%' },
+            {
+                bold: true,
+                getValue: (item) => `${item.make || ''} ${item.model || ''}`.trim(),
+                key: 'makeModel',
+                label: 'Make & Model',
+                width: '18%'
+            },
+            {
+                duplicateKey: 'duplicateVINs',
+                key: 'vin',
+                label: 'VIN',
+                normalize: (item) =>
+                    String(item.vin || '')
+                        .trim()
+                        .toUpperCase()
+                        .replace(/\s+/g, ''),
+                type: 'vin',
+                width: '15%'
+            },
+            {
+                getValue: (item) => (typeof item.mileage === 'number' ? item.mileage.toLocaleString() : null),
+                getWarning: (item) => typeof item.mileage === 'number' && item.mileage > 300000,
+                key: 'mileage',
+                label: 'Mileage',
+                type: 'number',
+                warningClassName: 'bg-red-50 text-text-primary rounded text-[10px] font-bold ml-2 px-2 py-1',
+                warningTitle: 'High mileage',
+                width: '10%'
+            },
+            { key: '_actions', label: 'More', type: 'actions', width: '13%' }
+        ],
+        headerLabels: ['Plant', 'Status', 'Assigned', 'Year', 'Make & Model', 'VIN', 'Mileage', 'More']
+    },
+
+    pluralLabel: 'Pickup Trucks',
+
+    // A pickup is known by who drives it rather than by a truck number, so
+    // the assignee is what the cards lead with and what the list sorts on.
+    primaryField: 'assigned',
+
+    primaryLabel: 'Assigned',
+
+    // Realtime rows arrive as raw database columns, so each one is renamed to
+    // the model property the views read before it reaches state.
+    realtimeFieldMap: {
+        assigned: 'assigned',
+        assigned_plant: 'assignedPlant',
+        comments: 'comments',
+        make: 'make',
+        mileage: 'mileage',
+        model: 'model',
+        status: 'status',
+        updated_at: 'updatedAt',
+        updated_by: 'updatedBy',
+        updated_last: 'updatedLast',
+        vin: 'vin',
+        year: 'year'
+    },
+
+    searchFields: (item, query) => {
+        const q = query.toLowerCase()
+        return (
+            String(item.vin || '')
+                .toLowerCase()
+                .includes(q) ||
+            String(item.make || '')
+                .toLowerCase()
+                .includes(q) ||
+            String(item.model || '')
+                .toLowerCase()
+                .includes(q) ||
+            String(item.year || '')
+                .toLowerCase()
+                .includes(q) ||
+            String(item.assigned || '')
+                .toLowerCase()
+                .includes(q)
+        )
+    },
+
+    searchPlaceholder: 'Search by VIN, make, model, year, or name...',
+
+    service: PickupTruckService,
+
+    singularLabel: 'Pickup Truck',
+
+    sortMappings: SORT_MAPPINGS,
+
+    // Entries in statusOptions that are not statuses at all: each one is a
+    // predicate the filter runs instead of comparing against `status`.
+    specialStatusFilters: {
+        'Over 300k Miles': (item) => typeof item.mileage === 'number' && item.mileage > 300000
+    },
+
+    statusBadgeClasses: {
+        Active: 'bg-status-active/15 text-status-active',
+        'In Shop': 'bg-status-shop/15 text-status-shop',
+        Spare: 'bg-status-spare/15 text-status-spare',
+        Stationary: 'bg-status-shop/15 text-status-shop'
+    },
+
+    statusColors: {
+        Active: 'var(--status-active)',
+        'In Shop': 'var(--status-inshop)',
+        Retired: 'var(--status-retired)',
+        Sold: 'var(--status-sold)',
+        Spare: 'var(--status-spare)',
+        Stationary: 'var(--status-stationary)'
+    },
+
+    statusOptions: ['All Statuses', 'Active', 'Stationary', 'Spare', 'In Shop', 'Retired', 'Sold', 'Over 300k Miles'],
+
+    tableName: 'pickup_trucks',
+
+    viewClassName: 'pickup-trucks-view',
+
+    viewModeStorageKey: 'pickup_trucks_last_view_mode'
+}
+
+export default pickupTruckConfig

@@ -1,0 +1,153 @@
+<h1 align="center">Smyrna Tools Design System</h1>
+
+<p align="center">
+  <b>The shared vocabulary for motion, elevation, focus, and interaction.</b>
+</p>
+<p align="center">
+  One source of truth so every view — fleet, people, plants, admin —<br />
+  feels like the same product across all three themes.
+</p>
+
+<br />
+
+## Why this file
+
+Every visual change should read from this file and align with the patterns below, so the product feels coherent across views. The substrate is **Tailwind v3 + CSS custom properties** with three themes (light, dark, gray). Tokens like `bg-bg-primary`, `text-text-primary`, `border-border-light`, and `bg-accent` are defined in `tailwind.config.js` and backed by CSS variables in [`src/app/index.css`](../index.css).
+
+> **Never** hardcode hex colors. **Never** write raw CSS. Tailwind-only.
+
+## Motion
+
+Three speeds. Pick by the size of what moves.
+
+| Token | Duration | Tailwind utility | Use for |
+| :--- | :--- | :--- | :--- |
+| fast | 150 ms | `duration-150` | Tiny state changes — hovers, focus rings, color flips |
+| base | 200 ms | `duration-200` | Small UI elements — buttons, badges, pills, dropdowns |
+| slow | 300 ms | `duration-300` | Panels, modals, page-level fades, list reveal |
+
+Easing — match the kind of motion, not the speed.
+
+| Curve | Tailwind | Use for |
+| :--- | :--- | :--- |
+| `ease-out` | `ease-out` | Anything entering or leaving — the default for state |
+| `ease-in-out` | `ease-in-out` | Loops and reversible state (theme toggles, tab switches) |
+
+Two curves, and no third. A control that overshoots its resting position reads
+as a toy, and this is a console someone works a shift in front of.
+
+The Tailwind config already exposes named animations: `animate-fade-in`, `animate-fade-in-fast`, `animate-fade-slide-in`, `animate-slide-up`, `animate-pop-in`, `animate-msg-in`. Prefer these named animations over ad-hoc `transition` declarations. Never write `@keyframes` in CSS files — they live in `tailwind.config.js`.
+
+**Reduced motion:** never auto-animate decorative loops without a way to disable. If you add a continuous loop (`animate-pulse-slow`, `animate-fuse-shimmer`), pair it with `motion-reduce:animate-none`.
+
+## Elevation
+
+Four levels. Pick the lowest that still reads.
+
+| Level | Tailwind utility | Use for |
+| :--- | :--- | :--- |
+| flat | (no shadow) | Section backgrounds, embedded panels, table rows |
+| resting | `shadow-card` | Cards at rest, default elevation |
+| raised | `shadow-raised` | Bars, sticky chrome, important panels, key dashboard tiles |
+| floating | `shadow-modal` | Modals, popovers, dropdown menus, toast notifications |
+
+A live status dot carries `shadow-glow`, which is the halo and not a level.
+Every one of these resolves to a `--shadow-*` custom property in `index.css`,
+so a shadow is never written out at the point of use.
+
+Hover lift on cards: bump one level (resting → raised) and translate by `-translate-y-px` to `-translate-y-0.5` — never more, or the layout shifts. Always pair the lift with `transition-shadow duration-200`.
+
+Borders read better than heavy shadows in dark/gray themes. When in doubt, use `border border-border-light` (or `border-border-medium` for emphasis) over a deeper shadow.
+
+## Radius
+
+| Token | Tailwind | Use for |
+| :--- | :--- | :--- |
+| pill | `rounded-full` | Avatars, status dots, count badges, single-line chips |
+| input | `rounded-md` (6 px) | Form inputs, buttons, small interactive controls |
+| card | `rounded-card` (12 px) | Cards, list rows, dropdown menus, popovers |
+| modal | `rounded-modal` (16 px) | Modals, dialogs, sheets |
+
+Match radius across stacked elements (e.g., a button inside a card uses `rounded-md`; the card uses `rounded-card`). Don't mix `rounded-lg` and `rounded-card` on sibling elements.
+
+## Focus, hover, active
+
+Every interactive element must read in all three themes. The pattern:
+
+```jsx
+className="
+  transition-colors duration-150
+  hover:bg-bg-hover
+  active:scale-[0.98]
+  focus-visible:outline-none
+  focus-visible:ring-2
+  focus-visible:ring-accent
+  focus-visible:ring-offset-2
+  focus-visible:ring-offset-bg-primary
+"
+```
+
+Rules:
+
+- **Hover** flips background to `bg-bg-hover` (or shifts text to `text-text-primary` if the element is link-like). Never use raw colors like `hover:bg-gray-100`.
+- **Active** is a 2 % scale press: `active:scale-[0.98]`. Skip for inputs and large surfaces.
+- **Focus-visible** is always a 2 px `ring-accent` with `ring-offset-2 ring-offset-bg-primary`. Never remove the ring without replacing it with an equivalent visible affordance.
+- **Disabled** is `disabled:opacity-50 disabled:cursor-not-allowed` plus removal of hover/active classes (use `disabled:pointer-events-none` if simpler).
+
+Icon-only buttons: `aria-label` required. Hit target ≥ 36 × 36 px (use `p-2` on a 20 px icon, `p-1.5` on a 24 px icon).
+
+## Spacing rhythm
+
+Stick to Tailwind's 4-px scale. Common rhythms in this codebase:
+
+| Context | Inner padding | Gap between children |
+| :--- | :--- | :--- |
+| Card body | `p-4` / `p-5` | `gap-3` / `gap-4` |
+| Form row | `py-2` / `py-3` | `gap-2` |
+| List row (dense) | `py-2 px-3` | `gap-2` |
+| Modal body | `p-6` | `gap-4` / `gap-6` |
+| Dashboard tile | `p-5` / `p-6` | `gap-4` |
+
+Never `gap-1.5`, never `gap-3.5` — multiples of 2/4/6/8 only.
+
+## Typography
+
+| Use | Class |
+| :--- | :--- |
+| Page heading | `font-heading text-2xl md:text-3xl font-semibold tracking-tight text-text-primary` |
+| Section heading | `font-heading text-lg font-semibold text-text-primary` |
+| Card title | `font-heading text-base font-semibold text-text-primary` |
+| Body | `text-sm text-text-primary` |
+| Secondary / helper | `text-sm text-text-secondary` |
+| Tertiary / placeholder | `text-xs text-text-tertiary` |
+| Metric (large number) | `font-heading text-3xl md:text-4xl font-bold tabular-nums` |
+| Caption / label | `text-xs font-medium uppercase tracking-wider text-text-tertiary` |
+
+Use `tabular-nums` on every numeric column so values align vertically.
+
+## Inputs
+
+Dropdowns, selects, comboboxes, autocomplete, search bars, tooltips, hover messages, date pickers, and time inputs share one contract:
+
+- Surface-aware: a select inside a card uses `bg-bg-primary`; inside a modal it uses `bg-bg-secondary`. The control inverts cleanly in all three themes.
+- Calendar popovers use `bg-bg-secondary border-border-light shadow-modal rounded-card`.
+- Time inputs are forgiving — accept "8", "8a", "830", "8:30 PM" — and detect 12 vs 24 h from the user's preference, not the locale.
+- Tooltips: `bg-text-primary text-bg-primary text-xs px-2 py-1 rounded-md shadow-sm` with `animate-fade-in-fast` and an 80 ms delay.
+
+The native `<select>` chevron is stripped with `appearance-none` and redrawn as an inline SVG on `currentColor`, so the affordance follows the text colour across all three themes instead of falling back to the browser's own arrow. `src/app/constants/detailFormClasses.js` carries the canonical class string for detail-view forms.
+
+## Three-theme test
+
+Before declaring any visual change done, verify:
+
+- **Light theme:** text contrast ≥ 4.5:1 against the background.
+- **Dark theme:** shadows still read; borders not invisible.
+- **Gray theme:** surfaces clearly distinct from light AND dark (they are intentionally medium gray, not "dark with grey accents").
+
+If a change uses raw palette tokens (`bg-white`, `bg-gray-100`, `text-gray-500`), it fails the test. Use semantic tokens (`bg-bg-primary`, `text-text-secondary`).
+
+<br />
+
+<p align="center">
+  <sub>One vocabulary. Read it before you touch a pixel.</sub>
+</p>
