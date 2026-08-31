@@ -1,6 +1,6 @@
 {
   "name": "smyrnatools",
-  "version": "2026.36.1",
+  "version": "2026.36.2",
   "private": true,
   "dependencies": {
     "@sentry/react": "^10.53.1",
