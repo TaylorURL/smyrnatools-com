@@ -1,7 +1,8 @@
 {
   "name": "smyrnatools",
-  "version": "2026.36.2",
+  "version": "2026.36.3",
   "private": true,
+  "license": "UNLICENSED",
   "dependencies": {
     "@sentry/react": "^10.53.1",
     "@supabase/supabase-js": "^2.39.7",
