@@ -2,6 +2,7 @@ import Trailer from '../../../../app/models/trailers/Trailer'
 import { Database } from '../../../../services/DatabaseService'
 import { TrailerService } from '../../../../services/TrailerService'
 import { UserService } from '../../../../services/UserService'
+import { formatCentralDateTime } from '../../../../utils/PlanUtility'
 import { getPlantName, getTractorName } from './trailerDetailHelpers'
 
 const VALID_TRAILER_TYPES = ['Cement', 'End Dump']
@@ -177,7 +178,7 @@ ${
         ? comments
               .map(
                   (c) =>
-                      `- ${c.author || 'Unknown'}: ${c.comment || c.text} (${new Date(c.created_at || c.createdAt).toLocaleString()})`
+                      `- ${c.author || 'Unknown'}: ${c.comment || c.text} (${formatCentralDateTime(c.created_at || c.createdAt)})`
               )
               .join('\n')
         : 'No comments.'
@@ -188,7 +189,7 @@ ${
         ? openIssues
               .map(
                   (i) =>
-                      `- ${i.issue || i.title || i.description || ''} (${new Date(i.time_created || i.created_at).toLocaleString()})`
+                      `- ${i.issue || i.title || i.description || ''} (${formatCentralDateTime(i.time_created || i.created_at)})`
               )
               .join('\n')
         : 'No open issues.'

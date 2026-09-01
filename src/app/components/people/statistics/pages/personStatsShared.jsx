@@ -2,6 +2,7 @@
 import React from 'react'
 
 import { fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { formatCentralDate } from '../../../../../utils/PlanUtility'
 
 /** Highlight row used by the Overview snapshot card — mirrors the asset
  *  surface so the two products read as one. */
@@ -52,7 +53,7 @@ export const formatPendingDate = (iso) => {
     if (!iso) return 'TBD'
     const date = new Date(`${iso}T00:00:00`)
     if (!Number.isFinite(date.getTime())) return 'TBD'
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+    return formatCentralDate(date)
 }
 
 /** Formats a full ISO timestamp (e.g. `createdAt`, `statusChangedAt`) into
@@ -64,7 +65,7 @@ export const formatEventDate = (iso) => {
     const value = typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T00:00:00` : iso
     const date = new Date(value)
     if (!Number.isFinite(date.getTime())) return '—'
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+    return formatCentralDate(date)
 }
 
 export const daysUntilLabel = (days) => {

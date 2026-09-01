@@ -1,6 +1,7 @@
 import { EquipmentService } from '../../../services/EquipmentService'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
 import CleanupUtility from '../../../utils/CleanupUtility'
+import { formatCentralDate } from '../../../utils/PlanUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
 import EquipmentAddView from '../equipment/EquipmentAddView'
 import EquipmentCard from '../equipment/EquipmentCard'
@@ -92,8 +93,7 @@ const equipmentConfig = {
         { getValue: (_item, ctx) => ctx.plantName || '---', label: 'Plant' },
         { getValue: (item) => item.equipmentType || 'Unknown', label: 'Type' },
         {
-            getValue: (item) =>
-                item.lastServiceDate ? new Date(item.lastServiceDate).toLocaleDateString() : 'Unknown',
+            getValue: (item) => (item.lastServiceDate ? formatCentralDate(item.lastServiceDate) : 'Unknown'),
             isOverdue: (item) => AssetStatsUtility.isServiceOverdue(item.lastServiceDate),
             label: 'Last Service'
         },

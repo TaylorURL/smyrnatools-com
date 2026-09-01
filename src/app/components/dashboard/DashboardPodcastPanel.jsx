@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
+import { formatCentralDate } from '../../../utils/PlanUtility'
 import { useAccentColor } from '../../hooks/useAccentColor'
 
 const SHOW_ID = '705426'
@@ -27,7 +28,7 @@ const formatDate = (input) => {
     if (!input) return ''
     const d = new Date(input)
     if (Number.isNaN(d.getTime())) return ''
-    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+    return formatCentralDate(d)
 }
 
 /** Format an iTunes:duration value (seconds or `H:MM:SS` / `M:SS`) into a

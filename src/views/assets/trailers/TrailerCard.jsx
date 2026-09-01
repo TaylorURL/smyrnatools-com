@@ -3,6 +3,7 @@ import React from 'react'
 import StarRating from '../../../app/components/common/StarRating'
 import CardSection from '../../../app/components/sections/CardSection'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
+import { formatCentralDate } from '../../../utils/PlanUtility'
 
 /** Maps trailer status to card accent color. */
 const STATUS_COLORS = {
@@ -62,7 +63,7 @@ function TrailerCard({
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Last Service</div>
                 <div className="text-sm font-medium">
-                    {trailer.lastServiceDate ? new Date(trailer.lastServiceDate).toLocaleDateString() : 'Unknown'}
+                    {trailer.lastServiceDate ? formatCentralDate(trailer.lastServiceDate) : 'Unknown'}
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">

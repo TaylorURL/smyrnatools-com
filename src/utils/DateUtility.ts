@@ -4,6 +4,7 @@
  * staleness checks, timezone-safe local date handling,
  * and human-readable display formatting with ordinal suffixes.
  */
+import { formatCentralDate, formatCentralDateTime, getCentralDay } from './PlanUtility'
 
 type DateInput = Date | string | number | null | undefined
 
@@ -65,9 +66,8 @@ function formatDate(dateStr: string | null | undefined): string {
     }
     const date = new Date(dateStr)
     if (isNaN(date.getTime())) return dateStr
-    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
-    const formatted = date.toLocaleDateString('en-US', options)
-    const day = date.getDate()
+    const formatted = formatCentralDate(date, { day: 'numeric', month: 'long', year: 'numeric' })
+    const day = Number(getCentralDay(date).slice(8))
     return formatted.replace(`${day}`, `${day}${ordinalSuffix(day)}`)
 }
 
@@ -75,14 +75,13 @@ function formatDateTime(dateStr: string | null | undefined): string {
     if (!dateStr) return ''
     const date = new Date(dateStr)
     if (isNaN(date.getTime())) return dateStr
-    const options: Intl.DateTimeFormatOptions = {
+    return formatCentralDateTime(date, {
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
         month: 'short',
         year: 'numeric'
-    }
-    return date.toLocaleString('en-US', options)
+    })
 }
 
 /** Formats a date string into an HTML datetime-local input value (YYYY-MM-DDTHH:MM). */
@@ -188,7 +187,7 @@ function formatTimeAgo(dateString: string | null | undefined): string {
     if (hours < 24) return `${hours}h ago`
     const days = Math.floor(hours / 24)
     if (days < 30) return `${days}d ago`
-    return new Date(dateString).toLocaleDateString()
+    return formatCentralDate(dateString)
 }
 
 const DateUtility = {

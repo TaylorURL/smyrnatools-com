@@ -1,4 +1,5 @@
 import { DateUtility } from '../../../utils/DateUtility'
+import { formatCentralDate } from '../../../utils/PlanUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
 
 /**
@@ -90,7 +91,7 @@ export class Tractor {
         return this
     }
     getFormattedServiceDate() {
-        return this.lastServiceDate ? new Date(this.lastServiceDate).toLocaleDateString() : 'Not available'
+        return this.lastServiceDate ? formatCentralDate(this.lastServiceDate) : 'Not available'
     }
     isVerified() {
         return VerifiedUtility.isVerified(this.updatedLast, this.updatedAt, this.updatedBy)

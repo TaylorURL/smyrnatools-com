@@ -1,5 +1,5 @@
 import { fmtRange, parseIsoLocal } from './PlanStatisticsFormatUtility'
-import { getTodayDate } from './PlanUtility'
+import { formatCentralDate, getTodayDate } from './PlanUtility'
 
 import {
     daysBetween,
@@ -124,10 +124,10 @@ export const formatPeriodLabel = (period: string, range: PeriodRange) => {
     const ed = parseIsoLocal(range.current.end)
     if (!sd || !ed) return fmtRange(range.current.start, range.current.end)
     if (period === 'day') {
-        return sd.toLocaleDateString('en-US', { day: 'numeric', month: 'short', weekday: 'short', year: 'numeric' })
+        return formatCentralDate(sd, { day: 'numeric', month: 'short', weekday: 'short', year: 'numeric' })
     }
     if (period === 'month') {
-        return sd.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+        return formatCentralDate(sd, { month: 'long', year: 'numeric' })
     }
     if (period === 'quarter') {
         return `Q${Math.floor(sd.getMonth() / 3) + 1} ${sd.getFullYear()}`

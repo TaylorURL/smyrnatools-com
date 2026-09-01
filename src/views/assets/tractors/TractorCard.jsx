@@ -3,6 +3,7 @@ import React from 'react'
 import StarRating from '../../../app/components/common/StarRating'
 import CardSection from '../../../app/components/sections/CardSection'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
+import { formatCentralDate } from '../../../utils/PlanUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
 
 /** Maps tractor status to card accent color. */
@@ -67,7 +68,7 @@ function TractorCard({
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Last Service</div>
                 <div className="text-sm font-medium">
-                    {tractor.lastServiceDate ? new Date(tractor.lastServiceDate).toLocaleDateString() : 'Unknown'}
+                    {tractor.lastServiceDate ? formatCentralDate(tractor.lastServiceDate) : 'Unknown'}
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">

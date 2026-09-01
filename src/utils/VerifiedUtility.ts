@@ -3,13 +3,14 @@
  * the last verification timestamp is more recent than the most recent
  * Monday at 5 PM CST and that no updates occurred after verification.
  */
+import { PLAN_TIME_ZONE } from '../app/constants/planConstants'
 
 const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const CENTRAL_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
     hour: '2-digit',
     hour12: false,
     minute: '2-digit',
-    timeZone: 'America/Chicago',
+    timeZone: PLAN_TIME_ZONE,
     weekday: 'short'
 }
 const PAST_DUE_MONDAY_CUTOFF_HOUR = 17

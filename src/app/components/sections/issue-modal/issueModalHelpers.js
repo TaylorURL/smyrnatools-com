@@ -1,3 +1,4 @@
+import { formatCentralDate } from '../../../../utils/PlanUtility'
 export const formatDate = (dateString) => {
     if (!dateString) return ''
     const date = new Date(dateString)
@@ -10,7 +11,7 @@ export const formatDate = (dateString) => {
     if (mins < 60) return `${mins}m ago`
     if (hours < 24) return `${hours}h ago`
     if (days < 7) return `${days}d ago`
-    return date.toLocaleDateString()
+    return formatCentralDate(date)
 }
 
 export const getInitials = (mgr) => {

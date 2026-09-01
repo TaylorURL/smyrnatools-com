@@ -1,5 +1,6 @@
 import { PROMPTS } from '../app/ai'
 import APIUtility from '../utils/APIUtility'
+import { formatCentralDate } from '../utils/PlanUtility'
 
 const DEFAULT_MODEL = 'grok-4'
 const FAST_MODEL = 'grok-3-mini-fast'
@@ -104,7 +105,7 @@ class AIServiceImpl {
         if (ctx.serviceHistory) {
             parts.push(`Service Records: ${ctx.serviceHistory.count}`)
             if (ctx.serviceHistory.lastService)
-                parts.push(`Last Service: ${new Date(ctx.serviceHistory.lastService).toLocaleDateString()}`)
+                parts.push(`Last Service: ${formatCentralDate(ctx.serviceHistory.lastService)}`)
             if (ctx.serviceHistory.avgDaysBetweenService)
                 parts.push(`Avg Days Between Service: ${ctx.serviceHistory.avgDaysBetweenService}`)
         }
@@ -118,9 +119,7 @@ class AIServiceImpl {
             parts.push('Recent Changes (last 10):')
             ctx.recentChanges
                 .slice(0, MAX_RECENT_CHANGES)
-                .forEach((c) =>
-                    parts.push(`  - ${c.field}: "${c.from}" -> "${c.to}" (${new Date(c.date).toLocaleDateString()})`)
-                )
+                .forEach((c) => parts.push(`  - ${c.field}: "${c.from}" -> "${c.to}" (${formatCentralDate(c.date)})`))
         }
         return parts.join('\n')
     }
