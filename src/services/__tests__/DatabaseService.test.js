@@ -23,8 +23,9 @@ beforeAll(() => {
 
     const dbModule = require('../DatabaseService')
     DatabaseService = dbModule.DatabaseService
-    getDatabaseErrorDetails = dbModule.getDatabaseErrorDetails
-    logDatabaseError = dbModule.logDatabaseError
+    const errorModule = require('../../utils/DatabaseErrorUtility')
+    getDatabaseErrorDetails = errorModule.getDatabaseErrorDetails
+    logDatabaseError = errorModule.logDatabaseError
     APIUtility = require('../../utils/APIUtility').default
 })
 
