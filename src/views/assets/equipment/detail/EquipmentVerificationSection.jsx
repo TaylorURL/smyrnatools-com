@@ -3,6 +3,7 @@ import React from 'react'
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
 import VerificationCardSection from '../../../../app/components/sections/VerificationCardSection'
 import { Equipment } from '../../../../app/models/equipment/Equipment'
+import { formatCentralDateTime } from '../../../../utils/PlanUtility'
 
 /**
  * @param {object} equipment - Equipment record.
@@ -22,7 +23,7 @@ function getVerificationColor(equipment) {
  */
 function getVerificationLabel(equipment) {
     if (!equipment.updatedLast) return 'Never verified'
-    const baseTime = new Date(equipment.updatedLast).toLocaleString()
+    const baseTime = formatCentralDateTime(equipment.updatedLast)
     if (Equipment.ensureInstance(equipment).isVerified()) return baseTime
     const suffix =
         new Date(equipment.updatedAt) > new Date(equipment.updatedLast)
@@ -68,7 +69,7 @@ export default function EquipmentVerificationSection({
                             icon: 'fas fa-user-check',
                             iconStyle: { color: verifiedByIconColor },
                             label: 'Verified By',
-                            title: `Last Updated: ${new Date(equipment.updatedAt).toLocaleString()}`,
+                            title: `Last Updated: ${formatCentralDateTime(equipment.updatedAt)}`,
                             value: equipment.updatedBy ? updatedByEmail || 'Unknown User' : 'No verification record',
                             valueStyle: { color: verifiedByColor }
                         }

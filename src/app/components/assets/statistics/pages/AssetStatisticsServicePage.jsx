@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { formatCentralDate } from '../../../../../utils/PlanUtility'
 import { DEFAULT_ACCENT_COLOR } from '../../../../constants/themeConstants'
 import { Panel, Stat, StatGroup } from '../../../ui/Panel'
 import { CategoricalBarChart } from '../AssetStatisticsCharts'
@@ -46,7 +47,7 @@ const formatServiceDate = (iso) => {
     if (!iso) return 'Never recorded'
     const date = new Date(iso)
     if (!Number.isFinite(date.getTime())) return 'Invalid'
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+    return formatCentralDate(date)
 }
 
 /**

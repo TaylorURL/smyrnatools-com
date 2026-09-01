@@ -1,3 +1,4 @@
+import { formatCentralDate } from '../../../utils/PlanUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
 /**
  * Equipment domain model with heuristic field resolution.
@@ -82,7 +83,7 @@ export class Equipment {
         return this.status || 'Unknown'
     }
     getFormattedServiceDate() {
-        return this.lastServiceDate ? new Date(this.lastServiceDate).toLocaleDateString() : 'Not available'
+        return this.lastServiceDate ? formatCentralDate(this.lastServiceDate) : 'Not available'
     }
     isVerified() {
         return VerifiedUtility.isVerified(this.updatedLast, this.updatedAt, this.updatedBy)

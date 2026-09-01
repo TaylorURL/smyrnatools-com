@@ -13,6 +13,7 @@ import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 import { PlantService } from '../../../services/PlantService'
 import { UserService } from '../../../services/UserService'
+import { formatCentralCalendarDate } from '../../../utils/PlanUtility'
 import { getRoleColor } from '../../../utils/RoleColorUtility'
 import ManagerCard from './ManagerCard'
 import ManagerDetailView from './ManagerDetailView'
@@ -401,9 +402,7 @@ function ManagersView({ title = 'Managers', onSelectManager }) {
                                                 </td>
                                                 <td className={`${cellSecondaryCls} w-[22%] group-hover:bg-bg-hover`}>
                                                     {manager.lastLoginAt
-                                                        ? new Date(
-                                                              manager.lastLoginAt + 'T00:00:00'
-                                                          ).toLocaleDateString(undefined, {
+                                                        ? formatCentralCalendarDate(manager.lastLoginAt, {
                                                               day: 'numeric',
                                                               month: 'short',
                                                               year: 'numeric'

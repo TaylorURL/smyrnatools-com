@@ -1,3 +1,4 @@
+import { formatCentralDate } from '../../utils/PlanUtility'
 export const AUTH_FUNCTION = '/auth-service'
 
 export const FIELD_LABEL_CLASS = 'block text-[11px] font-semibold uppercase tracking-wider mb-2'
@@ -109,7 +110,7 @@ export function formatJoinedDate(joinedAt) {
     if (!joinedAt) return '—'
     const d = new Date(joinedAt)
     if (Number.isNaN(d.getTime())) return '—'
-    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+    return formatCentralDate(d)
 }
 
 export function formatRelativeTime(timestamp) {

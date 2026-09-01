@@ -1,9 +1,10 @@
+import { formatCentralDate, formatCentralTime } from '../../utils/PlanUtility'
 export const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
 
 /** Hours-and-minutes formatter shared by the chat thread and the row preview. */
 export function formatMessageTime(dateString) {
     if (!dateString) return ''
-    return new Date(dateString).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    return formatCentralTime(dateString)
 }
 
 /** "Today" / "Yesterday" / "23 May 2025" date dividers in the chat. */
@@ -14,7 +15,7 @@ export function getDateLabel(dateString) {
     const yesterday = new Date(now)
     yesterday.setDate(yesterday.getDate() - 1)
     if (date.toDateString() === yesterday.toDateString()) return 'Yesterday'
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+    return formatCentralDate(date, { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 export const ATTACHMENT_ICONS = {

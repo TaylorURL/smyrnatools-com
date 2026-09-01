@@ -1,3 +1,4 @@
+import { formatCentralDateTime } from '../../../utils/PlanUtility'
 import { Mixer } from '../../models/mixers/Mixer'
 
 /**
@@ -43,16 +44,14 @@ export function buildMixerVerificationItems(mixer, updatedByEmail) {
             iconStyle: { color: verifiedColor },
             label: 'Verified',
             style: { color: verifiedColor },
-            value: hasUpdatedLast
-                ? `${new Date(mixer.updatedLast).toLocaleString()}${verifiedSuffix}`
-                : 'Never verified',
+            value: hasUpdatedLast ? `${formatCentralDateTime(mixer.updatedLast)}${verifiedSuffix}` : 'Never verified',
             valueStyle: { color: verifiedValueColor }
         },
         {
             icon: 'fas fa-user-check',
             iconStyle: { color: mixer.updatedBy ? 'var(--success)' : 'var(--danger)' },
             label: 'Verified By',
-            title: `Last Updated: ${new Date(mixer.updatedAt).toLocaleString()}`,
+            title: `Last Updated: ${formatCentralDateTime(mixer.updatedAt)}`,
             value: mixer.updatedBy ? updatedByEmail || 'Unknown User' : 'No verification record',
             valueStyle: { color: mixer.updatedBy ? 'inherit' : 'var(--danger)' }
         }

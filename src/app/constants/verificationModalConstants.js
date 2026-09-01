@@ -1,3 +1,4 @@
+import { formatCentralDateTime } from '../../utils/PlanUtility'
 export const SECTION_TITLE_CLASS = 'text-[13.5px] font-semibold leading-tight text-text-primary'
 
 export const SECTION_SUBTITLE_CLASS = 'text-[11.5px] leading-tight text-text-tertiary mt-0.5'
@@ -33,5 +34,5 @@ export function getSeverityPalette(severity) {
 /** Formats an ISO date string with the user's locale. Returns '' for falsy input. */
 export function formatVerificationDate(dateString) {
     if (!dateString) return ''
-    return new Date(dateString).toLocaleString()
+    return formatCentralDateTime(dateString)
 }
