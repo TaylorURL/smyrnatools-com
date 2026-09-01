@@ -1,6 +1,7 @@
 import APIUtility from '../utils/APIUtility'
 import { CacheUtility } from '../utils/CacheUtility'
 import { detectPlatformType } from '../utils/DeviceUtility'
+import { fetchRelease } from '../utils/NetworkUtility'
 import { getSessionUserId } from './SessionService'
 
 const PREFS_FUNCTION = '/user-preferences-service'
@@ -145,9 +146,8 @@ class UserPreferencesService {
         const cached = CacheUtility.get(VERSION_CACHE_KEY)
         if (cached) return cached
         try {
-            const response = await fetch('/release.json', { cache: 'no-store' })
-            if (!response.ok) throw new Error('failed')
-            const { version = '' } = await response.json()
+            const { ok, version } = await fetchRelease()
+            if (!ok) throw new Error('failed')
             return CacheUtility.set(VERSION_CACHE_KEY, version, VERSION_CACHE_TTL_MS)
         } catch {
             return CacheUtility.set(VERSION_CACHE_KEY, '', VERSION_CACHE_TTL_MS)

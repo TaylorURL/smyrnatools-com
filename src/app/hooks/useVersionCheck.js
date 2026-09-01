@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { fetchRelease } from '../../utils/NetworkUtility'
+
 const VERSION_POLL_INTERVAL = 60 * 1000 // 1 minute
 async function fetchDeployedVersion() {
-    const res = await fetch('/release.json', { cache: 'no-store' })
-    if (!res.ok) throw new Error('Failed to fetch version')
-    const data = await res.json()
-    return data.version ?? null
+    const { ok, version } = await fetchRelease()
+    if (!ok) throw new Error('Failed to fetch version')
+    return version || null
 }
 /**
  * Polls the deployed `/release.json` once a minute and flags when the server
