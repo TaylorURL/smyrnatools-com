@@ -1,20 +1,13 @@
-import React, { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 
+import VideoBackground from '../../../app/components/common/VideoBackground'
 import { SRM_LOGO_URL } from '../../../app/constants/assetUrls'
 import LoginForm from './LoginForm'
 import PortalDestinationCard from './PortalDestinationCard'
 
-const VideoBackground = lazy(() => import('../../../app/components/common/VideoBackground'))
-
-/** Static gradient placeholder shown while the ambient video lazy-loads. */
-const VideoFallback = memo(function VideoFallback() {
-    return <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-slate-950 to-accent" />
-})
-
 const READY_MIX_URL = 'https://smyrnareadymix.com'
 const SAMSARA_URL = 'https://samsara.com'
 const FOCUS_AFTER_REVEAL_MS = 480
-const VIDEO_LOAD_DELAY_MS = 100
 
 /**
  * The public front door. Fixed light-on-dark throughout rather than themed,
@@ -30,12 +23,6 @@ function LoginView() {
     const loginPanelRef = useRef(null)
     const gateButtonRef = useRef(null)
     const [isRevealed, setIsRevealed] = useState(false)
-    const [videoLoaded, setVideoLoaded] = useState(false)
-
-    useEffect(() => {
-        const timer = window.setTimeout(() => setVideoLoaded(true), VIDEO_LOAD_DELAY_MS)
-        return () => window.clearTimeout(timer)
-    }, [])
 
     const focusEmailField = useCallback(() => {
         const node = loginPanelRef.current
@@ -79,13 +66,7 @@ function LoginView() {
              * footer sit against the page rather than inside a panel.
              */}
             <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 bg-slate-950">
-                {videoLoaded ? (
-                    <Suspense fallback={<VideoFallback />}>
-                        <VideoBackground />
-                    </Suspense>
-                ) : (
-                    <VideoFallback />
-                )}
+                <VideoBackground />
                 <div className="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-slate-950/55 to-slate-950/90" />
             </div>
             <header className="relative z-10 flex shrink-0 items-center gap-3 border-b border-white/10 bg-slate-950/40 px-4 py-2.5 backdrop-blur-xl sm:px-5">
