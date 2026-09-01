@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2026.36.3-222d65?style=for-the-badge" alt="Version 2026.36.3" />
+  <img src="https://img.shields.io/badge/version-2026.36.5-222d65?style=for-the-badge" alt="Version 2026.36.5" />
   <img src="https://img.shields.io/badge/React-19-222d65?style=for-the-badge&logo=react&logoColor=white" alt="React 19" />
   <img src="https://img.shields.io/badge/Vite-6-222d65?style=for-the-badge&logo=vite&logoColor=white" alt="Vite 6" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3-222d65?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 3" />
@@ -134,7 +134,7 @@ flowchart LR
 
 ```
 smyrnatools-com/
-├── public/                 Logos, favicon, PWA manifest + service worker, self-hosted fonts,
+├── public/                 Logos, favicon, PWA manifest, self-hosted fonts,
 │                           robots.txt, sitemap.xml, llms.txt, release.json
 ├── docs/                   Workflow map and the running todo list
 ├── scripts/                Dev/ops helpers — Supabase CLI wrapper, CalVer, email templates,

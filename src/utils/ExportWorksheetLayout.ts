@@ -17,6 +17,7 @@ import {
 } from './ExportExcelStyles'
 import { type ChangeInfo, getChangeText, getChangeValue } from './ExportValueHelpers'
 import type { ExcelWorkbook, ExcelWorksheet } from './ExportWorkbook'
+import { formatCentralDate } from './PlanUtility'
 
 /**
  * Worksheet layout builders: section titles, table headers flat and merged,
@@ -245,7 +246,7 @@ export function addReportHeader(
     }
     worksheet.mergeCells(currentRow, 5, currentRow, 12)
     const dateCell = worksheet.getCell(currentRow, 5)
-    const generatedDate = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+    const generatedDate = formatCentralDate(new Date())
     dateCell.value = { hyperlink: SITE_URL, text: `Generated on ${generatedDate} on smyrnatools.com` }
     dateCell.font = buildFont(10, COLORS.slate500, { italic: true, underline: true })
     currentRow += 2

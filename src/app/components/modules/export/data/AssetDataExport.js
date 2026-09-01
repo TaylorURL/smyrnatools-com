@@ -5,6 +5,7 @@ import {
     addTableHeaders,
     COLORS
 } from '../../../../../utils/ExportUtility'
+import { formatCentralDate } from '../../../../../utils/PlanUtility'
 import { createSheet, exportWorkbook, finalizeSheet, initExport } from '../ExportModule'
 
 /** Column widths (in characters) are clamped to this readable range. */
@@ -19,7 +20,7 @@ function formatExportDate(value) {
     if (!value) return ''
     const date = new Date(value)
     if (isNaN(date)) return ''
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+    return formatCentralDate(date)
 }
 
 /**
@@ -91,7 +92,7 @@ export async function exportAssetDataSheet({ assetType, pluralLabel, rows, colum
     ]
     const ws = createSheet(wb, assetType, { columns: columnWidths })
 
-    const dateStr = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+    const dateStr = formatCentralDate(new Date(), { day: 'numeric', month: 'long', year: 'numeric' })
     let row = addReportHeader(ws, wb, { logoBase64, subtitle: dateStr, title: sheetTitle })
 
     const plural = pluralLabel || `${assetType}s`

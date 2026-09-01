@@ -16,6 +16,10 @@
  * a manager scanning the message finds the risks without reading it.
  */
 
+// The yard's zone. This mailer runs on a server in UTC, and the day it names
+// in the subject line is the day the plan is for.
+const PLAN_TIME_ZONE = 'America/Chicago'
+
 import { renderBadgeHtml } from './badgeHtml.js'
 
 const ACCENT = '#c12033'
@@ -65,14 +69,26 @@ function formatLongDate(planDateIso) {
     if (!planDateIso) return ''
     const date = new Date(`${planDateIso}T12:00:00`)
     if (Number.isNaN(date.getTime())) return planDateIso
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', weekday: 'long', year: 'numeric' })
+    return date.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'long',
+        timeZone: PLAN_TIME_ZONE,
+        weekday: 'long',
+        year: 'numeric'
+    })
 }
 
 function formatShortDate(planDateIso) {
     if (!planDateIso) return ''
     const date = new Date(`${planDateIso}T12:00:00`)
     if (Number.isNaN(date.getTime())) return planDateIso
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', weekday: 'short', year: 'numeric' })
+    return date.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        timeZone: PLAN_TIME_ZONE,
+        weekday: 'short',
+        year: 'numeric'
+    })
 }
 
 function formatRecipient(r) {

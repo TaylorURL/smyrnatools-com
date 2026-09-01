@@ -1,6 +1,7 @@
 import { MixerService } from '../../../services/MixerService'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
 import CleanupUtility from '../../../utils/CleanupUtility'
+import { formatCentralDate } from '../../../utils/PlanUtility'
 import { ValidationUtility } from '../../../utils/ValidationUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
 import MixerAddView from '../mixers/MixerAddView'
@@ -118,13 +119,12 @@ const mixerConfig = {
     gridCardFields: [
         { getValue: (_item, ctx) => ctx.plantName || '---', label: 'Plant' },
         {
-            getValue: (item) =>
-                item.lastServiceDate ? new Date(item.lastServiceDate).toLocaleDateString() : 'Unknown',
+            getValue: (item) => (item.lastServiceDate ? formatCentralDate(item.lastServiceDate) : 'Unknown'),
             isOverdue: (item) => AssetStatsUtility.isServiceOverdue(item.lastServiceDate),
             label: 'Last Service'
         },
         {
-            getValue: (item) => (item.lastChipDate ? new Date(item.lastChipDate).toLocaleDateString() : 'Unknown'),
+            getValue: (item) => (item.lastChipDate ? formatCentralDate(item.lastChipDate) : 'Unknown'),
             isOverdue: (item) => AssetStatsUtility.isServiceOverdue(item.lastChipDate, 90),
             label: 'Last Chip'
         },

@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import { UserService } from '../../../services/UserService'
+import { formatCentralDate } from '../../../utils/PlanUtility'
 import { DEFAULT_ACCENT_COLOR } from '../../constants/themeConstants'
 import { usePreferences } from '../../context/PreferencesContext'
 import Badge from '../common/Badge'
@@ -40,7 +41,7 @@ const formatDate = (dateString) => {
     if (mins < 60) return `${mins}m ago`
     if (hours < 24) return `${hours}h ago`
     if (days < 7) return `${days}d ago`
-    return date.toLocaleDateString()
+    return formatCentralDate(date)
 }
 
 /**

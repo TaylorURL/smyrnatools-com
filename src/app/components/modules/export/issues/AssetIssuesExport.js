@@ -6,6 +6,7 @@ import {
     addTableHeaders,
     COLORS
 } from '../../../../../utils/ExportUtility'
+import { formatCentralDate } from '../../../../../utils/PlanUtility'
 import { createSheet, exportWorkbook, finalizeSheet, initExport } from '../ExportModule'
 
 /** Severity level to Excel color mapping. */
@@ -43,7 +44,7 @@ function formatIssueDate(dateString) {
     if (!dateString) return ''
     const date = new Date(dateString)
     if (isNaN(date)) return ''
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+    return formatCentralDate(date)
 }
 /** Resolves user UUIDs from issue `created_by` fields to display names. */
 async function resolveUserNames(issues) {
@@ -100,7 +101,7 @@ export async function exportAssetIssuesSheet({ assets, plants, assetType, identi
             { width: 14 }
         ]
     })
-    const dateStr = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+    const dateStr = formatCentralDate(new Date(), { day: 'numeric', month: 'long', year: 'numeric' })
     let r = addReportHeader(ws, wb, { logoBase64, subtitle: dateStr, title: sheetTitle })
     r++
     const totalOpenIssues = Object.values(issuesByAssetId).reduce((sum, issues) => sum + issues.length, 0)

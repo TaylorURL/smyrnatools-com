@@ -1,4 +1,5 @@
 import { DateUtility } from '../../../utils/DateUtility'
+import { formatCentralDate } from '../../../utils/PlanUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
 
 /**
@@ -95,10 +96,10 @@ export class Mixer {
         return this
     }
     getFormattedServiceDate() {
-        return this.lastServiceDate ? new Date(this.lastServiceDate).toLocaleDateString() : 'Not available'
+        return this.lastServiceDate ? formatCentralDate(this.lastServiceDate) : 'Not available'
     }
     getFormattedChipDate() {
-        return this.lastChipDate ? new Date(this.lastChipDate).toLocaleDateString() : 'Not available'
+        return this.lastChipDate ? formatCentralDate(this.lastChipDate) : 'Not available'
     }
     isVerified() {
         return VerifiedUtility.isVerified(this.updatedLast, this.updatedAt, this.updatedBy)

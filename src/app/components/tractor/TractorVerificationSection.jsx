@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { formatCentralDateTime } from '../../../utils/PlanUtility'
 import { Tractor } from '../../models/tractors/Tractor'
 import DetailViewSection from '../sections/DetailViewSection'
 import VerificationCardSection from '../sections/VerificationCardSection'
@@ -36,7 +37,7 @@ function buildVerificationItems(tractor, updatedByEmail) {
             iconStyle: { color: verifiedColor },
             label: 'Verified',
             value: tractor.updatedLast
-                ? `${new Date(tractor.updatedLast).toLocaleString()}${verifiedSuffix}`
+                ? `${formatCentralDateTime(tractor.updatedLast)}${verifiedSuffix}`
                 : 'Never verified',
             valueStyle: { color: verifiedValueColor }
         },
@@ -44,7 +45,7 @@ function buildVerificationItems(tractor, updatedByEmail) {
             icon: 'fas fa-user-check',
             iconStyle: { color: tractor.updatedBy ? 'var(--success)' : 'var(--danger)' },
             label: 'Verified By',
-            title: `Last Updated: ${new Date(tractor.updatedAt).toLocaleString()}`,
+            title: `Last Updated: ${formatCentralDateTime(tractor.updatedAt)}`,
             value: tractor.updatedBy ? updatedByEmail || 'Unknown User' : 'No verification record',
             valueStyle: { color: tractor.updatedBy ? 'inherit' : 'var(--danger)' }
         }

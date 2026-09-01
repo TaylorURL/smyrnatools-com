@@ -10,11 +10,10 @@ import { useAccentColor } from '../../hooks/useAccentColor'
 /** Pool of background videos randomly selected on mount. */
 const BACKGROUND_VIDEOS = [vid1, vid2, vid3, vid4]
 const TRIM_END_SECONDS = 10
-const SKIP_START_SECONDS = 5
 
 /**
  * Ambient looping video background with a gradient underlay and dark overlay.
- * Randomly selects one video on mount; skips the first 5 seconds to avoid intro frames.
+ * Randomly selects one video on mount.
  */
 const VideoBackground = memo(function VideoBackground({ className = '' }) {
     const [currentVideoIndex, setCurrentVideoIndex] = useState(() =>
@@ -28,7 +27,6 @@ const VideoBackground = memo(function VideoBackground({ className = '' }) {
     const handleCanPlay = () => {
         if (!videoRef.current || hasStartedRef.current) return
         hasStartedRef.current = true
-        videoRef.current.currentTime = SKIP_START_SECONDS
         videoRef.current
             .play()
             .then(() => setShowVideo(true))

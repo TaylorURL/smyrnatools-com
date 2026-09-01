@@ -3,6 +3,7 @@
  * Centralizes date localization, rating labels, null-operator normalization,
  * and date comparison logic used across Mixer, Tractor, and Operator history models.
  */
+import { formatCentralCalendarDate, formatCentralDate, getCentralDay } from './PlanUtility'
 
 const CLEANLINESS_LABELS: Record<number, string> = {
     1: 'Poor (1)',
@@ -18,7 +19,7 @@ const HistoryDisplayUtility = {
         if (!date1 && !date2) return true
         if (!date1 || !date2) return false
         try {
-            return new Date(date1).toISOString().split('T')[0] === new Date(date2).toISOString().split('T')[0]
+            return getCentralDay(date1) === getCentralDay(date2)
         } catch {
             return false
         }
@@ -44,13 +45,16 @@ const HistoryDisplayUtility = {
     formatDateValue(value: string) {
         if (!value) return null
         try {
-            const parts = value.split('-')
-            if (parts.length === 3 && parts[0].length === 4) {
-                const date = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])))
-                if (!isNaN(date.getTime())) return date.toLocaleDateString()
-            }
+            const calendarDate = formatCentralCalendarDate(value, {
+                day: 'numeric',
+                month: 'numeric',
+                year: 'numeric'
+            })
+            if (calendarDate) return calendarDate
             const date = new Date(value)
-            if (!isNaN(date.getTime())) return date.toLocaleDateString()
+            if (!isNaN(date.getTime())) {
+                return formatCentralDate(date, { day: 'numeric', month: 'numeric', year: 'numeric' })
+            }
         } catch {}
         return null
     }

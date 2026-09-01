@@ -3,6 +3,7 @@ import React from 'react'
 import StarRating from '../../../app/components/common/StarRating'
 import CardSection from '../../../app/components/sections/CardSection'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
+import { formatCentralDate } from '../../../utils/PlanUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
 
 /** Maps equipment status to card accent color. */
@@ -62,7 +63,7 @@ function EquipmentCard({ equipment, plantName, onSelect, onShowCommentModal, onS
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Last Service</div>
                 <div className="text-sm font-medium">
-                    {equipment.lastServiceDate ? new Date(equipment.lastServiceDate).toLocaleDateString() : 'Unknown'}
+                    {equipment.lastServiceDate ? formatCentralDate(equipment.lastServiceDate) : 'Unknown'}
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">

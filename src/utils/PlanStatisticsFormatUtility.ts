@@ -2,6 +2,7 @@
  * Pure functions. No DOM, no React. Mirror the Schedule tab's headline
  * styling so cross-tab numbers always read the same.
  */
+import { formatCentralDate } from './PlanUtility'
 
 /** ISO `YYYY-MM-DD` -> local-zone `Date` (no UTC drift). Returns null when
  *  the input is empty or malformed. */
@@ -28,7 +29,7 @@ export const fmtScorePct = (n: number | null | undefined): string =>
 export const fmtDate = (iso: string | null | undefined): string => {
     const d = parseIsoLocal(iso)
     if (!d) return iso || ''
-    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+    return formatCentralDate(d, { day: 'numeric', month: 'short' })
 }
 
 export const fmtRange = (start: string | null | undefined, end: string | null | undefined): string => {

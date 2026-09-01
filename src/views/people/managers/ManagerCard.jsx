@@ -2,6 +2,7 @@ import React from 'react'
 
 import Badge from '../../../app/components/common/Badge'
 import CardSection from '../../../app/components/sections/CardSection'
+import { formatCentralCalendarDate } from '../../../utils/PlanUtility'
 import { getRoleColor } from '../../../utils/RoleColorUtility'
 
 function ManagerCard({ manager, plantName, onSelect }) {
@@ -40,7 +41,7 @@ function ManagerCard({ manager, plantName, onSelect }) {
                 <div className="text-sm text-text-secondary">Last Login</div>
                 <div className="text-sm font-medium">
                     {manager.lastLoginAt
-                        ? new Date(manager.lastLoginAt + 'T00:00:00').toLocaleDateString(undefined, {
+                        ? formatCentralCalendarDate(manager.lastLoginAt, {
                               day: 'numeric',
                               month: 'short',
                               year: 'numeric'

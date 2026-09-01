@@ -1,6 +1,7 @@
 import { TractorService } from '../../../services/TractorService'
 import { TrailerService } from '../../../services/TrailerService'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
+import { formatCentralDate } from '../../../utils/PlanUtility'
 import { ValidationUtility } from '../../../utils/ValidationUtility'
 import TrailerAddView from '../trailers/TrailerAddView'
 import TrailerCard from '../trailers/TrailerCard'
@@ -70,8 +71,7 @@ const trailerConfig = {
         { getValue: (_item, ctx) => ctx.plantName || '---', label: 'Plant' },
         { getValue: (item) => item.trailerType || 'Unknown', label: 'Type' },
         {
-            getValue: (item) =>
-                item.lastServiceDate ? new Date(item.lastServiceDate).toLocaleDateString() : 'Unknown',
+            getValue: (item) => (item.lastServiceDate ? formatCentralDate(item.lastServiceDate) : 'Unknown'),
             isOverdue: (item) => AssetStatsUtility.isServiceOverdue(item.lastServiceDate, 90),
             label: 'Last Service'
         },

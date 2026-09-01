@@ -2,9 +2,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
-import { Database } from '../services/DatabaseService'
 import { getSessionUserId } from '../services/SessionService'
-import { UserService } from '../services/UserService'
 import { NetworkUtility } from '../utils/NetworkUtility'
 import LoginView from '../views/common/login/LoginView'
 import AppFooter from './components/common/AppFooter'
@@ -56,6 +54,12 @@ const RolesView = lazyWithRetry(() => import('../views/admin/roles/RolesView'))
 const TractorsView = lazyWithRetry(() => import('../views/assets/tractors/TractorsView'))
 const TrailersView = lazyWithRetry(() => import('../views/assets/trailers/TrailersView'))
 const NotificationsView = lazyWithRetry(() => import('../views/common/notifications/NotificationsView'))
+// Both services below are reached only behind a session, and the module that
+// constructs the database client is the heaviest dependency in the graph.
+// Importing them from inside the effects that call them keeps them off the
+// path a signed-out visitor pays for.
+const loadDatabase = () => import('../services/DatabaseService').then((module) => module.Database)
+const loadUserService = () => import('../services/UserService').then((module) => module.UserService)
 // Which views a region type will tolerate. Switching region checks the view
 // currently on screen against these and drops back to Dashboard when it no
 // longer belongs, so nobody is left looking at data their new region has no
@@ -111,7 +115,10 @@ function AppContent() {
         }
     }, [userId, rolesLoaded, triggerTutorial])
     useEffect(() => {
-        UserService.getCurrentUser().catch(() => {})
+        if (!userId) return
+        loadUserService()
+            .then((service) => service.getCurrentUser())
+            .catch(() => {})
     }, [userId])
     useEffect(() => {
         const handleRegionChange = (event) => {
@@ -136,7 +143,8 @@ function AppContent() {
         let cancelled = false
         const loadRoles = async () => {
             try {
-                const roles = await UserService.getUserRoles(userId)
+                const userService = await loadUserService()
+                const roles = await userService.getUserRoles(userId)
                 if (cancelled) return
                 if (roles?.some((r) => r?.name?.toLowerCase() === 'terminated')) {
                     setTerminatedMode(true)
@@ -161,10 +169,10 @@ function AppContent() {
     }, [userId, rolesLoaded])
     useEffect(() => {
         if (!userId) return
-        Database.from('users_profiles')
-            .select('first_name, last_name')
-            .eq('id', userId)
-            .single()
+        loadDatabase()
+            .then((database) =>
+                database.from('users_profiles').select('first_name, last_name').eq('id', userId).single()
+            )
             .then(({ data, error }) => {
                 if (!error && data) {
                     const name = `${data.first_name || ''} ${data.last_name || ''}`.trim()
@@ -176,6 +184,7 @@ function AppContent() {
                     }
                 }
             })
+            .catch(() => {})
     }, [userId])
     useEffect(() => {
         document.querySelectorAll('[data-content-scroll]').forEach((el) => el.scrollTo(0, 0))

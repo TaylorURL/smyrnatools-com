@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { formatCentralDate, formatCentralDateTime } from '../../../../utils/PlanUtility'
 import { FIELD_NAME_ICONS, FIELD_NAME_LABELS, INACTIVE_STATUSES } from '../../../constants/recapConstants'
 
 export const formatFieldName = (fieldName) => {
@@ -38,7 +39,7 @@ export const formatValue = (value, fieldName, operatorNames) => {
     }
     if (fieldName === 'last_service_date' || fieldName === 'last_chip_date') {
         try {
-            return new Date(value).toLocaleDateString()
+            return formatCentralDate(value)
         } catch {
             return value
         }
@@ -52,7 +53,7 @@ export const formatValue = (value, fieldName, operatorNames) => {
     }
     if (fieldName === 'pending_start_date') {
         try {
-            return new Date(value).toLocaleDateString()
+            return formatCentralDate(value)
         } catch {
             return value
         }
@@ -72,7 +73,7 @@ export const formatDate = (dateStr) => {
         if (mins < 60) return `${mins}m ago`
         if (hours < 24) return `${hours}h ago`
         if (days < 7) return `${days}d ago`
-        return date.toLocaleDateString('en-US', {
+        return formatCentralDateTime(date, {
             day: 'numeric',
             hour: 'numeric',
             minute: '2-digit',

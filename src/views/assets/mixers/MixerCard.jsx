@@ -4,6 +4,7 @@ import Badge from '../../../app/components/common/Badge'
 import StarRating from '../../../app/components/common/StarRating'
 import CardSection from '../../../app/components/sections/CardSection'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
+import { formatCentralDate } from '../../../utils/PlanUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
 
 /** Maps mixer status to card accent color. Shop sub-statuses handled separately. */
@@ -107,13 +108,13 @@ function MixerCard({
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Last Service</div>
                 <div className="text-sm font-medium text-text-primary">
-                    {mixer.lastServiceDate ? new Date(mixer.lastServiceDate).toLocaleDateString() : 'Unknown'}
+                    {mixer.lastServiceDate ? formatCentralDate(mixer.lastServiceDate) : 'Unknown'}
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-text-secondary">Last Chip</div>
                 <div className="text-sm font-medium text-text-primary">
-                    {mixer.lastChipDate ? new Date(mixer.lastChipDate).toLocaleDateString() : 'Unknown'}
+                    {mixer.lastChipDate ? formatCentralDate(mixer.lastChipDate) : 'Unknown'}
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">

@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { formatCentralDate } from '../../../utils/PlanUtility'
+
 const SKELETON_ROW_LABELS = [
     'Asset Total',
     'Active',
@@ -65,7 +67,7 @@ export function DashboardAtAGlance({ alertCount, displayStats, loading = false, 
         (stats.equipment?.active || 0) +
         (stats.pickups?.active || 0)
 
-    const dateLabel = new Date().toLocaleDateString('en-US', {
+    const dateLabel = formatCentralDate(new Date(), {
         day: 'numeric',
         month: 'long',
         weekday: 'long',

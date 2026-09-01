@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 
 import { Database } from '../../../services/DatabaseService'
+import { formatCentralDate } from '../../../utils/PlanUtility'
 import { DEFAULT_ACCENT_COLOR } from '../../constants/themeConstants'
 import { usePreferences } from '../../context/PreferencesContext'
 
@@ -139,7 +140,7 @@ function VerificationCardSection({
         if (days === 1) return 'Yesterday'
         if (days < 7) return `${days} days ago`
         if (days < 30) return `${Math.floor(days / 7)} week${Math.floor(days / 7) > 1 ? 's' : ''} ago`
-        return new Date(dateStr).toLocaleDateString()
+        return formatCentralDate(dateStr)
     }
     return (
         <div className="flex flex-col gap-6">

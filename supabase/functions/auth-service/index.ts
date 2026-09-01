@@ -35,6 +35,19 @@ import { requireAuthenticated, SESSION_EXPIRY_DAYS } from '../_shared/requireSes
 const JWT_TTL_SECONDS = 3600
 
 const USERS_TABLE = 'users'
+
+// The yard's day, which is the day a `date` column here is meant to carry.
+// Stamped from a UTC one, a login on a Texas evening is written down as
+// tomorrow. This function runs on Deno and cannot reach the app's own helper,
+// so the zone is named here as well.
+const CENTRAL = 'America/Chicago'
+const centralDay = (at = new Date()) =>
+    new Intl.DateTimeFormat('en-CA', {
+        day: '2-digit',
+        month: '2-digit',
+        timeZone: CENTRAL,
+        year: 'numeric'
+    }).format(at)
 const PROFILES_TABLE = 'users_profiles'
 const PREFERENCES_TABLE = 'users_preferences'
 const PROFILE_SELECT_FIELDS = 'first_name, last_name, plant_code'
@@ -263,7 +276,7 @@ Deno.serve(async (req) => {
 
                 supabase
                     .from(USERS_TABLE)
-                    .update({ last_login_at: new Date().toISOString().split('T')[0] })
+                    .update({ last_login_at: centralDay() })
                     .eq('id', data.id)
                     .then(() => {})
                     .catch(() => {})

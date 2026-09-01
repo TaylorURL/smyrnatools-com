@@ -1,5 +1,6 @@
 import APIUtility, { SESSION_INVALID_EVENT } from '../utils/APIUtility'
 import { detectDeviceType } from '../utils/DeviceUtility'
+import { getCentralDay } from '../utils/PlanUtility'
 import {
     ACTIVITY_THROTTLE_MS,
     buildRoleColorMap,
@@ -185,7 +186,10 @@ class UserPresenceService {
         try {
             if (!(await postPresence('/update-activity', { userId: this.currentUserId }))) return false
             mergeActiveDevice(this.currentUserId, detectDeviceType())
-            const today = new Date().toISOString().split('T')[0]
+            // The yard's day. Stamped from a UTC one, a login on a Texas
+            // evening is written down as tomorrow, and the managers list shows
+            // a last-login date a day ahead of the login.
+            const today = getCentralDay()
             if (this.lastLoginDateWritten !== today) {
                 this.lastLoginDateWritten = today
                 try {
