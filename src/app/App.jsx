@@ -7,14 +7,12 @@ import { NetworkUtility } from '../utils/NetworkUtility'
 import LoginView from '../views/common/login/LoginView'
 import AppFooter from './components/common/AppFooter'
 import LockedOverlay from './components/common/LockedOverlay'
-import Navigation from './components/common/Navigation'
 import OfflineOverlay from './components/common/OfflineOverlay'
 import TerminatedOverlay from './components/common/TerminatedOverlay'
 import TutorialManager from './components/common/TutorialPopup'
 import VersionUpdateBanner from './components/common/VersionUpdateBanner'
 import WebOverlay from './components/common/WebOverlay'
 import { VALID_START_PAGE_IDS } from './constants/myAccountConstants'
-import { MessagesProvider } from './context/MessagesContext'
 import { usePreferences } from './context/PreferencesContext'
 import { useTutorial } from './context/TutorialContext'
 import { useAuthSession } from './hooks/useAuth'
@@ -39,6 +37,17 @@ const lazyWithRetry = (importer) =>
             return importer()
         })
     )
+// The navigation bar and the messages provider are mounted only behind a
+// session, and between them they reach every service that talks to the
+// database. Held apart from the entry graph, the client those services build
+// is fetched when somebody signs in rather than on every visit to the login
+// screen. Both land in one chunk, since the navigation reads the provider.
+const importMessagesContext = () => import('./context/MessagesContext')
+const importNavigation = () => import('./components/common/Navigation')
+const MessagesProvider = lazyWithRetry(() =>
+    importMessagesContext().then((module) => ({ default: module.MessagesProvider }))
+)
+const Navigation = lazyWithRetry(importNavigation)
 const AppInstallPromptModal = lazyWithRetry(() => import('./components/common/AppInstallPromptModal'))
 const DashboardView = lazyWithRetry(() => import('../views/common/dashboard/DashboardView'))
 const EquipmentsView = lazyWithRetry(() => import('../views/assets/equipment/EquipmentsView'))
@@ -114,6 +123,15 @@ function AppContent() {
             triggerTutorial('account-nav-hint', 2000)
         }
     }, [userId, rolesLoaded, triggerTutorial])
+    // The shell those two chunks build is not rendered until roles resolve, and
+    // that resolution is a round trip of its own. Starting the fetch as soon as
+    // a session exists runs the two in parallel, so the chunk is normally in
+    // hand by the time there is something to render with it.
+    useEffect(() => {
+        if (!userId) return
+        importNavigation().catch(() => {})
+        importMessagesContext().catch(() => {})
+    }, [userId])
     useEffect(() => {
         if (!userId) return
         loadUserService()
@@ -325,22 +343,24 @@ function AppContent() {
     if (!rolesLoaded) return null
     return (
         <div className="relative z-base flex h-screen w-full flex-col overflow-hidden bg-transparent font-sans">
-            <MessagesProvider userId={userId}>
-                <Navigation
-                    selectedView={selectedView.view}
-                    onSelectView={handleViewSelection}
-                    onExternalLink={setWebViewURL}
-                    userName={userDisplayName}
-                    userDisplayName={userDisplayName}
-                    userId={userId}
-                >
-                    <Suspense fallback={null}>
-                        <div key={`view-${regionKey}`} className="flex min-h-full flex-col">
-                            <div className="relative flex-1">{renderCurrentView()}</div>
-                        </div>
-                    </Suspense>
-                </Navigation>
-            </MessagesProvider>
+            <Suspense fallback={null}>
+                <MessagesProvider userId={userId}>
+                    <Navigation
+                        selectedView={selectedView.view}
+                        onSelectView={handleViewSelection}
+                        onExternalLink={setWebViewURL}
+                        userName={userDisplayName}
+                        userDisplayName={userDisplayName}
+                        userId={userId}
+                    >
+                        <Suspense fallback={null}>
+                            <div key={`view-${regionKey}`} className="flex min-h-full flex-col">
+                                <div className="relative flex-1">{renderCurrentView()}</div>
+                            </div>
+                        </Suspense>
+                    </Navigation>
+                </MessagesProvider>
+            </Suspense>
             <AppFooter />
             {offlineMode && <OfflineOverlay onRetry={handleRetryConnection} onReload={handleReloadIfOnline} />}
             {isGuestOnly && <LockedOverlay reason="guest-only" />}

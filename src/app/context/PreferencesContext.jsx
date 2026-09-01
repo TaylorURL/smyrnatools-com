@@ -1,13 +1,18 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
-import { logDatabaseError } from '../../services/DatabaseService'
-import { PlantService } from '../../services/PlantService'
+import { getSessionUserId } from '../../services/SessionService'
 import { UserPreferencesService } from '../../services/UserPreferencesService'
-import { UserService } from '../../services/UserService'
 import APIUtility from '../../utils/APIUtility'
+import { logDatabaseError } from '../../utils/DatabaseErrorUtility'
 import { DEFAULT_ACCENT_COLOR } from '../constants/themeConstants'
 
 const PREFS_FUNCTION = '/user-preferences-service'
+// Region derivation is the only thing here that reaches the database, and the
+// module that constructs its client is the heaviest dependency in the graph.
+// Importing the two services from inside the branch that derives a region
+// keeps them off the path a signed-out visitor pays for.
+const loadPlantService = () => import('../../services/PlantService').then((module) => module.PlantService)
+const loadUserService = () => import('../../services/UserService').then((module) => module.UserService)
 /**
  * User preferences context managing per-entity filter states, region selection,
  * view modes, accent color, and tutorial toggles. Persists to the database on change.
@@ -87,10 +92,12 @@ const defaultPreferences = {
  *
  * Children are withheld until the first load settles, so every consumer can
  * read `preferences` synchronously without guarding against half-loaded state.
+ * There is nothing to settle without a session — the defaults are already the
+ * answer — so a signed-out visitor is never held behind that gate.
  */
 export const PreferencesProvider = ({ children }) => {
     const [preferences, setPreferences] = useState(defaultPreferences)
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(() => Boolean(getSessionUserId()))
     const [userId, setUserId] = useState(null)
     const [_authTrigger, setAuthTrigger] = useState(0)
     const updatePreferencesRef = useRef(null)
@@ -166,7 +173,8 @@ export const PreferencesProvider = ({ children }) => {
         let cancelled = false
         const initialize = async () => {
             setLoading(true)
-            const user = await UserService.getCurrentUser()
+            const sessionUserId = getSessionUserId()
+            const user = sessionUserId ? { id: sessionUserId } : null
             if (cancelled) return
             if (user && user.id) {
                 setUserId(user.id)
@@ -248,13 +256,15 @@ export const PreferencesProvider = ({ children }) => {
                 const originalSelectedRegion = prefs.selectedRegion
                 if (!prefs.selectedRegion.code) {
                     try {
-                        const plant = await UserService.getUserPlant(user.id)
+                        const userService = await loadUserService()
+                        const plant = await userService.getUserPlant(user.id)
                         if (cancelled) return
                         const plantCode = (
                             typeof plant === 'string' ? plant : plant?.plant_code || plant?.plantCode || ''
                         ).trim()
                         if (plantCode) {
-                            const regions = await PlantService.fetchRegionsByPlantCode(plantCode)
+                            const plantService = await loadPlantService()
+                            const regions = await plantService.fetchRegionsByPlantCode(plantCode)
                             if (cancelled) return
                             if (regions && regions.length > 0) {
                                 const region = regions[0]
