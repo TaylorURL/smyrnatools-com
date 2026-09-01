@@ -134,12 +134,22 @@ runWhenIdle(() => {
         module.default()
     })
 })
+// No worker is registered for this origin, and one that a browser still holds
+// keeps intercepting fetches until something unregisters it — including the
+// range requests the background video is served over. Clearing any leftover
+// registration and the caches behind it hands every request back to the HTTP
+// cache, which the assets are already given immutable lifetimes for.
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        runWhenIdle(() => {
-            navigator.serviceWorker.register('/sw.js').catch((error) => {
-                console.error('Service worker registration failed:', error)
+    runWhenIdle(() => {
+        navigator.serviceWorker
+            .getRegistrations()
+            .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+            .then((results) => {
+                if (results.some(Boolean) && 'caches' in window) {
+                    return caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+                }
+                return null
             })
-        })
+            .catch(() => {})
     })
 }
