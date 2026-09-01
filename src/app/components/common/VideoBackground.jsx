@@ -65,7 +65,7 @@ const VideoBackground = memo(function VideoBackground({ className = '' }) {
                 onCanPlay={handleCanPlay}
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={advanceVideo}
-                className={`absolute left-1/2 top-1/2 z-media min-h-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover transition-opacity duration-1000 motion-reduce:transition-none ${showVideo ? 'opacity-100' : 'opacity-0'}`}
+                className={`absolute left-1/2 top-1/2 z-media min-h-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover transition-opacity duration-1000 motion-reduce:transition-none ${showVideo ? 'opacity-100' : 'opacity-[0.02]'}`}
             >
                 <source src={BACKGROUND_VIDEOS[currentVideoIndex]} type="video/mp4" />
             </video>
