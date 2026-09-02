@@ -59,6 +59,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.7.0",
+    "beasties": "^0.5.2",
     "cross-env": "^10.1.0",
     "dotenv": "^16.4.5",
     "eslint": "^9.39.0",
