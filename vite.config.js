@@ -4,6 +4,8 @@ import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { defineConfig, loadEnv } from 'vite'
 
+import prerenderPlugin from './vite/prerender-plugin'
+
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '')
 
@@ -16,7 +18,7 @@ export default defineConfig(({ mode }) => {
             .map(([key, value]) => [`process.env.${key}`, JSON.stringify(value)])
     )
 
-    const plugins = [react()]
+    const plugins = [react(), prerenderPlugin()]
 
     if (process.env.ANALYZE === 'true') {
         plugins.push(
