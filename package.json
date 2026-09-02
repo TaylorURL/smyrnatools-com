@@ -45,8 +45,7 @@
     "supabase:functions:deploy": "node scripts/supabase.js functions deploy",
     "supabase:functions:invoke": "node scripts/supabase.js functions invoke",
     "supabase:functions:download": "node scripts/supabase.js functions download",
-    "supabase:functions:delete": "node scripts/supabase.js functions delete",
-    "supabase:functions:delete:local": "node scripts/rm-function.js"
+    "supabase:functions:delete": "node scripts/supabase.js functions delete"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
