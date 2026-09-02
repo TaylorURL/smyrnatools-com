@@ -15,6 +15,7 @@ import WebOverlay from './components/common/WebOverlay'
 import { VALID_START_PAGE_IDS } from './constants/myAccountConstants'
 import { usePreferences } from './context/PreferencesContext'
 import { useTutorial } from './context/TutorialContext'
+import FrontDoor from './FrontDoor'
 import { useAuthSession } from './hooks/useAuth'
 import { useOfflineDetection } from './hooks/useOfflineDetection'
 import { useThemeMode } from './hooks/useThemeMode'
@@ -82,7 +83,12 @@ const AGGREGATE_HIDDEN_VIEWS = new Set(['Mixers', 'Plants', 'Regions'])
 /** Every view except these survives a switch into any other region type. */
 const DEFAULT_HIDDEN_VIEWS = new Set(['Plants', 'Regions'])
 function AppContent() {
-    const [userId, setUserId] = useState(null)
+    // The session lives in memory alone, so a freshly loaded document never
+    // carries one and the first screen is always the sign-in screen. Seeding
+    // both pieces of state here rather than waiting for the restore effect is
+    // what lets React's first commit draw that screen, which is the screen the
+    // prerendered document is already showing.
+    const [userId, setUserId] = useState(getSessionUserId)
     const [selectedView, setSelectedView] = useState({ initialStatusFilter: null, view: 'Dashboard' })
     const [title, setTitle] = useState('Dashboard')
     const [selectedMixer, setSelectedMixer] = useState(null)
@@ -93,7 +99,7 @@ function AppContent() {
     const [offlineMode, setOfflineMode] = useState(false)
     const [terminatedMode, setTerminatedMode] = useState(false)
     const [regionKey, setRegionKey] = useState(0)
-    const [sessionChecked, setSessionChecked] = useState(false)
+    const [sessionChecked, setSessionChecked] = useState(true)
     const { onlineStreakRef, offlineStreakRef, offlineSinceRef } = useOfflineDetection(setOfflineMode)
     const { preferences, loading: preferencesLoading } = usePreferences()
     const startPageAppliedRef = useRef(false)
@@ -333,13 +339,7 @@ function AppContent() {
     }
     if (terminatedMode) return <TerminatedOverlay />
     if (!sessionChecked) return null
-    if (!userId)
-        return (
-            <div className="relative z-base flex h-screen w-full flex-col overflow-hidden bg-transparent font-sans">
-                {renderCurrentView()}
-                <AppFooter tone="dark" />
-            </div>
-        )
+    if (!userId) return <FrontDoor />
     if (!rolesLoaded) return null
     return (
         <div className="relative z-base flex h-screen w-full flex-col overflow-hidden bg-transparent font-sans">

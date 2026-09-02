@@ -52,11 +52,3 @@ export function finalizeSheet(ws, options = {}) {
 export async function exportWorkbook(wb, filename) {
     return downloadWorkbook(wb, filename)
 }
-/** Builds a filename with an optional MM-DD-YYYY date suffix from an ISO date string. */
-export function generateFilename(baseName, dateIso) {
-    if (!dateIso) {
-        return `${baseName}.xlsx`
-    }
-    const [year, month, day] = dateIso.split('-')
-    return `${baseName} ${month}-${day}-${year}.xlsx`
-}

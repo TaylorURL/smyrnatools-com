@@ -1,6 +1,6 @@
 {
   "name": "smyrnatools",
-  "version": "2026.36.10",
+  "version": "2026.36.11",
   "private": true,
   "license": "UNLICENSED",
   "dependencies": {
@@ -45,8 +45,7 @@
     "supabase:functions:deploy": "node scripts/supabase.js functions deploy",
     "supabase:functions:invoke": "node scripts/supabase.js functions invoke",
     "supabase:functions:download": "node scripts/supabase.js functions download",
-    "supabase:functions:delete": "node scripts/supabase.js functions delete",
-    "supabase:functions:delete:local": "node scripts/rm-function.js"
+    "supabase:functions:delete": "node scripts/supabase.js functions delete"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
@@ -60,6 +59,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.7.0",
+    "beasties": "^0.5.2",
     "cross-env": "^10.1.0",
     "dotenv": "^16.4.5",
     "eslint": "^9.39.0",

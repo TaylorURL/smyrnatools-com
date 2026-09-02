@@ -68,14 +68,6 @@ export function Section({ children, expanded, onToggle, status, subtitle, title 
     )
 }
 
-export function Pill({ bg, children, fg }) {
-    return (
-        <Badge variant="custom" bg={bg} fg={fg} size="md" weight="semibold" uppercase={false}>
-            {children}
-        </Badge>
-    )
-}
-
 export function FieldLabel({ children, required }) {
     return (
         <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>

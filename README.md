@@ -11,9 +11,12 @@
   Fleet, people, and plant performance in one place —<br />
   tracked across every region and plant at <a href="https://smyrnatools.com">smyrnatools.com</a>.
 </p>
+<p align="center">
+  <sub>Published for reading. Proprietary — see <a href="LICENSE.md">LICENSE.md</a>. Outside contributions are not accepted.</sub>
+</p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2026.36.10-222d65?style=for-the-badge" alt="Version 2026.36.10" />
+  <img src="https://img.shields.io/badge/version-2026.36.11-222d65?style=for-the-badge" alt="Version 2026.36.11" />
   <img src="https://img.shields.io/badge/React-19-222d65?style=for-the-badge&logo=react&logoColor=white" alt="React 19" />
   <img src="https://img.shields.io/badge/Vite-6-222d65?style=for-the-badge&logo=vite&logoColor=white" alt="Vite 6" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3-222d65?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 3" />
@@ -134,9 +137,10 @@ flowchart LR
 
 ```
 smyrnatools-com/
+├── api/                    Vercel serverless function — reports the commit the deployment was built from
 ├── public/                 Logos, favicon, PWA manifest, self-hosted fonts,
 │                           robots.txt, sitemap.xml, llms.txt, release.json
-├── docs/                   Workflow map and the running todo list
+├── docs/                   The running todo list
 ├── scripts/                Dev/ops helpers — Supabase CLI wrapper, CalVer, email templates,
 │                           PDF and training-packet generators
 ├── supabase/
@@ -145,7 +149,7 @@ smyrnatools-com/
 └── src/
     ├── index.jsx           Entry — Sentry init, context providers, root <App/>
     ├── app/                Shell — components, hooks, context, models, constants, ai, styles
-    ├── views/              Feature domains — admin, assets, common, people, tools
+    ├── views/              Feature domains — admin, assets, common, people
     ├── services/           Service classes; DatabaseService.js is the only supabase-js consumer
     ├── utils/              Pure helpers (+ tests)
     └── assets/             Images and video
