@@ -3,7 +3,6 @@
  * and workbook metadata.
  */
 
-export const LOCALE_COMPARE_OPTIONS = { numeric: true, sensitivity: 'base' }
 export const FONT_CALIBRI = 'Calibri'
 export const WORKBOOK_CREATOR = 'Smyrna Ready Mix'
 export const SITE_URL = 'https://smyrnatools.com'
