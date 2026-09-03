@@ -1,13 +1,6 @@
 export const DASHBOARD_CACHE_KEY = 'dashboard_assets_cache_v1'
 export const DASHBOARD_CACHE_TTL_MS = 120000 // 2 minutes
 export const DASHBOARD_REFRESH_INTERVAL_MS = 600000 // 10 minutes
-export const STATUS_COLORS = {
-    Active: 'var(--status-active)',
-    'In Shop': 'var(--status-shop)',
-    Sold: 'var(--status-sold)',
-    Spare: 'var(--status-spare)',
-    Stationary: 'var(--status-stationary)'
-}
 /** What the dashboard renders before any data arrives, and the floor the
  *  count-up animation walks from. Every field a view reads has to be present
  *  here at zero or that view reads undefined on first paint. */

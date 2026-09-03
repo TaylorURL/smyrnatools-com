@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'

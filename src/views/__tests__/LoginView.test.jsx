@@ -24,8 +24,6 @@ jest.mock('../../utils/ValidationUtility', () => ({
     }
 }))
 
-jest.mock('../../assets/images/srm-logo.svg', () => 'srm-logo.svg')
-
 /** Resolve the form's submit button by an exact accessible-name match. The
  *  "Smyrna Tools" destination card also contains the words "Sign in" (badge
  *  + label), so a substring match would collide. */
