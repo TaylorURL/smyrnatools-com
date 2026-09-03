@@ -2,9 +2,8 @@ import { COLORS, FONT_CALIBRI } from './ExportConstants'
 
 /**
  * Reusable ExcelJS style builders — fonts, fills, alignments, borders, and
- * header/change-indicator helpers. All visual style decisions for exported
- * workbooks flow through this module so palette or typeface changes happen
- * in one place.
+ * the header helper. All visual style decisions for exported workbooks flow
+ * through this module so palette or typeface changes happen in one place.
  */
 
 /** The weight, slant, and underline flags a caller may ask for on top of the
@@ -25,9 +24,6 @@ interface FontStyle extends FontOptions {
 
 /** The horizontal placements the export builders ask for on a cell. */
 export type HorizontalAlignment = 'center' | 'left' | 'right'
-
-/** The direction a metric moved between two periods. */
-export type ChangeDirection = 'down' | 'neutral' | 'up'
 
 /** A single-color cell fill, in the pattern form ExcelJS expects. */
 export interface SolidFill {
@@ -100,7 +96,6 @@ export function alignMiddle(horizontal: HorizontalAlignment): CellAlignment {
 export const HEADER_FONT = buildFont(10, COLORS.slate700, { bold: true })
 export const HEADER_FILL = solidFill(COLORS.slate100)
 export const HEADER_BORDER: CellBorders = { bottom: { color: { argb: COLORS.slate300 }, style: 'thin' } }
-export const TOTAL_BORDER: CellBorders = { top: { color: { argb: COLORS.brand }, style: 'medium' } }
 export const BRAND_UNDERLINE_BORDER: CellBorders = { bottom: { color: { argb: COLORS.brand }, style: 'medium' } }
 export const DATA_FONT = buildFont(11, COLORS.slate700)
 
@@ -110,24 +105,4 @@ export function applyHeaderStyle(cell: ExcelCell, label: string, alignment: Hori
     cell.fill = HEADER_FILL
     cell.alignment = alignMiddle(alignment)
     cell.border = HEADER_BORDER
-}
-
-/**
- * Resolve the font color for a change indicator. `invertColors` swaps the
- * success and danger colors for metrics where an increase is the bad direction.
- */
-export function resolveChangeColor(direction: ChangeDirection, invertColors: boolean): string {
-    if (direction === 'up') return invertColors ? COLORS.danger : COLORS.success
-    if (direction === 'down') return invertColors ? COLORS.success : COLORS.danger
-    return COLORS.slate300
-}
-
-/**
- * Resolve the background highlight for a change indicator cell.
- * Success/danger get a light tint; neutral cells fall back to the alt-row banding.
- */
-export function resolveChangeBgColor(changeColorArgb: string | null, isAltRow: boolean): string | null {
-    if (changeColorArgb === COLORS.success) return COLORS.successLight
-    if (changeColorArgb === COLORS.danger) return COLORS.dangerLight
-    return isAltRow ? COLORS.snow : null
 }

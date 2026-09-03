@@ -138,10 +138,10 @@ flowchart LR
 ```
 smyrnatools-com/
 ├── api/                    Vercel serverless function — reports the commit the deployment was built from
-├── public/                 Logos, favicon, PWA manifest, self-hosted fonts,
+├── public/                 Logos, favicon, PWA manifest, self-hosted fonts, background videos,
 │                           robots.txt, sitemap.xml, llms.txt, release.json
 ├── docs/                   The running todo list
-├── scripts/                Dev/ops helpers — Supabase CLI wrapper, CalVer, email templates,
+├── scripts/                Dev/ops helpers — Supabase CLI wrapper, email templates,
 │                           PDF and training-packet generators
 ├── supabase/
 │   ├── functions/          Deno edge functions (deployed individually) — all database writes
@@ -152,7 +152,7 @@ smyrnatools-com/
     ├── views/              Feature domains — admin, assets, common, people
     ├── services/           Service classes; DatabaseService.js is the only supabase-js consumer
     ├── utils/              Pure helpers (+ tests)
-    └── assets/             Images and video
+    └── assets/             Images
 ```
 
 ## License

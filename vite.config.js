@@ -75,11 +75,6 @@ export default defineConfig(({ mode }) => {
                 }
             }
         },
-        resolve: {
-            alias: {
-                path: 'path-browserify'
-            }
-        },
         test: {
             globals: true,
             environment: 'jsdom',
