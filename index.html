@@ -27,8 +27,9 @@
     <!-- The onload handler above never runs with scripting off, so the icon
          rules reach that reader through this fallback. It is held back from the
          build's critical-CSS pass, which inlines a sheet's rules at its own
-         link's position — inside the noscript, where every reader who does run
-         scripts downloads them and no reader can use them. -->
+         link's position — here, four kilobytes of icon rules that ship inside
+         every copy of the document and that only a reader with scripting off
+         can ever apply. -->
     <noscript>
         <link data-beasties-skip href="/fonts/fontawesome/css/all.min.css" rel="stylesheet">
     </noscript>
