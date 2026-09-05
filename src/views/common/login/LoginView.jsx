@@ -167,7 +167,23 @@ function LoginView() {
                         </div>
                     </div>
                 ) : (
-                    <div className="m-auto flex w-full max-w-md flex-col items-center px-6 py-12 animate-fade-in motion-reduce:animate-none">
+                    <div className="m-auto flex w-full max-w-md flex-col items-center px-6 py-12">
+                        {/*
+                         * The fade is carried by the pieces around the title
+                         * rather than by this column. The title is the largest
+                         * thing the screen paints, and neither a reader nor
+                         * the browser's own largest-paint accounting has it
+                         * until it is opaque, so fading the column puts the
+                         * whole fade in front of a screen the document already
+                         * arrived carrying — this one is drawn at build time,
+                         * and the fade is the last thing left standing between
+                         * it and the reader. Split across the mark, the
+                         * eyebrow, the line under the title and the chip, the
+                         * screen still opens rather than appearing, and the
+                         * title is there in the first frame. Concealing the
+                         * portal returns to this branch, so the same split
+                         * governs the way back.
+                         */}
                         <button
                             type="button"
                             ref={gateButtonRef}
@@ -176,7 +192,7 @@ function LoginView() {
                             aria-controls="portal-landing"
                             className="group flex w-full cursor-pointer flex-col items-center gap-5 rounded-card border border-transparent bg-transparent px-6 py-8 text-center transition-[transform,border-color,background-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/[0.04] focus-visible:outline-none focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                         >
-                            <span className="relative inline-flex h-16 w-16 items-center justify-center">
+                            <span className="relative inline-flex h-16 w-16 items-center justify-center animate-fade-in motion-reduce:animate-none">
                                 <span
                                     aria-hidden="true"
                                     className="absolute inset-0 rounded-full bg-white/10 transition-[transform,background-color] duration-300 ease-out group-hover:scale-110 group-hover:bg-white/15 motion-reduce:transition-none"
@@ -193,7 +209,7 @@ function LoginView() {
                                 />
                             </span>
                             <span className="flex flex-col items-center gap-2.5">
-                                <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/55">
+                                <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/55 animate-fade-in motion-reduce:animate-none">
                                     <span className="h-px w-6 bg-white/25" aria-hidden="true" />
                                     Welcome
                                     <span className="h-px w-6 bg-white/25" aria-hidden="true" />
@@ -201,11 +217,13 @@ function LoginView() {
                                 <span className="font-heading text-[40px] font-bold leading-none tracking-tight text-white sm:text-[48px]">
                                     Smyrna Tools
                                 </span>
-                                <span className="text-[12.5px] text-white/70">Click to sign in</span>
+                                <span className="text-[12.5px] text-white/70 animate-fade-in motion-reduce:animate-none">
+                                    Click to sign in
+                                </span>
                             </span>
                             <span
                                 aria-hidden="true"
-                                className="inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/70 transition-[color,border-color,transform,background-color] duration-200 ease-out group-hover:translate-y-0.5 group-hover:border-white/30 group-hover:bg-white/[0.1] group-hover:text-white motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/70 transition-[color,border-color,transform,background-color] duration-200 ease-out group-hover:translate-y-0.5 group-hover:border-white/30 group-hover:bg-white/[0.1] group-hover:text-white animate-fade-in motion-reduce:transition-none motion-reduce:animate-none motion-reduce:group-hover:translate-y-0"
                             >
                                 <i className="fas fa-chevron-down text-[9px]" />
                                 Enter
