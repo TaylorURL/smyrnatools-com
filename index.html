@@ -24,8 +24,14 @@
     <link as="style" href="/fonts/fontawesome/css/all.min.css"
           onload="this.onload=null;this.rel='stylesheet'"
           rel="preload">
+    <!-- The onload handler above never runs with scripting off, so the icon
+         rules reach that reader through this fallback. It is held back from the
+         build's critical-CSS pass, which inlines a sheet's rules at its own
+         link's position — here, four kilobytes of icon rules that ship inside
+         every copy of the document and that only a reader with scripting off
+         can ever apply. -->
     <noscript>
-        <link href="/fonts/fontawesome/css/all.min.css" rel="stylesheet">
+        <link data-beasties-skip href="/fonts/fontawesome/css/all.min.css" rel="stylesheet">
     </noscript>
     <title>Smyrna Tools | Smyrna Ready Mix Operations</title>
     <meta content="website" property="og:type" />

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
+import { getSessionUserId } from '../../services/SessionService'
 import { UserPreferencesService } from '../../services/UserPreferencesService'
 
 /**
@@ -37,14 +38,17 @@ export function TutorialProvider({ children }) {
     useEffect(() => {
         const checkTutorialsEnabled = async () => {
             try {
-                const { UserService } = await import('../../services/UserService')
-                const user = await UserService.getCurrentUser()
-                if (user?.id) {
-                    const prefs = await UserPreferencesService.getUserPreferences(user.id)
-                    const enabled = prefs?.tutorials !== false
-                    setTutorialsEnabled(enabled)
-                    tutorialsEnabledRef.current = enabled
-                }
+                // A preference belongs to a signed-in user, and the session
+                // id is the whole of what looking one up takes. Asking
+                // SessionService for it rather than UserService keeps the
+                // module that builds the database client, the heaviest in the
+                // graph, out of a visit with nobody to look anything up for.
+                const userId = getSessionUserId()
+                if (!userId) return
+                const prefs = await UserPreferencesService.getUserPreferences(userId)
+                const enabled = prefs?.tutorials !== false
+                setTutorialsEnabled(enabled)
+                tutorialsEnabledRef.current = enabled
             } catch {}
         }
         checkTutorialsEnabled()
@@ -58,8 +62,19 @@ export function TutorialProvider({ children }) {
                 }
             }
         }
+        // A freshly loaded document holds no session. The id reaches memory
+        // when AuthContext's whoami round trip answers, and that provider sits
+        // above this one, so its effect runs after this one has already asked
+        // and found nothing. A restored session and a later sign-in both
+        // announce themselves here, and the read has to happen again on the
+        // announcement — otherwise the default stands for the whole visit and
+        // a reader who turned tutorials off is shown them anyway.
+        window.addEventListener('authSuccess', checkTutorialsEnabled)
         window.addEventListener('preferences-updated', handlePrefsChange)
-        return () => window.removeEventListener('preferences-updated', handlePrefsChange)
+        return () => {
+            window.removeEventListener('authSuccess', checkTutorialsEnabled)
+            window.removeEventListener('preferences-updated', handlePrefsChange)
+        }
     }, [activeTutorial])
     useEffect(() => {
         dismissedRef.current = dismissedTutorials
