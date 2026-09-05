@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
+import { getSessionUserId } from '../../services/SessionService'
 import { UserPreferencesService } from '../../services/UserPreferencesService'
 
 /**
@@ -37,14 +38,17 @@ export function TutorialProvider({ children }) {
     useEffect(() => {
         const checkTutorialsEnabled = async () => {
             try {
-                const { UserService } = await import('../../services/UserService')
-                const user = await UserService.getCurrentUser()
-                if (user?.id) {
-                    const prefs = await UserPreferencesService.getUserPreferences(user.id)
-                    const enabled = prefs?.tutorials !== false
-                    setTutorialsEnabled(enabled)
-                    tutorialsEnabledRef.current = enabled
-                }
+                // A preference belongs to a signed-in user, and the session
+                // id is the whole of what looking one up takes. Asking
+                // SessionService for it rather than UserService keeps the
+                // module that builds the database client, the heaviest in the
+                // graph, out of a visit with nobody to look anything up for.
+                const userId = getSessionUserId()
+                if (!userId) return
+                const prefs = await UserPreferencesService.getUserPreferences(userId)
+                const enabled = prefs?.tutorials !== false
+                setTutorialsEnabled(enabled)
+                tutorialsEnabledRef.current = enabled
             } catch {}
         }
         checkTutorialsEnabled()

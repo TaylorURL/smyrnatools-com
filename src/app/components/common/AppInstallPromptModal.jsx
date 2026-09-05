@@ -2,9 +2,20 @@
 import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 
+import { getSessionUserId } from '../../../services/SessionService'
 import { UserPreferencesService } from '../../../services/UserPreferencesService'
-import { UserService } from '../../../services/UserService'
 import { useAccentColor } from '../../hooks/useAccentColor'
+
+// This modal is mounted beside the whole app rather than behind the session it
+// serves, so it is on the path a signed-out visitor pays for. The roles lookup
+// is the only thing here that reaches the database, and the module that
+// constructs its client is the heaviest dependency in the graph; importing the
+// service from inside the branch that already has a session keeps the client
+// out of a visit that will never ask it anything. The session id the branch
+// turns on is read from SessionService, which depends on nothing — asking
+// UserService for it would drag the client back in to answer a question about
+// memory.
+const loadUserService = () => import('../../../services/UserService').then((module) => module.UserService)
 
 const IOS_STEPS = [
     {
@@ -254,9 +265,10 @@ function AppInstallPromptModal() {
     useEffect(() => {
         let timerId
         const checkAndShowPrompt = async () => {
-            const currentUser = await UserService.getCurrentUser()
-            if (!currentUser?.id) return
-            const roles = await UserService.getUserRoles(currentUser.id)
+            const userId = getSessionUserId()
+            if (!userId) return
+            const userService = await loadUserService()
+            const roles = await userService.getUserRoles(userId)
             const isGuestOnly = roles.length > 0 && roles.every((r) => r?.name?.toLowerCase() === 'guest')
             if (isGuestOnly || roles.length === 0) return
             const device = UserPreferencesService.detectDeviceType()
@@ -264,15 +276,15 @@ function AppInstallPromptModal() {
             if (!UserPreferencesService.canShowInstallPrompt()) return
             const type = device === 'desktop' ? 'desktop_tutorial' : 'mobile_install'
             setPromptType(type)
-            const shouldShow = await UserPreferencesService.shouldShowPrompt(currentUser.id, type)
+            const shouldShow = await UserPreferencesService.shouldShowPrompt(userId, type)
             if (shouldShow) timerId = setTimeout(() => setShowModal(true), 2000)
         }
         checkAndShowPrompt()
         return () => clearTimeout(timerId)
     }, [])
     const withCurrentUser = async (action) => {
-        const currentUser = await UserService.getCurrentUser()
-        if (currentUser?.id) await action(currentUser.id)
+        const userId = getSessionUserId()
+        if (userId) await action(userId)
         setShowModal(false)
     }
     const handleDismissForever = () =>
