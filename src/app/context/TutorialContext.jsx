@@ -62,8 +62,19 @@ export function TutorialProvider({ children }) {
                 }
             }
         }
+        // A freshly loaded document holds no session. The id reaches memory
+        // when AuthContext's whoami round trip answers, and that provider sits
+        // above this one, so its effect runs after this one has already asked
+        // and found nothing. A restored session and a later sign-in both
+        // announce themselves here, and the read has to happen again on the
+        // announcement — otherwise the default stands for the whole visit and
+        // a reader who turned tutorials off is shown them anyway.
+        window.addEventListener('authSuccess', checkTutorialsEnabled)
         window.addEventListener('preferences-updated', handlePrefsChange)
-        return () => window.removeEventListener('preferences-updated', handlePrefsChange)
+        return () => {
+            window.removeEventListener('authSuccess', checkTutorialsEnabled)
+            window.removeEventListener('preferences-updated', handlePrefsChange)
+        }
     }, [activeTutorial])
     useEffect(() => {
         dismissedRef.current = dismissedTutorials

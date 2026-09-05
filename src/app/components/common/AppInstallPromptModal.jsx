@@ -264,9 +264,12 @@ function AppInstallPromptModal() {
     const accentColor = useAccentColor()
     useEffect(() => {
         let timerId
+        let checked = false
         const checkAndShowPrompt = async () => {
+            if (checked) return
             const userId = getSessionUserId()
             if (!userId) return
+            checked = true
             const userService = await loadUserService()
             const roles = await userService.getUserRoles(userId)
             const isGuestOnly = roles.length > 0 && roles.every((r) => r?.name?.toLowerCase() === 'guest')
@@ -280,7 +283,18 @@ function AppInstallPromptModal() {
             if (shouldShow) timerId = setTimeout(() => setShowModal(true), 2000)
         }
         checkAndShowPrompt()
-        return () => clearTimeout(timerId)
+        // This modal is mounted beside the whole app, so it is on screen from
+        // the first commit — before AuthContext's whoami round trip has put a
+        // session id in memory, and on a fresh document that trip is the only
+        // thing that ever will. The check has to run again when the session
+        // announces itself, or the prompt is silently skipped for the visit
+        // that had a session all along. The guard keeps a sign-in later in the
+        // same document from queueing a second prompt on top of the first.
+        window.addEventListener('authSuccess', checkAndShowPrompt)
+        return () => {
+            window.removeEventListener('authSuccess', checkAndShowPrompt)
+            clearTimeout(timerId)
+        }
     }, [])
     const withCurrentUser = async (action) => {
         const userId = getSessionUserId()
