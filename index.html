@@ -307,6 +307,54 @@
         }
       })();
     </script>
+    <!-- A document restored from a browser's cache after a deploy asks for the
+         hashed bundle it was built against, which is no longer on the origin.
+         Nothing downstream recovers from that on its own: the entry script
+         never runs, so the app that would have drawn the page never starts and
+         the reader is left on an empty document until they reload by hand.
+
+         The document itself is served must-revalidate, so re-fetching it is
+         enough to pick up the current hashes. `cache: "reload"` is what makes
+         that re-fetch reach the network and replace the cached copy — a plain
+         location.reload() may be answered from the same stale entry that
+         caused this. One attempt per tab, recorded before it is taken, so a
+         genuine outage costs a single reload rather than a loop.
+
+         This listens after the reporter above, so the failure is still
+         reported before the page goes away. -->
+    <script>
+      (function () {
+        var KEY = "asset-recovery-attempted";
+        // The build asks for its entry bundle through a dynamic import, which
+        // rejects rather than firing an error event, so the recovery is a
+        // function the boot script can call as well as a listener. One attempt
+        // per tab, recorded before it is taken, so a genuine outage costs a
+        // single reload rather than a loop.
+        window.__recoverStaleShell = function () {
+          try {
+            if (sessionStorage.getItem(KEY) === "1") return;
+            sessionStorage.setItem(KEY, "1");
+          } catch (ignored) {
+            return;
+          }
+          // Long enough for the reporter's beacon to leave, short enough that
+          // the reader sees a reload rather than a blank page.
+          setTimeout(function () {
+            var again = function () { location.reload() };
+            fetch(location.href, { cache: "reload", credentials: "same-origin" }).then(again, again);
+          }, 500);
+        };
+        // The stylesheet and the entry's module preload are ordinary elements,
+        // and a stale document fails on those before the import is reached.
+        window.addEventListener("error", function (event) {
+          var target = event.target;
+          if (!target || target === window) return;
+          var href = target.src || target.href || "";
+          if (href.indexOf(location.origin + "/assets/") !== 0) return;
+          window.__recoverStaleShell();
+        }, true);
+      })();
+    </script>
     <!-- Traffic analytics. The site key is public by design: it says which
          site a hit belongs to, and the collector accepts it only from this
          site's own origins. Deferred, so nothing on the page waits for it. -->

@@ -72,8 +72,13 @@ function paintFirst(head) {
     if (!entry) throw new Error('prerender: the built head carries no module entry')
     const [tag, src] = entry
     const preload = `<link rel="modulepreload" crossorigin href="${src}">`
+    // A document a browser kept across a deploy asks here for a hashed bundle
+    // that is no longer on the origin, and an import that rejects leaves the
+    // drawn screen standing with nothing behind it — every control dead, and
+    // no sign to the reader that anything is wrong. The shell's recovery
+    // re-fetches the document past the cache and picks up the current hashes.
     const source = `let started=false;
-const start=()=>{if(!started){started=true;import(${JSON.stringify(src)})}};
+const start=()=>{if(!started){started=true;import(${JSON.stringify(src)}).catch(()=>{if(window.__recoverStaleShell)window.__recoverStaleShell()})}};
 if(document.visibilityState==="visible")requestAnimationFrame(()=>requestAnimationFrame(start));
 else start();
 setTimeout(start,2000)`
