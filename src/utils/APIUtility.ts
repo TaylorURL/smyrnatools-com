@@ -171,11 +171,30 @@ const APIUtility = {
                     method: 'POST',
                     signal: controller.signal
                 })
-                clearTimeout(timeoutId)
-                const json = await res.json().catch((error: Error) => {
+                // The timeout stays armed across the body read. Headers can
+                // arrive promptly and the stream behind them still stall, and
+                // clearing the timer at the header is what left that read
+                // running unbounded.
+                let json: Record<string, unknown>
+                try {
+                    json = (await res.json()) as Record<string, unknown>
+                } catch (error) {
+                    // A body that never finishes arriving is a transport
+                    // failure, not an empty response. The headers landed, so
+                    // `res.ok` still reads true, and handing the caller `{}`
+                    // turns a dropped payload into a list screen that renders
+                    // as empty with nothing to say why. Send it back to the
+                    // retry loop instead; the browser reports a broken stream
+                    // as a TypeError and an expired timer as an AbortError.
+                    // A body that did arrive and simply is not JSON keeps the
+                    // empty-object fallback.
+                    const err = error as Error
+                    if (err instanceof TypeError || err?.name === 'AbortError') throw err
                     console.error('Failed to parse JSON response body:', error)
-                    return {}
-                })
+                    json = {}
+                } finally {
+                    clearTimeout(timeoutId)
+                }
                 // A 401 from a non-public path means the server rejects this
                 // session — the row is gone, inactive past the expiry window, or
                 // was never created. Return it without retrying and tell the app
