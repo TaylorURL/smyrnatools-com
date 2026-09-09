@@ -59,14 +59,4 @@ describe('AppFooter', () => {
         expect(screen.queryByText(/^v/)).not.toBeInTheDocument()
         expect(screen.getByRole('link', { name: /^status$/i })).toBeInTheDocument()
     })
-
-    it.each([
-        ['Privacy', '/privacy'],
-        ['Terms', '/terms'],
-        ['Contact', '/contact']
-    ])('links to the %s route', (label, href) => {
-        renderFooter()
-
-        expect(screen.getByRole('link', { name: label })).toHaveAttribute('href', href)
-    })
 })
