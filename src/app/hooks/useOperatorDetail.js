@@ -8,14 +8,30 @@ import { TractorService } from '../../services/TractorService'
 import { UserService } from '../../services/UserService'
 
 /**
+ * Whether one plant code sits inside a restriction. A null or undefined set is
+ * the absence of a restriction and admits every code; an empty set is a
+ * restriction that admits none. Comparison is trimmed and upper-cased, matching
+ * how `PlantService` builds the set.
+ */
+const isPlantCodeAllowed = (allowedPlantCodes, plantCode) =>
+    !allowedPlantCodes ||
+    allowedPlantCodes.has(
+        String(plantCode || '')
+            .trim()
+            .toUpperCase()
+    )
+
+/**
  * Everything OperatorDetailView needs, so the view itself holds no state and
  * makes no calls.
  *
  * `allowedPlantCodes` is a restriction rather than a filter: it scopes the
  * plant picker and the trainer list, and clears a plant already chosen that
  * falls outside it, so a user whose access narrows mid-edit cannot save an
- * assignment they may no longer make. An absent or empty set leaves both lists
- * empty rather than unrestricted.
+ * assignment they may no longer make. It carries `PlantService.getAllowedPlantCodes`'
+ * own contract, where null means no scoping and an empty set scopes everything
+ * out — so an absent set leaves both lists whole and an empty one leaves both
+ * empty.
  *
  * Mounting marks `document.body` with `in-detail-view`, which the app's styles
  * key off to lock background scrolling.
@@ -104,15 +120,7 @@ export function useOperatorDetail({ operatorId, onClose, allowedPlantCodes }) {
             .eq('is_trainer', true)
         setTrainers(
             (data || [])
-                .filter((trainer) =>
-                    allowedPlantCodes && allowedPlantCodes.size > 0
-                        ? allowedPlantCodes.has(
-                              String(trainer.plant_code || '')
-                                  .trim()
-                                  .toUpperCase()
-                          )
-                        : false
-                )
+                .filter((trainer) => isPlantCodeAllowed(allowedPlantCodes, trainer.plant_code))
                 .map((trainer) => ({
                     employeeId: trainer.employee_id,
                     name: trainer.name
@@ -146,12 +154,7 @@ export function useOperatorDetail({ operatorId, onClose, allowedPlantCodes }) {
 
     const filteredPlants = useMemo(() => {
         return plants
-            .filter((p) => {
-                const code = String(p.plant_code || '')
-                    .trim()
-                    .toUpperCase()
-                return allowedPlantCodes && allowedPlantCodes.size > 0 ? allowedPlantCodes.has(code) : false
-            })
+            .filter((p) => isPlantCodeAllowed(allowedPlantCodes, p.plant_code))
             .sort((a, b) => {
                 const aCode = parseInt(a.plant_code?.replace(/\D/g, '') || '0')
                 const bCode = parseInt(b.plant_code?.replace(/\D/g, '') || '0')

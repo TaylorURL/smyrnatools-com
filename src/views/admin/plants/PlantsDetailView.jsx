@@ -19,8 +19,9 @@ const formatCoordinate = (value) => {
 /** Detail and edit view for one plant: name, address, coordinates, the
  *  managers attached to it, and the plants it shares a site with. Save writes
  *  those three groups through three separate service calls but reports once,
- *  so a failure part-way leaves the earlier groups already persisted. */
-function PlantsDetailView({ plant, onClose, onDelete }) {
+ *  so a failure part-way leaves the earlier groups already persisted. A save
+ *  that gets all the way through calls `onUpdate` with the plant code. */
+function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
     const plantCode = plant.plant_code || plant.plantCode || ''
     const [plantName, setPlantName] = useState(plant.plant_name || plant.plantName || '')
     const [plantAddress, setPlantAddress] = useState(plant.plant_address || plant.plantAddress || '')
@@ -43,10 +44,9 @@ function PlantsDetailView({ plant, onClose, onDelete }) {
     // one list and the server splits them apart again on save.
     //
     // The current plant's own state comes from that fetched list rather than
-    // the `plant` prop. PlantsView holds its plants in state and does not
-    // refetch when this view saves, so on the next open the prop can be a
-    // version from before the last save and the editor would open missing the
-    // alias codes that save added.
+    // the `plant` prop, since the list is the copy that has just come off the
+    // server. A save reports back through `onUpdate` so the caller's own copy
+    // catches up too.
     useEffect(() => {
         let cancelled = false
         ;(async () => {
@@ -136,6 +136,7 @@ function PlantsDetailView({ plant, onClose, onDelete }) {
             const persisted = await PlantService.updatePlantManagers(plantCode, managerIds)
             setManagerIds(persisted)
             await PlantService.updatePlantColocation(plantCode, siblingPlantCodes)
+            if (onUpdate) onUpdate(plantCode)
             setMessage('Changes saved')
             setTimeout(() => setMessage(''), 2000)
         } catch (error) {

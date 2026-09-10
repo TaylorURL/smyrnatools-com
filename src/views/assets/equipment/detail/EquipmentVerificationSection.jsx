@@ -61,7 +61,6 @@ export default function EquipmentVerificationSection({
                             icon: 'fas fa-calendar-check',
                             iconStyle: { color: verificationColor },
                             label: 'Verified',
-                            style: { color: verificationColor },
                             value: getVerificationLabel(equipment),
                             valueStyle: { color: verificationValueColor }
                         },
