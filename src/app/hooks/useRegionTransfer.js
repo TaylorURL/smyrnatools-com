@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { UserService } from '../../services/UserService'
+import { importChunk } from '../../utils/ChunkRecovery'
 
 /**
  * Owns the region-transfer modal's state for an asset detail view: gates the
@@ -37,7 +38,7 @@ export function useRegionTransfer({ assetType, onRegionTransfer }) {
         if (!showTransfer || !hasTransferPerm) return
         const loadRegions = async () => {
             try {
-                const { PlantService } = await import('../../services/PlantService')
+                const { PlantService } = await importChunk(() => import('../../services/PlantService'))
                 setRegions((await PlantService.fetchRegions()) || [])
             } catch {
                 setTransferErr('Failed to load regions')
@@ -52,7 +53,7 @@ export function useRegionTransfer({ assetType, onRegionTransfer }) {
         }
         const loadPlants = async () => {
             try {
-                const { PlantService } = await import('../../services/PlantService')
+                const { PlantService } = await importChunk(() => import('../../services/PlantService'))
                 setPlants((await PlantService.fetchRegionPlants(targetRegion)) || [])
                 setTargetPlant('')
             } catch {

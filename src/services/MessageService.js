@@ -1,4 +1,5 @@
 import APIUtility from '../utils/APIUtility'
+import { importChunk } from '../utils/ChunkRecovery'
 import { Database } from './DatabaseService'
 import { UserService } from './UserService'
 
@@ -130,7 +131,7 @@ const MessageService = {
         const [allUsers, allowedPlants] = await Promise.all([
             UserService.getAllUsersWithProfilesAndRoles(),
             regionCode
-                ? (await import('./PlantService')).PlantService.getAllowedPlantCodes(regionCode)
+                ? (await importChunk(() => import('./PlantService'))).PlantService.getAllowedPlantCodes(regionCode)
                 : Promise.resolve(null)
         ])
         return allUsers
