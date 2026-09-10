@@ -1,8 +1,9 @@
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
-import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
 import { getSessionUserId } from '../services/SessionService'
+import { importChunk, lazyWithRecovery } from '../utils/ChunkRecovery'
 import { NetworkUtility } from '../utils/NetworkUtility'
 import LoginView from '../views/common/login/LoginView'
 import AppFooter from './components/common/AppFooter'
@@ -21,23 +22,6 @@ import { useOfflineDetection } from './hooks/useOfflineDetection'
 import { useThemeMode } from './hooks/useThemeMode'
 import { useVersionCheck } from './hooks/useVersionCheck'
 
-const CHUNK_RELOAD_KEY = 'chunk_reload_attempted'
-// A deploy that lands mid-session leaves the running page pointing at chunk
-// hashes the server no longer serves, so the first lazy import to fail
-// triggers a full reload to pick up the new asset manifest. The session flag
-// caps that at one reload per session, so a chunk that is broken rather than
-// stale surfaces as a Suspense failure instead of a reload loop; it is cleared once
-// the app mounts successfully.
-const lazyWithRetry = (importer) =>
-    lazy(() =>
-        importer().catch(() => {
-            if (!sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
-                sessionStorage.setItem(CHUNK_RELOAD_KEY, '1')
-                window.location.reload()
-            }
-            return importer()
-        })
-    )
 // The navigation bar and the messages provider are mounted only behind a
 // session, and between them they reach every service that talks to the
 // database. Held apart from the entry graph, the client those services build
@@ -45,31 +29,31 @@ const lazyWithRetry = (importer) =>
 // screen. Both land in one chunk, since the navigation reads the provider.
 const importMessagesContext = () => import('./context/MessagesContext')
 const importNavigation = () => import('./components/common/Navigation')
-const MessagesProvider = lazyWithRetry(() =>
+const MessagesProvider = lazyWithRecovery(() =>
     importMessagesContext().then((module) => ({ default: module.MessagesProvider }))
 )
-const Navigation = lazyWithRetry(importNavigation)
-const AppInstallPromptModal = lazyWithRetry(() => import('./components/common/AppInstallPromptModal'))
-const DashboardView = lazyWithRetry(() => import('../views/common/dashboard/DashboardView'))
-const EquipmentsView = lazyWithRetry(() => import('../views/assets/equipment/EquipmentsView'))
-const ManagersView = lazyWithRetry(() => import('../views/people/managers/ManagersView'))
-const MixerDetailView = lazyWithRetry(() => import('../views/assets/mixers/MixerDetailView'))
-const MixersView = lazyWithRetry(() => import('../views/assets/mixers/MixersView'))
-const MyAccountView = lazyWithRetry(() => import('../views/common/myaccount/MyAccountView'))
-const OperatorsView = lazyWithRetry(() => import('../views/people/operators/OperatorsView'))
-const PickupTrucksView = lazyWithRetry(() => import('../views/assets/pickup-trucks/PickupTrucksView'))
-const PlantsView = lazyWithRetry(() => import('../views/admin/plants/PlantsView'))
-const RegionsView = lazyWithRetry(() => import('../views/admin/regions/RegionsView'))
-const RolesView = lazyWithRetry(() => import('../views/admin/roles/RolesView'))
-const TractorsView = lazyWithRetry(() => import('../views/assets/tractors/TractorsView'))
-const TrailersView = lazyWithRetry(() => import('../views/assets/trailers/TrailersView'))
-const NotificationsView = lazyWithRetry(() => import('../views/common/notifications/NotificationsView'))
+const Navigation = lazyWithRecovery(importNavigation)
+const AppInstallPromptModal = lazyWithRecovery(() => import('./components/common/AppInstallPromptModal'))
+const DashboardView = lazyWithRecovery(() => import('../views/common/dashboard/DashboardView'))
+const EquipmentsView = lazyWithRecovery(() => import('../views/assets/equipment/EquipmentsView'))
+const ManagersView = lazyWithRecovery(() => import('../views/people/managers/ManagersView'))
+const MixerDetailView = lazyWithRecovery(() => import('../views/assets/mixers/MixerDetailView'))
+const MixersView = lazyWithRecovery(() => import('../views/assets/mixers/MixersView'))
+const MyAccountView = lazyWithRecovery(() => import('../views/common/myaccount/MyAccountView'))
+const OperatorsView = lazyWithRecovery(() => import('../views/people/operators/OperatorsView'))
+const PickupTrucksView = lazyWithRecovery(() => import('../views/assets/pickup-trucks/PickupTrucksView'))
+const PlantsView = lazyWithRecovery(() => import('../views/admin/plants/PlantsView'))
+const RegionsView = lazyWithRecovery(() => import('../views/admin/regions/RegionsView'))
+const RolesView = lazyWithRecovery(() => import('../views/admin/roles/RolesView'))
+const TractorsView = lazyWithRecovery(() => import('../views/assets/tractors/TractorsView'))
+const TrailersView = lazyWithRecovery(() => import('../views/assets/trailers/TrailersView'))
+const NotificationsView = lazyWithRecovery(() => import('../views/common/notifications/NotificationsView'))
 // Both services below are reached only behind a session, and the module that
 // constructs the database client is the heaviest dependency in the graph.
 // Importing them from inside the effects that call them keeps them off the
 // path a signed-out visitor pays for.
-const loadDatabase = () => import('../services/DatabaseService').then((module) => module.Database)
-const loadUserService = () => import('../services/UserService').then((module) => module.UserService)
+const loadDatabase = () => importChunk(() => import('../services/DatabaseService')).then((module) => module.Database)
+const loadUserService = () => importChunk(() => import('../services/UserService')).then((module) => module.UserService)
 // Which views a region type will tolerate. Switching region checks the view
 // currently on screen against these and drops back to Dashboard when it no
 // longer belongs, so nobody is left looking at data their new region has no
@@ -106,9 +90,6 @@ function AppContent() {
     useAuthSession(setUserId, setIsGuestOnly, setRolesLoaded, setSelectedView, setSessionChecked)
     useThemeMode()
     const { triggerTutorial } = useTutorial()
-    useEffect(() => {
-        sessionStorage.removeItem(CHUNK_RELOAD_KEY)
-    }, [])
     // Apply the user's preferred start page, once, after preferences and
     // roles have both settled — before that the preference is not yet known
     // and the redirect would fight the session bootstrap. A stored page that
@@ -135,8 +116,8 @@ function AppContent() {
     // hand by the time there is something to render with it.
     useEffect(() => {
         if (!userId) return
-        importNavigation().catch(() => {})
-        importMessagesContext().catch(() => {})
+        importChunk(importNavigation).catch(() => {})
+        importChunk(importMessagesContext).catch(() => {})
     }, [userId])
     useEffect(() => {
         if (!userId) return

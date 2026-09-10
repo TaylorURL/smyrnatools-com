@@ -1,7 +1,7 @@
 import './app/index.css'
 
 import * as Sentry from '@sentry/react'
-import React, { lazy, Suspense } from 'react'
+import React, { Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
@@ -12,14 +12,15 @@ import { ConfirmProvider } from './app/context/ConfirmContext'
 import { PreferencesProvider } from './app/context/PreferencesContext'
 import { TutorialProvider } from './app/context/TutorialContext'
 import { getSessionUserId } from './services/SessionService'
+import { importChunk, lazyWithRecovery } from './utils/ChunkRecovery'
 
 // The three public pages are the only routes the app declares; every other
 // path is the operations shell, which picks its own screen from state rather
 // than from the URL. Loading them lazily keeps their prose out of the bundle
 // the signed-in app pays for on every visit.
-const ContactView = lazy(() => import('./views/common/legal/ContactView'))
-const PrivacyView = lazy(() => import('./views/common/legal/PrivacyView'))
-const TermsView = lazy(() => import('./views/common/legal/TermsView'))
+const ContactView = lazyWithRecovery(() => import('./views/common/legal/ContactView'))
+const PrivacyView = lazyWithRecovery(() => import('./views/common/legal/PrivacyView'))
+const TermsView = lazyWithRecovery(() => import('./views/common/legal/TermsView'))
 
 const SENTRY_DSN = import.meta.env.REACT_APP_SENTRY_DSN
 
@@ -130,7 +131,7 @@ const runWhenIdle = (callback) => {
     }
 }
 runWhenIdle(() => {
-    import('./utils/VitalsUtility').then((module) => {
+    importChunk(() => import('./utils/VitalsUtility')).then((module) => {
         module.default()
     })
 })

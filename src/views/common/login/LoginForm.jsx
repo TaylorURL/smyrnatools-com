@@ -1,10 +1,11 @@
-import React, { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import React, { memo, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
 import { SESSION_STORAGE_KEYS } from '../../../app/constants/authConstants'
 import { useAuth } from '../../../app/context/AuthContext'
+import { lazyWithRecovery } from '../../../utils/ChunkRecovery'
 import ValidationUtility from '../../../utils/ValidationUtility'
 
-const PasswordRecoveryView = lazy(() => import('./PasswordRecoveryView'))
+const PasswordRecoveryView = lazyWithRecovery(() => import('./PasswordRecoveryView'))
 
 const STRENGTH_DEBOUNCE_MS = 300
 const SUBMIT_TIMEOUT_MS = 10000

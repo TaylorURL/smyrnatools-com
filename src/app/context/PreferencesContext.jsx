@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { getSessionUserId } from '../../services/SessionService'
 import { UserPreferencesService } from '../../services/UserPreferencesService'
 import APIUtility from '../../utils/APIUtility'
+import { importChunk } from '../../utils/ChunkRecovery'
 import { logDatabaseError } from '../../utils/DatabaseErrorUtility'
 import { DEFAULT_ACCENT_COLOR } from '../constants/themeConstants'
 
@@ -11,8 +12,10 @@ const PREFS_FUNCTION = '/user-preferences-service'
 // module that constructs its client is the heaviest dependency in the graph.
 // Importing the two services from inside the branch that derives a region
 // keeps them off the path a signed-out visitor pays for.
-const loadPlantService = () => import('../../services/PlantService').then((module) => module.PlantService)
-const loadUserService = () => import('../../services/UserService').then((module) => module.UserService)
+const loadPlantService = () =>
+    importChunk(() => import('../../services/PlantService')).then((module) => module.PlantService)
+const loadUserService = () =>
+    importChunk(() => import('../../services/UserService')).then((module) => module.UserService)
 /**
  * User preferences context managing per-entity filter states, region selection,
  * view modes, accent color, and tutorial toggles. Persists to the database on change.
