@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom'
 
 import { getSessionUserId } from '../../../services/SessionService'
 import { UserPreferencesService } from '../../../services/UserPreferencesService'
+import { importChunk } from '../../../utils/ChunkRecovery'
 import { useAccentColor } from '../../hooks/useAccentColor'
 
 // This modal is mounted beside the whole app rather than behind the session it
@@ -15,7 +16,8 @@ import { useAccentColor } from '../../hooks/useAccentColor'
 // turns on is read from SessionService, which depends on nothing — asking
 // UserService for it would drag the client back in to answer a question about
 // memory.
-const loadUserService = () => import('../../../services/UserService').then((module) => module.UserService)
+const loadUserService = () =>
+    importChunk(() => import('../../../services/UserService')).then((module) => module.UserService)
 
 const IOS_STEPS = [
     {

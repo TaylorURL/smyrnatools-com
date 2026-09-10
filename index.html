@@ -307,45 +307,81 @@
         }
       })();
     </script>
-    <!-- A document restored from a browser's cache after a deploy asks for the
-         hashed bundle it was built against, which is no longer on the origin.
-         Nothing downstream recovers from that on its own: the entry script
-         never runs, so the app that would have drawn the page never starts and
-         the reader is left on an empty document until they reload by hand.
+    <!-- A document a browser kept across a deploy asks for hashed files that
+         are no longer on the origin. Every chunk name carries a content hash,
+         so a deploy replaces the whole set, and a document naming the old set
+         can reach none of them.
 
-         The document itself is served must-revalidate, so re-fetching it is
-         enough to pick up the current hashes. `cache: "reload"` is what makes
-         that re-fetch reach the network and replace the cached copy — a plain
-         location.reload() may be answered from the same stale entry that
-         caused this. One attempt per tab, recorded before it is taken, so a
-         genuine outage costs a single reload rather than a loop.
+         A missing chunk cannot be recovered at its own address, nor at any
+         other. A dynamic import that fails is recorded as failed in the
+         document's module map, and every later import of that specifier
+         rejects out of the map without a request ever leaving the browser, so
+         asking again buys nothing. Only a document naming the current build
+         can reach the current files, which makes re-fetching the document the
+         whole of the recovery rather than its last resort.
+
+         The document is served must-revalidate, and `cache: "reload"` is what
+         makes the re-fetch reach the network instead of being answered from
+         the same stale copy that caused this. That request is the one thing
+         here worth retrying, so it is tried three times with a growing gap
+         before the reload is taken regardless.
+
+         Two limits stand between a recovery and a reload loop. A second
+         attempt inside the cooling window is refused, which is what stops a
+         file that is missing for a reason a new document cannot fix from
+         cycling the page; a tab that has been running long enough to cross a
+         later deploy is still recovered, which a one-per-tab flag would have
+         denied. Three attempts is the whole of a tab's allowance.
 
          This listens after the reporter above, so the failure is still
          reported before the page goes away. -->
     <script>
       (function () {
-        var KEY = "asset-recovery-attempted";
-        // The build asks for its entry bundle through a dynamic import, which
-        // rejects rather than firing an error event, so the recovery is a
-        // function the boot script can call as well as a listener. One attempt
-        // per tab, recorded before it is taken, so a genuine outage costs a
-        // single reload rather than a loop.
-        window.__recoverStaleShell = function () {
+        var KEY = "asset-recovery-attempts";
+        // Comfortably longer than a load, so a page that comes back needing a
+        // second recovery is answering a later deploy rather than looping.
+        var COOLING_MS = 60000;
+        var ALLOWANCE = 3;
+        function attempts() {
           try {
-            if (sessionStorage.getItem(KEY) === "1") return;
-            sessionStorage.setItem(KEY, "1");
+            var raw = sessionStorage.getItem(KEY);
+            return raw ? JSON.parse(raw) : [];
           } catch (ignored) {
-            return;
+            return null;
+          }
+        }
+        // Answers whether the document is being replaced, so a caller can tell
+        // a recovery under way from one it has to leave to the reader.
+        window.__recoverStaleShell = function () {
+          var taken = attempts();
+          if (!taken) return false;
+          var now = Date.now();
+          if (taken.length >= ALLOWANCE) return false;
+          if (taken.length && now - taken[taken.length - 1] < COOLING_MS) return false;
+          taken.push(now);
+          try {
+            sessionStorage.setItem(KEY, JSON.stringify(taken));
+          } catch (ignored) {
+            return false;
           }
           // Long enough for the reporter's beacon to leave, short enough that
           // the reader sees a reload rather than a blank page.
           setTimeout(function () {
+            var left = 3;
             var again = function () { location.reload() };
-            fetch(location.href, { cache: "reload", credentials: "same-origin" }).then(again, again);
+            var ask = function () {
+              left -= 1;
+              fetch(location.href, { cache: "reload", credentials: "same-origin" }).then(again, function () {
+                if (left > 0) setTimeout(ask, (3 - left) * 400);
+                else again();
+              });
+            };
+            ask();
           }, 500);
+          return true;
         };
-        // The stylesheet and the entry's module preload are ordinary elements,
-        // and a stale document fails on those before the import is reached.
+        // A stylesheet and a module preload are ordinary elements, and a stale
+        // document fails on those before any import is reached.
         window.addEventListener("error", function (event) {
           var target = event.target;
           if (!target || target === window) return;
