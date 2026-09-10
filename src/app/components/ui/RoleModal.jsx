@@ -102,9 +102,13 @@ export function RoleFormField({ children, label, sublabel }) {
     )
 }
 
-export function RoleTextInput({ disabled, onChange, placeholder, type = 'text', value }) {
+/** The one text field every role modal uses. `autoFocus` is forwarded rather
+ *  than swallowed: each of these modals mounts its body only once opened, so
+ *  the field it marks is the one the caret lands in. */
+export function RoleTextInput({ autoFocus = false, disabled, onChange, placeholder, type = 'text', value }) {
     return (
         <input
+            autoFocus={autoFocus}
             className="w-full px-4 py-3 border border-border-light rounded-md text-sm bg-bg-primary text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:bg-bg-tertiary disabled:text-text-tertiary disabled:cursor-not-allowed"
             disabled={disabled}
             onChange={(event) =>

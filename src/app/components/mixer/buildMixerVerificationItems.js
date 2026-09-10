@@ -43,7 +43,6 @@ export function buildMixerVerificationItems(mixer, updatedByEmail) {
             icon: 'fas fa-calendar-check',
             iconStyle: { color: verifiedColor },
             label: 'Verified',
-            style: { color: verifiedColor },
             value: hasUpdatedLast ? `${formatCentralDateTime(mixer.updatedLast)}${verifiedSuffix}` : 'Never verified',
             valueStyle: { color: verifiedValueColor }
         },
