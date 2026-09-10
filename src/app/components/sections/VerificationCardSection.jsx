@@ -29,10 +29,16 @@ function VerificationCardSection({
     const accentColor = preferences.accentColor || DEFAULT_ACCENT_COLOR
     const [recentHistory, setRecentHistory] = useState([])
     const [resolvedNames, setResolvedNames] = useState({})
+    // Clearing on the way in matters as much as fetching. The card is reused as
+    // the user moves from one asset to the next, so an asset with no history of
+    // its own — or one whose type has no history table — would otherwise go on
+    // showing the previous asset's changes as if they were its own.
     useEffect(() => {
-        if (!assetId || !assetType) return
+        let cancelled = false
+        setRecentHistory([])
+        setResolvedNames({})
         const tableName = assetType === 'mixer' ? 'mixers_history' : assetType === 'tractor' ? 'tractors_history' : null
-        if (!tableName) return
+        if (!assetId || !tableName) return
         const fetchHistory = async () => {
             const idCol = assetType === 'mixer' ? 'mixer_id' : 'tractor_id'
             const { data } = await Database.from(tableName)
@@ -40,13 +46,16 @@ function VerificationCardSection({
                 .eq(idCol, assetId)
                 .order('changed_at', { ascending: false })
                 .limit(5)
-            if (data && data.length > 0) {
-                const names = await resolveUUIDs(data)
-                setResolvedNames(names)
-                setRecentHistory(data)
-            }
+            const rows = data ?? []
+            const names = rows.length > 0 ? await resolveUUIDs(rows) : {}
+            if (cancelled) return
+            setResolvedNames(names)
+            setRecentHistory(rows)
         }
         fetchHistory()
+        return () => {
+            cancelled = true
+        }
     }, [assetId, assetType])
     /** History rows store operator, plant, and user references as raw UUIDs.
      *  Resolves each one to a display name from whichever table owns it;
@@ -191,9 +200,18 @@ function VerificationCardSection({
                         className={`flex items-center gap-3.5 py-3.5 ${index < verificationItems.length - 1 ? 'border-b border-bg-tertiary' : ''}`}
                         title={item.title || ''}
                     >
-                        <i className={`${item.icon} text-sm text-center w-5`} style={{ color: accentColor }}></i>
+                        {/* An item may carry its own colours — a red calendar
+                            for a lapsed verification, for one. Where it does
+                            not, the icon takes the accent and the value takes
+                            the card's own text colour. */}
+                        <i
+                            className={`${item.icon} text-sm text-center w-5`}
+                            style={item.iconStyle || { color: accentColor }}
+                        ></i>
                         <div className="text-text-secondary text-xs font-medium w-[90px]">{item.label}</div>
-                        <div className="text-text-primary flex-1 text-[13px] font-semibold">{item.value}</div>
+                        <div className="text-text-primary flex-1 text-[13px] font-semibold" style={item.valueStyle}>
+                            {item.value}
+                        </div>
                     </div>
                 ))}
             </div>

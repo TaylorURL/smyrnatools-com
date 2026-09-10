@@ -110,11 +110,19 @@ Deno.serve(async (req) => {
                 const auth = await requireAuthenticated(supabase, req, headers)
                 if (auth instanceof Response) return auth
                 // Two queries so Active operators list first, with each block
-                // alphabetized independently.
+                // alphabetized independently. The second block asks for a null
+                // status explicitly: `status <> 'Active'` is unknown rather
+                // than true for a null in Postgres, so an operator with no
+                // status set would otherwise land in neither block and drop
+                // off the list entirely.
                 const [{ data: activeData, error: activeError }, { data: otherData, error: otherError }] =
                     await Promise.all([
                         supabase.from(OPERATORS_TABLE).select('*').eq('status', 'Active').order('name'),
-                        supabase.from(OPERATORS_TABLE).select('*').not('status', 'eq', 'Active').order('name')
+                        supabase
+                            .from(OPERATORS_TABLE)
+                            .select('*')
+                            .or('status.is.null,status.neq.Active')
+                            .order('name')
                     ])
                 if (activeError || otherError) return errorResponse('Failed to fetch operators', headers, 400)
                 return jsonResponse({ data: [...(activeData ?? []), ...(otherData ?? [])] }, headers)

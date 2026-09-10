@@ -4,17 +4,26 @@ import Badge from '../../app/components/common/Badge'
 import StarRating from '../../app/components/common/StarRating'
 
 /**
- * Badge tone per status, keyed on the Tailwind class string an asset config
- * lists for that status rather than on the status name. A class string with no
- * entry here falls through to the neutral tone.
+ * Badge tone per status token. An asset config lists a Tailwind class string
+ * for each status, and the semantic lives in the `status-*` colour inside it —
+ * `bg-status-active/15 text-status-active` and a solid `bg-status-active` both
+ * mean success. Keying on the token rather than on the whole class string is
+ * what keeps the two spellings equivalent.
  */
-const STATUS_BADGE_CLASS_TO_TONE = {
-    'bg-bg-tertiary text-text-secondary': 'neutral',
-    'bg-status-active text-white': 'success',
-    'bg-status-danger text-white': 'danger',
-    'bg-status-shop text-white': 'info',
-    'bg-status-spare text-white': 'neutral',
-    'bg-status-warning text-white': 'warning'
+const STATUS_TOKEN_TO_TONE = {
+    active: 'success',
+    danger: 'danger',
+    shop: 'info',
+    spare: 'neutral',
+    warning: 'warning'
+}
+
+/** Reads the `status-*` token out of a config's badge class string. A class
+ *  string carrying none of them — the neutral fallback among them — is
+ *  neutral. */
+const getStatusTone = (badgeClass) => {
+    const token = /\bbg-status-([a-z]+)/.exec(badgeClass || '')?.[1]
+    return STATUS_TOKEN_TO_TONE[token] || 'neutral'
 }
 
 const getInitials = (name) => {
@@ -170,7 +179,7 @@ function AssetGridCard({
                     </Badge>
                 )}
                 <Badge
-                    tone={STATUS_BADGE_CLASS_TO_TONE[statusBadgeClass] || 'neutral'}
+                    tone={getStatusTone(statusBadgeClass)}
                     size="md"
                     shape="rounded-md"
                     uppercase={false}

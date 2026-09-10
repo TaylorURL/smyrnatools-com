@@ -106,7 +106,11 @@ export default function AssetListSkeleton({ viewMode, count, columnCount = 8 }) 
                 style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? '260px' : '300px'}, 1fr))` }}
             >
                 {Array.from({ length: cardCount }, (_, index) => (
-                    <div key={index} style={{ animationDelay: `${index * STAGGER_MS}ms`, animationFillMode: 'both' }}>
+                    <div
+                        key={index}
+                        className="animate-fade-in-up motion-reduce:animate-none"
+                        style={{ animationDelay: `${index * STAGGER_MS}ms`, animationFillMode: 'both' }}
+                    >
                         <SkeletonAssetCard compact={isMobile} />
                     </div>
                 ))}
