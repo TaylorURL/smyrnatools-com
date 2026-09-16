@@ -23,7 +23,7 @@ export function HighlightRow({ hint, icon, label, value }) {
 
 /** Launchpad tile — same affordance as the asset overview's tiles so the
  *  navigation pattern feels identical. */
-export function LaunchpadTile({ accent, hint, icon, label, onSelect, section, value }) {
+export function LaunchpadTile({ hint, icon, label, onSelect, section, value }) {
     return (
         <button
             type="button"

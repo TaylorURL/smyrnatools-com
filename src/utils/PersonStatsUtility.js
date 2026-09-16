@@ -6,16 +6,16 @@ export const RETIRED_STATUSES = ['Terminated', 'No Hire']
  *  case-insensitively. Guests and terminated accounts shouldn't contribute
  *  to coverage / role-tier / plant-distribution counts — only to surfaces
  *  that are specifically about them. */
-export const EXCLUDED_MANAGER_ROLE_NAMES = new Set(['guest', 'terminated', 'no hire'])
+const EXCLUDED_MANAGER_ROLE_NAMES = new Set(['guest', 'terminated', 'no hire'])
 
 /** Whole-star axis and bucket label, e.g. `1 Star` / `4 Stars`. Chart axes and
  *  the KPI strips key off the returned string, so every producer and every
  *  lookup goes through here. */
 export const starLabel = (count) => `${count} ${count === 1 ? 'Star' : 'Stars'}`
 
-export const RATING_BUCKETS = [0, 1, 2, 3, 4, 5].map((max) => ({ label: starLabel(max), max }))
+const RATING_BUCKETS = [0, 1, 2, 3, 4, 5].map((max) => ({ label: starLabel(max), max }))
 
-export const LAST_LOGIN_BUCKETS = [
+const LAST_LOGIN_BUCKETS = [
     { label: '< 7 d', max: 7 },
     { label: '7–30 d', max: 30 },
     { label: '31–90 d', max: 90 },

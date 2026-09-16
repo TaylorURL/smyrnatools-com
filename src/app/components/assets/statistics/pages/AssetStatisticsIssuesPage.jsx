@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react'
 
 import { fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
-import { DEFAULT_ACCENT_COLOR } from '../../../../constants/themeConstants'
 import { Panel, Stat, StatGroup } from '../../../ui/Panel'
 import { AssetWatchlistTable } from '../AssetStatisticsTables'
 
@@ -11,8 +10,7 @@ import { AssetWatchlistTable } from '../AssetStatisticsTables'
  * item after the list loads, so the page never fetches issues itself and
  * shows nothing until those counts land.
  */
-export function AssetStatisticsIssuesPage({ accentColor, onSelectAsset, stats }) {
-    const accent = accentColor || DEFAULT_ACCENT_COLOR
+export function AssetStatisticsIssuesPage({ onSelectAsset, stats }) {
     const { perPlant, summary, topIssueAssets } = stats
 
     const plantsWithIssues = useMemo(
@@ -48,7 +46,6 @@ export function AssetStatisticsIssuesPage({ accentColor, onSelectAsset, stats })
                 right={<span className="text-[11px] text-text-tertiary">{`Showing ${topIssueAssets.length}`}</span>}
             >
                 <AssetWatchlistTable
-                    accent={accent}
                     headerLabel="Open issues"
                     onSelect={onSelectAsset}
                     rows={topIssueAssets}

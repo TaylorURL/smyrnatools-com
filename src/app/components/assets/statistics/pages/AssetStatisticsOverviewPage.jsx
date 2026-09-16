@@ -7,7 +7,7 @@ import { Panel } from '../../../ui/Panel'
 
 /** Tile carrying one teaser metric for a sub-page; clicking it switches the
  *  view to `section`. */
-function LaunchpadTile({ accent, hint, icon, label, onSelect, section, value }) {
+function LaunchpadTile({ hint, icon, label, onSelect, section, value }) {
     return (
         <button
             type="button"
@@ -242,7 +242,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
             <Panel title="Jump Into Details" innerClassName="p-3">
                 <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     <LaunchpadTile
-                        accent={accent}
                         icon="fa-circle-half-stroke"
                         label="Fleet Status"
                         section="fleetStatus"
@@ -251,7 +250,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                         onSelect={onSelectSection}
                     />
                     <LaunchpadTile
-                        accent={accent}
                         icon="fa-industry"
                         label="Plant Distribution"
                         section="plants"
@@ -261,7 +259,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                     />
                     {summary.hasService && (
                         <LaunchpadTile
-                            accent={accent}
                             icon="fa-wrench"
                             label="Service Health"
                             section="service"
@@ -271,7 +268,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                         />
                     )}
                     <LaunchpadTile
-                        accent={accent}
                         icon="fa-screwdriver-wrench"
                         label="Shop Performance"
                         section="shopPerformance"
@@ -285,7 +281,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                     />
                     {stats.hoursStats?.hasHours && (
                         <LaunchpadTile
-                            accent={accent}
                             icon="fa-gauge"
                             label="Hours & Utilization"
                             section="hours"
@@ -304,7 +299,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                     )}
                     {config?.hasVerification && (
                         <LaunchpadTile
-                            accent={accent}
                             icon="fa-clipboard-check"
                             label="Verification & Data"
                             section="verification"
@@ -315,7 +309,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                     )}
                     {summary.hasCleanliness && (
                         <LaunchpadTile
-                            accent={accent}
                             icon="fa-broom"
                             label="Cleanliness"
                             section="cleanliness"
@@ -326,7 +319,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                     )}
                     {config?.hasOperatorAssignment && (
                         <LaunchpadTile
-                            accent={accent}
                             icon="fa-id-badge"
                             label="Operator Coverage"
                             section="operators"
@@ -336,7 +328,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                         />
                     )}
                     <LaunchpadTile
-                        accent={accent}
                         icon="fa-triangle-exclamation"
                         label="Issues"
                         section="issues"
@@ -345,7 +336,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                         onSelect={onSelectSection}
                     />
                     <LaunchpadTile
-                        accent={accent}
                         icon="fa-clock-rotate-left"
                         label="Fleet Aging"
                         section="aging"

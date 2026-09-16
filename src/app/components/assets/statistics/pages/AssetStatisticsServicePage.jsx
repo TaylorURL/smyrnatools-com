@@ -116,7 +116,6 @@ export function AssetStatisticsServicePage({ accentColor, onSelectAsset, stats }
                 right={<span className="text-[11px] text-text-tertiary">{`Showing ${overdueServiceList.length}`}</span>}
             >
                 <AssetWatchlistTable
-                    accent={accent}
                     headerLabel="Last serviced"
                     onSelect={onSelectAsset}
                     rows={overdueServiceList}

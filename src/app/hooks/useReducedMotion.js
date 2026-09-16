@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 const QUERY = '(prefers-reduced-motion: reduce)'
 
 /** Whether the OS is currently asking for reduced motion, read outside React. */
-export function prefersReducedMotion() {
+function prefersReducedMotion() {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
     return window.matchMedia(QUERY).matches
 }

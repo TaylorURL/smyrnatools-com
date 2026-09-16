@@ -167,10 +167,6 @@ export { Database }
 export { createRealtimeChannel }
 /** Subscribes a realtime channel and re-mints the token behind a refused join. */
 export { subscribeRealtimeChannel }
-/** Supabase project URL the client is pointed at. */
-export { databaseUrl }
-/** Supabase anon key. Grants nothing on its own — RLS gates every table. */
-export { databaseKey }
 /**
  * Tables the `DatabaseService` static methods may name. The edge function
  * takes the table as data, so this list plus `sanitizeTableName` is what

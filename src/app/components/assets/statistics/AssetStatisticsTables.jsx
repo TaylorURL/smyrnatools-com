@@ -179,7 +179,7 @@ export function PlantScorecardTable({ accent, config, hasService, rows, totalFle
  *  `identifier`, `plant`, and `status`; `operatorName` is optional and
  *  renders as a subtitle. `onSelect` receives the whole row so the parent
  *  can open the asset's detail view. */
-export function AssetWatchlistTable({ accent, headerLabel, onSelect, rows, valueAccessor, valueFormatter }) {
+export function AssetWatchlistTable({ headerLabel, onSelect, rows, valueAccessor, valueFormatter }) {
     if (!rows.length) {
         return (
             <div className="text-[12px] py-4 text-center text-text-tertiary">

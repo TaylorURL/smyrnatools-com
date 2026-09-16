@@ -296,4 +296,4 @@ export default function Badge({
     )
 }
 
-export { cleanStyleProp, formatCount, SHAPE_CLS, SIZE_STYLES, TONE_DOT_CLS, TONE_ICON_CLS }
+export { cleanStyleProp, SIZE_STYLES }

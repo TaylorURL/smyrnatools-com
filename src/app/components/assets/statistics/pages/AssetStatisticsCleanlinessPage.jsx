@@ -70,7 +70,6 @@ export function AssetStatisticsCleanlinessPage({ accentColor, onSelectAsset, sta
                 right={<span className="text-[11px] text-text-tertiary">{`Showing ${dirtyAssets.length}`}</span>}
             >
                 <AssetWatchlistTable
-                    accent={accent}
                     headerLabel="Rating"
                     onSelect={onSelectAsset}
                     rows={dirtyAssets}

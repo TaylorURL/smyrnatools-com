@@ -293,5 +293,5 @@ function TutorialManager() {
     if (!activeTutorial) return null
     return <TutorialPopup tutorialId={activeTutorial} onDismiss={() => dismissTutorial(activeTutorial)} />
 }
-export { TutorialManager, TutorialPopup, TUTORIALS }
+export { TutorialManager, TutorialPopup }
 export default TutorialManager

@@ -1,7 +1,6 @@
 import React from 'react'
 
 import { fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
-import { DEFAULT_ACCENT_COLOR } from '../../../../constants/themeConstants'
 import { Panel, Stat, StatGroup } from '../../../ui/Panel'
 import { AssetStatsEmpty } from '../AssetStatisticsCharts'
 import { AssetWatchlistTable } from '../AssetStatisticsTables'
@@ -15,8 +14,7 @@ import { AssetWatchlistTable } from '../AssetStatisticsTables'
  * Coverage is measured against Active assets alone: a spare or in-shop asset
  * without an operator is expected, not a gap.
  */
-export function AssetStatisticsOperatorsPage({ accentColor, onSelectAsset, stats }) {
-    const accent = accentColor || DEFAULT_ACCENT_COLOR
+export function AssetStatisticsOperatorsPage({ onSelectAsset, stats }) {
     const { operatorCoverage } = stats
 
     if (!operatorCoverage) {
@@ -56,7 +54,6 @@ export function AssetStatisticsOperatorsPage({ accentColor, onSelectAsset, stats
                     }
                 >
                     <AssetWatchlistTable
-                        accent={accent}
                         headerLabel="Plant"
                         onSelect={onSelectAsset}
                         rows={unassignedAssetList}
