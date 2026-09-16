@@ -133,7 +133,6 @@ export function AssetStatisticsHoursPage({ accentColor, onSelectAsset, stats }) 
                 right={<span className="text-[11px] text-text-tertiary">{`Top ${topByHours.length}`}</span>}
             >
                 <AssetWatchlistTable
-                    accent={accent}
                     headerLabel="Hours"
                     onSelect={onSelectAsset}
                     rows={topByHours}
@@ -152,7 +151,6 @@ export function AssetStatisticsHoursPage({ accentColor, onSelectAsset, stats }) 
                 right={<span className="text-[11px] text-text-tertiary">{`Top ${hoursPerYearTopList.length}`}</span>}
             >
                 <AssetWatchlistTable
-                    accent={accent}
                     headerLabel="Hrs / yr"
                     onSelect={onSelectAsset}
                     rows={hoursPerYearTopList}

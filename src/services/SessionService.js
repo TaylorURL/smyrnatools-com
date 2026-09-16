@@ -111,7 +111,7 @@ export const registerJwtRefresher = (refresher) => {
 }
 
 /** True when a JWT is held but has reached (or is about to reach) its expiry. */
-export const isSessionJwtExpired = () =>
+const isSessionJwtExpired = () =>
     Boolean(currentJwt) && currentJwtExpiresAt > 0 && Date.now() >= currentJwtExpiresAt - JWT_EXPIRY_MARGIN_MS
 
 /** Runs the registered refresher, or joins the run already under way. A burst

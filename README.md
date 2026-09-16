@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2026.37.4-222d65?style=for-the-badge" alt="Version 2026.37.4" />
+  <img src="https://img.shields.io/badge/version-2026.38.0-222d65?style=for-the-badge" alt="Version 2026.38.0" />
   <img src="https://img.shields.io/badge/React-19-222d65?style=for-the-badge&logo=react&logoColor=white" alt="React 19" />
   <img src="https://img.shields.io/badge/Vite-6-222d65?style=for-the-badge&logo=vite&logoColor=white" alt="Vite 6" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3-222d65?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 3" />
@@ -92,27 +92,29 @@ npm run build          # production build to build/
 | `npm start` | Vite dev server on port 3000. |
 | `npm run build` | Production build to `build/`. |
 | `npm run preview` | Serve the production build. |
-| `npm test` | Run the Vitest suite once. |
-| `npm run test:watch` | Vitest in watch mode. |
 | `npm run lint` | ESLint over `src/`. |
-| `npm run typecheck` | TypeScript over the project, no emit. |
+| `npm run lint:fix` | ESLint over `src/`, fixing what it can. |
 | `npm run format` | Prettier over `src/`. |
 | `npm run format:check` | Check formatting without writing. |
+| `npm test` | Run the Vitest suite once. |
+| `npm run test:watch` | Vitest in watch mode. |
+| `npm run typecheck` | TypeScript over the project, no emit. |
 | `npm run analyze` | Build with a Rollup bundle treemap. |
+| `npm run supabase` | Supabase CLI, through the wrapper below. |
 
 CI runs `format:check`, `lint`, `typecheck`, `test`, and `build` on every pull request, so a change that fails any of them locally fails the same way there.
 
 ### Supabase workflow
 
-A `supabase:*` script family wraps the Supabase CLI through `scripts/supabase.js`:
+`npm run supabase` forwards everything after it to the Supabase CLI through `scripts/supabase.js`, which finds the binary via `SUPABASE_BIN`, the usual install paths, `PATH`, the npm global bin, or `npx` — so the same command works whichever way the CLI was installed.
 
-| Script | Does |
-| :--- | :--- |
-| `supabase:start` · `:stop` · `:status` | Run the local Supabase stack. |
-| `supabase:db:reset` | Reset the local database. |
-| `supabase:functions:serve` · `:deploy` · `:invoke` | Develop and ship edge functions. |
-| `supabase:functions:list` · `:new` · `:download` · `:delete` | Manage edge functions. |
-| `supabase:login` · `:init` · `:version` | CLI auth and setup. |
+```bash
+npm run supabase -- start                    # local stack up; stop, status the same way
+npm run supabase -- db reset                 # reset the local database
+npm run supabase -- functions serve <name>   # run an edge function locally
+npm run supabase -- functions deploy <name>  # ship one
+npm run supabase -- login                    # CLI auth
+```
 
 ## Architecture
 
@@ -137,17 +139,20 @@ flowchart LR
 
 ```
 smyrnatools-com/
-├── api/                    Vercel serverless function — reports the commit the deployment was built from
+├── api/                    Vercel serverless functions — the commit this deployment was built from,
+│                           and a 404 for hashed assets an older build is still asking for
 ├── public/                 Logos, favicon, PWA manifest, self-hosted fonts, background videos,
 │                           robots.txt, sitemap.xml, llms.txt, release.json
 ├── docs/                   The running todo list
 ├── scripts/                Dev/ops helpers — Supabase CLI wrapper, email templates,
 │                           PDF and training-packet generators
+├── vite/                   Build plugin — prerenders the sign-in screen and inlines its CSS
 ├── supabase/
 │   ├── functions/          Deno edge functions (deployed individually) — all database writes
 │   └── migrations/         Schema, row-level security, and the scheduled housekeeping jobs
 └── src/
     ├── index.jsx           Entry — Sentry init, context providers, root <App/>
+    ├── entry-server.jsx    Build-time render of the sign-in screen for the prerender plugin
     ├── app/                Shell — components, hooks, context, models, constants, ai, styles
     ├── views/              Feature domains — admin, assets, common, people
     ├── services/           Service classes; DatabaseService.js is the only supabase-js consumer

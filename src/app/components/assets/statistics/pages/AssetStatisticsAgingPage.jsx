@@ -66,7 +66,6 @@ export function AssetStatisticsAgingPage({ accentColor, onSelectAsset, stats }) 
                 right={<span className="text-[11px] text-text-tertiary">{`Showing ${oldestAssets.length}`}</span>}
             >
                 <AssetWatchlistTable
-                    accent={accent}
                     headerLabel="Year · Hours"
                     onSelect={onSelectAsset}
                     rows={oldestAssets}

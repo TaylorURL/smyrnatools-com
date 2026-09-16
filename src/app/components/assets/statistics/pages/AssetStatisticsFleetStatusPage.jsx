@@ -49,7 +49,6 @@ export function AssetStatisticsFleetStatusPage({ accentColor, onSelectAsset, sta
                 }
             >
                 <AssetWatchlistTable
-                    accent={accent}
                     headerLabel="Days in status"
                     onSelect={onSelectAsset}
                     rows={longestInStatus}

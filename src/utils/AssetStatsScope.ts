@@ -14,7 +14,7 @@ import AssetStatsUtility, { daysSince, itemYear, RETIRED_STATUSES } from './Asse
 /** Grouping key for assets with no plant assignment. Sections that roll up by
  *  plant use it so unassigned assets stay visible as their own row rather than
  *  collapsing into a blank code. */
-export const UNASSIGNED_PLANT_CODE = 'UNASSIGNED'
+const UNASSIGNED_PLANT_CODE = 'UNASSIGNED'
 
 export const upperCode = (value: unknown): string =>
     String(value || '')

@@ -80,9 +80,9 @@ const SIZE_STYLES = {
 }
 
 const VALUE_FORMATTERS = {
-    decimal: (v, max) => formatNumber(v),
+    decimal: (v) => formatNumber(v),
     fraction: (v, max) => `${formatNumber(v)}/${max}`,
-    stars: (v, max) => `${formatNumber(v)} ${Number(v) === 1 ? 'Star' : 'Stars'}`
+    stars: (v) => `${formatNumber(v)} ${Number(v) === 1 ? 'Star' : 'Stars'}`
 }
 
 const formatNumber = (n) => {
@@ -278,4 +278,4 @@ export default function StarRating({
     )
 }
 
-export { EMPTY_CLS, SIZE_STYLES, TONE_FILLED_CLS, VALUE_FORMATTERS }
+export { SIZE_STYLES }

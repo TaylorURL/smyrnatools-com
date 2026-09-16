@@ -58,7 +58,7 @@ export class TractorHistory {
  * Display formatting helpers for tractor history values.
  * Delegates shared logic to HistoryDisplayUtility; handles tractor-specific blower formatting.
  */
-export class TractorHistoryUtils {
+class TractorHistoryUtils {
     static formatValueForDisplay(fieldName, value) {
         if (!value) return ''
         if (['last_service_date'].includes(fieldName)) {

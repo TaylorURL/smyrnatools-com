@@ -1,7 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { usePreferences } from '../../context/PreferencesContext'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import Badge from '../common/Badge'
 import StarRating from '../common/StarRating'
@@ -66,7 +65,6 @@ function ListViewModeSection({
     onVerify
 }) {
     const isMobile = useIsMobile()
-    const { preferences } = usePreferences()
     const cellBase = 'text-[12px] font-medium text-left align-middle whitespace-nowrap py-1.5 px-2.5'
     const cellHighlight = `font-bold text-left align-middle whitespace-nowrap font-mono tabular-nums py-1.5 ${
         isMobile ? 'text-[12px] px-2' : 'text-[12.5px] px-2.5'

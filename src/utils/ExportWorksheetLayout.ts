@@ -24,7 +24,7 @@ import { formatCentralDate } from './PlanUtility'
 
 /** A data cell given as a value plus its presentation, rather than as a bare
  *  value that takes the row's default styling. */
-export interface DataCellDescriptor {
+interface DataCellDescriptor {
     align?: HorizontalAlignment
     bold?: boolean
     color?: string
@@ -34,10 +34,10 @@ export interface DataCellDescriptor {
 }
 
 /** One cell of a data row — a bare value, or a descriptor that styles it. */
-export type DataRowValue = DataCellDescriptor | string | number
+type DataRowValue = DataCellDescriptor | string | number
 
 /** The report-header band's content and the row it starts on. */
-export interface ReportHeaderOptions {
+interface ReportHeaderOptions {
     logoBase64?: string | null
     row?: number
     subtitle?: string | null

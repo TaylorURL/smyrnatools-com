@@ -1,7 +1,6 @@
 import React from 'react'
 
 import { fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
-import { DEFAULT_ACCENT_COLOR } from '../../../../constants/themeConstants'
 import { StatusPieChart } from '../../../assets/statistics/AssetStatisticsCharts'
 import StarRating from '../../../common/StarRating'
 import { Panel } from '../../../ui/Panel'
@@ -17,8 +16,7 @@ import { HighlightRow, LaunchpadTile } from './personStatsShared'
  * `perPlant` by active headcount, so every `slice(0, n)` here reads the n
  * largest entries.
  */
-export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }) {
-    const accent = accentColor || DEFAULT_ACCENT_COLOR
+export function PersonOverviewPage({ kind, onSelectSection, stats }) {
     const isOperators = kind === 'operators'
     const { perPlant, roleDistribution, statusDistribution, summary } = stats
     const topRoles = roleDistribution.slice(0, 4)
@@ -169,7 +167,6 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                 <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     {isOperators && (
                         <LaunchpadTile
-                            accent={accent}
                             icon="fa-circle-half-stroke"
                             label="Roster Status"
                             section="status"
@@ -179,7 +176,6 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                         />
                     )}
                     <LaunchpadTile
-                        accent={accent}
                         icon="fa-industry"
                         label="Plant Distribution"
                         section="plants"
@@ -188,7 +184,6 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                         onSelect={onSelectSection}
                     />
                     <LaunchpadTile
-                        accent={accent}
                         icon="fa-user-tag"
                         label={isOperators ? 'Positions' : 'Roles'}
                         section="roles"
@@ -198,7 +193,6 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                     />
                     {isOperators && (
                         <LaunchpadTile
-                            accent={accent}
                             icon="fa-user-plus"
                             label="Hiring & Training"
                             section="hiringTraining"
@@ -213,7 +207,6 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                     )}
                     {isOperators && (
                         <LaunchpadTile
-                            accent={accent}
                             icon="fa-star"
                             label="Ratings"
                             section="rating"
@@ -236,7 +229,6 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                     )}
                     {!isOperators && stats.managerCoverage && (
                         <LaunchpadTile
-                            accent={accent}
                             icon="fa-shield-halved"
                             label="Coverage & Risk"
                             section="coverage"
@@ -254,7 +246,6 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                     )}
                     {!isOperators && (
                         <LaunchpadTile
-                            accent={accent}
                             icon="fa-right-to-bracket"
                             label="Login Activity"
                             section="activity"

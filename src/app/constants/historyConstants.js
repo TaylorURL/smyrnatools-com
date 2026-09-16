@@ -55,11 +55,11 @@ export const MAX_STAR_RATING = 5
 export const DAYS_IN_MS = 1000 * 60 * 60 * 24
 /** Membership sets the tab definitions below test against, so which tabs an
  *  asset type gets is decided here rather than in the modal. */
-export const ASSET_TYPES_WITH_OVERVIEW = ['mixer', 'tractor', 'trailer', 'equipment', 'pickup-truck']
+const ASSET_TYPES_WITH_OVERVIEW = ['mixer', 'tractor', 'trailer', 'equipment', 'pickup-truck']
 export const ASSET_TYPES_WITH_OPERATORS = ['mixer', 'tractor']
-export const ASSET_TYPES_WITH_SERVICE = ['mixer', 'tractor', 'equipment', 'pickup-truck']
-export const ASSET_TYPES_WITH_PLANT = ['mixer', 'tractor', 'trailer', 'equipment', 'pickup-truck']
-export const ASSET_TYPES_WITH_CLEANLINESS = ['mixer', 'tractor', 'trailer', 'equipment']
+const ASSET_TYPES_WITH_SERVICE = ['mixer', 'tractor', 'equipment', 'pickup-truck']
+const ASSET_TYPES_WITH_PLANT = ['mixer', 'tractor', 'trailer', 'equipment', 'pickup-truck']
+const ASSET_TYPES_WITH_CLEANLINESS = ['mixer', 'tractor', 'trailer', 'equipment']
 export const AI_TYPEWRITER_CHARS_PER_TICK = 4
 export const AI_TYPEWRITER_TICK_MS = 10
 export const SEVERITY_PALETTES = {
