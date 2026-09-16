@@ -30,12 +30,12 @@ interface PageSetup {
 }
 
 /** The slice of an ExcelJS column the export builders set. */
-export interface ExcelColumn {
+interface ExcelColumn {
     width?: number
 }
 
 /** The slice of an ExcelJS row the export builders set. */
-export interface ExcelRow {
+interface ExcelRow {
     getCell(col: number): ExcelCell
     height?: number
 }

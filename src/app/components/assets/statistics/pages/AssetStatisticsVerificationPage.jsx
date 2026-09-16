@@ -2,7 +2,6 @@
 import React, { useMemo } from 'react'
 
 import { fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
-import { DEFAULT_ACCENT_COLOR } from '../../../../constants/themeConstants'
 import { itemDisplayId } from '../../../../hooks/useAssetStatistics'
 import { Panel, Stat, StatGroup } from '../../../ui/Panel'
 import { AssetWatchlistTable } from '../AssetStatisticsTables'
@@ -47,8 +46,7 @@ const daysSinceVerifiedSignal = (item) => {
  * time-range scope before the operational filter, so each drops retired and
  * terminated assets itself to keep out records nobody is expected to verify.
  */
-export function AssetStatisticsVerificationPage({ accentColor, config, onSelectAsset, stats }) {
-    const accent = accentColor || DEFAULT_ACCENT_COLOR
+export function AssetStatisticsVerificationPage({ config, onSelectAsset, stats }) {
     const { operatorNames, scopedItems, summary } = stats
 
     // Assets currently failing the weekly check, longest-untouched first.
@@ -157,7 +155,6 @@ export function AssetStatisticsVerificationPage({ accentColor, config, onSelectA
                 right={<span className="text-[11px] text-text-tertiary">{`Showing ${unverifiedAssets.length}`}</span>}
             >
                 <AssetWatchlistTable
-                    accent={accent}
                     headerLabel="Days since edit"
                     onSelect={onSelectAsset}
                     rows={unverifiedAssets}
@@ -172,7 +169,6 @@ export function AssetStatisticsVerificationPage({ accentColor, config, onSelectA
                 right={<span className="text-[11px] text-text-tertiary">{`Showing ${missingDataAssets.length}`}</span>}
             >
                 <AssetWatchlistTable
-                    accent={accent}
                     headerLabel="Fields missing"
                     onSelect={onSelectAsset}
                     rows={missingDataAssets}

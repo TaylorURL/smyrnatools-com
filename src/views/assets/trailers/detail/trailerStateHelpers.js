@@ -12,7 +12,7 @@ const VALID_TRAILER_TYPES = ['Cement', 'End Dump']
  * detail view's "originalValues" tracking and applied after any successful
  * save / re-fetch.
  */
-export function buildOriginalValuesFromTrailer(updatedTrailer) {
+function buildOriginalValuesFromTrailer(updatedTrailer) {
     return {
         assignedPlant: updatedTrailer.assignedPlant,
         assignedTractor: updatedTrailer.assignedTractor,

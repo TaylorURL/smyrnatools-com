@@ -135,4 +135,4 @@ function formatPhone(input: string | number | null | undefined): string {
 }
 const GrammarUtility = { cleanComments, cleanDescription, formatPhone }
 export default GrammarUtility
-export { cleanText, formatPhone, GrammarUtility }
+export { formatPhone, GrammarUtility }

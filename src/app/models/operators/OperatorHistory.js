@@ -47,7 +47,7 @@ export class OperatorHistory {
  * Display formatting helpers for operator history values.
  * Delegates shared logic to HistoryDisplayUtility; handles operator-specific status normalization.
  */
-export class OperatorHistoryUtils {
+class OperatorHistoryUtils {
     static formatValueForDisplay(fieldName, value) {
         if (!value) return ''
         if (['hire_date', 'termination_date'].includes(fieldName)) {

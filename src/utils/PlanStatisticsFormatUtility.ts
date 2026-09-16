@@ -26,7 +26,7 @@ export const fmtPct = (n: number | null | undefined): string =>
 export const fmtScorePct = (n: number | null | undefined): string =>
     Number.isFinite(n as number) ? `${Math.round((n as number) * 100)}%` : '\u2014'
 
-export const fmtDate = (iso: string | null | undefined): string => {
+const fmtDate = (iso: string | null | undefined): string => {
     const d = parseIsoLocal(iso)
     if (!d) return iso || ''
     return formatCentralDate(d, { day: 'numeric', month: 'short' })

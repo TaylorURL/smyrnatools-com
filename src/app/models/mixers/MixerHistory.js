@@ -58,7 +58,7 @@ export class MixerHistory {
  * Display formatting helpers for mixer history values.
  * Delegates shared logic to HistoryDisplayUtility; handles mixer-specific date fields.
  */
-export class MixerHistoryUtils {
+class MixerHistoryUtils {
     static formatValueForDisplay(fieldName, value) {
         if (!value) return ''
         if (['last_service_date', 'last_chip_date'].includes(fieldName)) {

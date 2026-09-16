@@ -7,6 +7,6 @@ export const DEFAULT_THEME_MODE = 'light'
  *  dark theme and the lighter "Grayed Out" variant use light text on darker
  *  chrome, so tint logic must gate on `isDarkLikeTheme(themeMode)` rather
  *  than `themeMode === 'dark'`, which would miss the grayed variant. */
-export const DARK_LIKE_THEMES = new Set(['dark', 'grayed'])
+const DARK_LIKE_THEMES = new Set(['dark', 'grayed'])
 
 export const isDarkLikeTheme = (mode) => DARK_LIKE_THEMES.has(mode)

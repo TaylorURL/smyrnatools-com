@@ -282,7 +282,6 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
                 }
             >
                 <AssetWatchlistTable
-                    accent={accent}
                     headerLabel="Days in shop"
                     onSelect={onSelectAsset}
                     rows={stuckInShop}

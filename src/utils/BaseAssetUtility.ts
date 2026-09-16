@@ -211,7 +211,7 @@ export async function fetchStatusHistoryMap(
     return statusHistoryMap
 }
 
-export function ensureDefaultCounts(item: Record<string, unknown>): ItemWithCounts {
+function ensureDefaultCounts(item: Record<string, unknown>): ItemWithCounts {
     return {
         ...item,
         commentsCount: typeof item.commentsCount === 'number' ? item.commentsCount : 0,

@@ -26,14 +26,14 @@ interface FontStyle extends FontOptions {
 export type HorizontalAlignment = 'center' | 'left' | 'right'
 
 /** A single-color cell fill, in the pattern form ExcelJS expects. */
-export interface SolidFill {
+interface SolidFill {
     fgColor: { argb: string }
     pattern: 'solid'
     type: 'pattern'
 }
 
 /** Vertically centered alignment carrying the caller's horizontal placement. */
-export interface CellAlignment {
+interface CellAlignment {
     horizontal: HorizontalAlignment
     vertical: 'middle'
 }
@@ -45,7 +45,7 @@ interface BorderSide {
 }
 
 /** The edges a cell draws a border on. An absent edge is left unruled. */
-export interface CellBorders {
+interface CellBorders {
     bottom?: BorderSide
     left?: BorderSide
     right?: BorderSide
@@ -93,9 +93,9 @@ export function alignMiddle(horizontal: HorizontalAlignment): CellAlignment {
     return { horizontal, vertical: 'middle' }
 }
 
-export const HEADER_FONT = buildFont(10, COLORS.slate700, { bold: true })
-export const HEADER_FILL = solidFill(COLORS.slate100)
-export const HEADER_BORDER: CellBorders = { bottom: { color: { argb: COLORS.slate300 }, style: 'thin' } }
+const HEADER_FONT = buildFont(10, COLORS.slate700, { bold: true })
+const HEADER_FILL = solidFill(COLORS.slate100)
+const HEADER_BORDER: CellBorders = { bottom: { color: { argb: COLORS.slate300 }, style: 'thin' } }
 export const BRAND_UNDERLINE_BORDER: CellBorders = { bottom: { color: { argb: COLORS.brand }, style: 'medium' } }
 export const DATA_FONT = buildFont(11, COLORS.slate700)
 

@@ -105,7 +105,7 @@ export function resolveShopStatusForSave(statusValue, overrideValues, currentSho
  * incoming one gets an entry gaining it. History lives on the operator, not the
  * mixer, so an unchanged assignment writes nothing.
  */
-export async function recordAssignmentHistory({ mixerForHistory, updatedMixer, userId }) {
+async function recordAssignmentHistory({ mixerForHistory, updatedMixer, userId }) {
     if (mixerForHistory.assignedOperator === updatedMixer.assignedOperator) return
     if (mixerForHistory.assignedOperator) {
         await OperatorService.createHistoryEntry(
