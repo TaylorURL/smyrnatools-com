@@ -7,7 +7,14 @@
 
 const presenceReads = []
 const posts = []
+const postOptions = []
 const regionLookups = []
+const okResponse = { json: {}, res: { ok: true, status: 200 } }
+// What APIUtility hands back for a request that never reached the network: it
+// resolves rather than rejecting, so a transport failure arrives here as a
+// response that is simply not ok.
+const transportFailure = { json: { error: 'Failed to fetch' }, res: { ok: false, status: 0 } }
+const unreachable = new Set()
 
 vi.mock('../DatabaseService', () => {
     const result = { data: [], error: null }
@@ -52,9 +59,10 @@ vi.mock('../PlantService', () => ({
 vi.mock('../../utils/APIUtility', () => ({
     SESSION_INVALID_EVENT: 'auth:session-invalid',
     default: {
-        post: async (path) => {
+        post: async (path, body, options) => {
             posts.push(path)
-            return { json: {}, res: { ok: true, status: 200 } }
+            postOptions.push({ options, path })
+            return [...unreachable].some((suffix) => path.endsWith(suffix)) ? transportFailure : okResponse
         }
     }
 }))
@@ -68,10 +76,13 @@ beforeAll(async () => {
 beforeEach(() => {
     presenceReads.length = 0
     posts.length = 0
+    postOptions.length = 0
     regionLookups.length = 0
+    unreachable.clear()
     UserPresenceService.handlePageShow({ persisted: false })
     UserPresenceService.currentUserId = 'user-1'
     UserPresenceService.lastActivityUpdate = 0
+    UserPresenceService.lastLoginDateWritten = null
     UserPresenceService._userMetaCache = {}
 })
 
@@ -105,10 +116,50 @@ describe('activity writes around page teardown', () => {
         expect(posts).toContain('/user-presence-service/update-activity')
     })
 
-    it('writes nothing for the click that takes the page away', () => {
+    it('writes nothing for a click that arrives once the teardown is under way', () => {
         UserPresenceService.handlePageHide()
         UserPresenceService.handleUserActivity()
         expect(posts).toEqual([])
+    })
+
+    // The click that takes the page away reaches this handler before the
+    // browser starts the navigation, so the write is made whatever the flag
+    // says and the transport is the only thing standing between it and a
+    // cancellation. `keepalive` is what carries it across the teardown.
+    it('sends the activity write on a transport the teardown cannot cancel', async () => {
+        await UserPresenceService.updateActivity()
+        const activity = postOptions.find((call) => call.path.endsWith('/update-activity'))
+        expect(activity.options).toMatchObject({ keepalive: true, maxRetries: 0 })
+    })
+
+    it('sends the device merge the same way', async () => {
+        await UserPresenceService.updateActivity()
+        await Promise.resolve()
+        const merge = postOptions.find((call) => call.path.endsWith('/merge-device'))
+        expect(merge.options).toMatchObject({ keepalive: true, maxRetries: 0 })
+    })
+})
+
+describe('the day of the last login', () => {
+    it('writes it once the activity stamp lands', async () => {
+        await UserPresenceService.updateActivity()
+        expect(posts).toContain('/user-presence-service/update-last-login')
+    })
+
+    it('writes it again after an attempt that did not reach the network', async () => {
+        unreachable.add('/update-last-login')
+        await UserPresenceService.updateActivity()
+        unreachable.clear()
+        posts.length = 0
+        await UserPresenceService.updateActivity()
+        expect(posts).toContain('/user-presence-service/update-last-login')
+    })
+
+    it('writes it once for a day it has already recorded', async () => {
+        await UserPresenceService.updateActivity()
+        posts.length = 0
+        await UserPresenceService.updateActivity()
+        expect(posts).not.toContain('/user-presence-service/update-last-login')
     })
 })
 

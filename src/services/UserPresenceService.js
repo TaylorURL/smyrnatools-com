@@ -19,6 +19,23 @@ import { UserService } from './UserService'
 const PRESENCE_FUNCTION = '/user-presence-service'
 
 /**
+ * How the writes that hang off a DOM event are sent.
+ *
+ * A click or a keypress is routinely the thing that takes the page away, and
+ * the event reaches these handlers before the browser starts the navigation, so
+ * no flag the document sets on its way out can be read early enough to hold
+ * one back. The write goes out either way; what decides whether it arrives is
+ * the transport. `keepalive` hands it to the browser to finish on its own, so a
+ * document torn down a moment later cannot cancel it part-way through.
+ *
+ * Retries come off for the same reason the heartbeat has none. Each write
+ * carries only the moment it was sent, the next interaction replaces it inside
+ * the throttle window, and a retry scheduled a second later runs on a document
+ * that may no longer be there to run it.
+ */
+const ACTIVITY_WRITE_OPTIONS = { keepalive: true, maxRetries: 0 }
+
+/**
  * POSTs to one presence endpoint and reports whether the write landed.
  *
  * Returns false without making the request while the browser reports no
@@ -48,11 +65,11 @@ async function checkActiveDevicesCol() {
     return _hasActiveDevicesCol
 }
 
-async function mergeActiveDevice(userId, device) {
+async function mergeActiveDevice(userId, device, options) {
     const hasCol = await checkActiveDevicesCol()
     if (!hasCol) return
     try {
-        await postPresence('/merge-device', { device, userId })
+        await postPresence('/merge-device', { device, userId }, options)
     } catch (err) {
         console.error('Failed to merge active device:', err)
     }
@@ -169,9 +186,11 @@ class UserPresenceService {
      * The activity listeners sit on the document rather than on a timer, so
      * stopping the pollers does not stop them: a click or a keypress that starts
      * a navigation fires here first, and the last event a page receives is
-     * routinely the one that takes the page away. The write that event would
-     * send is cancelled part-way through, and it carries nothing the next page's
-     * own set-online write does not, so it is dropped rather than sent.
+     * routinely the one that takes the page away. The page-going-away flag
+     * cannot catch that one — the browser raises it at `pagehide`, which is
+     * after the event that caused it — so it holds back only the events that
+     * arrive once the teardown is already under way, and the write itself is
+     * sent on a transport that survives the teardown instead.
      */
     handleUserActivity() {
         if (this.pageIsGoingAway) return
@@ -184,19 +203,30 @@ class UserPresenceService {
     async updateActivity() {
         if (!this.currentUserId) return false
         try {
-            if (!(await postPresence('/update-activity', { userId: this.currentUserId }))) return false
-            mergeActiveDevice(this.currentUserId, detectDeviceType())
+            if (!(await postPresence('/update-activity', { userId: this.currentUserId }, ACTIVITY_WRITE_OPTIONS)))
+                return false
+            mergeActiveDevice(this.currentUserId, detectDeviceType(), ACTIVITY_WRITE_OPTIONS)
             // The yard's day. Stamped from a UTC one, a login on a Texas
             // evening is written down as tomorrow, and the managers list shows
             // a last-login date a day ahead of the login.
             const today = getCentralDay()
             if (this.lastLoginDateWritten !== today) {
-                this.lastLoginDateWritten = today
                 try {
-                    await postPresence('/update-last-login', {
-                        date: today,
-                        userId: this.currentUserId
-                    })
+                    // Marked written only once the write lands. Marking it on
+                    // the way out spends the day's single attempt on whatever
+                    // happened to the first one: the date is written once per
+                    // day per page, so a first attempt that does not arrive
+                    // used to leave the managers list showing yesterday until
+                    // the user signed in again.
+                    if (
+                        await postPresence(
+                            '/update-last-login',
+                            { date: today, userId: this.currentUserId },
+                            ACTIVITY_WRITE_OPTIONS
+                        )
+                    ) {
+                        this.lastLoginDateWritten = today
+                    }
                 } catch (err) {
                     console.error('Failed to update last_login_at:', err)
                 }
