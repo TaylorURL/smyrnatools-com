@@ -50,8 +50,14 @@ function applyJwt(jwt, expiresInSeconds) {
 }
 
 /**
- * Re-mints the session JWT against the current `users_sessions` row and
- * returns true on success.
+ * Re-mints the session JWT against the current `users_sessions` row.
+ *
+ * Answers `{ refreshed, reachedServer }`. `refreshed` is whether a new token
+ * was applied; `reachedServer` is whether the request arrived at all, which is
+ * what SessionService reads to decide whether a refused token is spent or
+ * merely unlucky. `APIUtility.post` resolves rather than rejecting and reports
+ * a request that never reached the network as status 0, so the two outcomes are
+ * distinguishable here and nowhere further down.
  *
  * Which endpoint can do the minting depends on what this tab holds.
  * `refresh-token` reads the user and session ids out of the request body, so
@@ -73,19 +79,22 @@ function applyJwt(jwt, expiresInSeconds) {
  * token life to spend, and the visibility probe re-mints ahead of a tab waking
  * from sleep.
  */
+const REFRESH_UNREACHABLE = { reachedServer: false, refreshed: false }
+
 async function refreshJwtIfPossible() {
     const userId = getSessionUserId()
-    if (!userId) return false
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) return false
+    if (!userId) return REFRESH_UNREACHABLE
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return REFRESH_UNREACHABLE
     const sessionId = getSessionId()
     const path = sessionId ? `${AUTH_FUNCTION}/refresh-token` : `${AUTH_FUNCTION}/restore-session`
     try {
         const { json, res } = await APIUtility.post(path, sessionId ? { sessionId, userId } : { userId })
-        if (!res.ok || !json?.jwt) return false
+        const reachedServer = res.status !== 0
+        if (!res.ok || !json?.jwt) return { reachedServer, refreshed: false }
         applyJwt(json.jwt, json.expiresIn)
-        return true
+        return { reachedServer: true, refreshed: true }
     } catch {
-        return false
+        return REFRESH_UNREACHABLE
     }
 }
 
