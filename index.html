@@ -252,11 +252,23 @@
         // problem reaching the CDN surfaces there too, so nothing that
         // matters is lost by skipping these tags.
         var MEDIA_LIFECYCLE_TAGS = { SOURCE: 1, VIDEO: 1, AUDIO: 1, TRACK: 1, PICTURE: 1 };
+        // The hosting platform's own telemetry, asked for by a script the
+        // platform serves rather than by anything this site builds. That script
+        // catches and discards its own failures, no behaviour a reader meets
+        // depends on one, and a content blocker refusing the path is the
+        // ordinary case on a phone, so a failure here describes the visitor's
+        // browser rather than the site. The paths pass through unread for the
+        // same reason the reporter's own endpoint does.
+        function platformTelemetry(target) {
+          var path = String(target || "");
+          return path.indexOf("/_vercel/insights/") > -1 || path.indexOf("/_vercel/speed-insights/") > -1;
+        }
         // Capture phase, because element load failures fire error events that do not bubble.
         window.addEventListener("error", function (event) {
           try {
             if (event.target && event.target !== window && event.target.tagName) {
               if (MEDIA_LIFECYCLE_TAGS[event.target.tagName]) return;
+              if (platformTelemetry(event.target.src || event.target.href)) return;
               report("resource", "Failed to load " + event.target.tagName.toLowerCase() + ": " + (event.target.src || event.target.href || ""));
             } else {
               report("uncaught", event.message, event.error && event.error.stack);
@@ -294,7 +306,7 @@
           window.fetch = function (input) {
             var target = typeof input === "string" ? input : (input && input.url) || "";
             // Reports about the reporter's own request would loop, so the endpoint passes through unwrapped.
-            if (target.indexOf(endpoint) === 0) return originalFetch.apply(window, arguments);
+            if (target.indexOf(endpoint) === 0 || platformTelemetry(target)) return originalFetch.apply(window, arguments);
             return originalFetch.apply(window, arguments).then(function (response) {
               if (response.status >= 500) report("http", "HTTP " + response.status + " from " + target.split("?")[0]);
               return response;
