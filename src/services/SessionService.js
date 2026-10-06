@@ -38,11 +38,17 @@ let realtimeAuthApplier = null
 let jwtRefresher = null
 let pendingJwtRefresh = null
 let lastRejectedJwt = null
+let refreshRetryBlockedUntil = 0
 
 // A token this close to its expiry is treated as already dead. Without the
 // margin a JWT that passes the check can still expire between the check and
 // the moment PostgREST evaluates it.
 const JWT_EXPIRY_MARGIN_MS = 30 * 1000
+
+// How long a mint that never reached the server holds off the next attempt on
+// the same refused token. The alternative to a wait is a mint started by every
+// query the page makes for as long as the connection is down.
+const JWT_REFRESH_RETRY_COOLDOWN_MS = 5 * 1000
 
 /**
  * Registers the callback that pushes the JWT into the realtime websocket, so
@@ -96,6 +102,7 @@ export const clearSession = () => {
     currentSessionUserId = null
     currentSessionId = null
     lastRejectedJwt = null
+    refreshRetryBlockedUntil = 0
     if (hadJwt) applyRealtimeAuth()
 }
 
@@ -104,7 +111,11 @@ export const clearSession = () => {
  * refresh an expired token without importing AuthContext and creating a
  * cycle. AuthContext registers itself on mount.
  *
- * The callback resolves true when a new JWT was applied via `updateSession`.
+ * The callback resolves `{ refreshed, reachedServer }`: whether a new JWT was
+ * applied via `updateSession`, and whether the mint request reached the server
+ * at all. The second field is what separates the server refusing this session
+ * from the request never arriving, and only the first is the server's word on
+ * the token.
  */
 export const registerJwtRefresher = (refresher) => {
     jwtRefresher = typeof refresher === 'function' ? refresher : null
@@ -114,13 +125,24 @@ export const registerJwtRefresher = (refresher) => {
 const isSessionJwtExpired = () =>
     Boolean(currentJwt) && currentJwtExpiresAt > 0 && Date.now() >= currentJwtExpiresAt - JWT_EXPIRY_MARGIN_MS
 
+/** Reads a refresher's answer into the two flags this module acts on. A
+ *  refresher that throws, or answers with nothing, is read as a mint that never
+ *  reached the server, which is the reading that keeps the token retryable. */
+const readRefreshResult = (result) => {
+    if (result === true) return { reachedServer: true, refreshed: true }
+    return { reachedServer: Boolean(result?.reachedServer), refreshed: Boolean(result?.refreshed) }
+}
+
 /** Runs the registered refresher, or joins the run already under way. A burst
- *  of queries on wake would otherwise each mint their own token. */
+ *  of queries on wake would otherwise each mint their own token. Resolves the
+ *  refresher's answer, so a caller can tell a refusal from an unreachable
+ *  server. */
 const startJwtRefresh = () => {
     if (!pendingJwtRefresh) {
         pendingJwtRefresh = Promise.resolve()
             .then(() => jwtRefresher())
-            .catch(() => false)
+            .then(readRefreshResult)
+            .catch(() => readRefreshResult(null))
             .finally(() => {
                 pendingJwtRefresh = null
             })
@@ -161,15 +183,32 @@ export const ensureFreshJwt = async () => {
  *
  * At most one mint is spent per refused token. A caller holding a token that
  * has already been replaced gets the replacement without a round-trip, and a
- * token whose refresh already failed is not retried — otherwise a session the
- * server has dropped for good would mint once per query for as long as the
+ * token the server has refused a mint for is not retried — otherwise a session
+ * the server has dropped for good would mint once per query for as long as the
  * page stayed open.
+ *
+ * A mint that never reached the server does not retire the token, and that is
+ * the whole of the difference between a page that recovers and one that does
+ * not. This path exists for the token the clock still believes is alive, which
+ * is exactly the token the periodic refresh leaves alone, so it is the only
+ * chance that token gets. Retiring it on a request that was cancelled or
+ * dropped on the way out left the page holding a credential PostgREST refuses
+ * and nothing willing to replace it: every query answered `PGRST301` and every
+ * realtime channel went on rejoining against the dead token until the page was
+ * reloaded. An unreachable mint is therefore retried, behind a cooldown so a
+ * connection that is simply down cannot turn each query into a mint.
  */
 export const refreshRejectedJwt = async (rejectedJwt) => {
     if (!currentJwt || !jwtRefresher) return currentJwt
     if (rejectedJwt !== currentJwt || lastRejectedJwt === rejectedJwt) return currentJwt
-    lastRejectedJwt = rejectedJwt
-    await startJwtRefresh()
+    if (Date.now() < refreshRetryBlockedUntil) return currentJwt
+    const { reachedServer } = await startJwtRefresh()
+    if (reachedServer) {
+        lastRejectedJwt = rejectedJwt
+        refreshRetryBlockedUntil = 0
+    } else {
+        refreshRetryBlockedUntil = Date.now() + JWT_REFRESH_RETRY_COOLDOWN_MS
+    }
     return currentJwt
 }
 
