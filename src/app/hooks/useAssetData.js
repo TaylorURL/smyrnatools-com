@@ -239,6 +239,14 @@ export default function useAssetData({
     const handleRealtimeUpdateRef = useRef(handleRealtimeUpdate)
     handleRealtimeUpdateRef.current = handleRealtimeUpdate
 
+    // A channel that drops and rejoins resumes the stream without replaying
+    // what it missed, so the list is re-read on recovery. It goes through a
+    // ref for the same reason the handler does: the fetch is rebuilt whenever
+    // the region scope changes, and depending on it would tear the channel
+    // down and rebuild it.
+    const refetchItemsRef = useRef(null)
+    refetchItemsRef.current = () => fetchAllItems(regionPlantCodes)
+
     // The list and the statistics dashboard both run this hook against the same
     // asset config, and the shell swaps one for the other in a single commit, so
     // the topic has to be unique per subscription rather than per asset type.
@@ -251,7 +259,8 @@ export default function useAssetData({
                     handleRealtimeUpdateRef.current(payload.eventType, { new: payload.new, old: payload.old })
                 }
             ),
-            (reason) => console.error(`${config.singularLabel} realtime subscription error: ${reason}`)
+            (reason) => console.error(`${config.singularLabel} realtime subscription error: ${reason}`),
+            () => refetchItemsRef.current?.()
         )
         return () => Database.removeChannel(channel)
     }, [config.channelName, config.singularLabel, config.tableName])
