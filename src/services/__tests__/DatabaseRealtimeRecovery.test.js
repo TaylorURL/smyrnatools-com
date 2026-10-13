@@ -4,13 +4,28 @@
 // and is not. Recovery is the only notice the client gets that it has a hole,
 // and these tests pin that notice: once per outage, never on a clean first
 // join, and without disturbing the failure report behind it.
+//
+// They pin what that report says as well. A channel the retries bring back is
+// an interruption rather than a failure, and the two are told apart here by
+// how long the retries have been running and whether the browser has a
+// network at all.
 
 const SESSION_JWT = 'session-jwt'
 const ANON_KEY = 'test-anon-key'
 
-// The attempt at which a subscription still down is reported, as
-// DatabaseService counts them.
+// The attempts at which an interruption and then a subscription that is not
+// coming back are reported, as DatabaseService counts them.
 const FAILURES_BEFORE_REPORT = 4
+const FAILURES_BEFORE_ERROR = 12
+
+/** Drives the browser's own view of whether it has a network. */
+function setOnline(online) {
+    Object.defineProperty(window.navigator, 'onLine', { configurable: true, get: () => online })
+}
+
+afterEach(() => {
+    delete window.navigator.onLine
+})
 
 vi.mock('../SessionService', () => ({
     ensureFreshJwt: async () => SESSION_JWT,
@@ -91,7 +106,7 @@ describe('realtime recovery', () => {
         expect(onResubscribe).toHaveBeenCalledTimes(2)
     })
 
-    it('still reports a subscription that stays down', () => {
+    it('reports an outage the retries are still working on as recovering', () => {
         const onFailure = vi.fn()
         const channel = fakeChannel()
         subscribeRealtimeChannel(channel, onFailure, vi.fn())
@@ -101,7 +116,92 @@ describe('realtime recovery', () => {
         }
 
         expect(onFailure).toHaveBeenCalledTimes(1)
-        expect(onFailure).toHaveBeenCalledWith('TIMED_OUT')
+        expect(onFailure).toHaveBeenCalledWith('TIMED_OUT', { recovering: true })
+    })
+
+    it('reports an interruption once rather than once per failed attempt', () => {
+        const onFailure = vi.fn()
+        const channel = fakeChannel()
+        subscribeRealtimeChannel(channel, onFailure, vi.fn())
+
+        for (let attempt = 0; attempt < FAILURES_BEFORE_ERROR - 1; attempt += 1) {
+            channel.emit('CHANNEL_ERROR', new Error('heartbeat timeout'))
+        }
+
+        expect(onFailure).toHaveBeenCalledTimes(1)
+        expect(onFailure).toHaveBeenCalledWith('heartbeat timeout', { recovering: true })
+    })
+
+    it('reports a subscription that never rejoins as a failure', () => {
+        const onFailure = vi.fn()
+        const channel = fakeChannel()
+        subscribeRealtimeChannel(channel, onFailure, vi.fn())
+
+        for (let attempt = 0; attempt < FAILURES_BEFORE_ERROR; attempt += 1) {
+            channel.emit('TIMED_OUT')
+        }
+
+        expect(onFailure).toHaveBeenCalledTimes(2)
+        expect(onFailure).toHaveBeenLastCalledWith('TIMED_OUT', { recovering: false })
+    })
+
+    it('reports the failure once however long the subscription stays down', () => {
+        const onFailure = vi.fn()
+        const channel = fakeChannel()
+        subscribeRealtimeChannel(channel, onFailure, vi.fn())
+
+        for (let attempt = 0; attempt < FAILURES_BEFORE_ERROR * 3; attempt += 1) {
+            channel.emit('TIMED_OUT')
+        }
+
+        expect(onFailure).toHaveBeenCalledTimes(2)
+    })
+
+    it('does not report a failure while the browser has no network', () => {
+        setOnline(false)
+        const onFailure = vi.fn()
+        const channel = fakeChannel()
+        subscribeRealtimeChannel(channel, onFailure, vi.fn())
+
+        for (let attempt = 0; attempt < FAILURES_BEFORE_ERROR * 2; attempt += 1) {
+            channel.emit('TIMED_OUT')
+        }
+
+        expect(onFailure).toHaveBeenCalledTimes(1)
+        expect(onFailure).toHaveBeenCalledWith('TIMED_OUT', { recovering: true })
+    })
+
+    it('reports a failure on the first attempt after the network comes back', () => {
+        setOnline(false)
+        const onFailure = vi.fn()
+        const channel = fakeChannel()
+        subscribeRealtimeChannel(channel, onFailure, vi.fn())
+
+        for (let attempt = 0; attempt < FAILURES_BEFORE_ERROR * 2; attempt += 1) {
+            channel.emit('TIMED_OUT')
+        }
+        setOnline(true)
+        channel.emit('TIMED_OUT')
+
+        expect(onFailure).toHaveBeenCalledTimes(2)
+        expect(onFailure).toHaveBeenLastCalledWith('TIMED_OUT', { recovering: false })
+    })
+
+    it('reports a later outage after a rejoin has cleared the first', () => {
+        const onFailure = vi.fn()
+        const channel = fakeChannel()
+        subscribeRealtimeChannel(channel, onFailure, vi.fn())
+
+        for (let attempt = 0; attempt < FAILURES_BEFORE_ERROR; attempt += 1) {
+            channel.emit('TIMED_OUT')
+        }
+        channel.emit('SUBSCRIBED')
+        for (let attempt = 0; attempt < FAILURES_BEFORE_REPORT; attempt += 1) {
+            channel.emit('TIMED_OUT')
+        }
+
+        expect(onFailure).toHaveBeenCalledTimes(3)
+        expect(onFailure).toHaveBeenLastCalledWith('TIMED_OUT', { recovering: true })
     })
 
     it('ignores a status that is neither a join nor a failure', () => {
