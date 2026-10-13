@@ -259,7 +259,15 @@ export default function useAssetData({
                     handleRealtimeUpdateRef.current(payload.eventType, { new: payload.new, old: payload.old })
                 }
             ),
-            (reason) => console.error(`${config.singularLabel} realtime subscription error: ${reason}`),
+            // An interrupted channel rejoins by itself and the list is re-read
+            // behind it, so the console entry for one says what it is. The
+            // error is kept for the subscription the retries never bring back,
+            // which is the one that leaves the view reading rows nothing will
+            // correct.
+            (reason, { recovering }) =>
+                recovering
+                    ? console.warn(`${config.singularLabel} realtime updates interrupted, reconnecting: ${reason}`)
+                    : console.error(`${config.singularLabel} realtime subscription error: ${reason}`),
             () => refetchItemsRef.current?.()
         )
         return () => Database.removeChannel(channel)

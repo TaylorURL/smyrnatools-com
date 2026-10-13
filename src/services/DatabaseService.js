@@ -89,11 +89,31 @@ const Database = createClient(databaseUrl, databaseKey, {
 
 let channelSequence = 0
 
-// Consecutive failed joins a subscription is allowed before its failure is
-// reported. A refused join is retried on a widening backoff, so the first few
-// failures are the recovery below still working; the fourth lands about twenty
-// seconds in, by which time a re-minted token has had every chance to take.
+// Consecutive failed joins a subscription is allowed before the interruption
+// is reported. A refused join is retried on a widening backoff, so the first
+// few failures are the recovery below still working; the fourth lands about
+// forty seconds in, by which time a re-minted token has had every chance to
+// take.
 const REALTIME_FAILURES_BEFORE_REPORT = 4
+
+// Consecutive failed joins before the subscription is treated as gone rather
+// than interrupted. The realtime client rejoins for as long as the page is
+// open and never declares a channel lost, so this is the only line between
+// the two, and the gap between them is what the report is worth: an attempt
+// costs its ten-second join timeout plus a backoff that widens to ten
+// seconds, so the fourth is still inside a reconnect, a tab waking from sleep
+// or a token mint, and the twelfth is better than two minutes of a channel
+// that will not join while everything it needs is in place.
+const REALTIME_FAILURES_BEFORE_ERROR = 12
+
+/** Whether the browser believes it has a network at all. A channel failing
+ *  while the machine is offline is the connection rather than the
+ *  subscription, and no client code brings it back, so that run of failures
+ *  never escalates past an interruption. The flag is read the one way it can
+ *  be trusted: `false` is the browser's word that nothing can reach the
+ *  network, while `true` claims only that an interface is up. So it suppresses
+ *  an escalation and never causes one. */
+const isBrowserOnline = () => typeof navigator === 'undefined' || navigator.onLine !== false
 
 /**
  * Opens a realtime channel on a topic no other subscriber shares.
@@ -131,9 +151,17 @@ const createRealtimeChannel = (name) => {
  * spent per refused token, so a failure with nothing to do with the credential
  * does not turn into a run of them.
  *
- * `onFailure` receives the reason for a subscription still down after
- * `REALTIME_FAILURES_BEFORE_REPORT` consecutive attempts, once per outage. A
- * subscription that comes back is not a failure; one that does not is worth the
+ * `onFailure` receives the reason a subscription is down, with
+ * `recovering` saying which of the two things that is. An outage is reported
+ * once at `REALTIME_FAILURES_BEFORE_REPORT` consecutive attempts while the
+ * retries are still running and recovery is the likely end of it, and once
+ * more at `REALTIME_FAILURES_BEFORE_ERROR` when they have run long enough that
+ * the stream is not coming back on its own. Nearly every outage ends at the
+ * first of those: a socket dropped by a sleeping laptop, a heartbeat the
+ * network swallowed, a join that timed out on a phone changing cells. Each
+ * rejoins within seconds of the connection returning, and reporting one as a
+ * failure says the subscription broke when what happened is that it healed.
+ * The second report is the subscription that really is down, and it keeps the
  * reason it gives.
  *
  * `onResubscribe` is called when a channel that had failed joins again, once
@@ -147,17 +175,34 @@ const createRealtimeChannel = (name) => {
  */
 const subscribeRealtimeChannel = (channel, onFailure, onResubscribe) => {
     let consecutiveFailures = 0
+    let reportedOutage = false
+    let reportedFailure = false
     return channel.subscribe((status, error) => {
         if (status === 'SUBSCRIBED') {
             const missedUpdates = consecutiveFailures > 0
             consecutiveFailures = 0
+            reportedOutage = false
+            reportedFailure = false
             if (missedUpdates) onResubscribe?.()
             return
         }
         if (status !== 'CHANNEL_ERROR' && status !== 'TIMED_OUT') return
         consecutiveFailures += 1
         refreshRejectedJwt(getSessionJwt())
-        if (consecutiveFailures === REALTIME_FAILURES_BEFORE_REPORT) onFailure?.(error?.message || status)
+        const reason = error?.message || status
+        if (!reportedOutage && consecutiveFailures >= REALTIME_FAILURES_BEFORE_REPORT) {
+            reportedOutage = true
+            onFailure?.(reason, { recovering: true })
+        }
+        // Counted rather than fired on the attempt that crosses the line: the
+        // attempts that run while the machine is offline pass it without
+        // escalating, so the escalation waits for a failure the browser has a
+        // network behind - which is the first one that is the subscription's
+        // own.
+        if (!reportedFailure && consecutiveFailures >= REALTIME_FAILURES_BEFORE_ERROR && isBrowserOnline()) {
+            reportedFailure = true
+            onFailure?.(reason, { recovering: false })
+        }
     })
 }
 
@@ -176,8 +221,9 @@ export default Database
 export { Database }
 /** Opens a realtime channel whose topic no other subscriber can collide with. */
 export { createRealtimeChannel }
-/** Subscribes a realtime channel, re-mints the token behind a refused join, and
- *  reports the rejoin that follows an outage so the caller can close the gap. */
+/** Subscribes a realtime channel, re-mints the token behind a refused join,
+ *  separates an outage the retries recover from one they do not, and reports
+ *  the rejoin that follows an outage so the caller can close the gap. */
 export { subscribeRealtimeChannel }
 /**
  * Tables the `DatabaseService` static methods may name. The edge function
