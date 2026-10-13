@@ -135,12 +135,23 @@ const createRealtimeChannel = (name) => {
  * `REALTIME_FAILURES_BEFORE_REPORT` consecutive attempts, once per outage. A
  * subscription that comes back is not a failure; one that does not is worth the
  * reason it gives.
+ *
+ * `onResubscribe` is called when a channel that had failed joins again, once
+ * per outage. A rejoin only resumes the stream; it carries nothing that
+ * happened while the channel was down, and the server replays no backlog. So
+ * every insert, update and delete inside the gap is gone, and the view goes on
+ * rendering the rows it held when the channel dropped — correct-looking, never
+ * corrected, and indistinguishable from a fleet that simply has not changed.
+ * Recovery is the only moment the client knows it has a hole, and re-reading
+ * the list is what closes it.
  */
-const subscribeRealtimeChannel = (channel, onFailure) => {
+const subscribeRealtimeChannel = (channel, onFailure, onResubscribe) => {
     let consecutiveFailures = 0
     return channel.subscribe((status, error) => {
         if (status === 'SUBSCRIBED') {
+            const missedUpdates = consecutiveFailures > 0
             consecutiveFailures = 0
+            if (missedUpdates) onResubscribe?.()
             return
         }
         if (status !== 'CHANNEL_ERROR' && status !== 'TIMED_OUT') return
@@ -165,7 +176,8 @@ export default Database
 export { Database }
 /** Opens a realtime channel whose topic no other subscriber can collide with. */
 export { createRealtimeChannel }
-/** Subscribes a realtime channel and re-mints the token behind a refused join. */
+/** Subscribes a realtime channel, re-mints the token behind a refused join, and
+ *  reports the rejoin that follows an outage so the caller can close the gap. */
 export { subscribeRealtimeChannel }
 /**
  * Tables the `DatabaseService` static methods may name. The edge function
