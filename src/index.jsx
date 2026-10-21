@@ -130,10 +130,20 @@ const runWhenIdle = (callback) => {
         setTimeout(callback, 1)
     }
 }
+// Measurement is the one import nothing on the page is waiting for, so a chunk
+// a deploy has already replaced is nothing a reader can perceive. The shell is
+// still asked to replace the document, and once its allowance is spent there is
+// no second address to ask at: the import is finished, and the rejection left
+// unhandled is reported as a fault the reader never met. Answering it here ends
+// it where it happened. Only the import is answered, so an error the module
+// itself throws still reaches the page's handlers.
 runWhenIdle(() => {
-    importChunk(() => import('./utils/VitalsUtility')).then((module) => {
-        module.default()
-    })
+    importChunk(() => import('./utils/VitalsUtility')).then(
+        (module) => {
+            module.default()
+        },
+        () => {}
+    )
 })
 // No worker is registered for this origin, and one that a browser still holds
 // keeps intercepting fetches until something unregisters it — including the
