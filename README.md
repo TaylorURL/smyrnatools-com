@@ -1,171 +1,67 @@
 <p align="center">
-  <img src="public/srm-logo.svg" width="200" alt="Smyrna Tools" />
+  <img src="public/srm-logo.svg" width="200" alt="Smyrna Ready Mix" />
 </p>
 
 <h1 align="center">Smyrna Tools</h1>
 
-<p align="center">
-  <b>The internal operations platform for Smyrna Ready Mix.</b>
-</p>
-<p align="center">
-  Fleet, people, and plant performance in one place —<br />
-  tracked across every region and plant at <a href="https://smyrnatools.com">smyrnatools.com</a>.
-</p>
-<p align="center">
-  <sub>Published for reading. Proprietary — see <a href="LICENSE.md">LICENSE.md</a>. Outside contributions are not accepted.</sub>
-</p>
+<p align="center">The internal operations app for Smyrna Ready Mix, a ready-mix concrete company.</p>
+<p align="center"><a href="https://www.smyrnatools.com">smyrnatools.com</a></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-2026.43.0-222d65?style=for-the-badge" alt="Version 2026.43.0" />
-  <img src="https://img.shields.io/badge/React-19-222d65?style=for-the-badge&logo=react&logoColor=white" alt="React 19" />
-  <img src="https://img.shields.io/badge/Vite-6-222d65?style=for-the-badge&logo=vite&logoColor=white" alt="Vite 6" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-3-222d65?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 3" />
-  <img src="https://img.shields.io/badge/React_Router-7-c12033?style=for-the-badge&logo=reactrouter&logoColor=white" alt="React Router 7" />
-  <img src="https://img.shields.io/badge/Supabase-222d65?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
-  <img src="https://img.shields.io/badge/Sentry-c12033?style=for-the-badge&logo=sentry&logoColor=white" alt="Sentry" />
-  <img src="https://img.shields.io/badge/Vercel-222d65?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
 </p>
 
-<br />
+I built Smyrna Tools while I was running plants for Smyrna Ready Mix, and it became the system two Texas regions use. Managers keep track of their trucks, equipment, operators and plants in one place. Everything is behind a company sign-in. The only public pages are the login screen, privacy policy, terms and contact page.
 
-## Why Smyrna Tools
+## What it does
 
-Running a ready-mix operation means tracking hundreds of moving assets, an operator workforce flowing through onboarding, training, and duty changes, and fleet numbers that only mean something once they roll up across plants and regions. Smyrna Tools puts all of it behind one authenticated portal: every asset and every person carries a verification state and a full change history, and every write goes through the server — the browser never mutates the database directly.
+-   **Dashboard** with a fleet overview, alerts for anything that needs attention, and a summary of the crew.
+-   **Assets**: mixers, tractors, trailers, heavy equipment and pickup trucks. Each one has a status, service tracking, a verification checklist and a full change history with an AI-written summary.
+-   **Operators** from pending start through training, active duty and light duty, plus manager profiles.
+-   **Statistics** for every asset type and roster: status mix, service health, shop queue.
+-   **Excel export** of any list or its open issues.
+-   **Admin** screens for plants, regions and roles. Roles decide what each person can see and change.
+-   **Messages** between users, addressed by name, role or plant.
 
-<table width="100%">
-  <tr>
-    <td width="33%" valign="top">
-      <h3 align="center">Fleet &amp; assets</h3>
-      <p align="center">Mixers, tractors, trailers, equipment, and pickup trucks, each with verification status, service tracking, and a full change-history timeline.</p>
-    </td>
-    <td width="33%" valign="top">
-      <h3 align="center">People &amp; personnel</h3>
-      <p align="center">The operator lifecycle from onboarding through training, active duty, light duty, and separation, plus manager profiles and role-based access.</p>
-    </td>
-    <td width="33%" valign="top">
-      <h3 align="center">Statistics &amp; export</h3>
-      <p align="center">A live dashboard plus a statistics surface for every asset type and roster — status mix, service health, shop queue, coverage and aging — and an Excel export of any list or its open issues.</p>
-    </td>
-  </tr>
-</table>
+## Running it locally
 
-<br />
-
-## Stack
-
-| Layer | Technology |
-| :--- | :--- |
-| UI | React 19 + React Router 7 |
-| Build & dev | Vite 6 (output `build/`) |
-| Styling | Tailwind CSS 3 — light / dark / gray themes via semantic tokens, no plain CSS |
-| Backend | Supabase — Postgres, Storage, Deno edge functions |
-| Auth | Own accounts table, PBKDF2 password hashing, session rows, and HS256 session JWTs minted in `auth-service` |
-| Charts | Recharts |
-| Icons | Font Awesome Free |
-| Export | ExcelJS |
-| Monitoring | Sentry · Vercel Analytics + Speed Insights · the hosted traffic tracker |
-| Testing | Vitest + Testing Library |
-| Hosting | Vercel |
-
-## Getting started
+You need Node 22 or newer and a Supabase project.
 
 ```bash
 npm install
-cp .env.example .env   # Supabase URL + keys, Sentry DSN, edge secrets
-npm start              # Vite dev server on http://localhost:3000
-npm run build          # production build to build/
+cp .env.example .env
+npm start          # dev server on http://localhost:3000
+npm run build      # production build to build/
+npm test           # Vitest
 ```
 
-| Variable | Purpose |
-| :--- | :--- |
-| `REACT_APP_SUPABASE_URL` | Supabase project URL. |
-| `REACT_APP_SUPABASE_ANON_KEY` | Publishable key for the browser client. |
-| `REACT_APP_EDGE_FUNCTIONS_URL` | Base URL the client posts writes to. |
-| `REACT_APP_SENTRY_DSN` | Error reporting. |
+The React app reads four variables from `.env`:
 
-`GROK_API_KEY`, `MAILERSEND_*`, `EDGE_INTERNAL_TOKEN`, and `EMAIL_DEBUG_WHITELIST` are read by the edge functions, not the React app — in production they are set with `supabase secrets set`. `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are build-time only: `vite.config.js` uploads source maps with them on a production build and skips the upload when the token is absent.
+| Variable                       | What it is                      |
+| :----------------------------- | :------------------------------ |
+| `REACT_APP_SUPABASE_URL`       | Supabase project URL            |
+| `REACT_APP_SUPABASE_ANON_KEY`  | Supabase publishable key        |
+| `REACT_APP_EDGE_FUNCTIONS_URL` | Base URL for the edge functions |
+| `REACT_APP_SENTRY_DSN`         | Sentry error reporting          |
 
-### Scripts
+The rest of `.env.example` is for the edge functions and the Sentry source map upload. `npm run supabase -- <command>` runs the Supabase CLI, for example `npm run supabase -- start` for a local stack.
 
-| Script | Does |
-| :--- | :--- |
-| `npm start` | Vite dev server on port 3000. |
-| `npm run build` | Production build to `build/`. |
-| `npm run preview` | Serve the production build. |
-| `npm run lint` | ESLint over `src/`. |
-| `npm run lint:fix` | ESLint over `src/`, fixing what it can. |
-| `npm run format` | Prettier over `src/`. |
-| `npm run format:check` | Check formatting without writing. |
-| `npm test` | Run the Vitest suite once. |
-| `npm run test:watch` | Vitest in watch mode. |
-| `npm run typecheck` | TypeScript over the project, no emit. |
-| `npm run analyze` | Build with a Rollup bundle treemap. |
-| `npm run supabase` | Supabase CLI, through the wrapper below. |
+## Project layout
 
-CI runs `format:check`, `lint`, `typecheck`, `test`, and `build` on every pull request, so a change that fails any of them locally fails the same way there.
+| Path                  | What's there                                                              |
+| :-------------------- | :------------------------------------------------------------------------ |
+| `src/views`           | The screens: dashboard, assets, people, admin                             |
+| `src/services`        | Data access. `DatabaseService.js` is the only file that talks to Supabase |
+| `supabase/functions`  | Edge functions. Every database write goes through one of these            |
+| `supabase/migrations` | Schema and row-level security                                             |
+| `scripts`             | Supabase CLI wrapper, email templates, PDF and training packet generators |
 
-### Supabase workflow
+## Built with
 
-`npm run supabase` forwards everything after it to the Supabase CLI through `scripts/supabase.js`, which finds the binary via `SUPABASE_BIN`, the usual install paths, `PATH`, the npm global bin, or `npx` — so the same command works whichever way the CLI was installed.
-
-```bash
-npm run supabase -- start                    # local stack up; stop, status the same way
-npm run supabase -- db reset                 # reset the local database
-npm run supabase -- functions serve <name>   # run an edge function locally
-npm run supabase -- functions deploy <name>  # ship one
-npm run supabase -- login                    # CLI auth
-```
-
-## Architecture
-
-```mermaid
-flowchart LR
-    V["React SPA — views + app shell"] --> D["DatabaseService — only supabase-js consumer"]
-    D -->|"reads, RLS-scoped"| DB[("Supabase — Postgres, Storage, Auth")]
-    D -->|"writes"| EF["Edge functions — Deno, one per domain"]
-    EF -->|"insert / update / delete"| DB
-    V -.->|"errors"| SEN["Sentry"]
-    V -.->|"served by"| VER["Vercel"]
-```
-
-## How it works
-
-- **One database gateway.** Every Supabase call flows through a single `DatabaseService.js` — the only module in the app that imports `@supabase/supabase-js`.
-- **Writes live on the server.** The client reads through row-level security; every insert, update, and delete runs in a Deno edge function, one per domain (`mixer-service`, `operator-service`, `plant-service`, …).
-- **JWT-scoped requests.** The database client swaps the publishable-key bearer for the current session JWT on every REST and realtime request, so PostgREST evaluates RLS against the signed-in user — and the token never touches storage.
-- **Themed by tokens, never by hex.** All styling is Tailwind semantic tokens backed by CSS variables across three themes. The shared vocabulary lives in [`src/app/styles/DESIGN_SYSTEM.md`](src/app/styles/DESIGN_SYSTEM.md).
-
-## Project structure
-
-```
-smyrnatools-com/
-├── api/                    Vercel serverless functions — the commit this deployment was built from,
-│                           and a 404 for hashed assets an older build is still asking for
-├── public/                 Logos, favicon, PWA manifest, self-hosted fonts, background videos,
-│                           robots.txt, sitemap.xml, llms.txt, release.json
-├── docs/                   The running todo list
-├── scripts/                Dev/ops helpers — Supabase CLI wrapper, email templates,
-│                           PDF and training-packet generators
-├── vite/                   Build plugin — prerenders the sign-in screen and inlines its CSS
-├── supabase/
-│   ├── functions/          Deno edge functions (deployed individually) — all database writes
-│   └── migrations/         Schema, row-level security, and the scheduled housekeeping jobs
-└── src/
-    ├── index.jsx           Entry — Sentry init, context providers, root <App/>
-    ├── entry-server.jsx    Build-time render of the sign-in screen for the prerender plugin
-    ├── app/                Shell — components, hooks, context, models, constants, ai, styles
-    ├── views/              Feature domains — admin, assets, common, people
-    ├── services/           Service classes; DatabaseService.js is the only supabase-js consumer
-    ├── utils/              Pure helpers (+ tests)
-    └── assets/             Images
-```
+React 19, React Router, Vite, Tailwind CSS, Supabase (Postgres, Storage, edge functions), Recharts, ExcelJS and Sentry. Hosted on Vercel.
 
 ## License
 
-Copyright (c) 2026 TaylorURL LLC. All rights reserved. See [LICENSE.md](LICENSE.md).
+Proprietary. Copyright (c) 2026 TaylorURL LLC, all rights reserved. See [LICENSE.md](LICENSE.md).
 
-<br />
-
-<p align="center">
-  <sub>Built by <strong>Trenton Taylor</strong> for <strong>Smyrna Ready Mix</strong>.</sub>
-</p>
+Built and maintained by [TaylorURL](https://www.taylorurl.com).
