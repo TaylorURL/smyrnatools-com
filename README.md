@@ -15,13 +15,13 @@ I built Smyrna Tools while I was running plants for Smyrna Ready Mix, and it bec
 
 ## What it does
 
--   **Dashboard** with a fleet overview, alerts for anything that needs attention, and a summary of the crew.
--   **Assets**: mixers, tractors, trailers, heavy equipment and pickup trucks. Each one has a status, service tracking, a verification checklist and a full change history with an AI-written summary.
--   **Operators** from pending start through training, active duty and light duty, plus manager profiles.
--   **Statistics** for every asset type and roster: status mix, service health, shop queue.
--   **Excel export** of any list or its open issues.
--   **Admin** screens for plants, regions and roles. Roles decide what each person can see and change.
--   **Messages** between users, addressed by name, role or plant.
+- **Dashboard** with a fleet overview, alerts for anything that needs attention, and a summary of the crew.
+- **Assets**: mixers, tractors, trailers, heavy equipment and pickup trucks. Each one has a status, service tracking, a verification checklist and a full change history with an AI-written summary.
+- **Operators** from pending start through training, active duty and light duty, plus manager profiles.
+- **Statistics** for every asset type and roster: status mix, service health, shop queue.
+- **Excel export** of any list or its open issues.
+- **Admin** screens for plants, regions and roles. Roles decide what each person can see and change.
+- **Messages** between users, addressed by name, role or plant.
 
 ## Running it locally
 
@@ -45,16 +45,6 @@ The React app reads four variables from `.env`:
 | `REACT_APP_SENTRY_DSN`         | Sentry error reporting          |
 
 The rest of `.env.example` is for the edge functions and the Sentry source map upload. `npm run supabase -- <command>` runs the Supabase CLI, for example `npm run supabase -- start` for a local stack.
-
-## Project layout
-
-| Path                  | What's there                                                              |
-| :-------------------- | :------------------------------------------------------------------------ |
-| `src/views`           | The screens: dashboard, assets, people, admin                             |
-| `src/services`        | Data access. `DatabaseService.js` is the only file that talks to Supabase |
-| `supabase/functions`  | Edge functions. Every database write goes through one of these            |
-| `supabase/migrations` | Schema and row-level security                                             |
-| `scripts`             | Supabase CLI wrapper, email templates, PDF and training packet generators |
 
 ## Built with
 
