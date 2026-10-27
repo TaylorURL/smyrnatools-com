@@ -8,7 +8,7 @@
 <p align="center"><a href="https://www.smyrnatools.com">smyrnatools.com</a></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2026.43.0-222d65?style=for-the-badge" alt="Version 2026.43.0" />
+  <img src="https://img.shields.io/badge/version-2026.44.0-222d65?style=for-the-badge" alt="Version 2026.44.0" />
 </p>
 
 I built Smyrna Tools while I was running plants for Smyrna Ready Mix, and it became the system two Texas regions use. Managers keep track of their trucks, equipment, operators and plants in one place. Everything is behind a company sign-in. The only public pages are the login screen, privacy policy, terms and contact page.
