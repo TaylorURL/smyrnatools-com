@@ -13,7 +13,8 @@
 
 I built Smyrna Tools while I was running plants for Smyrna Ready Mix, and it became the system two Texas regions use. Managers keep track of their trucks, equipment, operators and plants in one place. Everything is behind a company sign-in. The only public pages are the login screen, privacy policy, terms and contact page.
 
-## What it does
+<details>
+<summary>What it does</summary>
 
 - **Dashboard** with a fleet overview, alerts for anything that needs attention, and a summary of the crew.
 - **Assets**: mixers, tractors, trailers, heavy equipment and pickup trucks. Each one has a status, service tracking, a verification checklist and a full change history with an AI-written summary.
@@ -23,7 +24,10 @@ I built Smyrna Tools while I was running plants for Smyrna Ready Mix, and it bec
 - **Admin** screens for plants, regions and roles. Roles decide what each person can see and change.
 - **Messages** between users, addressed by name, role or plant.
 
-## Running it locally
+</details>
+
+<details>
+<summary>Running it locally</summary>
 
 You need Node 22 or newer and a Supabase project.
 
@@ -46,12 +50,17 @@ The React app reads four variables from `.env`:
 
 The rest of `.env.example` is for the edge functions and the Sentry source map upload. `npm run supabase -- <command>` runs the Supabase CLI, for example `npm run supabase -- start` for a local stack.
 
+</details>
+
 ## Built with
 
 React 19, React Router, Vite, Tailwind CSS, Supabase (Postgres, Storage, edge functions), Recharts, ExcelJS and Sentry. Hosted on Vercel.
 
-## License
+<details>
+<summary>License</summary>
 
 Proprietary. Copyright (c) 2026 TaylorURL LLC, all rights reserved. See [LICENSE.md](LICENSE.md).
+
+</details>
 
 Built and maintained by [TaylorURL](https://www.taylorurl.com).
