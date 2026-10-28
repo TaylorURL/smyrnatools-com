@@ -6,7 +6,7 @@ The internal operations app for Smyrna Ready Mix, a ready-mix concrete company.
 
 [smyrnatools.com](https://www.smyrnatools.com)
 
-<img src="https://img.shields.io/badge/version-2026.44.0-222d65?style=for-the-badge" alt="Version 2026.44.0" />
+<img src="https://img.shields.io/badge/version-2026.44.1-222d65?style=for-the-badge" alt="Version 2026.44.1" />
 
 I built Smyrna Tools while I was running plants for Smyrna Ready Mix. Managers track their trucks, equipment, operators and plants in one place. Everything is behind a company sign-in. The only public pages are login, privacy, terms and contact.
 
