@@ -11,7 +11,6 @@ import DetailViewHeader from './detail-view/DetailViewHeader'
 import DetailViewMessagePortal from './detail-view/DetailViewMessagePortal'
 import DetailViewMobileNav from './detail-view/DetailViewMobileNav'
 import DetailViewNotFound from './detail-view/DetailViewNotFound'
-import DetailViewSidebar from './detail-view/DetailViewSidebar'
 import {
     Banner,
     Button,
@@ -29,10 +28,12 @@ import {
 import DetailViewTransferModal from './detail-view/DetailViewTransferModal'
 
 /**
- * Full-screen detail view shell for asset editing.
- * Provides a sidebar with section navigation, plant-based edit restrictions,
- * region transfer support, delete confirmation, loading/saving overlays,
- * and responsive mobile bottom navigation.
+ * Full-screen record page for editing one asset, person, plant or region.
+ * The header carries the title, the record's tools (issues, comments,
+ * history) and its commit actions (Save, Delete, Transfer); the sections sit
+ * as tabs under it. Also owns plant-based edit restrictions, region transfer,
+ * delete confirmation, the loading and saving overlays, and the phone's
+ * bottom bar, which takes over the tabs and actions under the breakpoint.
  */
 function DetailViewSection({
     title,
@@ -71,20 +72,6 @@ function DetailViewSection({
     const transfer = useRegionTransfer({ assetType, onRegionTransfer })
     const [activeSection, setActiveSection] = useState('')
     const [sections, setSections] = useState([])
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-        try {
-            return localStorage.getItem('detailview-sidebar-collapsed') === 'true'
-        } catch {
-            return false
-        }
-    })
-    const handleSidebarToggle = () => {
-        const newValue = !sidebarCollapsed
-        setSidebarCollapsed(newValue)
-        try {
-            localStorage.setItem('detailview-sidebar-collapsed', String(newValue))
-        } catch {}
-    }
     const registerSection = (section) => {
         setSections((prev) => {
             if (prev.find((s) => s.id === section.id)) return prev
@@ -111,7 +98,7 @@ function DetailViewSection({
     return (
         <DetailViewContext.Provider value={{ activeSection, registerSection, sections, setActiveSection }}>
             <div
-                className={`${className} fixed top-16 left-0 right-0 bottom-0 z-shell flex flex-col bg-bg-secondary`}
+                className={`${className} fixed bottom-0 right-0 left-[var(--rail-width,0px)] top-[var(--topbar-height,0px)] z-shell flex flex-col bg-bg-secondary`}
                 style={{ '--dv-accent': accent }}
             >
                 {isSaving && (
@@ -130,6 +117,28 @@ function DetailViewSection({
                     onClose={onClose}
                     subtitle={subtitle}
                     title={title}
+                    commitActions={
+                        (footerActions || (transfer.hasTransferPerm && onRegionTransfer && currentRegion)) && (
+                            <>
+                                {footerActions}
+                                {transfer.hasTransferPerm && onRegionTransfer && currentRegion && (
+                                    <button
+                                        type="button"
+                                        className="global-button-secondary"
+                                        onClick={transfer.openTransfer}
+                                        disabled={isSaving}
+                                        title="Transfer Region"
+                                    >
+                                        <i className="fas fa-arrow-right-arrow-left"></i>
+                                        <span>Transfer</span>
+                                    </button>
+                                )}
+                            </>
+                        )
+                    }
+                    tabs={!isLoading && sections.length > 1 ? sections : null}
+                    activeSection={activeSection}
+                    setActiveSection={setActiveSection}
                 />
                 <div className="dv-container flex min-h-0 flex-1 overflow-hidden w-full">
                     {isLoading ? (
@@ -142,22 +151,8 @@ function DetailViewSection({
                         </div>
                     ) : (
                         <>
-                            <DetailViewSidebar
-                                accent={accent}
-                                activeSection={activeSection}
-                                currentRegion={currentRegion}
-                                footerActions={footerActions}
-                                handleSidebarToggle={handleSidebarToggle}
-                                hasTransferPerm={transfer.hasTransferPerm}
-                                isSaving={isSaving}
-                                onRegionTransfer={onRegionTransfer}
-                                openTransfer={transfer.openTransfer}
-                                sections={sections}
-                                setActiveSection={setActiveSection}
-                                sidebarCollapsed={sidebarCollapsed}
-                            />
-                            <main className="dv-main-content min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-bg-secondary p-4">
-                                <div className="animate-dv-fade-in">{children}</div>
+                            <main className="dv-main-content min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-bg-secondary px-4 py-6 sm:px-6 lg:px-8">
+                                <div className="w-full animate-dv-fade-in">{children}</div>
                             </main>
                             <DetailViewMobileNav
                                 accent={accent}

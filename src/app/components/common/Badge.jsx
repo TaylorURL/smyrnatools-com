@@ -6,17 +6,16 @@ import React from 'react'
  * component enforces that against its own callers:
  *
  *   - The body is neutral and theme-tracking (`bg-bg-tertiary` +
- *     `text-text-primary`). Both tokens adapt across the light, dark, and
- *     grayed themes, so contrast clears WCAG AA with no per-theme tuning.
+ *     `text-text-primary`). Both tokens adapt across the light and dark
+ *     themes, so contrast clears WCAG AA with no per-theme tuning.
  *   - Colour lives only in the leading dot (or the leading icon that
  *     replaces it), carrying the semantic: success, warning, danger, info,
  *     neutral, accent, or a data-driven hue via `variant="custom"`.
- *   - Typography is 700-weight uppercase at 0.06em tracking, and the radius
- *     is a flat 4px.
+ *   - Typography is 500-weight sentence case, and the radius is a flat 3px.
  *
  * The body classes are all `!important` and the shape map collapses every
  * value to one radius, so a caller's `className`, inline `style`, `weight`,
- * `uppercase`, `dot`, or `shape` cannot move any of it. Those props are
+ * ``, `dot`, or `shape` cannot move any of it. Those props are
  * still accepted, so passing them is harmless but has no effect; `tone`,
  * `variant`, `size`, `icon`, and the custom `bg`/`fg` are the props that
  * actually change what renders.
@@ -67,34 +66,34 @@ const SIZE_STYLES = {
         iconSize: 'text-[11px]',
         pad: 'pl-2.5 pr-3 py-1',
         removeSize: 'h-4 w-4',
-        text: 'text-[12px]'
+        text: 'text-[13px]'
     },
     md: {
         dotSize: 'h-1.5 w-1.5',
         gap: 'gap-1.5',
         iconSize: 'text-[10px]',
-        pad: 'pl-2 pr-2.5 py-0.5',
+        pad: 'pl-2 pr-2.5 py-1',
         removeSize: 'h-3.5 w-3.5',
-        text: 'text-[11px]'
+        text: 'text-[12px]'
     },
     sm: {
         dotSize: 'h-1.5 w-1.5',
         gap: 'gap-1.5',
         iconSize: 'text-[10px]',
-        pad: 'pl-1.5 pr-2 py-0.5',
+        pad: 'pl-1.5 pr-2 py-[3px]',
         removeSize: 'h-3 w-3',
-        text: 'text-[10px]'
+        text: 'text-[11.5px]'
     },
     xs: {
-        dotSize: 'h-1 w-1',
+        dotSize: 'h-1.5 w-1.5',
         gap: 'gap-1',
-        iconSize: 'text-[8px]',
+        iconSize: 'text-[9px]',
         // 2px is the minimum vertical padding that clears descenders here:
         // at 9px with leading-none, py-0 crops the tails of g/y/p/q against
         // the body edge.
         pad: 'pl-1 pr-1.5 py-0.5',
         removeSize: 'h-3 w-3',
-        text: 'text-[9px]'
+        text: 'text-[10.5px]'
     }
 }
 
@@ -196,13 +195,12 @@ export default function Badge({
     // whole identity as important is what makes it unoverridable.
     const classes = [
         'inline-flex items-center justify-center text-center align-middle shrink-0 box-border whitespace-nowrap leading-none',
-        '!uppercase !tracking-[0.06em] !font-bold !text-text-primary !bg-bg-tertiary !rounded',
+        '!normal-case !tracking-normal !font-medium !text-text-primary !bg-bg-tertiary !rounded-[3px]',
         sizeCfg.text,
         sizeCfg.pad,
         sizeCfg.gap,
         shapeCls,
-        interactive &&
-            'cursor-pointer transition-[transform,filter] duration-100 ease-out hover:brightness-95 active:scale-[0.97]',
+        interactive && 'cursor-pointer transition-[transform,filter] duration-100 ease-out hover:brightness-95',
         active && 'ring-1 ring-inset ring-accent/40',
         pulse && 'animate-pulse',
         className

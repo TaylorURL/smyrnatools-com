@@ -1,29 +1,22 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import ReactDOM from 'react-dom'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { UserService } from '../../../services/UserService'
 import { formatCentralDate } from '../../../utils/PlanUtility'
-import { DEFAULT_ACCENT_COLOR } from '../../constants/themeConstants'
-import { usePreferences } from '../../context/PreferencesContext'
-import Badge from '../common/Badge'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import Skeleton, { SkeletonStack } from '../common/Skeleton'
-import UserAvatar from '../common/UserAvatar'
+import Dialog, { DIALOG_TEXTAREA } from '../ui/Dialog'
+import DockedPanel from './DockedPanel'
 
 function CommentRowSkeleton() {
     return (
-        <div className="flex items-start gap-2.5 px-3 py-2.5 border-b border-border-light last:border-b-0">
-            <Skeleton className="h-7 w-7 shrink-0" />
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5">
-                    <Skeleton className="h-3 w-28" />
-                    <Skeleton className="h-3 w-16" />
-                </div>
-                <Skeleton className="h-3 w-full mb-1" />
-                <Skeleton className="h-3 w-3/5" />
+        <div className="border-b border-border-light px-6 py-3">
+            <div className="mb-2 flex items-center gap-2">
+                <Skeleton className="h-3.5 w-28" />
+                <Skeleton className="h-3 w-14" />
             </div>
-            <Skeleton className="h-6 w-6 shrink-0" />
+            <Skeleton className="mb-1.5 h-3 w-full" />
+            <Skeleton className="h-3 w-3/5" />
         </div>
     )
 }
@@ -51,13 +44,12 @@ const formatDate = (dateString) => {
  * @param {Function} props.onClose      - Invoked when the user dismisses the surface.
  * @param {Object}   props.service      - Service exposing fetchComments/addComment/deleteComment.
  * @param {'modal'|'panel'} [props.displayMode='modal']
- *        'modal' renders a centered portal with overlay (default).
- *        'panel' renders inline as a flush-fitting card — used as a right-side
- *        side panel on the asset/people list views. No portal, no overlay.
+ *        'modal' renders in the shared `Dialog` (default).
+ *        'panel' renders the same header, composer and list inline as a card,
+ *        used as a right-side panel on the asset/people list views. No portal,
+ *        no scrim.
  */
 function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, displayMode = 'modal' }) {
-    const { preferences } = usePreferences()
-    const accent = preferences?.accentColor || DEFAULT_ACCENT_COLOR
     const [comments, setComments] = useState([])
     const [newComment, setNewComment] = useState('')
     const [isLoading, setIsLoading] = useState(true)
@@ -65,6 +57,21 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
     const [error, setError] = useState(null)
     const [userNames, setUserNames] = useState({})
     const [pendingDeleteId, setPendingDeleteId] = useState(null)
+
+    // The Dialog's close handler stays the same function for its whole life:
+    // a new one would re-run its open effect and pull focus out of the
+    // composer whenever a parent re-renders. While the delete confirmation is
+    // up, Escape belongs to it, so the dialog underneath ignores it.
+    const onCloseRef = useRef(onClose)
+    const confirmOpenRef = useRef(false)
+    useEffect(() => {
+        onCloseRef.current = onClose
+        confirmOpenRef.current = pendingDeleteId !== null
+    }, [onClose, pendingDeleteId])
+    const handleDialogClose = useCallback(() => {
+        if (!confirmOpenRef.current) onCloseRef.current()
+    }, [])
+    const cancelDelete = useCallback(() => setPendingDeleteId(null), [])
 
     const fetchComments = useCallback(async () => {
         setIsLoading(true)
@@ -141,183 +148,115 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
         return 'Loading...'
     }
 
-    const handleBackdropClick = (e) => {
-        if (e.target === e.currentTarget) onClose()
-    }
-
     const sortedComments = [...comments].sort((a, b) => {
         const dateA = new Date(a.createdAt || a.created_at)
         const dateB = new Date(b.createdAt || b.created_at)
         return dateB - dateA
     })
 
-    if (typeof document === 'undefined' || !document.body) return null
     const isSubmitDisabled = isSubmitting || !newComment.trim()
     const isPanel = displayMode === 'panel'
+    const eyebrow = isLoading
+        ? itemType
+        : `${itemType} · ${comments.length} ${comments.length === 1 ? 'comment' : 'comments'}`
 
-    const card = (
-        <div
-            onClick={isPanel ? undefined : (e) => e.stopPropagation()}
-            className={
-                isPanel
-                    ? 'flex flex-col h-full w-full overflow-hidden rounded bg-bg-primary border border-border-light'
-                    : 'flex flex-col max-h-[90vh] max-w-[560px] w-full overflow-hidden rounded bg-bg-primary border border-border-light'
-            }
-        >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border-light">
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-bg-tertiary text-text-secondary">
-                        <i className="fas fa-comments text-[12px]" />
-                    </div>
-                    <div className="min-w-0">
-                        <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
-                            {itemType} · {comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}
-                        </div>
-                        <div className="text-[14px] font-semibold font-mono tabular-nums truncate text-text-primary">
-                            {itemNumber || itemId}
-                        </div>
-                    </div>
-                </div>
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                    <i className="fas fa-times text-[12px]" />
-                </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-4 py-3">
+    const body = (
+        <>
+            <form onSubmit={handleAddComment} className="flex flex-col gap-3 border-b border-border-light px-6 py-4">
                 <ErrorMessage message={error} onDismiss={() => setError(null)} />
+                <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Write a comment"
+                    aria-label="Write a comment"
+                    disabled={isSubmitting}
+                    rows="3"
+                    className={`${DIALOG_TEXTAREA} disabled:cursor-not-allowed disabled:bg-bg-tertiary disabled:text-text-tertiary`}
+                />
+                <div className="flex justify-end">
+                    <button type="submit" disabled={isSubmitDisabled} className="btn-primary">
+                        {isSubmitting ? 'Posting' : 'Post'}
+                    </button>
+                </div>
+            </form>
 
-                <form onSubmit={handleAddComment} className="mb-3">
-                    <div className="rounded p-2.5 bg-bg-secondary border border-border-light">
-                        <textarea
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            placeholder="Write a comment..."
-                            aria-label="Write a comment"
-                            disabled={isSubmitting}
-                            rows="2"
-                            className="w-full rounded outline-none p-2 resize-none text-[12px] bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                        />
-                        <div className="flex justify-end mt-2">
-                            <Badge
-                                as="button"
-                                type="submit"
-                                disabled={isSubmitDisabled}
-                                variant="custom"
-                                size="md"
-                                shape="rounded"
-                                weight="semibold"
-                                icon="paper-plane"
-                                onClick={undefined}
-                                className={`gap-1.5 ${isSubmitDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                style={{
-                                    background: isSubmitDisabled ? 'var(--bg-tertiary)' : accent,
-                                    color: isSubmitDisabled ? 'var(--text-tertiary)' : 'var(--on-accent)'
-                                }}
-                            >
-                                {isSubmitting ? 'Posting' : 'Post'}
-                            </Badge>
-                        </div>
-                    </div>
-                </form>
-
-                {isLoading ? (
-                    <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
-                        <SkeletonStack count={3} gapClassName="gap-0">
-                            {() => <CommentRowSkeleton />}
-                        </SkeletonStack>
-                    </div>
-                ) : comments.length === 0 ? (
-                    <div className="flex flex-col items-center py-8 px-4 text-center text-text-tertiary">
-                        <i className="fas fa-comment-dots text-2xl mb-2" />
-                        <p className="text-[12px] m-0 font-semibold text-text-secondary">No comments yet</p>
-                        <p className="text-[10.5px] mt-1 mb-0">Be the first to add a comment</p>
-                    </div>
-                ) : (
-                    <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
-                        {sortedComments.map((comment) => {
-                            const authorName = getAuthorName(comment)
-                            return (
-                                <div
-                                    key={comment.id}
-                                    className="flex items-start gap-2.5 px-3 py-2.5 border-b border-border-light"
-                                >
-                                    <UserAvatar name={authorName} userId={comment.author} size="md" rounded="md" />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-0.5">
-                                            <span className="text-[12px] font-semibold text-text-primary">
-                                                {authorName}
-                                            </span>
-                                            <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
-                                                {formatDate(comment.createdAt || comment.created_at)}
-                                            </span>
-                                        </div>
-                                        <p className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap break-words text-text-secondary">
-                                            {comment.text}
-                                        </p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleDeleteComment(comment.id)}
-                                        title="Delete"
-                                        className="w-6 h-6 flex items-center justify-center shrink-0 rounded transition-colors bg-transparent text-text-tertiary"
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = 'var(--bg-tertiary)'
-                                            e.currentTarget.style.color = 'var(--status-danger)'
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = 'transparent'
-                                            e.currentTarget.style.color = 'var(--text-tertiary)'
-                                        }}
-                                    >
-                                        <i className="fas fa-trash text-[10px]" />
-                                    </button>
+            {isLoading ? (
+                <SkeletonStack count={3} gapClassName="gap-0">
+                    {() => <CommentRowSkeleton />}
+                </SkeletonStack>
+            ) : comments.length === 0 ? (
+                <div className="flex flex-col items-center gap-1 px-6 py-10 text-center">
+                    <p className="m-0 text-[15px] font-medium text-text-primary">No comments yet</p>
+                    <p className="m-0 text-[13px] text-text-secondary">Be the first to add one.</p>
+                </div>
+            ) : (
+                <ul className="m-0 list-none p-0">
+                    {sortedComments.map((comment) => (
+                        <li
+                            key={comment.id}
+                            className="flex items-start gap-3 border-b border-border-light px-6 py-3 transition-colors duration-150 hover:bg-bg-hover motion-reduce:transition-none"
+                        >
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-baseline gap-x-2">
+                                    <span className="text-[13px] font-medium text-text-primary">
+                                        {getAuthorName(comment)}
+                                    </span>
+                                    <span className="text-[12px] tabular-nums text-text-tertiary">
+                                        {formatDate(comment.createdAt || comment.created_at)}
+                                    </span>
                                 </div>
-                            )
-                        })}
-                    </div>
-                )}
-            </div>
-        </div>
+                                <p className="m-0 mt-0.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-text-primary">
+                                    {comment.text}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => handleDeleteComment(comment.id)}
+                                title="Delete"
+                                aria-label="Delete comment"
+                                className="-mr-2 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-tertiary transition-colors duration-150 hover:bg-bg-tertiary hover:text-status-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+                            >
+                                <i className="fas fa-trash text-[12px]" aria-hidden="true" />
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </>
     )
 
     const confirmDialog = (
         <ConfirmDialog
             isOpen={pendingDeleteId !== null}
             onConfirm={confirmDeleteComment}
-            onCancel={() => setPendingDeleteId(null)}
-            title="Delete Comment"
-            message="Are you sure you want to delete this comment?"
+            onCancel={cancelDelete}
+            title="Delete this comment?"
+            message="This can't be undone."
             confirmLabel="Delete"
             variant="danger"
         />
     )
 
+    const title = itemNumber || itemId
+
     if (isPanel) {
         return (
             <>
-                {card}
+                <DockedPanel onClose={onClose} eyebrow={eyebrow} title={title} bodyClassName="p-0">
+                    {body}
+                </DockedPanel>
                 {confirmDialog}
             </>
         )
     }
 
-    return ReactDOM.createPortal(
+    return (
         <>
-            <div
-                onClick={handleBackdropClick}
-                className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-[var(--scrim)]"
-            >
-                {card}
-            </div>
+            <Dialog open onClose={handleDialogClose} size="md" eyebrow={eyebrow} title={title} bodyClassName="p-0">
+                {body}
+            </Dialog>
             {confirmDialog}
-        </>,
-        document.body
+        </>
     )
 }
 

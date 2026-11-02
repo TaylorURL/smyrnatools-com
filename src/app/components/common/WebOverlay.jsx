@@ -1,15 +1,21 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 import ReactDOM from 'react-dom'
 
-import { useAccentColor } from '../../hooks/useAccentColor'
+/** The host name of `url`, or the whole string when it doesn't parse. */
+function hostOf(url) {
+    try {
+        return new URL(url).hostname || url
+    } catch {
+        return url
+    }
+}
 
 /**
  * Full-screen overlay that embeds external content in a sandboxed iframe.
- * Includes a branded header bar with a close button and the current URL.
+ * A plain bar across the top carries a close button, the site's name and the
+ * full address.
  */
 function WebOverlay({ url, onClose }) {
-    const accentColor = useAccentColor()
     if (typeof document === 'undefined' || !document.body) return null
     return ReactDOM.createPortal(
         <div
@@ -18,19 +24,19 @@ function WebOverlay({ url, onClose }) {
             aria-label="External content"
             className="fixed inset-0 z-system flex flex-col bg-bg-primary animate-fade-in motion-reduce:animate-none"
         >
-            <div
-                className="flex items-center gap-4 border-b border-white/15 px-4 py-3"
-                style={{ backgroundColor: accentColor }}
-            >
+            <div className="flex shrink-0 items-center gap-3 border-b border-border-light bg-bg-primary px-4 py-2.5">
                 <button
                     type="button"
                     aria-label="Close external content"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-none bg-white/[0.18] text-base text-white cursor-pointer hover:bg-white/[0.28] active:scale-[0.94] transition-[background-color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
                     onClick={onClose}
                 >
-                    <i className="fas fa-times" aria-hidden="true" />
+                    <i className="fas fa-times text-[14px]" aria-hidden="true" />
                 </button>
-                <div className="flex-1 truncate text-sm text-white/85">{url}</div>
+                <div className="min-w-0 flex-1">
+                    <div className="truncate text-[14px] font-semibold text-text-primary">{hostOf(url)}</div>
+                    <div className="truncate text-[12px] text-text-tertiary">{url}</div>
+                </div>
             </div>
             <iframe
                 src={url}

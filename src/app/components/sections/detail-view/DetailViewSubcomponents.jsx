@@ -17,10 +17,10 @@ import { DetailViewContext } from './DetailViewContext'
 
 const DEFAULT_ACCENT = DEFAULT_ACCENT_COLOR
 
-const LABEL_CLASS = 'flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-text-secondary'
-const VALUE_BOX_CLASS = 'rounded-md border border-border-light bg-bg-secondary px-2.5 py-1.5 text-[12.5px] font-medium'
+const LABEL_CLASS = 'flex items-center gap-1 text-[12px] font-medium text-text-secondary'
+const VALUE_BOX_CLASS = 'rounded-[4px] border border-border-light bg-bg-secondary px-3 py-2 text-[13px]'
 const INPUT_CLASS =
-    'dv-input w-full rounded-md border border-border-light bg-bg-primary px-2.5 py-1.5 text-[12.5px] text-text-primary outline-none transition-[border-color,box-shadow] duration-150'
+    'dv-input h-9 w-full rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-[border-color,box-shadow] duration-150'
 
 export function Section({ id, title, icon, children }) {
     const { activeSection, registerSection } = useContext(DetailViewContext)
@@ -31,7 +31,7 @@ export function Section({ id, title, icon, children }) {
 
     const childArray = React.Children.toArray(children)
     const count = childArray.length
-    const gridClass = count === 1 ? 'flex flex-col gap-3' : 'grid grid-cols-2 gap-3'
+    const gridClass = count === 1 ? 'flex flex-col gap-5' : 'grid grid-cols-2 gap-5'
 
     const renderChildren = () => {
         if (count === 3) {
@@ -59,30 +59,28 @@ export function Section({ id, title, icon, children }) {
 
     return (
         <div className="flex flex-col gap-3">
-            <div className="dv-section-header flex items-center gap-2">
-                {icon && <i className={`${icon} text-text-secondary text-[13px]`}></i>}
-                <h2 className="m-0 text-[14px] font-bold text-text-primary">{title}</h2>
+            <div className="dv-section-header md:sr-only">
+                <h2 className="m-0 font-heading text-[18px] font-semibold tracking-tight text-text-primary">{title}</h2>
             </div>
             <div className={`dv-section-grid ${gridClass}`}>{renderChildren()}</div>
         </div>
     )
 }
 
-export function Card({ title, icon, children, actions, fullWidth }) {
+export function Card({ title, icon: _icon, children, actions, fullWidth }) {
     return (
         <div
-            className={`overflow-hidden rounded-md border border-border-light bg-bg-primary ${fullWidth ? 'col-[1_/_-1]' : ''}`}
+            className={`overflow-hidden rounded-card border border-border-light bg-bg-primary ${fullWidth ? 'col-[1_/_-1]' : ''}`}
         >
             {title && (
-                <div className="flex items-center justify-between gap-2 border-b border-border-light bg-bg-secondary px-3 py-2">
-                    <div className="flex items-center gap-1.5 text-[12.5px] font-bold text-text-primary">
-                        {icon && <i className={`${icon} text-text-secondary text-[12px]`}></i>}
+                <div className="flex min-h-[44px] items-center justify-between gap-2 border-b border-border-light px-4 py-2">
+                    <h3 className="m-0 font-heading text-[15px] font-semibold tracking-tight text-text-primary">
                         {title}
-                    </div>
+                    </h3>
                     {actions && <div className="flex items-center gap-1.5">{actions}</div>}
                 </div>
             )}
-            <div className="flex flex-col gap-2.5 p-3">{children}</div>
+            <div className="flex flex-col gap-4 p-4">{children}</div>
         </div>
     )
 }
@@ -126,7 +124,7 @@ export function Input({ label, icon, ...props }) {
 
 export function Select({ label, icon, options = [], placeholder, ...props }) {
     // --select-chevron-sm carries the caret SVG, stroke included, so the
-    // dark and gray themes swap it the same way they swap a colour token.
+    // dark theme swaps it the same way it swaps a colour token.
     const selectBg = 'var(--bg-primary) var(--select-chevron-sm) right 10px center/14px no-repeat'
     return (
         <div className="flex flex-col gap-1">
@@ -138,10 +136,10 @@ export function Select({ label, icon, options = [], placeholder, ...props }) {
             )}
             <select
                 {...props}
-                className="dv-input w-full cursor-pointer appearance-none rounded-md border border-border-light text-[12.5px] text-text-primary outline-none transition-[border-color,box-shadow] duration-150"
+                className="dv-input h-9 w-full cursor-pointer appearance-none rounded-[4px] border border-border-medium text-[13px] text-text-primary outline-none transition-[border-color,box-shadow] duration-150"
                 style={{
                     background: selectBg,
-                    padding: '8px 32px 8px 12px',
+                    padding: '0 32px 0 12px',
                     ...props.style
                 }}
             >

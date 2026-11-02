@@ -61,7 +61,7 @@ function PlantGridCard({ plant, region, plantType, managerCount, onSelect, onMan
     return (
         <button
             type="button"
-            className="group relative flex flex-col overflow-hidden rounded-card border border-border-light bg-bg-primary text-left shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:border-border-medium hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:translate-y-0 motion-reduce:transition-none motion-reduce:transform-none"
+            className="group relative flex flex-col overflow-hidden rounded-card border border-border-light bg-bg-primary text-left transition-colors duration-150 ease-out hover:border-border-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:translate-y-0 motion-reduce:transition-none motion-reduce:transform-none"
             onClick={() => onSelect(code)}
             aria-label={`Open plant ${code}${name ? ` — ${name}` : ''}`}
         >
@@ -73,12 +73,9 @@ function PlantGridCard({ plant, region, plantType, managerCount, onSelect, onMan
                 />
             )}
             <div className="flex items-center gap-3 border-b border-border-light px-5 py-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent/10 text-base text-accent transition-colors duration-200 group-hover:bg-accent group-hover:text-white">
-                    <i className={`fas fa-${meta.icon}`} aria-hidden="true" />
-                </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                        <span className="truncate font-heading text-lg font-bold tracking-tight text-text-primary">
+                        <span className="truncate font-heading text-[20px] font-semibold tracking-tight text-text-primary">
                             #{code}
                         </span>
                         {isColocated && (
@@ -110,15 +107,13 @@ function PlantGridCard({ plant, region, plantType, managerCount, onSelect, onMan
 
             <div className="grid grid-cols-2">
                 <div className="flex flex-col gap-0.5 border-r border-border-light px-5 py-3">
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">Region</span>
+                    <span className="text-[12px] font-medium text-text-tertiary">Region</span>
                     <span className="truncate text-[13px] font-semibold text-text-primary">
                         {region?.regionName || 'N/A'}
                     </span>
                 </div>
                 <div className="flex flex-col gap-0.5 px-5 py-3">
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                        Region Code
-                    </span>
+                    <span className="text-[12px] font-medium text-text-tertiary">Region Code</span>
                     <span className="truncate text-[13px] font-semibold text-text-primary">
                         {region?.regionCode || '—'}
                     </span>
@@ -127,9 +122,7 @@ function PlantGridCard({ plant, region, plantType, managerCount, onSelect, onMan
 
             {aliasCodes.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1 border-t border-border-light px-5 py-2.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                        Shares site with
-                    </span>
+                    <span className="text-[12px] font-medium text-text-tertiary">Shares site with</span>
                     {aliasCodes.map((alias) => (
                         <Badge key={alias} tone="accent" size="md" shape="pill" weight="semibold" uppercase={false}>
                             {alias}
@@ -438,7 +431,7 @@ function PlantsView({ title = 'Plants' }) {
                                                             event.stopPropagation()
                                                             setManagersEditPlant(plant)
                                                         }}
-                                                        className="inline-flex items-center gap-2 rounded-full border border-border-light bg-bg-primary px-3 py-1 text-xs font-semibold text-text-secondary transition duration-150 hover:border-accent hover:bg-accent/10 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97]"
+                                                        className="inline-flex items-center gap-2 rounded-full border border-border-light bg-bg-primary px-3 py-1 text-xs font-semibold text-text-secondary transition duration-150 hover:border-accent hover:bg-accent/10 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                                                         title="Attach or remove managers for this plant"
                                                         aria-label="Manage plant managers"
                                                     >

@@ -7,40 +7,34 @@ import { Panel } from '../../../ui/Panel'
 
 /** Tile carrying one teaser metric for a sub-page; clicking it switches the
  *  view to `section`. */
-function LaunchpadTile({ hint, icon, label, onSelect, section, value }) {
+function LaunchpadTile({ hint, label, onSelect, section, value }) {
     return (
         <button
             type="button"
             onClick={() => onSelect?.(section)}
-            className="flex flex-col gap-1 items-start rounded-lg border bg-bg-secondary border-border-light cursor-pointer p-3 text-left hover:border-current transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
-            style={{ color: 'var(--text-secondary)' }}
+            className="group flex flex-col gap-1 items-start rounded-card border border-border-light bg-bg-primary cursor-pointer px-4 py-3 text-left transition-colors duration-150 ease-out hover:border-border-medium hover:bg-bg-hover motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
-            <span className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider">
-                <i className={`fas ${icon} text-[11px] text-text-primary`} />
-                {label}
-            </span>
-            <span className="font-mono tabular-nums font-bold leading-none text-text-primary" style={{ fontSize: 22 }}>
+            <span className="text-[12px] text-text-secondary">{label}</span>
+            <span className="font-heading text-[24px] font-semibold leading-tight tabular-nums text-text-primary">
                 {value}
             </span>
-            {hint && <span className="text-[10.5px] text-text-tertiary">{hint}</span>}
-            <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-text-primary">
-                Open
-                <i className="fas fa-arrow-right text-[9px]" />
+            {hint && <span className="text-[12px] text-text-tertiary">{hint}</span>}
+            <span className="mt-1 text-[12px] font-medium text-text-secondary group-hover:text-text-primary">
+                Open →
             </span>
         </button>
     )
 }
 
-function HighlightRow({ hint, icon, label, value }) {
+/** One fact in the snapshot: the label in a fixed column, the value and its
+ *  context beside it. */
+function HighlightRow({ hint, label, value }) {
     return (
-        <div className="flex items-start gap-3 px-3 py-2.5 border-t border-border-light first:border-t-0">
-            <i className={`fas ${icon} text-[11px] mt-1 w-4 text-center text-text-tertiary`} />
-            <div className="flex-1 min-w-0">
-                <div className="text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary">{label}</div>
-                <div className="font-semibold truncate text-text-primary" style={{ fontSize: 13.5 }}>
-                    {value}
-                </div>
-                {hint && <div className="text-[11px] text-text-tertiary truncate">{hint}</div>}
+        <div className="grid grid-cols-[160px_minmax(0,1fr)] items-baseline gap-4 px-4 py-2.5 border-t border-border-light first:border-t-0">
+            <div className="text-[13px] text-text-secondary">{label}</div>
+            <div className="min-w-0">
+                <span className="text-[14px] font-medium text-text-primary">{value}</span>
+                {hint && <span className="ml-2 text-[12px] text-text-tertiary">{hint}</span>}
             </div>
         </div>
     )
@@ -195,7 +189,7 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                                     <button
                                         type="button"
                                         onClick={() => onSelectSection?.('plants')}
-                                        className="text-[11px] font-semibold bg-transparent border-none cursor-pointer text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                        className="text-[11px] font-semibold bg-transparent border-none cursor-pointer text-text-primary transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     >
                                         View <i className="fas fa-arrow-right" aria-hidden="true" />
                                     </button>

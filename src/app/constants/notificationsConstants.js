@@ -1,5 +1,5 @@
 import { formatCentralDate, formatCentralTime } from '../../utils/PlanUtility'
-export const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
+export const SECTION_LABEL_CLASS = 'text-[12px] font-medium'
 
 /** Hours-and-minutes formatter shared by the chat thread and the row preview. */
 export function formatMessageTime(dateString) {

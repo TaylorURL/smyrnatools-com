@@ -58,12 +58,7 @@ const TopSectionMobile = ({
         <div className="flex flex-col gap-3" style={hideRealContent ? { display: 'none' } : undefined}>
             <div className="flex items-center justify-between gap-2">
                 <div className={`flex items-center gap-2 min-w-0${revealControls ? ' animate-reveal-left' : ''}`}>
-                    <h1 className="text-[16px] font-bold m-0 truncate text-text-primary">{title}</h1>
-                    {badge && (
-                        <TopSectionBadgeRow onClick={onBadgeClick} onPillClick={onPillClick} accentColor={accentColor}>
-                            {badge}
-                        </TopSectionBadgeRow>
-                    )}
+                    {title && <h1 className="text-[16px] font-bold m-0 truncate text-text-primary">{title}</h1>}
                 </div>
                 <div className={`flex items-center gap-2${revealControls ? ' animate-reveal-right' : ''}`}>
                     {customActions}
@@ -86,6 +81,15 @@ const TopSectionMobile = ({
                     )}
                 </div>
             </div>
+            {/* The count chips get a row of their own: sharing the title's row,
+                they squeezed the title down to "Mix…". */}
+            {badge && (
+                <div className={revealControls ? 'animate-reveal-left' : ''}>
+                    <TopSectionBadgeRow onClick={onBadgeClick} onPillClick={onPillClick} accentColor={accentColor}>
+                        {badge}
+                    </TopSectionBadgeRow>
+                </div>
+            )}
             <div className="flex items-center gap-2">
                 {!hideSearchBar && (
                     <div className="flex-1">

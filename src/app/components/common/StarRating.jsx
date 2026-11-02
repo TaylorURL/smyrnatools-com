@@ -243,7 +243,7 @@ export default function StarRating({
                         aria-label={`${starNumber} star${starNumber === 1 ? '' : 's'}`}
                         onMouseEnter={() => setHoverValue(starNumber)}
                         onClick={() => handleClick(starNumber)}
-                        className={`${sizeCfg.pickerTap} inline-flex items-center justify-center bg-transparent border-0 cursor-pointer transition-transform duration-100 ease-out hover:scale-110 active:scale-95`}
+                        className={`${sizeCfg.pickerTap} inline-flex items-center justify-center bg-transparent border-0 cursor-pointer transition-transform duration-100 ease-out hover:scale-110`}
                     >
                         <StarSlot
                             fillPercent={Math.max(

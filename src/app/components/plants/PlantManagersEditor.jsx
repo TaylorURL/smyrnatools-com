@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { createPortal } from 'react-dom'
 
 import { UserService } from '../../../services/UserService'
+import { DIALOG_INPUT } from '../ui/Dialog'
 
 const DROPDOWN_MAX_HEIGHT = 256
 const DROPDOWN_VIEWPORT_GUTTER = 8
@@ -23,7 +24,8 @@ const formatUserLabel = (user) => {
  * `document.body` and positioned with `getBoundingClientRect` of the
  * input — that escapes every parent `overflow: hidden / auto` context
  * (the detail-view card and the modal body both clip) so the list is
- * always fully visible regardless of where the editor is mounted.
+ * always fully visible regardless of where the editor is mounted. It sits
+ * on the modal-menu layer so it clears the quick-edit dialog as well.
  */
 export default function PlantManagersEditor({ managerIds, onChange, disabled = false }) {
     const [allUsers, setAllUsers] = useState([])
@@ -159,11 +161,11 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
             <div
                 role="listbox"
                 aria-label="Manager candidates"
-                className="fixed z-panel-menu overflow-y-auto rounded-xl border border-border-light bg-bg-primary shadow-lg"
+                className="fixed z-modal-menu overflow-y-auto rounded-card border border-border-light bg-bg-primary p-1 shadow-modal"
                 style={dropdownStyle}
             >
                 {pickerResults.length === 0 ? (
-                    <div className="px-4 py-3 text-sm text-text-tertiary italic">No matching users.</div>
+                    <div className="px-2.5 py-2 text-[13px] text-text-secondary">No matching users</div>
                 ) : (
                     pickerResults.map((user) => (
                         <button
@@ -175,14 +177,14 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
                                 event.preventDefault()
                                 attachManager(user.id)
                             }}
-                            className="block w-full border-b border-border-light px-4 py-2.5 text-left text-sm last:border-b-0 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:bg-bg-hover focus-visible:ring-2 focus-visible:ring-accent/40 active:scale-[0.97]"
+                            className="flex h-9 w-full cursor-pointer items-center gap-2 rounded-[4px] border-none bg-transparent px-2.5 text-left text-[13px] transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
                         >
-                            <div className="font-semibold text-text-primary">{formatUserLabel(user)}</div>
+                            <span className="min-w-0 truncate text-text-primary">{formatUserLabel(user)}</span>
                             {user.email && (
-                                <div className="text-[11.5px] text-text-tertiary">
+                                <span className="min-w-0 flex-1 truncate text-[12px] text-text-tertiary">
                                     {user.email}
                                     {user.roleName ? ` · ${user.roleName}` : ''}
-                                </div>
+                                </span>
                             )}
                         </button>
                     ))
@@ -195,32 +197,31 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
     return (
         <div className="flex flex-col gap-3">
             {attachedManagers.length === 0 ? (
-                <div className="rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-tertiary italic">
+                <div className="flex min-h-9 items-center rounded-[4px] border border-dashed border-border-medium px-3 text-[13px] text-text-tertiary">
                     No managers attached yet.
                 </div>
             ) : (
-                <ul className="flex flex-col gap-1.5">
+                <ul className="m-0 flex list-none flex-col overflow-hidden rounded-card border border-border-light p-0">
                     {attachedManagers.map(({ id, user }) => (
                         <li
                             key={id}
-                            className="flex items-center justify-between gap-2 rounded-xl border border-border-light bg-bg-secondary px-4 py-2.5"
+                            className="flex items-center justify-between gap-2 border-b border-border-light bg-bg-primary px-3 py-2 last:border-b-0"
                         >
                             <div className="min-w-0 flex-1">
-                                <div className="truncate text-sm font-semibold text-text-primary">
+                                <div className="truncate text-[13px] font-medium text-text-primary">
                                     {user ? formatUserLabel(user) : id}
                                 </div>
                                 {user?.email && (
-                                    <div className="truncate text-[11.5px] text-text-tertiary">{user.email}</div>
+                                    <div className="truncate text-[12px] text-text-tertiary">{user.email}</div>
                                 )}
                             </div>
                             <button
                                 type="button"
                                 onClick={() => removeManager(id)}
                                 disabled={disabled}
-                                className="rounded-lg border border-border-light bg-bg-primary px-2.5 py-1 text-[11.5px] font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] disabled:active:scale-[0.97]"
+                                className="btn-secondary !h-8 !px-2.5 !text-[12px]"
                                 title="Remove manager"
                             >
-                                <i className="fas fa-times mr-1 text-[10px]" />
                                 Remove
                             </button>
                         </li>
@@ -245,7 +246,7 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
                     onBlur={() => setTimeout(() => setPickerOpen(false), 150)}
                     placeholder={usersLoading ? 'Loading users…' : 'Search by name or email to attach a manager…'}
                     disabled={usersLoading || disabled}
-                    className="w-full rounded-xl border border-border-light bg-bg-primary px-4 py-3 text-sm text-text-primary outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className={DIALOG_INPUT}
                 />
                 {renderDropdown()}
             </div>

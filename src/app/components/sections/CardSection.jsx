@@ -36,7 +36,7 @@ function CardSection({
         : {}
     return (
         <div
-            className={`relative bg-bg-primary border border-border-light rounded-card shadow-card overflow-hidden mb-6 transition-[colors,transform,box-shadow] duration-200 motion-reduce:transition-none ${onSelect ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] active:opacity-80' : ''}`}
+            className={`relative bg-bg-primary border border-border-light rounded-card shadow-card overflow-hidden mb-6 transition-[colors,transform,box-shadow] duration-200 motion-reduce:transition-none ${onSelect ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:opacity-80' : ''}`}
             {...cardProps}
         >
             <div

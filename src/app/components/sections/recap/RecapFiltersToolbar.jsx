@@ -1,131 +1,129 @@
+/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import { DETAIL_SELECT_CLS } from '../../../constants/detailFormClasses'
 import { DATE_OPTIONS, TYPE_OPTIONS } from '../../../constants/recapConstants'
 import RecapFilterPill from './RecapFilterPill'
 import { formatFieldName } from './recapHelpers'
-import RecapMetricCell from './RecapMetricCell'
+
+const PERIOD_LABELS = { all: 'All time', day: '24 hours', month: '30 days', week: '7 days' }
+const TYPE_LABELS = { all: 'Everything', mixers: 'Mixers', operators: 'Operators', terminated: 'Terminated' }
+
+/** Net change for one measure, as a signed figure. `positive` says which
+ *  direction is good — gaining operators reads green, gaining trucks in the
+ *  shop reads red — and the colour follows. */
+function NetFigure({ label, positive, value }) {
+    const color =
+        value === 0 ? 'var(--text-primary)' : value > 0 === positive ? 'var(--status-active)' : 'var(--status-danger)'
+    return (
+        <span className="inline-flex items-baseline gap-1.5">
+            <span className="font-heading text-[18px] font-semibold tabular-nums" style={{ color }}>
+                {value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : '0'}
+            </span>
+            <span className="text-[13px] text-text-secondary">{label}</span>
+        </span>
+    )
+}
 
 /**
- * Filter region at the top of the recap modal. It owns no state: every
- * control reports upward, and the metric tiles show what the parent's filters
- * currently resolve to. The field dropdown only appears once there is more
- * than one field to choose between.
+ * Everything above the change table: search, the period, what to show, an
+ * optional field filter, then one line with the net change and the count.
+ * It owns no state; every control reports upward.
  */
 function RecapFiltersToolbar({
-    accentColor,
-    searchQuery,
-    onSearchQueryChange,
-    dateFilter,
-    onDateFilterChange,
-    typeFilter,
-    onTypeFilterChange,
-    fieldFilter,
-    onFieldFilterChange,
+    assetCount,
     availableFields,
-    changeMetrics
+    changeCount,
+    changeMetrics,
+    dateFilter,
+    fieldFilter,
+    hasActiveFilters,
+    onClearFilters,
+    onDateFilterChange,
+    onFieldFilterChange,
+    onSearchQueryChange,
+    onTypeFilterChange,
+    searchQuery,
+    typeFilter
 }) {
     return (
-        <div className="px-3 py-2 shrink-0 flex flex-col gap-2 bg-bg-secondary border-b border-border-light">
-            <div className="relative">
-                <i className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary" />
-                <input
-                    type="search"
-                    placeholder="Search by name…"
-                    aria-label="Search recap entries by name"
-                    value={searchQuery}
-                    onChange={(e) => onSearchQueryChange(e.target.value)}
-                    className="w-full pl-7 pr-7 py-1.5 text-[12.5px] rounded outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
-                />
-                {searchQuery && (
-                    <button
-                        type="button"
-                        onClick={() => onSearchQueryChange('')}
-                        aria-label="Clear search"
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded border-none bg-transparent cursor-pointer text-text-tertiary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 transition-colors duration-150"
-                    >
-                        <i className="fa-solid fa-xmark text-[10px]" />
-                    </button>
-                )}
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1">
+        <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+                <div className="relative min-w-[200px] flex-1">
+                    <i
+                        className="fas fa-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary"
+                        aria-hidden="true"
+                    />
+                    <input
+                        type="search"
+                        placeholder="Search trucks and operators"
+                        aria-label="Search recap by name"
+                        value={searchQuery}
+                        onChange={(e) => onSearchQueryChange(e.target.value)}
+                        className="h-9 w-full rounded-[4px] border border-border-medium bg-bg-primary pl-8 pr-3 text-[13px] text-text-primary outline-none placeholder:text-text-tertiary transition-colors duration-150 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:appearance-none"
+                    />
+                </div>
+                <div
+                    role="group"
+                    aria-label="Period"
+                    className="flex h-9 items-stretch overflow-hidden rounded-[4px] border border-border-medium"
+                >
                     {DATE_OPTIONS.map((d) => (
                         <RecapFilterPill
                             key={d.id}
                             active={dateFilter === d.id}
-                            label={d.label}
+                            label={PERIOD_LABELS[d.id] || d.label}
                             onClick={() => onDateFilterChange(d.id)}
-                            accentColor={accentColor}
                         />
                     ))}
                 </div>
-                <span className="w-px h-4 bg-[var(--border-light)]" />
-                <div className="flex items-center gap-1">
+                <select
+                    value={typeFilter}
+                    onChange={(e) => onTypeFilterChange(e.target.value)}
+                    aria-label="Show"
+                    className={`${DETAIL_SELECT_CLS} !w-auto min-w-[140px]`}
+                >
                     {TYPE_OPTIONS.map((t) => (
-                        <RecapFilterPill
-                            key={t.id}
-                            active={typeFilter === t.id}
-                            label={t.label}
-                            onClick={() => onTypeFilterChange(t.id)}
-                            accentColor={accentColor}
-                        />
+                        <option key={t.id} value={t.id}>
+                            {TYPE_LABELS[t.id] || t.label}
+                        </option>
                     ))}
-                </div>
+                </select>
                 {availableFields.length > 1 && (
-                    <>
-                        <span className="w-px h-4 bg-[var(--border-light)]" />
-                        <select
-                            value={fieldFilter}
-                            onChange={(e) => onFieldFilterChange(e.target.value)}
-                            aria-label="Filter by field"
-                            className="appearance-none bg-no-repeat bg-[right_0.5rem_center] bg-[length:0.875rem_0.875rem] bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20fill=%22none%22%20viewBox=%220%200%2024%2024%22%20stroke=%22currentColor%22%3E%3Cpath%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%20stroke-width=%222%22%20d=%22M19%209l-7%207-7-7%22/%3E%3C/svg%3E')] [color-scheme:light] dark:[color-scheme:dark] rounded text-[11px] cursor-pointer font-medium pl-2 pr-7 py-1 outline-none bg-bg-primary border border-border-light text-text-primary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <option value="all">All Fields</option>
-                            {availableFields.map((f) => (
-                                <option key={f} value={f}>
-                                    {formatFieldName(f)}
-                                </option>
-                            ))}
-                        </select>
-                    </>
+                    <select
+                        value={fieldFilter}
+                        onChange={(e) => onFieldFilterChange(e.target.value)}
+                        aria-label="Filter by field"
+                        className={`${DETAIL_SELECT_CLS} !w-auto min-w-[140px]`}
+                    >
+                        <option value="all">Every field</option>
+                        {availableFields.map((f) => (
+                            <option key={f} value={f}>
+                                {formatFieldName(f)}
+                            </option>
+                        ))}
+                    </select>
                 )}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 rounded overflow-hidden bg-bg-primary border border-border-light">
-                <RecapMetricCell
-                    value={changeMetrics.operatorsNet}
-                    label="Operators"
-                    icon="fa-user"
-                    iconBg="var(--tint-info-bg)"
-                    iconFg="var(--tint-info-ink-deep)"
-                    positive
-                />
-                <RecapMetricCell
-                    value={changeMetrics.runnableNet}
-                    label="Runnable"
-                    icon="fa-truck"
-                    iconBg="var(--badge-success-bg)"
-                    iconFg="var(--tint-success-ink-deep)"
-                    positive
-                />
-                <RecapMetricCell
-                    value={changeMetrics.downNet}
-                    label="Down"
-                    icon="fa-wrench"
-                    iconBg="var(--notice-warning-bg-strong)"
-                    iconFg="var(--notice-warning-strong)"
-                    positive={false}
-                />
-                <RecapMetricCell
-                    value={changeMetrics.transfersNet}
-                    label="Transfers"
-                    icon="fa-right-left"
-                    iconBg="var(--tint-purple-bg)"
-                    iconFg="var(--tint-purple-ink)"
-                    positive
-                    last
-                />
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                <NetFigure label="operators" positive value={changeMetrics.operatorsNet} />
+                <NetFigure label="runnable" positive value={changeMetrics.runnableNet} />
+                <NetFigure label="in the shop" positive={false} value={changeMetrics.downNet} />
+                <NetFigure label="transfers" positive value={changeMetrics.transfersNet} />
+                <span className="ml-auto flex items-center gap-3 text-[12px] tabular-nums text-text-secondary">
+                    {changeCount} change{changeCount === 1 ? '' : 's'} on {assetCount} record
+                    {assetCount === 1 ? '' : 's'}
+                    {hasActiveFilters && (
+                        <button
+                            type="button"
+                            onClick={onClearFilters}
+                            className="cursor-pointer border-none bg-transparent p-0 text-[12px] font-medium text-text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        >
+                            Clear filters
+                        </button>
+                    )}
+                </span>
             </div>
         </div>
     )

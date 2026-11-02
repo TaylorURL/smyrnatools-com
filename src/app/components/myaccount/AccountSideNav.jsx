@@ -1,34 +1,28 @@
 import React from 'react'
 
-/** Sticky scrollspy nav for the cockpit's left column. Each entry scrolls its
- *  section into view; the active entry carries a 2px accent border on its
- *  leading edge. */
-export default function AccountSideNav({ accentColor, activeId, onJump, sections }) {
+/** Sticky scrollspy nav for the account page's left column. Each entry
+ *  scrolls its section into view; the section in view reads darker and
+ *  sits on a filled row, the same way the rail marks the page you're on. */
+export default function AccountSideNav({ activeId, onJump, sections }) {
     return (
-        <aside className="hidden lg:block sticky top-0 self-start py-5 pr-3 overflow-y-auto w-[200px] max-h-screen supports-[height:1dvh]:max-h-[100dvh]">
-            <div className="text-[10px] font-bold uppercase tracking-[0.08em] px-2 pb-2 text-text-tertiary">
-                Sections
-            </div>
-            <nav className="flex flex-col">
-                {sections.map(({ icon, id, label }) => {
+        <aside className="hidden lg:block sticky top-0 self-start py-6 overflow-y-auto w-[180px] shrink-0 max-h-screen supports-[height:1dvh]:max-h-[100dvh]">
+            <div className="px-2.5 pb-2 text-[12px] font-medium text-text-tertiary">On this page</div>
+            <nav className="flex flex-col gap-px">
+                {sections.map(({ id, label }) => {
                     const isActive = activeId === id
                     return (
                         <button
                             type="button"
                             key={id}
                             onClick={() => onJump(id)}
-                            className="flex items-center gap-2 px-2 py-1.5 border-none cursor-pointer text-[13px] text-left bg-transparent transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
-                            style={{
-                                borderLeft: `2px solid ${isActive ? accentColor : 'transparent'}`,
-                                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                fontWeight: isActive ? 600 : 400
-                            }}
+                            aria-current={isActive ? 'true' : undefined}
+                            className={`flex h-8 items-center rounded-[4px] border-none px-2.5 text-left text-[13px] cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                isActive
+                                    ? 'bg-bg-tertiary font-medium text-text-primary'
+                                    : 'bg-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+                            }`}
                         >
-                            <i
-                                className={`fas ${icon} text-[12px] w-3.5`}
-                                style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
-                            />
-                            <span className="flex-1 truncate">{label}</span>
+                            <span className="truncate">{label}</span>
                         </button>
                     )
                 })}

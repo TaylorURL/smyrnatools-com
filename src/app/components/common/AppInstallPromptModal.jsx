@@ -1,11 +1,9 @@
-/* eslint-disable react/forbid-dom-props */
-import React, { useEffect, useState } from 'react'
-import ReactDOM from 'react-dom'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getSessionUserId } from '../../../services/SessionService'
 import { UserPreferencesService } from '../../../services/UserPreferencesService'
 import { importChunk } from '../../../utils/ChunkRecovery'
-import { useAccentColor } from '../../hooks/useAccentColor'
+import Dialog from '../ui/Dialog'
 
 // This modal is mounted beside the whole app rather than behind the session it
 // serves, so it is on the path a signed-out visitor pays for. The roles lookup
@@ -86,160 +84,60 @@ const DESKTOP_ANDROID_STEPS = [
     'Tap **Add**'
 ]
 
-function StepNumber({ number, accentColor }) {
-    return (
-        <span
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold text-white"
-            style={{ backgroundColor: accentColor }}
-        >
-            {number}
-        </span>
-    )
-}
-
-function SmallStepNumber({ number, accentColor }) {
-    return (
-        <span
-            className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-            style={{ backgroundColor: accentColor }}
-        >
-            {number}
-        </span>
-    )
-}
-
 /** Renders the `**bold**` spans in a step string as `<strong>`. Splitting on
  *  a capturing group puts the bracketed text at every odd index. */
 function renderBold(text) {
     return text.split(/\*\*(.+?)\*\*/).map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : part))
 }
 
-function ActionButtons({ onPrimary, primaryIcon, primaryLabel, onSecondary, onDismiss, accentColor }) {
+/** One numbered list of steps, ruled like every other list in a dialog. */
+function StepList({ label, steps }) {
     return (
-        <div className="flex flex-col gap-3">
-            <button
-                type="button"
-                className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none px-6 py-3.5 text-[15px] font-semibold text-white cursor-pointer active:scale-[0.98] transition-[transform,filter] duration-150 ease-out motion-reduce:transition-none hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
-                style={{ backgroundColor: accentColor }}
-                onClick={onPrimary}
-            >
-                <i className={`fas ${primaryIcon}`} aria-hidden="true" /> {primaryLabel}
-            </button>
-            <button
-                type="button"
-                className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border-light bg-bg-secondary px-6 py-3.5 text-[15px] font-medium text-text-primary cursor-pointer active:scale-[0.98] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
-                onClick={onSecondary}
-            >
-                <i className="fas fa-clock" aria-hidden="true" /> Remind Me Later
-            </button>
-            <button
-                type="button"
-                className="mt-1 border-none bg-transparent p-2 text-[13px] text-text-tertiary cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary rounded"
-                onClick={onDismiss}
-            >
-                Do Not Show This Again
-            </button>
-        </div>
+        <ol aria-label={label} className="m-0 list-none p-0">
+            {steps.map((step, index) => (
+                <li
+                    key={index}
+                    className="flex items-baseline gap-3 border-b border-border-light px-6 py-2.5 text-[13px] leading-normal text-text-primary last:border-b-0"
+                >
+                    <span className="w-4 shrink-0 text-right tabular-nums text-text-tertiary">{index + 1}</span>
+                    <span className="min-w-0 flex-1">{step}</span>
+                </li>
+            ))}
+        </ol>
     )
 }
 
-function MobileContent({ deviceType, accentColor, onInstalled, onRemindLater, onDismissForever }) {
+function MobileContent({ deviceType }) {
     const steps = deviceType === 'ios' ? IOS_STEPS : deviceType === 'android' ? ANDROID_STEPS : []
     return (
-        <div className="px-8 pb-8 pt-10 text-center">
-            <div
-                className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[20px] text-4xl"
-                style={{ backgroundColor: `${accentColor}14`, color: accentColor }}
-            >
-                <i className="fas fa-mobile-alt" aria-hidden="true" />
-            </div>
-            <h2 className="mb-3 font-heading text-2xl font-bold tracking-tight" style={{ color: accentColor }}>
-                Install Smyrna Tools
-            </h2>
-            <p className="mb-7 text-[15px] leading-relaxed text-text-secondary">
-                Add Smyrna Tools to your home screen for quick access and a better experience.
-            </p>
-            <div className="mb-7 text-left">
-                {steps.map((step, index) => (
-                    <div
-                        key={index}
-                        className={`flex items-start gap-3.5 py-3 ${index < steps.length - 1 ? 'border-b border-border-light' : ''}`}
-                    >
-                        <StepNumber number={index + 1} accentColor={accentColor} />
-                        <span className="pt-1 text-sm leading-normal text-text-primary">
-                            {step.text} {step.icon && <i className={`fas ${step.icon}`} aria-hidden="true" />}
-                        </span>
-                    </div>
-                ))}
-            </div>
-            <ActionButtons
-                accentColor={accentColor}
-                onPrimary={onInstalled}
-                primaryIcon="fa-check"
-                primaryLabel="I Installed It"
-                onSecondary={onRemindLater}
-                onDismiss={onDismissForever}
-            />
-        </div>
-    )
-}
-
-function DesktopTutorialSection({ icon, title, steps, accentColor }) {
-    return (
-        <div className="rounded-xl border border-border-light bg-bg-secondary p-5 text-left">
-            <div className="mb-4 flex items-center gap-3">
-                <i className={`${icon} text-2xl`} style={{ color: accentColor }} aria-hidden="true" />
-                <h3 className="m-0 font-heading text-base font-semibold" style={{ color: accentColor }}>
-                    {title}
-                </h3>
-            </div>
-            {steps.map((step, index) => (
-                <div key={index} className="flex items-center gap-2.5 py-2 text-[13px] text-text-primary">
-                    <SmallStepNumber number={index + 1} accentColor={accentColor} />
-                    <span>{renderBold(step)}</span>
-                </div>
+        <StepList
+            label="Steps"
+            steps={steps.map((step, index) => (
+                <React.Fragment key={index}>
+                    {step.text}
+                    {step.icon && (
+                        <i className={`fas ${step.icon} ml-1.5 text-[12px] text-text-secondary`} aria-hidden="true" />
+                    )}
+                </React.Fragment>
             ))}
-        </div>
+        />
     )
 }
 
-function DesktopContent({ accentColor, onInstalled, onRemindLater, onDismissForever }) {
+function DesktopTutorialSection({ title, steps }) {
     return (
-        <div className="px-8 pb-8 pt-10 text-center">
-            <div
-                className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[20px] text-4xl"
-                style={{ backgroundColor: `${accentColor}14`, color: accentColor }}
-            >
-                <i className="fas fa-mobile-screen-button" aria-hidden="true" />
-            </div>
-            <h2 className="mb-3 font-heading text-2xl font-bold tracking-tight" style={{ color: accentColor }}>
-                Install on Your Phone
-            </h2>
-            <p className="mb-7 text-[15px] leading-relaxed text-text-secondary">
-                Get the best experience by installing Smyrna Tools on your mobile device.
-            </p>
-            <div className="mb-7 flex flex-col gap-5">
-                <DesktopTutorialSection
-                    icon="fab fa-apple"
-                    title="iPhone / iPad"
-                    steps={DESKTOP_IOS_STEPS}
-                    accentColor={accentColor}
-                />
-                <DesktopTutorialSection
-                    icon="fab fa-android"
-                    title="Android"
-                    steps={DESKTOP_ANDROID_STEPS}
-                    accentColor={accentColor}
-                />
-            </div>
-            <ActionButtons
-                accentColor={accentColor}
-                onPrimary={onInstalled}
-                primaryIcon="fa-check-circle"
-                primaryLabel="Got It, Thanks!"
-                onSecondary={onRemindLater}
-                onDismiss={onDismissForever}
-            />
+        <section className="min-w-0 border-b border-border-light last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
+            <h3 className="m-0 px-6 pb-1 pt-4 text-[13px] font-semibold text-text-primary">{title}</h3>
+            <StepList label={title} steps={steps.map(renderBold)} />
+        </section>
+    )
+}
+
+function DesktopContent() {
+    return (
+        <div className="grid sm:grid-cols-2">
+            <DesktopTutorialSection title="iPhone or iPad" steps={DESKTOP_IOS_STEPS} />
+            <DesktopTutorialSection title="Android" steps={DESKTOP_ANDROID_STEPS} />
         </div>
     )
 }
@@ -255,15 +153,14 @@ function DesktopContent({ accentColor, onInstalled, onRemindLater, onDismissFore
  * step-by-step for its own browser, a desktop gets both platforms' steps to
  * follow on a phone.
  *
- * All three exits persist a decision server-side, and the backdrop and the
- * close button count as "remind me later" — there is no way to close this
+ * All three exits persist a decision server-side, and the scrim, Escape and
+ * the close button count as "remind me later" — there is no way to close this
  * without recording something.
  */
 function AppInstallPromptModal() {
     const [showModal, setShowModal] = useState(false)
     const [deviceType, setDeviceType] = useState('desktop')
     const [promptType, setPromptType] = useState('mobile_install')
-    const accentColor = useAccentColor()
     useEffect(() => {
         let timerId
         let checked = false
@@ -309,38 +206,57 @@ function AppInstallPromptModal() {
         withCurrentUser((id) => UserPreferencesService.remindLater(id, promptType, deviceType))
     const handleInstalled = () =>
         withCurrentUser((id) => UserPreferencesService.markAsInstalled(id, promptType, deviceType))
+    // Escape, the scrim and the close button all count as "remind me later".
+    // The dialog re-runs its focus handling whenever its `onClose` changes
+    // identity, so it gets one stable function that calls the latest handler.
+    const remindLaterRef = useRef(handleRemindLater)
+    useEffect(() => {
+        remindLaterRef.current = handleRemindLater
+    })
+    const handleClose = useCallback(() => remindLaterRef.current(), [])
     if (!showModal) return null
-    const ContentComponent = deviceType === 'desktop' ? DesktopContent : MobileContent
-    if (typeof document === 'undefined' || !document.body) return null
-    return ReactDOM.createPortal(
-        <div
-            role="dialog"
-            aria-modal="true"
-            className="fixed inset-0 z-system flex items-center justify-center bg-black/60 p-5 backdrop-blur-sm animate-fade-in motion-reduce:animate-none"
-            onClick={handleRemindLater}
+    const isDesktop = deviceType === 'desktop'
+    return (
+        <Dialog
+            open
+            onClose={handleClose}
+            size={isDesktop ? 'lg' : 'md'}
+            zClassName="z-system"
+            bodyClassName="p-0"
+            title={isDesktop ? 'Install on your phone' : 'Install Smyrna Tools'}
+            description={
+                isDesktop
+                    ? 'Get the best experience by installing Smyrna Tools on your phone.'
+                    : 'Add Smyrna Tools to your home screen for quick access and a better experience.'
+            }
+            footer={
+                <>
+                    <button
+                        type="button"
+                        onClick={handleDismissForever}
+                        className="order-last h-9 w-full cursor-pointer rounded-[4px] border-none bg-transparent px-1 text-[13px] text-text-secondary underline-offset-2 transition-colors duration-150 hover:text-text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none sm:order-none sm:mr-auto sm:w-auto"
+                    >
+                        Don&apos;t show this again
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleRemindLater}
+                        className="btn-secondary flex-1 justify-center sm:flex-none"
+                    >
+                        Remind me later
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleInstalled}
+                        className="btn-primary flex-1 justify-center sm:flex-none"
+                    >
+                        {isDesktop ? 'Got it' : 'I installed it'}
+                    </button>
+                </>
+            }
         >
-            <div
-                className="relative max-h-[90vh] w-full max-w-[480px] overflow-auto rounded-modal border border-border-light bg-bg-primary shadow-modal animate-pop-in motion-reduce:animate-none"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <button
-                    type="button"
-                    aria-label="Close"
-                    className="absolute right-4 top-4 z-base flex h-9 w-9 items-center justify-center rounded-full border-none bg-bg-secondary text-base text-text-secondary cursor-pointer hover:bg-bg-hover hover:text-text-primary active:scale-[0.94] transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
-                    onClick={handleRemindLater}
-                >
-                    <i className="fas fa-times" aria-hidden="true" />
-                </button>
-                <ContentComponent
-                    deviceType={deviceType}
-                    accentColor={accentColor}
-                    onInstalled={handleInstalled}
-                    onRemindLater={handleRemindLater}
-                    onDismissForever={handleDismissForever}
-                />
-            </div>
-        </div>,
-        document.body
+            {isDesktop ? <DesktopContent /> : <MobileContent deviceType={deviceType} />}
+        </Dialog>
     )
 }
 export default AppInstallPromptModal

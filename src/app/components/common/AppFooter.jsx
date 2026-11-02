@@ -3,7 +3,7 @@ import SplitRail from '@taylorurl/split-rail'
 import { useVersion } from '../../hooks/useVersion'
 
 /** Per-surface palette. The app shell follows the theme tokens so the bar
- *  reads in the dark, light, and gray themes alike; the login portal sits on
+ *  reads in the light and dark themes alike; the login portal sits on
  *  its own video backdrop, so there the bar mirrors that page's glass header
  *  instead. */
 const TONES = {

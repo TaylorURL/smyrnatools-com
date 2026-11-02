@@ -9,7 +9,12 @@ import { StatisticsTimeRange } from '../../common/StatisticsTimeRange'
  * the two views can stay scoped differently. An empty `selectedPlant` means
  * every plant in the region.
  */
-function PlantFilterMenu({ accentColor, availablePlants, plantNames, selectedPlant, setSelectedPlant }) {
+const OPTION_CLASS =
+    'flex h-8 w-full items-center rounded-[4px] border-none px-2.5 text-left text-[13px] cursor-pointer text-text-primary transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent'
+const OPTION_ON = 'bg-bg-tertiary font-medium'
+const OPTION_OFF = 'bg-transparent hover:bg-bg-hover'
+
+function PlantFilterMenu({ availablePlants, plantNames, selectedPlant, setSelectedPlant }) {
     const [open, setOpen] = useState(false)
     return (
         <div className="relative">
@@ -19,24 +24,19 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNames, selectedPla
                 aria-haspopup="listbox"
                 aria-expanded={open}
                 aria-label="Filter every chart and table to a single plant"
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
-                style={{
-                    backgroundColor: selectedPlant ? `${accentColor}20` : 'var(--bg-tertiary)',
-                    color: selectedPlant ? accentColor : 'var(--text-secondary)'
-                }}
+                className="btn-secondary"
             >
-                <i className="fas fa-industry text-[11px]" />
                 <span>
                     {selectedPlant
                         ? `Plant · ${plantNames?.get(selectedPlant) ? selectedPlant : selectedPlant}`
-                        : 'All Plants'}
+                        : 'All plants'}
                 </span>
-                <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} />
+                <i className="fas fa-chevron-down text-[10px] text-text-tertiary" aria-hidden="true" />
             </button>
             {open && (
                 <div
                     role="listbox"
-                    className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-raised min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light"
+                    className="absolute left-0 top-full mt-1 rounded-card p-1 shadow-modal z-raised min-w-[240px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light"
                 >
                     <button
                         type="button"
@@ -46,14 +46,9 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNames, selectedPla
                             setSelectedPlant('')
                             setOpen(false)
                         }}
-                        className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:bg-bg-hover"
-                        style={{
-                            backgroundColor: !selectedPlant ? `${accentColor}15` : 'transparent',
-                            color: !selectedPlant ? accentColor : 'var(--text-primary)'
-                        }}
+                        className={`${OPTION_CLASS} ${!selectedPlant ? OPTION_ON : OPTION_OFF}`}
                     >
-                        <span>All plants</span>
-                        {!selectedPlant && <i className="fas fa-check text-[10px]" />}
+                        All plants
                     </button>
                     {availablePlants.length === 0 ? (
                         <div className="px-3 py-2 text-[11px] text-text-tertiary">No plants with assets in scope</div>
@@ -70,14 +65,9 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNames, selectedPla
                                         setSelectedPlant(code)
                                         setOpen(false)
                                     }}
-                                    className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:bg-bg-hover"
-                                    style={{
-                                        backgroundColor: isActive ? `${accentColor}15` : 'transparent',
-                                        color: isActive ? accentColor : 'var(--text-primary)'
-                                    }}
+                                    className={`${OPTION_CLASS} ${isActive ? OPTION_ON : OPTION_OFF}`}
                                 >
                                     <span className="truncate">{label}</span>
-                                    {isActive && <i className="fas fa-check text-[10px]" />}
                                 </button>
                             )
                         })
@@ -120,7 +110,6 @@ export function AssetStatisticsControls({
             <StatisticsTimeRange accentColor={accentColor} period={period} {...periodProps} />
             <span className="hidden md:inline-block w-px h-5 bg-border-light mx-1" aria-hidden="true" />
             <PlantFilterMenu
-                accentColor={accentColor}
                 availablePlants={availablePlants}
                 plantNames={plantNames}
                 selectedPlant={selectedPlant}
@@ -130,9 +119,9 @@ export function AssetStatisticsControls({
                 <button
                     type="button"
                     onClick={() => setSelectedPlant('')}
-                    className="text-[11px] font-semibold border-none bg-transparent cursor-pointer text-text-secondary hover:text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded px-1"
+                    className="text-[13px] border-none bg-transparent cursor-pointer text-text-secondary underline-offset-2 hover:text-text-primary hover:underline transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded px-1"
                 >
-                    Clear Plant
+                    Clear plant
                 </button>
             )}
         </div>

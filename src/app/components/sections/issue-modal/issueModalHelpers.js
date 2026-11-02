@@ -13,17 +13,3 @@ export const formatDate = (dateString) => {
     if (days < 7) return `${days}d ago`
     return formatCentralDate(date)
 }
-
-export const getInitials = (mgr) => {
-    if (!mgr) return '?'
-    const f = mgr.firstName?.[0] || ''
-    const l = mgr.lastName?.[0] || ''
-    return (f + l).toUpperCase() || '?'
-}
-
-export const getNameInitials = (name) => {
-    if (!name || name === 'Unknown') return '?'
-    const parts = name.split(' ')
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-    return name.slice(0, 2).toUpperCase()
-}

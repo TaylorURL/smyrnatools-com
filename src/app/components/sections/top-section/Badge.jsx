@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react'
 
 import { BADGE_PILL_TINTS } from '../../../constants/topSectionConstants'
-import Badge from '../../common/Badge'
 
 /**
- * Splits a summary string like "5 Active · 2 Shop" into one tinted pill per
- * segment. Anything that does not parse into a count and a label, or whose
+ * Splits a summary string like "5 Active · 2 Shop" into one count per
+ * segment, read as a line of figures: a small square in the status colour, the
+ * number set large, its label beside it. Each one filters the list. Anything that does not parse into a count and a label, or whose
  * label has no entry in BADGE_PILL_TINTS, falls back to a single pill in the
  * caller's accent colour.
  *
@@ -34,33 +34,32 @@ const TopSectionBadgeRow = ({ children, onClick, onPillClick, accentColor }) => 
 
     if (parsed.length >= 2) {
         return (
-            <div className="flex items-center gap-1 flex-wrap">
+            <div className="flex flex-wrap items-baseline gap-x-1 gap-y-1">
                 {parsed.map(({ count, label }) => {
                     const tint = BADGE_PILL_TINTS[label]
                     if (!tint) return null
                     const num = parseInt(count, 10)
                     const isZeroVariant = label === 'Unassigned' && num === 0
-                    const color = isZeroVariant ? '#64748b' : tint
                     const handleClick = onPillClick ? () => onPillClick(label) : onClick
                     return (
-                        <Badge
+                        <button
+                            type="button"
                             key={label}
-                            variant="custom"
-                            size="md"
-                            shape="rounded"
-                            weight="semibold"
-                            uppercase={false}
                             onClick={handleClick}
-                            className="gap-1 border"
-                            style={{
-                                background: `${color}14`,
-                                borderColor: `${color}30`,
-                                color: 'var(--text-primary)'
-                            }}
+                            className="group inline-flex items-baseline gap-1.5 rounded-[3px] border-none bg-transparent px-2 py-1 first:-ml-2 cursor-pointer transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                         >
-                            <span className="font-mono tabular-nums">{count}</span>
-                            <span>{label}</span>
-                        </Badge>
+                            <span
+                                className="relative -top-px inline-block h-2 w-2 shrink-0 self-center rounded-[2px]"
+                                style={{ background: isZeroVariant ? 'var(--status-spare)' : tint }}
+                                aria-hidden="true"
+                            />
+                            <span className="font-heading text-[20px] font-semibold leading-none tabular-nums text-text-primary">
+                                {count}
+                            </span>
+                            <span className="text-[13px] text-text-secondary group-hover:text-text-primary">
+                                {label}
+                            </span>
+                        </button>
                     )
                 })}
             </div>
@@ -68,22 +67,14 @@ const TopSectionBadgeRow = ({ children, onClick, onPillClick, accentColor }) => 
     }
 
     return (
-        <Badge
-            variant="custom"
-            size="md"
-            shape="rounded"
-            weight="semibold"
-            uppercase={false}
+        <button
+            type="button"
             onClick={onClick}
-            className="border"
-            style={{
-                background: `${accentColor}14`,
-                borderColor: `${accentColor}30`,
-                color: 'var(--text-primary)'
-            }}
+            className="inline-flex items-baseline gap-1.5 rounded-[3px] border-none bg-transparent px-2 py-1 -ml-2 text-[13px] text-text-secondary cursor-pointer hover:bg-bg-hover hover:text-text-primary"
+            style={{ boxShadow: `inset 2px 0 0 ${accentColor}` }}
         >
             {children}
-        </Badge>
+        </button>
     )
 }
 

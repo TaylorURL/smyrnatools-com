@@ -138,34 +138,22 @@ function HistoryViewSection({ item, onClose, type }) {
     const renderContent = () => {
         if (isLoading) {
             return (
-                <div className="px-6 py-6">
-                    <SkeletonStack count={5} gapClassName="gap-3">
-                        {(i) => (
-                            <div className="rounded-md p-4 bg-bg-secondary border border-border-light">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <Skeleton className="h-8 w-8" rounded="rounded-full" />
-                                    <div className="flex-1">
-                                        <Skeleton className="h-3.5 w-40 mb-1.5" />
-                                        <Skeleton className="h-3 w-24" />
-                                    </div>
-                                </div>
-                                <Skeleton className={`h-3 ${['w-full', 'w-3/4', 'w-5/6', 'w-2/3', 'w-1/2'][i % 5]}`} />
-                            </div>
-                        )}
-                    </SkeletonStack>
-                </div>
+                <SkeletonStack count={5} gapClassName="gap-0">
+                    {(i) => (
+                        <div className="border-b border-border-light py-3">
+                            <Skeleton className="mb-2 h-3.5 w-40" />
+                            <Skeleton className={`h-3 ${['w-full', 'w-3/4', 'w-5/6', 'w-2/3', 'w-1/2'][i % 5]}`} />
+                        </div>
+                    )}
+                </SkeletonStack>
             )
         }
         if (error) {
             return (
-                <div className="text-center py-8 text-text-primary">
-                    <p>{error}</p>
-                    <button
-                        type="button"
-                        className="bg-red-600 text-white border-none rounded-lg px-5 py-2.5 mt-4 text-sm font-semibold cursor-pointer hover:bg-red-700"
-                        onClick={fetchHistory}
-                    >
-                        Retry
+                <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+                    <p className="m-0 text-[13px] text-text-secondary">{error}</p>
+                    <button type="button" className="btn-secondary" onClick={fetchHistory}>
+                        Try again
                     </button>
                 </div>
             )

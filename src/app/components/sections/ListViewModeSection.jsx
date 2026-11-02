@@ -79,17 +79,20 @@ function ListViewModeSection({
             : 'bg-[color:var(--notice-warning-bg-strong)] hover:brightness-95'
         const text = 'text-text-primary'
         const cursor = isVerified ? 'cursor-default' : 'cursor-pointer'
-        return `inline-flex items-center gap-1 border-none rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${cursor} ${bg} ${text}`
+        return `inline-flex items-center gap-1 border-none rounded text-[12px] font-medium px-1.5 py-0.5 ${cursor} ${bg} ${text}`
     }
 
     // Horizontal scroll lives on the outer wrapper; the inner container sets a
     // min-width on mobile so the dense column set forces overflow inside the
     // table area instead of bleeding past the viewport edge.
-    const wrapperClasses = `mb-5 overflow-x-auto ${isMobile ? 'mx-1 mt-2' : 'mx-4 lg:mx-6 mt-3'}`
+    // On desktop the column headings above end the toolbar, and this card
+    // continues them: no top border, square top corners, same side inset.
+    const wrapperClasses = `mb-8 overflow-x-auto ${isMobile ? 'mx-3 mt-1' : 'mx-4 sm:mx-6 lg:mx-8 mt-0'}`
     const containerStyle = {
         background: 'var(--bg-primary)',
         border: '1px solid var(--border-light)',
-        borderRadius: 6,
+        borderTop: isMobile ? '1px solid var(--border-light)' : 'none',
+        borderRadius: isMobile ? 6 : '0 0 6px 6px',
         overflow: 'hidden'
     }
     const containerClasses = `box-border ${isMobile ? 'min-w-[1100px]' : 'w-full'}`
@@ -130,7 +133,10 @@ function ListViewModeSection({
                                     style: {
                                         animationDelay: `${getRowDelay(index)}ms`,
                                         backgroundColor: 'var(--bg-primary)',
-                                        borderBottom: '1px solid var(--border-light)',
+                                        borderBottom:
+                                            index === filteredItems.length - 1
+                                                ? 'none'
+                                                : '1px solid var(--border-light)',
                                         cursor: 'pointer',
                                         ...row.props.style
                                     }

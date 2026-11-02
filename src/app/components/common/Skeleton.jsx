@@ -2,7 +2,7 @@ import React from 'react'
 
 /**
  * Loading placeholder block. Pulses on the tertiary surface token so it stays
- * legible in the light, dark, and gray themes, and holds still for
+ * legible in the light and dark themes, and holds still for
  * reduced-motion users. Hidden from assistive tech — announce the loading state
  * from the container instead, as `SkeletonStack` does.
  */

@@ -1,16 +1,20 @@
-import React, { useEffect, useRef, useState } from 'react'
-import ReactDOM from 'react-dom'
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react'
 
 import MessageService from '../../../services/MessageService'
 import UserUtility from '../../../utils/UserUtility'
-import { SECTION_LABEL_CLASS } from '../../constants/notificationsConstants'
 import { usePreferences } from '../../context/PreferencesContext'
 import UserAvatar from '../common/UserAvatar'
+import Dialog, { DIALOG_INPUT, DIALOG_TEXTAREA, DialogField } from '../ui/Dialog'
+
+/** Role and plant under a recipient's name. */
+function recipientMeta(recipient) {
+    return `${recipient.roleName || ''}${recipient.plantCode ? ` · ${recipient.plantCode}` : ''}`
+}
 
 /** Modal for composing a brand new message thread. Loads the regional
  *  recipient list on mount, supports search, and shows a confirmation
  *  state after the message sends successfully. */
-export default function ComposeModal({ accentColor, onClose, onSend }) {
+export default function ComposeModal({ onClose, onSend }) {
     const { preferences } = usePreferences()
     const regionCode = preferences?.selectedRegion?.code || ''
     const [recipients, setRecipients] = useState([])
@@ -24,6 +28,18 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
     const [dropdownOpen, setDropdownOpen] = useState(false)
     const [loadingRecipients, setLoadingRecipients] = useState(true)
     const dropdownRef = useRef(null)
+    const toId = useId()
+    const subjectId = useId()
+    const bodyId = useId()
+
+    // The parent hands this a fresh `onClose` whenever it re-renders (a new
+    // message arriving is enough), and the dialog re-runs its focus handling
+    // on every new identity. One stable close keeps focus where the writer is.
+    const onCloseRef = useRef(onClose)
+    useEffect(() => {
+        onCloseRef.current = onClose
+    })
+    const handleClose = useCallback(() => onCloseRef.current?.(), [])
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -73,244 +89,184 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
         setSending(false)
     }
 
-    const fieldStyle = {
-        background: 'var(--bg-secondary)',
-        border: '1px solid var(--border-light)',
-        color: 'var(--text-primary)'
-    }
+    const cannotSend = !selectedRecipient || !body.trim() || sending
 
-    if (typeof document === 'undefined' || !document.body) return null
-
-    return ReactDOM.createPortal(
-        <div
-            className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-[var(--scrim)] animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
-            onClick={(e) => {
-                if (e.target === e.currentTarget) onClose()
-            }}
-        >
-            <div
-                className="w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden rounded bg-bg-primary border border-border-light"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-center justify-between px-3 py-2 border-b border-border-light">
-                    <div className="flex items-center gap-2">
-                        <div
-                            className="flex h-6 w-6 items-center justify-center rounded bg-bg-tertiary"
-                            style={{ color: accentColor }}
-                        >
-                            <i className="fas fa-pen text-[11px]" />
-                        </div>
-                        <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
-                            New Message
-                        </span>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="flex h-6 w-6 items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.92]"
-                        aria-label="Close"
-                    >
-                        <i className="fas fa-times text-[11px]" />
+    return (
+        <Dialog
+            open
+            onClose={handleClose}
+            size="md"
+            title={sent ? 'Message sent' : 'New message'}
+            footer={
+                sent ? (
+                    <button type="button" onClick={handleClose} className="btn-primary">
+                        Done
                     </button>
+                ) : (
+                    <>
+                        <button type="button" onClick={handleClose} className="btn-secondary">
+                            Cancel
+                        </button>
+                        <button type="button" onClick={handleSend} disabled={cannotSend} className="btn-primary">
+                            {sending && <i className="fas fa-spinner animate-dv-spin text-[12px]" aria-hidden="true" />}
+                            {sending ? 'Sending…' : 'Send'}
+                        </button>
+                    </>
+                )
+            }
+        >
+            {sent ? (
+                <div className="flex min-h-[120px] flex-col items-center justify-center gap-1 text-center">
+                    <p className="m-0 text-[15px] font-medium text-text-primary">
+                        Sent to {selectedRecipient?.firstName} {selectedRecipient?.lastName}
+                    </p>
+                    <p className="m-0 text-[13px] text-text-secondary">They will receive it in their messages.</p>
                 </div>
-
-                <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
-                    {sent ? (
-                        <div className="flex flex-col items-center gap-3 py-6 text-center">
-                            <div className="w-12 h-12 rounded flex items-center justify-center bg-green-100 text-text-primary">
-                                <i className="fas fa-check text-lg" />
-                            </div>
-                            <div className="text-[14px] font-semibold text-text-primary">Message Sent</div>
-                            <p className="text-[12px] text-text-secondary">
-                                {selectedRecipient?.firstName} {selectedRecipient?.lastName} will receive your message
-                            </p>
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                                style={{ background: accentColor }}
-                            >
-                                Done
-                            </button>
-                        </div>
-                    ) : (
-                        <>
-                            <div>
-                                <label className={`block ${SECTION_LABEL_CLASS} mb-1.5 text-text-secondary`}>To</label>
-                                <div ref={dropdownRef} className="relative">
-                                    {selectedRecipient ? (
+            ) : (
+                <div className="flex flex-col gap-4">
+                    <DialogField label="To" htmlFor={toId}>
+                        <div ref={dropdownRef} className="relative">
+                            {selectedRecipient ? (
+                                <div className="flex min-h-[36px] items-center gap-2.5 rounded-[4px] border border-border-medium bg-bg-primary py-1 pl-2 pr-1">
+                                    <UserAvatar
+                                        userId={selectedRecipient.id}
+                                        initials={UserUtility.getInitials(
+                                            `${selectedRecipient.firstName} ${selectedRecipient.lastName}`
+                                        )}
+                                        size="sm"
+                                    />
+                                    <div className="flex min-w-0 flex-1 items-baseline gap-2">
+                                        <span className="truncate text-[13px] font-medium text-text-primary">
+                                            {selectedRecipient.firstName} {selectedRecipient.lastName}
+                                        </span>
+                                        <span className="truncate text-[12px] text-text-secondary">
+                                            {recipientMeta(selectedRecipient)}
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedRecipient(null)}
+                                        className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+                                        aria-label="Clear recipient"
+                                    >
+                                        <i className="fas fa-times text-[12px]" aria-hidden="true" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="relative">
+                                        <i
+                                            aria-hidden="true"
+                                            className="fas fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary"
+                                        />
+                                        <input
+                                            id={toId}
+                                            type="search"
+                                            value={recipientSearch}
+                                            onChange={(e) => {
+                                                setRecipientSearch(e.target.value)
+                                                setDropdownOpen(true)
+                                            }}
+                                            onFocus={() => setDropdownOpen(true)}
+                                            onKeyDown={(e) => {
+                                                // Escape closes the results first, not the whole message.
+                                                if (e.key === 'Escape' && dropdownOpen) {
+                                                    e.stopPropagation()
+                                                    setDropdownOpen(false)
+                                                }
+                                            }}
+                                            placeholder="Search by name, role or plant"
+                                            aria-label="Search recipients"
+                                            aria-expanded={dropdownOpen}
+                                            aria-haspopup="listbox"
+                                            data-autofocus
+                                            className={`${DIALOG_INPUT} pl-8 [&::-webkit-search-cancel-button]:hidden`}
+                                        />
+                                    </div>
+                                    {dropdownOpen && (
                                         <div
-                                            className="flex items-center gap-2.5 px-2.5 py-2 rounded"
-                                            style={fieldStyle}
+                                            role="listbox"
+                                            className="absolute left-0 right-0 z-raised mt-1 max-h-60 overflow-y-auto rounded-card border border-border-light bg-bg-primary shadow-modal"
                                         >
-                                            <UserAvatar
-                                                userId={selectedRecipient.id}
-                                                initials={UserUtility.getInitials(
-                                                    `${selectedRecipient.firstName} ${selectedRecipient.lastName}`
-                                                )}
-                                                size="md"
-                                                rounded="md"
-                                            />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-[12.5px] font-semibold truncate text-text-primary">
-                                                    {selectedRecipient.firstName} {selectedRecipient.lastName}
+                                            {loadingRecipients ? (
+                                                <div className="px-3 py-3 text-center text-[13px] text-text-secondary">
+                                                    Loading people…
                                                 </div>
-                                                <div className="text-[10.5px] truncate text-text-secondary">
-                                                    {selectedRecipient.roleName}
-                                                    {selectedRecipient.plantCode
-                                                        ? ` · ${selectedRecipient.plantCode}`
-                                                        : ''}
+                                            ) : filteredRecipients.length === 0 ? (
+                                                <div className="px-3 py-3 text-center text-[13px] text-text-secondary">
+                                                    No one matches that search
                                                 </div>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => setSelectedRecipient(null)}
-                                                className="text-[11px] flex h-6 w-6 items-center justify-center rounded hover:bg-bg-tertiary text-text-secondary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                                                aria-label="Clear recipient"
-                                            >
-                                                <i className="fas fa-times" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="relative">
-                                                <i
-                                                    aria-hidden="true"
-                                                    className="fas fa-magnifying-glass pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary"
-                                                />
-                                                <input
-                                                    type="search"
-                                                    value={recipientSearch}
-                                                    onChange={(e) => {
-                                                        setRecipientSearch(e.target.value)
-                                                        setDropdownOpen(true)
-                                                    }}
-                                                    onFocus={() => setDropdownOpen(true)}
-                                                    placeholder="Search by name, role, or plant…"
-                                                    aria-label="Search recipients"
-                                                    aria-expanded={dropdownOpen}
-                                                    aria-haspopup="listbox"
-                                                    className="w-full pl-7 pr-2.5 py-1.5 rounded text-[12.5px] outline-none placeholder:text-text-tertiary transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
-                                                    style={fieldStyle}
-                                                />
-                                            </div>
-                                            {dropdownOpen && (
-                                                <div
-                                                    role="listbox"
-                                                    className="absolute left-0 right-0 z-raised mt-1 max-h-52 overflow-y-auto rounded py-1 bg-bg-primary border border-border-light shadow-lg"
-                                                >
-                                                    {loadingRecipients ? (
-                                                        <div className="px-3 py-2 text-[12px] text-center text-text-secondary">
-                                                            <i className="fas fa-spinner animate-dv-spin mr-1.5" />
-                                                            Loading…
-                                                        </div>
-                                                    ) : filteredRecipients.length === 0 ? (
-                                                        <div className="px-3 py-2 text-[12px] text-center text-text-secondary">
-                                                            No results found
-                                                        </div>
-                                                    ) : (
-                                                        filteredRecipients.map((r) => (
-                                                            <button
-                                                                type="button"
-                                                                key={r.id}
-                                                                role="option"
-                                                                aria-selected={false}
-                                                                onClick={() => {
-                                                                    setSelectedRecipient(r)
-                                                                    setDropdownOpen(false)
-                                                                    setRecipientSearch('')
-                                                                }}
-                                                                className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary focus-visible:bg-bg-tertiary focus-visible:outline-none text-text-primary active:scale-[0.97]"
-                                                            >
-                                                                <UserAvatar
-                                                                    userId={r.id}
-                                                                    initials={UserUtility.getInitials(
-                                                                        `${r.firstName} ${r.lastName}`
-                                                                    )}
-                                                                    size={24}
-                                                                    rounded="md"
-                                                                />
-                                                                <div className="flex-1 min-w-0">
-                                                                    <div className="text-[12px] font-semibold truncate">
-                                                                        {r.firstName} {r.lastName}
-                                                                    </div>
-                                                                    <div className="text-[10.5px] truncate text-text-secondary">
-                                                                        {r.roleName}
-                                                                        {r.plantCode ? ` · ${r.plantCode}` : ''}
-                                                                    </div>
-                                                                </div>
-                                                            </button>
-                                                        ))
-                                                    )}
-                                                </div>
+                                            ) : (
+                                                filteredRecipients.map((r) => (
+                                                    <button
+                                                        type="button"
+                                                        key={r.id}
+                                                        role="option"
+                                                        aria-selected={false}
+                                                        onClick={() => {
+                                                            setSelectedRecipient(r)
+                                                            setDropdownOpen(false)
+                                                            setRecipientSearch('')
+                                                        }}
+                                                        className="flex w-full cursor-pointer items-center gap-2.5 border-b border-border-light bg-transparent px-3 py-2 text-left text-text-primary transition-colors duration-150 last:border-b-0 hover:bg-bg-hover focus-visible:bg-bg-hover focus-visible:outline-none motion-reduce:transition-none"
+                                                    >
+                                                        <UserAvatar
+                                                            userId={r.id}
+                                                            initials={UserUtility.getInitials(
+                                                                `${r.firstName} ${r.lastName}`
+                                                            )}
+                                                            size="sm"
+                                                        />
+                                                        <span className="min-w-0 flex-1">
+                                                            <span className="block truncate text-[13px] font-medium">
+                                                                {r.firstName} {r.lastName}
+                                                            </span>
+                                                            <span className="block truncate text-[12px] text-text-secondary">
+                                                                {recipientMeta(r)}
+                                                            </span>
+                                                        </span>
+                                                    </button>
+                                                ))
                                             )}
-                                        </>
+                                        </div>
                                     )}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className={`block ${SECTION_LABEL_CLASS} mb-1.5 text-text-secondary`}>
-                                    Subject
-                                </label>
-                                <input
-                                    type="text"
-                                    value={subject}
-                                    onChange={(e) => setSubject(e.target.value)}
-                                    placeholder="Subject (optional)"
-                                    className="w-full px-2.5 py-1.5 rounded text-[12.5px] outline-none placeholder:text-text-tertiary transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30"
-                                    style={fieldStyle}
-                                />
-                            </div>
-
-                            <div>
-                                <label className={`block ${SECTION_LABEL_CLASS} mb-1.5 text-text-secondary`}>
-                                    Message
-                                </label>
-                                <textarea
-                                    value={body}
-                                    onChange={(e) => setBody(e.target.value)}
-                                    placeholder="Write your message…"
-                                    rows="5"
-                                    className="w-full px-2.5 py-1.5 rounded text-[12.5px] outline-none resize-y placeholder:text-text-tertiary transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30"
-                                    style={{ ...fieldStyle, fontFamily: 'inherit', lineHeight: 1.55 }}
-                                />
-                            </div>
-
-                            {error && (
-                                <div className="px-2.5 py-1.5 rounded text-[12px] font-medium bg-red-100 text-text-primary">
-                                    <i className="fas fa-exclamation-triangle mr-1.5" />
-                                    {error}
-                                </div>
+                                </>
                             )}
+                        </div>
+                    </DialogField>
 
-                            <button
-                                type="button"
-                                onClick={handleSend}
-                                disabled={!selectedRecipient || !body.trim() || sending}
-                                className="w-full flex items-center justify-center gap-1.5 py-2 rounded text-[10.5px] font-semibold uppercase tracking-wider active:scale-[0.97] disabled:active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                                style={{
-                                    background:
-                                        !selectedRecipient || !body.trim() || sending
-                                            ? 'var(--bg-tertiary)'
-                                            : accentColor,
-                                    color:
-                                        !selectedRecipient || !body.trim() || sending
-                                            ? 'var(--text-tertiary)'
-                                            : 'white',
-                                    cursor: !selectedRecipient || !body.trim() || sending ? 'not-allowed' : 'pointer'
-                                }}
-                            >
-                                <i
-                                    className={`fas ${sending ? 'fa-spinner animate-dv-spin' : 'fa-paper-plane'} text-[10px]`}
-                                />
-                                {sending ? 'Sending…' : 'Send Message'}
-                            </button>
-                        </>
+                    <DialogField label="Subject" htmlFor={subjectId}>
+                        <input
+                            id={subjectId}
+                            type="text"
+                            value={subject}
+                            onChange={(e) => setSubject(e.target.value)}
+                            placeholder="Optional"
+                            className={DIALOG_INPUT}
+                        />
+                    </DialogField>
+
+                    <DialogField label="Message" htmlFor={bodyId}>
+                        <textarea
+                            id={bodyId}
+                            value={body}
+                            onChange={(e) => setBody(e.target.value)}
+                            placeholder="Write your message"
+                            rows="6"
+                            className={DIALOG_TEXTAREA}
+                        />
+                    </DialogField>
+
+                    {error && (
+                        <div
+                            role="alert"
+                            className="rounded-[4px] border border-[color:var(--notice-danger-border)] bg-[color:var(--notice-danger-bg)] px-3 py-2 text-[13px] text-[color:var(--notice-danger-strong)]"
+                        >
+                            {error}
+                        </div>
                     )}
                 </div>
-            </div>
-        </div>,
-        document.body
+            )}
+        </Dialog>
     )
 }

@@ -1,6 +1,7 @@
 import React from 'react'
 
 import Badge from '../../app/components/common/Badge'
+import CountBubble from '../../app/components/common/CountBubble'
 import StarRating from '../../app/components/common/StarRating'
 import StatusHistoryBar from '../../app/components/common/StatusHistoryBar'
 
@@ -26,13 +27,15 @@ const STATUS_TO_TONE = {
 }
 
 const ICON_BUTTON_CLASS =
-    'relative inline-flex items-center justify-center w-[22px] h-[22px] rounded-md border-none bg-transparent text-[11px] text-text-tertiary cursor-pointer transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset'
+    'relative inline-flex items-center justify-center w-7 h-7 rounded-md border-none bg-transparent text-[11px] text-text-tertiary cursor-pointer transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset'
 
-const CELL_BASE_CLASS = 'border-b border-border-light px-2.5 py-1.5 text-[12px] align-middle text-text-primary'
-const CELL_BOLD_CLASS = `${CELL_BASE_CLASS} text-[12.5px] font-bold`
+/** Operator comment/history controls, sitting on the name's own line so a
+ *  row is one line tall unless the operator has trainees to list. */
+const OPERATOR_ACTION_CLASS =
+    'relative inline-flex items-center justify-center w-6 h-6 rounded-md border-none bg-transparent text-[10.5px] text-text-tertiary cursor-pointer transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset'
 
-/** 9+ clamp for badge counts (keeps inline icon-button dot visually round). */
-const formatBadgeCount = (count) => (count > 9 ? '9+' : count)
+const CELL_BASE_CLASS = 'px-3 py-2.5 text-[13px] align-middle text-text-primary'
+const CELL_BOLD_CLASS = `${CELL_BASE_CLASS} font-semibold`
 
 const getStatusToneForStatus = (status) => STATUS_TO_TONE[status] || 'neutral'
 
@@ -148,8 +151,40 @@ export default function AssetListRow({
                     {operator?.name ? (
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-1">
-                                <span className="font-medium">{operator.name}</span>
+                                <span className="whitespace-nowrap font-medium">{operator.name}</span>
                                 {copyButton(operator.name, 'Copy operator name')}
+                                <span className="ml-1 inline-flex items-center gap-0.5 border-l border-border-light pl-1">
+                                    <button
+                                        type="button"
+                                        onClick={(event) => {
+                                            event.stopPropagation()
+                                            onOperatorComment?.(operator)
+                                        }}
+                                        className={OPERATOR_ACTION_CLASS}
+                                        title="Operator comments"
+                                        aria-label="Operator comments"
+                                    >
+                                        <i className="fas fa-comment" aria-hidden="true" />
+                                        <CountBubble
+                                            count={operator.commentsCount}
+                                            size="sm"
+                                            tone="accent"
+                                            className="absolute -right-1.5 -top-1.5"
+                                        />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(event) => {
+                                            event.stopPropagation()
+                                            onOperatorHistory?.(operator)
+                                        }}
+                                        className={OPERATOR_ACTION_CLASS}
+                                        title="Operator history"
+                                        aria-label="Operator history"
+                                    >
+                                        <i className="fas fa-history" aria-hidden="true" />
+                                    </button>
+                                </span>
                             </div>
                             {assignedTrainees.length > 0 && (
                                 <div className="flex flex-wrap items-center gap-1">
@@ -170,57 +205,6 @@ export default function AssetListRow({
                                     ))}
                                 </div>
                             )}
-                            <div className="flex items-center gap-1">
-                                <Badge
-                                    as="button"
-                                    tone="neutral"
-                                    variant="custom"
-                                    size="sm"
-                                    shape="rounded-md"
-                                    weight="semibold"
-                                    uppercase={false}
-                                    icon="comment"
-                                    onClick={(event) => {
-                                        event.stopPropagation()
-                                        onOperatorComment?.(operator)
-                                    }}
-                                    title="Operator comments"
-                                    aria-label="Operator comments"
-                                    className="relative bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                                >
-                                    <span>Comments</span>
-                                    {operator.commentsCount > 0 && (
-                                        <Badge
-                                            tone="accent"
-                                            size="xs"
-                                            shape="pill"
-                                            uppercase={false}
-                                            className="absolute -top-0.5 -right-0.5 min-w-[12px] justify-center"
-                                        >
-                                            {formatBadgeCount(operator.commentsCount)}
-                                        </Badge>
-                                    )}
-                                </Badge>
-                                <Badge
-                                    as="button"
-                                    tone="neutral"
-                                    variant="custom"
-                                    size="sm"
-                                    shape="rounded-md"
-                                    weight="semibold"
-                                    uppercase={false}
-                                    icon="history"
-                                    onClick={(event) => {
-                                        event.stopPropagation()
-                                        onOperatorHistory?.(operator)
-                                    }}
-                                    title="Operator history"
-                                    aria-label="Operator history"
-                                    className="bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                                >
-                                    <span>History</span>
-                                </Badge>
-                            </div>
                         </div>
                     ) : (
                         <span className="italic text-text-tertiary">Unassigned</span>
@@ -388,17 +372,12 @@ export default function AssetListRow({
                             aria-label="View comments"
                         >
                             <i className="fas fa-comments" />
-                            {item.commentsCount > 0 && (
-                                <Badge
-                                    tone="accent"
-                                    size="xs"
-                                    shape="pill"
-                                    uppercase={false}
-                                    className="absolute -top-0.5 -right-0.5 min-w-[12px] justify-center"
-                                >
-                                    {formatBadgeCount(item.commentsCount)}
-                                </Badge>
-                            )}
+                            <CountBubble
+                                count={item.commentsCount}
+                                size="sm"
+                                tone="accent"
+                                className="absolute -right-1 -top-1"
+                            />
                         </button>
                         <button
                             type="button"
@@ -411,17 +390,12 @@ export default function AssetListRow({
                             aria-label="View issues"
                         >
                             <i className="fas fa-tools" />
-                            {item.openIssuesCount > 0 && (
-                                <Badge
-                                    tone="danger"
-                                    size="xs"
-                                    shape="pill"
-                                    uppercase={false}
-                                    className="absolute -top-0.5 -right-0.5 min-w-[12px] justify-center"
-                                >
-                                    {formatBadgeCount(item.openIssuesCount)}
-                                </Badge>
-                            )}
+                            <CountBubble
+                                count={item.openIssuesCount}
+                                size="sm"
+                                tone="danger"
+                                className="absolute -right-1 -top-1"
+                            />
                         </button>
                         <button
                             type="button"

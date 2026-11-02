@@ -89,11 +89,11 @@ function TopSection({
 
     useTopSectionHeight(forwardedRef)
 
-    const sectionClasses = `${tightTop ? 'px-4 py-3' : 'px-4 lg:px-6 py-3'} ${sticky ? 'sticky top-0 z-dropdown' : ''}`
-    const sectionStyle = {
-        background: 'var(--bg-primary)',
-        borderBottom: '1px solid var(--border-light)'
-    }
+    // In list view the column headings close the section and the table picks
+    // up straight under them, so the section drops its bottom padding there.
+    const endsWithListHeader = !isMobile && viewMode === 'list'
+    const sectionClasses = `${tightTop ? 'px-4' : 'px-4 sm:px-6 lg:px-8'} pt-4 ${endsWithListHeader ? 'pb-0' : 'pb-4'} ${sticky ? 'sticky top-0 z-dropdown' : ''}`
+    const sectionStyle = { background: 'var(--bg-secondary)' }
     const { revealControls, hideRealContent } = useRevealOnLoad(isLoading)
 
     const skeletonContent = <TopSectionSkeleton isMobile={isMobile} customBottomSkeleton={customBottomSkeleton} />
@@ -155,6 +155,7 @@ function TopSection({
                         plants={filteredPlants}
                         onSelect={onSelectedPlantChange}
                         showAllPlants={true}
+                        selectedPlantCode={selectedPlant || ''}
                         userPlantCode={userPlantCode}
                     />
                 )}
@@ -179,6 +180,7 @@ function TopSection({
                     plants={filteredPlants}
                     onSelect={onSelectedPlantChange}
                     showAllPlants={true}
+                    selectedPlantCode={selectedPlant || ''}
                     userPlantCode={userPlantCode}
                 />
             )}

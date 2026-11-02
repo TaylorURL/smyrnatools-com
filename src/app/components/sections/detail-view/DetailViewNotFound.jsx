@@ -11,7 +11,7 @@ export default function DetailViewNotFound({
 }) {
     return (
         <div
-            className={`${className} fixed top-16 left-0 right-0 bottom-0 z-shell flex flex-col items-center justify-center gap-5 bg-bg-secondary p-10 text-center`}
+            className={`${className} fixed bottom-0 right-0 left-[var(--rail-width,0px)] top-[var(--topbar-height,0px)] z-shell flex flex-col items-center justify-center gap-5 bg-bg-secondary p-10 text-center`}
         >
             <div
                 className="flex h-20 w-20 items-center justify-center rounded-[20px]"
@@ -26,7 +26,7 @@ export default function DetailViewNotFound({
             <button
                 type="button"
                 onClick={onClose || onBack}
-                className="flex items-center gap-2 rounded-xl border-none text-sm font-semibold text-[color:var(--on-accent)] cursor-pointer px-6 py-3"
+                className="flex items-center gap-2 rounded-card border-none text-sm font-semibold text-[color:var(--on-accent)] cursor-pointer px-6 py-3"
                 style={{ background: accent }}
             >
                 <i className="fas fa-arrow-left"></i> Go Back

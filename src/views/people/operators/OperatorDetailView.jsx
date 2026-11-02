@@ -99,7 +99,7 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
                         <>
                             <button
                                 type="button"
-                                className="global-button-secondary flex-1 justify-center"
+                                className="global-button-primary flex-1 justify-center"
                                 onClick={handleSave}
                                 disabled={isSaving || !canEditOperator}
                             >
@@ -109,7 +109,7 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
                             {canDeleteOperator && (
                                 <button
                                     type="button"
-                                    className="global-button-secondary flex-1 justify-center"
+                                    className="global-button-danger flex-1 justify-center"
                                     onClick={() => setShowDeleteConfirmation(true)}
                                     disabled={isSaving || !canEditOperator}
                                 >

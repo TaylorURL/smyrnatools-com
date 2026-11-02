@@ -1,8 +1,8 @@
-/* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo, useState } from 'react'
-import ReactDOM from 'react-dom'
 
-import { useAccentColor } from '../../hooks/useAccentColor'
+import Dialog from '../ui/Dialog'
+import DialogSearchField from './DialogSearchField'
+import useDialogClose from './useDialogClose'
 
 const plantCodeOf = (plant) => plant.plantCode || plant.plant_code || ''
 const plantNameOf = (plant) => plant.plantName || plant.plant_name || ''
@@ -36,7 +36,20 @@ const computeDistrictGroups = (plants) => {
         .sort((a, b) => a.name.localeCompare(b.name))
 }
 
+/** One ruled row of the list. `indent` lines a row up under an open region. */
+const rowClass = (selected, indent = false) =>
+    `flex w-full cursor-pointer items-center gap-3 border-0 border-b border-solid border-border-light py-2.5 pr-6 text-left text-[13px] text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none ${
+        indent ? 'pl-14' : 'pl-6'
+    } ${selected ? 'bg-bg-tertiary font-medium' : 'bg-transparent hover:bg-bg-hover'}`
+
 /**
+ * The plant picker: search in the toolbar, then plain ruled rows with the
+ * plant code in a mono column. In single-select mode a pick closes it; with
+ * `allowMultiple` every row is a checkbox and the footer clears or finishes.
+ * Above the plants it can offer "All plants", "My plants", the districts the
+ * plants belong to, or (with `regionGroups`) every region with its districts
+ * and plants folded under it.
+ *
  * @param {Object} props
  * @param {boolean} props.isOpen
  * @param {Function} props.onClose
@@ -47,6 +60,8 @@ const computeDistrictGroups = (plants) => {
  * @param {boolean} [props.showMyPlants=false]
  * @param {boolean} [props.allowMultiple=false]
  * @param {string[]} [props.selectedPlantCodes]
+ * @param {string} [props.selectedPlantCode] Current value in single-select
+ *   mode ('' or 'All' for every plant), so the open list can mark it.
  * @param {string} [props.userPlantCode]
  * @param {Array<Object>} [props.regionGroups]
  */
@@ -60,13 +75,14 @@ function PlantDropdownModal({
     showMyPlants = false,
     allowMultiple = false,
     selectedPlantCodes = [],
+    selectedPlantCode,
     userPlantCode = '',
     regionGroups = []
 }) {
     const [search, setSearch] = useState('')
     const [localSelectedCodes, setLocalSelectedCodes] = useState(selectedPlantCodes || [])
     const [expandedRegions, setExpandedRegions] = useState({})
-    const accentColor = useAccentColor()
+    const { anchorRef, handleClose } = useDialogClose(onClose)
 
     useEffect(() => {
         if (isOpen) setLocalSelectedCodes(selectedPlantCodes || [])
@@ -76,15 +92,6 @@ function PlantDropdownModal({
     useEffect(() => {
         if (isOpen) setExpandedRegions({})
     }, [isOpen])
-
-    useEffect(() => {
-        if (!isOpen) return undefined
-        const handleKey = (event) => {
-            if (event.key === 'Escape') onClose?.()
-        }
-        document.addEventListener('keydown', handleKey)
-        return () => document.removeEventListener('keydown', handleKey)
-    }, [isOpen, onClose])
 
     const districtGroups = useMemo(() => computeDistrictGroups(plants), [plants])
     const userDistrict = useMemo(
@@ -142,309 +149,36 @@ function PlantDropdownModal({
 
     const hasRegions = regionGroups && regionGroups.length > 0
     const searchActive = search.trim().length > 0
+    // The region accordion already lists every plant under its region, so
+    // the flat list waits for a search there.
+    const showFlatPlants = allowMultiple || !hasRegions || searchActive
+    // A "Plants" band only where other rows sit above the plants.
+    const hasRowsAbovePlants =
+        (!allowMultiple && (showAllPlants || showMyPlants || hasRegions)) || districtGroups.length > 0
 
-    return ReactDOM.createPortal(
-        <div
-            className="fixed inset-0 z-system flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in-fast motion-reduce:animate-none"
-            onClick={allowMultiple ? undefined : onClose}
-            role="dialog"
-            aria-modal="true"
-            aria-label={allowMultiple ? 'Select Plants' : 'Select Plant'}
-        >
-            <div
-                className="flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-modal bg-bg-secondary border border-border-light shadow-modal animate-pop-in motion-reduce:animate-none"
-                onClick={(event) => event.stopPropagation()}
-            >
-                <div className="flex items-center justify-between rounded-t-modal border-b border-border-light bg-bg-tertiary/40 px-5 py-4">
-                    <h2 className="m-0 font-heading text-lg font-semibold" style={{ color: accentColor }}>
-                        {allowMultiple ? 'Select Plants' : 'Select Plant'}
-                    </h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        aria-label="Close"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-transparent text-base text-text-secondary transition-colors duration-150 hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
-                    >
-                        <i className="fas fa-times" aria-hidden="true" />
-                    </button>
-                </div>
-
-                <div className="relative border-b border-border-light px-4 py-3">
-                    <input
-                        type="text"
-                        placeholder={searchPlaceholder}
-                        aria-label={searchPlaceholder}
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        className="w-full rounded-md border border-border-light bg-bg-primary text-text-primary py-2.5 pl-10 pr-9 text-sm outline-none transition-colors duration-150 placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
-                    />
-                    <i
-                        className="fas fa-search absolute left-7 top-1/2 -translate-y-1/2 text-sm text-text-tertiary"
-                        aria-hidden="true"
-                    />
-                    {search && (
-                        <button
-                            type="button"
-                            onClick={() => setSearch('')}
-                            aria-label="Clear search"
-                            className="absolute right-6 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary transition-colors duration-150 hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
-                        >
-                            <i className="fas fa-times text-xs" aria-hidden="true" />
-                        </button>
-                    )}
-                </div>
-                <div className="flex-1 overflow-y-auto bg-bg-secondary p-2" role="listbox">
-                    {showAllPlants && !allowMultiple && (
-                        <PickerRow
-                            icon="fa-globe"
-                            accentColor={accentColor}
-                            onClick={() => {
-                                onSelect('All')
-                                onClose()
-                            }}
-                        >
-                            All Plants
-                        </PickerRow>
-                    )}
-                    {showMyPlants && !allowMultiple && (
-                        <PickerRow
-                            icon="fa-user-circle"
-                            accentColor={accentColor}
-                            onClick={() => {
-                                onSelect('MY_PLANTS')
-                                onClose()
-                            }}
-                        >
-                            My Plants
-                        </PickerRow>
-                    )}
-
-                    {!allowMultiple && hasRegions && !searchActive && (
-                        <>
-                            <Divider />
-                            <SectionLabel>Regions</SectionLabel>
-                            {regionGroups.map((region) => {
-                                const isExpanded = !!expandedRegions[region.code]
-                                const districts = region.districts || []
-                                const regionPlants = sortPlantsByCode(region.plants || [])
-                                return (
-                                    <div key={region.code} className="mb-1">
-                                        <div className="flex items-center gap-1 rounded-card hover:bg-bg-hover transition-colors duration-150">
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setExpandedRegions((prev) => ({
-                                                        ...prev,
-                                                        [region.code]: !prev[region.code]
-                                                    }))
-                                                }
-                                                aria-label={isExpanded ? 'Collapse region' : 'Expand region'}
-                                                aria-expanded={isExpanded}
-                                                className="ml-2 flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent text-text-tertiary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
-                                            >
-                                                <i
-                                                    className={`fas ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[11px]`}
-                                                    aria-hidden="true"
-                                                />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                role="option"
-                                                aria-selected={false}
-                                                onClick={() => {
-                                                    onSelect(`REGION:${region.code}`)
-                                                    onClose()
-                                                }}
-                                                className="flex flex-1 cursor-pointer items-center gap-3 rounded-card px-2 py-3 text-sm font-medium text-text-primary border-0 bg-transparent text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                                            >
-                                                <i
-                                                    className="fas fa-globe"
-                                                    style={{ color: accentColor }}
-                                                    aria-hidden="true"
-                                                />
-                                                <span className="flex-1">{region.name}</span>
-                                                <span className="text-xs text-text-tertiary tabular-nums">
-                                                    {region.plantCodes?.length || 0}
-                                                </span>
-                                            </button>
-                                        </div>
-                                        {isExpanded && (
-                                            <div className="ml-6 mt-1 mb-2 border-l border-border-light pl-2">
-                                                {districts.length > 0 && (
-                                                    <>
-                                                        <NestedLabel>Districts</NestedLabel>
-                                                        {districts.map((district) => (
-                                                            <NestedRow
-                                                                key={`${region.code}:${district.name}`}
-                                                                icon="fa-layer-group"
-                                                                accentColor={accentColor}
-                                                                count={district.plantCodes.length}
-                                                                onClick={() => {
-                                                                    onSelect(`DISTRICT:${district.name}`)
-                                                                    onClose()
-                                                                }}
-                                                            >
-                                                                {district.name}
-                                                            </NestedRow>
-                                                        ))}
-                                                    </>
-                                                )}
-                                                {regionPlants.length > 0 && (
-                                                    <>
-                                                        <NestedLabel className="mt-1">Plants</NestedLabel>
-                                                        {regionPlants.map((plant) => {
-                                                            const code = plantCodeOf(plant)
-                                                            return (
-                                                                <NestedRow
-                                                                    key={`${region.code}:${code}`}
-                                                                    onClick={() => {
-                                                                        onSelect(code)
-                                                                        onClose()
-                                                                    }}
-                                                                >
-                                                                    ({code}) {plantNameOf(plant)}
-                                                                </NestedRow>
-                                                            )
-                                                        })}
-                                                    </>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                            <Divider />
-                        </>
-                    )}
-
-                    {!allowMultiple && hasRegions && searchActive && <SectionLabel>Plants</SectionLabel>}
-
-                    {!allowMultiple && !hasRegions && districtGroups.length > 0 && (
-                        <>
-                            <Divider />
-                            {userDistrict && (
-                                <PickerRow
-                                    icon="fa-user-circle"
-                                    accentColor={accentColor}
-                                    onClick={() => {
-                                        onSelect(`DISTRICT:${userDistrict.name}`)
-                                        onClose()
-                                    }}
-                                    count={userDistrict.plantCodes.length}
-                                >
-                                    My District
-                                </PickerRow>
-                            )}
-                            {districtGroups.map((district) => (
-                                <PickerRow
-                                    key={district.name}
-                                    icon="fa-layer-group"
-                                    accentColor={accentColor}
-                                    onClick={() => {
-                                        onSelect(`DISTRICT:${district.name}`)
-                                        onClose()
-                                    }}
-                                    count={district.plantCodes.length}
-                                >
-                                    {district.name}
-                                </PickerRow>
-                            ))}
-                            <Divider />
-                        </>
-                    )}
-
-                    {allowMultiple && districtGroups.length > 0 && (
-                        <>
-                            <SectionLabel>Districts. Tap to toggle every plant</SectionLabel>
-                            {districtGroups.map((district) => {
-                                const codes = district.plantCodes
-                                const selectedInDistrict = codes.filter((code) =>
-                                    localSelectedCodes.includes(code)
-                                ).length
-                                const allSelected = codes.length > 0 && selectedInDistrict === codes.length
-                                const partial = selectedInDistrict > 0 && !allSelected
-                                return (
-                                    <button
-                                        type="button"
-                                        key={district.name}
-                                        role="option"
-                                        aria-selected={allSelected}
-                                        onClick={() => handleDistrictClickMulti(district)}
-                                        className={`mb-1 w-full flex items-center gap-3 rounded-card px-4 py-2.5 text-sm border-0 text-left cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${allSelected ? 'bg-accent/10 font-semibold text-text-primary' : 'text-text-primary hover:bg-bg-hover'}`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={allSelected}
-                                            ref={(el) => {
-                                                if (el) el.indeterminate = partial
-                                            }}
-                                            onChange={() => {}}
-                                            className="h-[18px] w-[18px] accent-accent"
-                                            tabIndex={-1}
-                                        />
-                                        <i
-                                            className="fas fa-layer-group"
-                                            style={{ color: accentColor }}
-                                            aria-hidden="true"
-                                        />
-                                        <span className="flex-1">{district.name}</span>
-                                        <span className="text-xs text-text-tertiary tabular-nums">
-                                            {selectedInDistrict}/{codes.length}
-                                        </span>
-                                    </button>
-                                )
-                            })}
-                            <Divider className="my-2" />
-                            <SectionLabel>Plants</SectionLabel>
-                        </>
-                    )}
-
-                    {/* The hierarchical region accordion already renders
-                        every plant nested under its region in office-mode
-                        single-select view. Suppressing the flat list while
-                        no search is active avoids a duplicate flat dump. */}
-                    {!allowMultiple && hasRegions && !searchActive
-                        ? null
-                        : sortedPlants.map((plant) => {
-                              const code = plantCodeOf(plant)
-                              const isSelected = allowMultiple && localSelectedCodes.includes(code)
-                              return (
-                                  <button
-                                      type="button"
-                                      key={code}
-                                      onClick={() => handlePlantClick(code)}
-                                      role="option"
-                                      aria-selected={isSelected}
-                                      className={`w-full flex items-center gap-3 rounded-card px-4 py-3 text-sm border-0 text-left cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${isSelected ? 'bg-accent/10 font-semibold text-text-primary' : 'text-text-primary hover:bg-bg-hover'}`}
-                                  >
-                                      {allowMultiple && (
-                                          <input
-                                              type="checkbox"
-                                              checked={isSelected}
-                                              onChange={() => {}}
-                                              className="h-[18px] w-[18px] accent-accent"
-                                              tabIndex={-1}
-                                          />
-                                      )}
-                                      <span className="text-text-primary">
-                                          ({code}) {plantNameOf(plant)}
-                                      </span>
-                                      {isSelected && (
-                                          <i className="fas fa-check ml-auto text-accent" aria-hidden="true" />
-                                      )}
-                                  </button>
-                              )
-                          })}
-
-                    {sortedPlants.length === 0 && searchActive && (
-                        <div className="px-4 py-8 text-center text-sm text-text-tertiary">
-                            No plants match “{search}”.
-                        </div>
-                    )}
-                </div>
-
-                {allowMultiple && (
-                    <div className="border-t border-border-light bg-bg-tertiary/40 px-4 py-3 flex items-center gap-2">
+    return (
+        <Dialog
+            open
+            onClose={handleClose}
+            size="md"
+            tall
+            title={allowMultiple ? 'Select plants' : 'Select plant'}
+            zClassName="z-system"
+            bodyClassName="p-0"
+            toolbar={
+                <DialogSearchField
+                    label={searchPlaceholder}
+                    onChange={setSearch}
+                    placeholder={searchPlaceholder}
+                    value={search}
+                />
+            }
+            footer={
+                allowMultiple ? (
+                    <>
+                        <span className="mr-auto text-[12px] tabular-nums text-text-secondary">
+                            {localSelectedCodes.length} selected
+                        </span>
                         <button
                             type="button"
                             onClick={() => {
@@ -455,74 +189,282 @@ function PlantDropdownModal({
                                 setLocalSelectedCodes([])
                             }}
                             disabled={localSelectedCodes.length === 0}
-                            className="rounded-md border border-border-light bg-bg-primary text-text-primary px-3 py-2 text-xs font-semibold transition-colors duration-150 hover:bg-bg-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none"
+                            className="btn-secondary"
                         >
                             Clear
                         </button>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 rounded-md border-0 px-5 py-3 text-sm font-semibold text-white transition-colors duration-150 hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none"
-                            style={{ backgroundColor: accentColor }}
-                        >
-                            Done ({localSelectedCodes.length} selected)
+                        <button type="button" onClick={onClose} className="btn-primary">
+                            Done
                         </button>
+                    </>
+                ) : undefined
+            }
+        >
+            <div ref={anchorRef} role="listbox" aria-label={allowMultiple ? 'Plants' : 'Plant'}>
+                {showAllPlants && !allowMultiple && (
+                    <PickerRow
+                        selected={
+                            selectedPlantCode !== undefined && (!selectedPlantCode || selectedPlantCode === 'All')
+                        }
+                        onClick={() => {
+                            onSelect('All')
+                            onClose()
+                        }}
+                    >
+                        All plants
+                    </PickerRow>
+                )}
+                {showMyPlants && !allowMultiple && (
+                    <PickerRow
+                        selected={selectedPlantCode === 'MY_PLANTS'}
+                        onClick={() => {
+                            onSelect('MY_PLANTS')
+                            onClose()
+                        }}
+                    >
+                        My plants
+                    </PickerRow>
+                )}
+
+                {!allowMultiple && hasRegions && !searchActive && (
+                    <>
+                        <GroupHeader>Regions</GroupHeader>
+                        {regionGroups.map((region) => {
+                            const isExpanded = !!expandedRegions[region.code]
+                            const districts = region.districts || []
+                            const regionPlants = sortPlantsByCode(region.plants || [])
+                            return (
+                                <div key={region.code}>
+                                    <div className="flex items-center border-b border-border-light transition-colors duration-150 hover:bg-bg-hover motion-reduce:transition-none">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setExpandedRegions((prev) => ({
+                                                    ...prev,
+                                                    [region.code]: !prev[region.code]
+                                                }))
+                                            }
+                                            aria-label={isExpanded ? 'Collapse region' : 'Expand region'}
+                                            aria-expanded={isExpanded}
+                                            className="ml-4 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-0 bg-transparent text-text-tertiary transition-colors duration-150 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+                                        >
+                                            <i
+                                                className={`fas ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[11px]`}
+                                                aria-hidden="true"
+                                            />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            role="option"
+                                            aria-selected={false}
+                                            onClick={() => {
+                                                onSelect(`REGION:${region.code}`)
+                                                onClose()
+                                            }}
+                                            className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 border-0 bg-transparent py-2.5 pl-2 pr-6 text-left text-[13px] font-medium text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                                        >
+                                            <span className="min-w-0 flex-1 truncate">{region.name}</span>
+                                            <span className="text-[12px] font-normal tabular-nums text-text-tertiary">
+                                                {region.plantCodes?.length || 0}
+                                            </span>
+                                        </button>
+                                    </div>
+                                    {isExpanded && (
+                                        <>
+                                            {districts.length > 0 && (
+                                                <>
+                                                    <NestedLabel>Districts</NestedLabel>
+                                                    {districts.map((district) => (
+                                                        <PickerRow
+                                                            key={`${region.code}:${district.name}`}
+                                                            indent
+                                                            count={district.plantCodes.length}
+                                                            onClick={() => {
+                                                                onSelect(`DISTRICT:${district.name}`)
+                                                                onClose()
+                                                            }}
+                                                        >
+                                                            {district.name}
+                                                        </PickerRow>
+                                                    ))}
+                                                </>
+                                            )}
+                                            {regionPlants.length > 0 && (
+                                                <>
+                                                    <NestedLabel>Plants</NestedLabel>
+                                                    {regionPlants.map((plant) => {
+                                                        const code = plantCodeOf(plant)
+                                                        return (
+                                                            <PickerRow
+                                                                key={`${region.code}:${code}`}
+                                                                indent
+                                                                code={code}
+                                                                onClick={() => {
+                                                                    onSelect(code)
+                                                                    onClose()
+                                                                }}
+                                                            >
+                                                                {plantNameOf(plant)}
+                                                            </PickerRow>
+                                                        )
+                                                    })}
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </>
+                )}
+
+                {!allowMultiple && !hasRegions && districtGroups.length > 0 && (
+                    <>
+                        <GroupHeader>Districts</GroupHeader>
+                        {userDistrict && (
+                            <PickerRow
+                                onClick={() => {
+                                    onSelect(`DISTRICT:${userDistrict.name}`)
+                                    onClose()
+                                }}
+                                count={userDistrict.plantCodes.length}
+                            >
+                                My district
+                            </PickerRow>
+                        )}
+                        {districtGroups.map((district) => (
+                            <PickerRow
+                                key={district.name}
+                                onClick={() => {
+                                    onSelect(`DISTRICT:${district.name}`)
+                                    onClose()
+                                }}
+                                count={district.plantCodes.length}
+                            >
+                                {district.name}
+                            </PickerRow>
+                        ))}
+                    </>
+                )}
+
+                {allowMultiple && districtGroups.length > 0 && (
+                    <>
+                        <GroupHeader hint="Pick one to toggle every plant in it">Districts</GroupHeader>
+                        {districtGroups.map((district) => {
+                            const codes = district.plantCodes
+                            const selectedInDistrict = codes.filter((code) => localSelectedCodes.includes(code)).length
+                            const allSelected = codes.length > 0 && selectedInDistrict === codes.length
+                            const partial = selectedInDistrict > 0 && !allSelected
+                            return (
+                                <button
+                                    type="button"
+                                    key={district.name}
+                                    role="option"
+                                    aria-selected={allSelected}
+                                    onClick={() => handleDistrictClickMulti(district)}
+                                    className={rowClass(allSelected)}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={allSelected}
+                                        ref={(el) => {
+                                            if (el) el.indeterminate = partial
+                                        }}
+                                        onChange={() => {}}
+                                        className="h-4 w-4 shrink-0 accent-accent"
+                                        tabIndex={-1}
+                                    />
+                                    <span className="min-w-0 flex-1 truncate">{district.name}</span>
+                                    <span className="text-[12px] font-normal tabular-nums text-text-tertiary">
+                                        {selectedInDistrict}/{codes.length}
+                                    </span>
+                                </button>
+                            )
+                        })}
+                    </>
+                )}
+
+                {showFlatPlants && sortedPlants.length > 0 && (
+                    <>
+                        {hasRowsAbovePlants && <GroupHeader>Plants</GroupHeader>}
+                        {sortedPlants.map((plant) => {
+                            const code = plantCodeOf(plant)
+                            const isSelected = allowMultiple
+                                ? localSelectedCodes.includes(code)
+                                : selectedPlantCode === code
+                            return (
+                                <button
+                                    type="button"
+                                    key={code}
+                                    onClick={() => handlePlantClick(code)}
+                                    role="option"
+                                    aria-selected={isSelected}
+                                    className={rowClass(isSelected)}
+                                >
+                                    {allowMultiple && (
+                                        <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={() => {}}
+                                            className="h-4 w-4 shrink-0 accent-accent"
+                                            tabIndex={-1}
+                                        />
+                                    )}
+                                    <PlantCode code={code} />
+                                    <span className="min-w-0 flex-1 truncate">{plantNameOf(plant)}</span>
+                                </button>
+                            )
+                        })}
+                    </>
+                )}
+
+                {sortedPlants.length === 0 && searchActive && (
+                    <div className="flex min-h-[200px] flex-col items-center justify-center gap-1 px-6 text-center">
+                        <p className="m-0 text-[15px] font-medium text-text-primary">No plants match “{search}”</p>
+                        <p className="m-0 text-[13px] text-text-secondary">Try a plant code or part of the name.</p>
                     </div>
                 )}
             </div>
-        </div>,
-        document.body
+        </Dialog>
     )
 }
 
-/** Top-level picker row used for All Plants / My Plants / district groups. */
-function PickerRow({ icon, accentColor, onClick, children, count }) {
+/** Plant code in its fixed-width mono column, so names line up. */
+function PlantCode({ code }) {
+    return <span className="w-12 shrink-0 truncate font-mono text-[12px] tabular-nums text-text-secondary">{code}</span>
+}
+
+/** A single-select row: a plant (with `code`), or a choice above the plants
+ *  such as All plants or a district (with an optional `count`). */
+function PickerRow({ children, code, count, indent = false, onClick, selected = false }) {
     return (
         <button
             type="button"
             role="option"
-            aria-selected={false}
+            aria-selected={selected}
             onClick={onClick}
-            className="mb-1 w-full flex items-center gap-3 rounded-card px-4 py-3 text-sm font-medium text-text-primary border-0 bg-transparent text-left cursor-pointer transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className={rowClass(selected, indent)}
         >
-            {icon && <i className={`fas ${icon}`} style={{ color: accentColor }} aria-hidden="true" />}
-            <span className="flex-1">{children}</span>
-            {count != null && <span className="text-xs text-text-tertiary tabular-nums">{count}</span>}
+            {code !== undefined && <PlantCode code={code} />}
+            <span className="min-w-0 flex-1 truncate">{children}</span>
+            {count != null && <span className="text-[12px] font-normal tabular-nums text-text-tertiary">{count}</span>}
         </button>
     )
 }
 
-/** Nested picker row used inside an expanded region accordion. */
-function NestedRow({ icon, accentColor, onClick, children, count }) {
+/** The band that starts a group of rows, as in a table head. */
+function GroupHeader({ children, hint }) {
     return (
-        <button
-            type="button"
-            role="option"
-            aria-selected={false}
-            onClick={onClick}
-            className="mb-0.5 w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm text-text-primary border-0 bg-transparent text-left cursor-pointer transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-            {icon && <i className={`fas ${icon}`} style={{ color: accentColor }} aria-hidden="true" />}
+        <div className="flex items-baseline gap-3 border-b border-border-light bg-bg-secondary px-6 py-2 text-[12px] font-medium text-text-secondary">
             <span className="flex-1">{children}</span>
-            {count != null && <span className="text-xs text-text-tertiary tabular-nums">{count}</span>}
-        </button>
-    )
-}
-
-function SectionLabel({ children }) {
-    return <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{children}</div>
-}
-
-function NestedLabel({ children, className = '' }) {
-    return (
-        <div className={`px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-text-tertiary ${className}`}>
-            {children}
+            {hint && <span className="font-normal text-text-tertiary">{hint}</span>}
         </div>
     )
 }
 
-function Divider({ className = '' }) {
-    return <div className={`mx-4 my-1 border-t border-border-light ${className}`} />
+/** A small label over the districts or plants of an open region. */
+function NestedLabel({ children }) {
+    return <div className="pb-1 pl-14 pr-6 pt-3 text-[12px] font-medium text-text-tertiary">{children}</div>
 }
 
 export default PlantDropdownModal

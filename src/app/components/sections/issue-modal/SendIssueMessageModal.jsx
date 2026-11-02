@@ -1,18 +1,23 @@
-/* eslint-disable react/forbid-dom-props */
-import React, { useEffect, useRef, useState } from 'react'
-import ReactDOM from 'react-dom'
+import React, { useEffect, useId, useRef, useState } from 'react'
 
 import MessageService from '../../../../services/MessageService'
 import { UserService } from '../../../../services/UserService'
-import { SEVERITY_PALETTE, SEVERITY_TO_TONE } from '../../../constants/issueModalConstants'
-import { DEFAULT_ACCENT_COLOR } from '../../../constants/themeConstants'
+import { SEVERITY_TO_TONE } from '../../../constants/issueModalConstants'
 import { usePreferences } from '../../../context/PreferencesContext'
 import Badge from '../../common/Badge'
-import { SkeletonStack } from '../../common/Skeleton'
-import UserAvatar from '../../common/UserAvatar'
-import { getInitials } from './issueModalHelpers'
-import { TeamMemberSkeleton } from './IssueModalSkeletons'
+import ErrorMessage from '../../common/ErrorMessage'
+import Dialog, { DIALOG_INPUT, DIALOG_TEXTAREA, DialogField } from '../../ui/Dialog'
+import { RecipientFieldSkeleton } from './IssueModalSkeletons'
 
+const recipientMeta = (mgr) => [mgr.roleName, mgr.plantCode].filter(Boolean).join(' · ')
+
+/**
+ * Sends one issue to a teammate as a message with an `issue` attachment.
+ * Rendered in the shared `Dialog`, which portals to document.body: mounted in
+ * place it would sit inside AssetSidePanel's sticky aside, a stacking context
+ * of its own, and paint under the navigation. `z-modal-menu` keeps it above
+ * the issues dialog that opens it.
+ */
 function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClose }) {
     const [managers, setManagers] = useState([])
     const [selectedManager, setSelectedManager] = useState(null)
@@ -23,10 +28,9 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
     const [error, setError] = useState('')
     const [managerDropdownOpen, setManagerDropdownOpen] = useState(false)
     const dropdownRef = useRef(null)
+    const recipientId = useId()
     const { preferences } = usePreferences()
-    const accent = preferences?.accentColor || DEFAULT_ACCENT_COLOR
     const regionCode = preferences?.selectedRegion?.code || ''
-    const sevConfig = SEVERITY_PALETTE[issue.severity] || SEVERITY_PALETTE.Medium
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -87,264 +91,150 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
         setSending(false)
     }
 
-    if (typeof document === 'undefined' || !document.body) return null
+    const footer = sent ? (
+        <button type="button" onClick={onClose} className="btn-primary">
+            Done
+        </button>
+    ) : (
+        <>
+            <button type="button" onClick={onClose} className="btn-secondary">
+                Cancel
+            </button>
+            <button type="button" onClick={handleSend} disabled={!selectedManager || sending} className="btn-primary">
+                {sending ? 'Sending' : 'Send'}
+            </button>
+        </>
+    )
 
-    /* Portaled to document.body so the backdrop lands in the root stacking
-     * context. Rendered in place it would sit inside AssetSidePanel's sticky
-     * aside, which is a stacking context of its own, and z-modal-menu would
-     * then only outrank that aside's own children — leaving the modal painted
-     * under the navigation and anything else anchored at the root. */
-    return ReactDOM.createPortal(
-        <div
-            onClick={(e) => {
-                if (e.target === e.currentTarget) onClose()
-            }}
-            className="fixed inset-0 z-modal-menu flex items-center justify-center p-4 bg-[var(--scrim)]"
+    return (
+        <Dialog
+            open
+            onClose={onClose}
+            size="md"
+            zClassName="z-modal-menu"
+            eyebrow="Send issue to a teammate"
+            title={`${itemType} ${itemNumber || 'N/A'}`}
+            footer={footer}
         >
-            <div
-                onClick={(e) => e.stopPropagation()}
-                className="flex flex-col max-h-[90vh] max-w-[520px] w-full overflow-hidden rounded bg-bg-primary border border-border-light"
-            >
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border-light">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-bg-tertiary text-text-primary">
-                            <i className="fas fa-paper-plane text-[12px]" />
-                        </div>
-                        <div className="min-w-0">
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
-                                Send Message
-                            </div>
-                            <div className="text-[12px] truncate text-text-primary">Notify a team member</div>
-                        </div>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                        <i className="fas fa-times text-[12px]" />
-                    </button>
+            {sent ? (
+                <div className="flex flex-col items-center gap-1 py-6 text-center">
+                    <p className="m-0 text-[15px] font-medium text-text-primary">Message sent</p>
+                    <p className="m-0 text-[13px] text-text-secondary">
+                        {selectedManager?.firstName} {selectedManager?.lastName} will be notified.
+                    </p>
                 </div>
-
-                <div className="flex-1 overflow-y-auto px-4 py-3">
-                    {sent ? (
-                        <div className="flex flex-col items-center gap-3 py-8 text-center">
-                            <div className="w-12 h-12 rounded flex items-center justify-center bg-green-100 text-text-primary">
-                                <i className="fas fa-check text-[18px]" />
-                            </div>
-                            <div className="text-[14px] font-semibold text-text-primary">Message Sent</div>
-                            <div className="text-[11px] text-text-secondary">
-                                {selectedManager?.firstName} {selectedManager?.lastName} will be notified
-                            </div>
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="rounded text-[10.5px] font-semibold uppercase tracking-wider px-3 py-1.5 mt-1 text-white"
-                                style={{ background: accent }}
-                            >
-                                Done
-                            </button>
+            ) : (
+                <div className="flex flex-col gap-4">
+                    <div className="rounded-[4px] border border-border-light bg-bg-secondary px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <Badge tone={SEVERITY_TO_TONE[issue.severity] || 'warning'} size="sm">
+                                {issue.severity}
+                            </Badge>
+                            <span className="text-[12px] text-text-tertiary">Reported by {creatorName}</span>
                         </div>
-                    ) : (
-                        <>
-                            <div
-                                className="rounded mb-3 overflow-hidden bg-bg-secondary border border-border-light"
-                                style={{ borderLeft: `3px solid ${sevConfig.fg}` }}
-                            >
-                                <div className="px-3 py-2.5">
-                                    <div className="flex items-center gap-2 mb-1.5">
-                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
-                                            {itemType}
-                                        </span>
-                                        <span className="text-[12px] font-semibold font-mono tabular-nums text-text-primary">
-                                            {itemNumber || 'N/A'}
-                                        </span>
-                                        <Badge
-                                            tone={SEVERITY_TO_TONE[issue.severity] || 'warning'}
-                                            size="md"
-                                            weight="semibold"
-                                            icon={sevConfig.icon.replace(/^fa-/, '')}
-                                            className="ml-auto"
-                                        >
-                                            {issue.severity}
-                                        </Badge>
-                                    </div>
-                                    <p className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap text-text-primary">
-                                        {issue.issue}
-                                    </p>
-                                    <div className="text-[10.5px] mt-1.5 text-text-tertiary">
-                                        Reported by {creatorName}
-                                    </div>
-                                </div>
-                            </div>
+                        <p className="m-0 mt-1.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-text-primary">
+                            {issue.issue}
+                        </p>
+                    </div>
 
-                            <div className="mb-3">
-                                <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1 text-text-secondary">
-                                    Send to
-                                </label>
-                                {loading ? (
-                                    <div className="rounded px-3 py-2 bg-bg-secondary border border-border-light">
-                                        <SkeletonStack count={3} gapClassName="gap-0">
-                                            {() => <TeamMemberSkeleton />}
-                                        </SkeletonStack>
-                                    </div>
-                                ) : (
-                                    <div ref={dropdownRef} className="relative">
-                                        <button
-                                            type="button"
-                                            onClick={() => setManagerDropdownOpen((prev) => !prev)}
-                                            className="w-full flex items-center gap-2.5 rounded px-3 py-2 text-left text-[12px] bg-bg-secondary"
-                                            style={{
-                                                border: `1px solid ${managerDropdownOpen ? accent : 'var(--border-light)'}`,
-                                                color: selectedManager ? 'var(--text-primary)' : 'var(--text-tertiary)'
-                                            }}
-                                        >
-                                            {selectedManager ? (
-                                                <>
-                                                    <UserAvatar
-                                                        userId={selectedManager.id}
-                                                        initials={getInitials(selectedManager)}
-                                                        size="md"
-                                                        rounded="md"
-                                                    />
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="font-semibold truncate">
-                                                            {selectedManager.firstName} {selectedManager.lastName}
-                                                        </div>
-                                                        <div className="text-[10.5px] truncate text-text-secondary">
-                                                            {selectedManager.roleName}
-                                                            {selectedManager.plantCode
-                                                                ? ` · ${selectedManager.plantCode}`
-                                                                : ''}
-                                                        </div>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <i className="fas fa-user-plus text-[12px]" />
-                                                    <span>Select a recipient...</span>
-                                                </>
+                    <DialogField label="Send to" htmlFor={recipientId}>
+                        {loading ? (
+                            <RecipientFieldSkeleton />
+                        ) : (
+                            <div ref={dropdownRef}>
+                                <button
+                                    id={recipientId}
+                                    type="button"
+                                    onClick={() => setManagerDropdownOpen((prev) => !prev)}
+                                    aria-haspopup="listbox"
+                                    aria-expanded={managerDropdownOpen}
+                                    className={`${DIALOG_INPUT} flex cursor-pointer items-center gap-2 text-left`}
+                                >
+                                    {selectedManager ? (
+                                        <span className="min-w-0 flex-1 truncate">
+                                            <span className="font-medium">
+                                                {selectedManager.firstName} {selectedManager.lastName}
+                                            </span>
+                                            {recipientMeta(selectedManager) && (
+                                                <span className="text-text-tertiary">
+                                                    {' · '}
+                                                    {recipientMeta(selectedManager)}
+                                                </span>
                                             )}
-                                            <i
-                                                className="fas fa-chevron-down text-[9px] ml-auto text-text-secondary"
-                                                style={{
-                                                    transform: managerDropdownOpen ? 'rotate(180deg)' : 'none',
-                                                    transition: 'transform 0.2s'
-                                                }}
-                                            />
-                                        </button>
-                                        {managerDropdownOpen && (
-                                            <div
-                                                className="absolute left-0 right-0 mt-1 rounded overflow-y-auto z-raised bg-bg-primary border border-border-light"
-                                                style={{ maxHeight: 220, top: '100%' }}
-                                            >
-                                                {managers.length === 0 ? (
-                                                    <div className="text-center py-3 text-[11px] text-text-tertiary">
-                                                        No team members found
-                                                    </div>
-                                                ) : (
-                                                    managers.map((mgr) => {
-                                                        const isSelected = selectedManager?.id === mgr.id
-                                                        return (
-                                                            <button
-                                                                type="button"
-                                                                key={mgr.id}
-                                                                onClick={() => {
-                                                                    setSelectedManager(mgr)
-                                                                    setManagerDropdownOpen(false)
-                                                                }}
-                                                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors border-b border-border-light"
-                                                                style={{
-                                                                    background: isSelected
-                                                                        ? 'var(--bg-tertiary)'
-                                                                        : 'transparent'
-                                                                }}
-                                                                onMouseEnter={(e) => {
-                                                                    if (!isSelected)
-                                                                        e.currentTarget.style.background =
-                                                                            'var(--bg-secondary)'
-                                                                }}
-                                                                onMouseLeave={(e) => {
-                                                                    if (!isSelected)
-                                                                        e.currentTarget.style.background = 'transparent'
-                                                                }}
-                                                            >
-                                                                <UserAvatar
-                                                                    userId={mgr.id}
-                                                                    initials={getInitials(mgr)}
-                                                                    size="sm"
-                                                                    rounded="md"
-                                                                />
-                                                                <div className="flex-1 min-w-0">
-                                                                    <div className="text-[12px] font-semibold truncate text-text-primary">
-                                                                        {mgr.firstName} {mgr.lastName}
-                                                                    </div>
-                                                                    <div className="text-[10.5px] truncate text-text-secondary">
-                                                                        {mgr.roleName}
-                                                                        {mgr.plantCode ? ` · ${mgr.plantCode}` : ''}
-                                                                    </div>
-                                                                </div>
-                                                                {isSelected && (
-                                                                    <i className="fas fa-check text-[10px] text-text-primary" />
-                                                                )}
-                                                            </button>
-                                                        )
-                                                    })
-                                                )}
-                                            </div>
+                                        </span>
+                                    ) : (
+                                        <span className="flex-1 text-text-tertiary">Select a recipient</span>
+                                    )}
+                                    <i
+                                        className={`fas fa-chevron-down text-[10px] text-text-secondary transition-transform duration-150 motion-reduce:transition-none ${
+                                            managerDropdownOpen ? 'rotate-180' : ''
+                                        }`}
+                                        aria-hidden="true"
+                                    />
+                                </button>
+                                {managerDropdownOpen && (
+                                    <div
+                                        role="listbox"
+                                        aria-label="Recipients"
+                                        className="mt-1 max-h-[220px] overflow-y-auto rounded-[4px] border border-border-medium bg-bg-primary"
+                                    >
+                                        {managers.length === 0 ? (
+                                            <p className="m-0 px-3 py-3 text-center text-[13px] text-text-secondary">
+                                                No team members found
+                                            </p>
+                                        ) : (
+                                            managers.map((mgr) => {
+                                                const isSelected = selectedManager?.id === mgr.id
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        key={mgr.id}
+                                                        role="option"
+                                                        aria-selected={isSelected}
+                                                        onClick={() => {
+                                                            setSelectedManager(mgr)
+                                                            setManagerDropdownOpen(false)
+                                                        }}
+                                                        className={`flex w-full cursor-pointer flex-col items-start border-0 border-b border-solid border-border-light px-3 py-2 text-left transition-colors duration-150 last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none ${
+                                                            isSelected
+                                                                ? 'bg-bg-tertiary font-medium'
+                                                                : 'bg-transparent hover:bg-bg-hover'
+                                                        }`}
+                                                    >
+                                                        <span className="text-[13px] text-text-primary">
+                                                            {mgr.firstName} {mgr.lastName}
+                                                        </span>
+                                                        {recipientMeta(mgr) && (
+                                                            <span className="text-[12px] font-normal text-text-secondary">
+                                                                {recipientMeta(mgr)}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                )
+                                            })
                                         )}
                                     </div>
                                 )}
                             </div>
+                        )}
+                    </DialogField>
 
-                            <div className="mb-3">
-                                <label
-                                    htmlFor="issue-message-textarea"
-                                    className="block text-[10px] font-semibold uppercase tracking-wider mb-1 text-text-secondary"
-                                >
-                                    Message{' '}
-                                    <span className="font-normal normal-case text-text-tertiary">(optional)</span>
-                                </label>
-                                <textarea
-                                    id="issue-message-textarea"
-                                    value={commentary}
-                                    onChange={(e) => setCommentary(e.target.value)}
-                                    placeholder="Add context, questions, or instructions..."
-                                    aria-label="Message"
-                                    rows="3"
-                                    className="w-full rounded outline-none px-3 py-2 text-[12px] resize-vertical bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
-                                />
-                            </div>
+                    <DialogField label="Message (optional)" htmlFor="issue-message-textarea">
+                        <textarea
+                            id="issue-message-textarea"
+                            value={commentary}
+                            onChange={(e) => setCommentary(e.target.value)}
+                            placeholder="Add context, questions or instructions"
+                            aria-label="Message"
+                            rows="3"
+                            className={DIALOG_TEXTAREA}
+                        />
+                    </DialogField>
 
-                            {error && (
-                                <div className="rounded px-3 py-2 mb-3 text-[11px] font-semibold bg-red-100 text-text-primary">
-                                    <i className="fas fa-exclamation-triangle mr-2 text-[10px]" />
-                                    {error}
-                                </div>
-                            )}
-
-                            <button
-                                type="button"
-                                onClick={handleSend}
-                                disabled={!selectedManager || sending}
-                                className="w-full rounded text-[11px] font-semibold uppercase tracking-wider py-2 inline-flex items-center justify-center gap-1.5"
-                                style={{
-                                    background: !selectedManager || sending ? 'var(--bg-tertiary)' : accent,
-                                    color: !selectedManager || sending ? 'var(--text-tertiary)' : 'var(--on-accent)',
-                                    cursor: !selectedManager || sending ? 'not-allowed' : 'pointer'
-                                }}
-                            >
-                                <i className={`fas ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-[10px]`} />
-                                {sending ? 'Sending' : 'Send Message'}
-                            </button>
-                        </>
-                    )}
+                    <ErrorMessage message={error} />
                 </div>
-            </div>
-        </div>,
-        document.body
+            )}
+        </Dialog>
     )
 }
 

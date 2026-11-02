@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom'
 
 import { UserPresenceService } from '../../../services/UserPresenceService'
 import { useUserAccents } from '../../hooks/useUserAccent'
-import Badge from './Badge'
 import UserAvatar from './UserAvatar'
 
 const MILLISECONDS_PER_MINUTE = 60000
@@ -84,41 +83,34 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                 aria-modal="false"
                 aria-label="Online users"
                 style={modalStyle}
-                className="flex max-h-[70vh] w-80 flex-col overflow-hidden rounded border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
+                className="flex max-h-[76vh] w-96 max-w-[calc(100vw-16px)] flex-col overflow-hidden rounded-card border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
             >
-                <div className="flex shrink-0 items-center justify-between border-b border-border-light px-3 py-2">
-                    <div className="flex items-center gap-2">
-                        <div className="flex h-6 w-6 items-center justify-center rounded bg-bg-tertiary text-text-secondary">
-                            <i className="fas fa-users text-[11px]" aria-hidden="true" />
-                        </div>
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
-                            Online Users
-                        </span>
-                        {!isLoading && (
-                            <Badge tone="neutral" size="xs" weight="bold" className="font-mono tabular-nums">
-                                {onlineUsers.length}
-                            </Badge>
-                        )}
-                    </div>
+                <div className="flex shrink-0 items-center gap-2 border-b border-border-light py-2 pl-4 pr-2">
+                    <span className="text-[14px] font-semibold text-text-primary">Online now</span>
+                    {!isLoading && (
+                        <span className="text-[12px] tabular-nums text-text-secondary">{onlineUsers.length}</span>
+                    )}
                     <button
                         type="button"
-                        className="flex h-6 w-6 items-center justify-center rounded text-text-secondary cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                        className="ml-auto flex h-7 w-7 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-secondary transition-colors duration-150 ease-out hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
                         onClick={onClose}
                         aria-label="Close online users"
                     >
-                        <i className="fas fa-times text-[11px]" aria-hidden="true" />
+                        <i className="fas fa-times text-[12px]" aria-hidden="true" />
                     </button>
                 </div>
-                <div className="flex-1 overflow-y-auto">
+                <div className="min-h-0 flex-1 overflow-y-auto">
                     {isLoading && onlineUsers.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-10 text-text-tertiary">
-                            <i className="fas fa-spinner fa-spin mb-2 text-xl" aria-hidden="true" />
-                            <span className="text-[12px]">Loading users…</span>
+                        <div className="flex items-center justify-center gap-2 px-4 py-10 text-[13px] text-text-secondary">
+                            <i className="fas fa-spinner fa-spin text-[12px]" aria-hidden="true" />
+                            Loading people
                         </div>
                     ) : onlineUsers.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-10 text-text-tertiary">
-                            <i className="fas fa-user-slash mb-2 text-2xl" aria-hidden="true" />
-                            <span className="text-[12px] font-semibold text-text-primary">No users online</span>
+                        <div className="flex flex-col items-center justify-center gap-1 px-4 py-10 text-center">
+                            <p className="m-0 text-[15px] font-medium text-text-primary">No users online</p>
+                            <p className="m-0 text-[13px] text-text-secondary">
+                                People show up here while they have the app open.
+                            </p>
                         </div>
                     ) : (
                         <div role="list">
@@ -126,7 +118,7 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                                 /* Source data occasionally repeats the same role on a user
                                  * — usually from a join hitting both a role assignment row
                                  * and the role's name string with mismatched casing. Dedupe
-                                 * case-insensitively here so the badge row reads once-per-
+                                 * case-insensitively here so the role line reads once-per-
                                  * role, keeping the first encountered casing for display. */
                                 const uniqueRoles = []
                                 const seenRoleKeys = new Set()
@@ -140,76 +132,85 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                                 const roleColor =
                                     (uniqueRoles[0] && roleColorMap[uniqueRoles[0].toLowerCase()]) ??
                                     'var(--role-other)'
+                                const region = user.regionCode ? regionNames[user.regionCode] || user.regionCode : ''
                                 return (
                                     <div
                                         key={user.id}
                                         role="listitem"
-                                        className="border-b border-border-light px-3 py-2 transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover"
+                                        className="flex items-center gap-3 border-b border-border-light px-4 py-2.5 transition-colors duration-150 ease-out last:border-b-0 hover:bg-bg-hover motion-reduce:transition-none"
                                     >
-                                        <div className="flex items-start gap-2.5">
-                                            <UserAvatar
-                                                name={user.name}
-                                                accentColor={accentByUserId[user.id]}
-                                                size="md"
-                                                rounded="md"
-                                            >
-                                                <span
-                                                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-status-active border-2 border-bg-primary motion-reduce:animate-none"
-                                                    aria-hidden="true"
-                                                />
-                                            </UserAvatar>
-                                            <div className="min-w-0 flex-1">
-                                                <span className="block truncate text-[12px] font-semibold text-text-primary">
+                                        <UserAvatar name={user.name} accentColor={accentByUserId[user.id]} size="md">
+                                            <span
+                                                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-bg-primary bg-status-active"
+                                                aria-hidden="true"
+                                            />
+                                        </UserAvatar>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-baseline justify-between gap-3">
+                                                <span className="truncate text-[13px] font-medium text-text-primary">
                                                     {user.name || 'Unknown User'}
                                                     {user.isCurrentUser && (
                                                         <span className="ml-1 font-normal text-text-tertiary">
-                                                            (You)
+                                                            (you)
                                                         </span>
                                                     )}
                                                 </span>
-                                                {uniqueRoles.length > 0 && (
-                                                    <div className="mt-1 flex flex-wrap items-center gap-1">
-                                                        {uniqueRoles.map((role) => (
-                                                            <Badge
-                                                                key={role.toLowerCase()}
-                                                                variant="custom"
-                                                                bg={roleColorMap[role.toLowerCase()] ?? roleColor}
-                                                                fg="var(--on-accent)"
-                                                                size="xs"
-                                                                weight="semibold"
-                                                                className="force-white-text"
-                                                            >
-                                                                {role}
-                                                            </Badge>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                                {user.regionCode && (
-                                                    <div className="mt-1 text-[10.5px] text-text-secondary truncate">
-                                                        {regionNames[user.regionCode] || user.regionCode}
-                                                    </div>
-                                                )}
-                                                <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-text-tertiary">
-                                                    <span className="flex items-center gap-1">
-                                                        {(user.activeDevices || ['desktop']).map((d) => (
-                                                            <i
-                                                                key={d}
-                                                                className={`fas fa-${d === 'mobile' ? 'mobile-alt' : 'desktop'} text-[9px]`}
+                                                <span className="flex shrink-0 items-center gap-1.5 text-[12px] tabular-nums text-text-tertiary">
+                                                    {(user.activeDevices || ['desktop']).map((d) => (
+                                                        <i
+                                                            key={d}
+                                                            className={`fas fa-${d === 'mobile' ? 'mobile-alt' : 'desktop'} text-[10px]`}
+                                                            aria-hidden="true"
+                                                        />
+                                                    ))}
+                                                    {formatLastActivity(user.lastActivity)}
+                                                </span>
+                                            </div>
+                                            {(uniqueRoles.length > 0 || region) && (
+                                                <div className="flex min-w-0 items-center gap-x-2 text-[12px] text-text-secondary">
+                                                    {uniqueRoles.map((role) => (
+                                                        <span
+                                                            key={role.toLowerCase()}
+                                                            className="inline-flex shrink-0 items-center gap-1.5"
+                                                        >
+                                                            <span
+                                                                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                                                style={{
+                                                                    background:
+                                                                        roleColorMap[role.toLowerCase()] ?? roleColor
+                                                                }}
                                                                 aria-hidden="true"
                                                             />
-                                                        ))}
-                                                    </span>
-                                                    <span className="font-mono tabular-nums">
-                                                        Active {formatLastActivity(user.lastActivity)}
-                                                    </span>
+                                                            {role}
+                                                        </span>
+                                                    ))}
+                                                    {region && (
+                                                        <span className="min-w-0 truncate">
+                                                            {uniqueRoles.length > 0 && (
+                                                                <span className="mr-2" aria-hidden="true">
+                                                                    ·
+                                                                </span>
+                                                            )}
+                                                            {region}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                            </div>
+                                            )}
                                         </div>
                                     </div>
                                 )
                             })}
                         </div>
                     )}
+                </div>
+                <div className="shrink-0 border-t border-border-light">
+                    <button
+                        type="button"
+                        onClick={() => UserPresenceService.refreshOnlineUsers(true)}
+                        className="flex w-full cursor-pointer items-center border-none bg-transparent px-4 py-2.5 text-left text-[13px] font-medium text-text-primary underline-offset-2 transition-colors duration-150 ease-out hover:bg-bg-hover hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none"
+                    >
+                        Refresh list
+                    </button>
                 </div>
             </div>
         </div>

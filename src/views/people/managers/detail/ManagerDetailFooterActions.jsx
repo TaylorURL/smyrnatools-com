@@ -1,6 +1,7 @@
 import React from 'react'
 
-const footerButtonClasses = 'global-button-secondary flex-1 justify-center'
+const saveButtonClasses = 'global-button-primary flex-1 justify-center'
+const deleteButtonClasses = 'global-button-danger flex-1 justify-center'
 
 /**
  * Footer-row action buttons for the manager detail view. Save is gated on edit
@@ -27,13 +28,13 @@ export default function ManagerDetailFooterActions({
     return (
         <>
             {showSave && (
-                <button type="button" className={footerButtonClasses} onClick={onSave} disabled={isSaving}>
+                <button type="button" className={saveButtonClasses} onClick={onSave} disabled={isSaving}>
                     <i className="fas fa-save"></i>
                     <span>{isSaving ? 'Saving...' : 'Save'}</span>
                 </button>
             )}
             {canDeleteManager && (
-                <button type="button" className={footerButtonClasses} onClick={onRequestDelete} disabled={isSaving}>
+                <button type="button" className={deleteButtonClasses} onClick={onRequestDelete} disabled={isSaving}>
                     <i className="fas fa-trash-alt"></i>
                     <span>Delete</span>
                 </button>

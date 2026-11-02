@@ -178,7 +178,7 @@ const StatusHistoryBar = memo(function StatusHistoryBar({ itemId, itemType, curr
     return (
         <div
             ref={wrapperRef}
-            className="relative mt-2 w-full"
+            className="relative mt-1.5 w-full max-w-[140px] rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             tabIndex={0}
             role="img"
             aria-label="Status history breakdown"
@@ -187,7 +187,7 @@ const StatusHistoryBar = memo(function StatusHistoryBar({ itemId, itemType, curr
             onFocus={revealBreakdown}
             onBlur={hideBreakdown}
         >
-            <div className="flex h-1.5 w-full overflow-hidden rounded-md bg-bg-hover">
+            <div className="flex h-1 w-full gap-px overflow-hidden rounded-full bg-bg-hover">
                 {loading ? (
                     <div
                         className="h-full w-full animate-shimmer"
@@ -205,7 +205,7 @@ const StatusHistoryBar = memo(function StatusHistoryBar({ itemId, itemType, curr
                             style={{
                                 background: resolveStatusColor(item.status),
                                 minWidth: item.percentage > 0 ? '2px' : '0',
-                                opacity: animateIn ? 1 : 0,
+                                opacity: animateIn ? 0.8 : 0,
                                 transform: animateIn ? 'scaleX(1)' : 'scaleX(0)',
                                 transition: 'transform 300ms ease-out, opacity 300ms ease-out',
                                 transitionDelay: `${index * 100}ms`,
@@ -221,7 +221,7 @@ const StatusHistoryBar = memo(function StatusHistoryBar({ itemId, itemType, curr
                         className="pointer-events-none fixed z-panel min-w-[140px] -translate-x-1/2 rounded-card border border-border-light bg-bg-secondary p-2.5 shadow-modal animate-fade-in-fast"
                         style={{ left: tooltipPosition.left, top: tooltipPosition.top }}
                     >
-                        <div className="mb-1.5 text-[9px] font-semibold uppercase tracking-wider text-text-tertiary">
+                        <div className="mb-1.5 text-[12px] font-medium text-text-tertiary">
                             {totalDays} days tracked
                         </div>
                         {statusPercentages.map((item, index) => (

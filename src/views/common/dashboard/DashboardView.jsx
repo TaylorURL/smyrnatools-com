@@ -247,63 +247,60 @@ export default function DashboardView() {
                 regionDisplayName={regionDisplayName}
             />
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0">
-                <div className="w-full px-3 sm:px-4 lg:px-6 flex flex-col lg:flex-row gap-3 lg:gap-4">
-                    {/* Podcast panel is desktop-only — the embedded player
-                        consumes vertical real estate that phones can't
-                        afford, and the show notes don't shorten cleanly
-                        for a narrow column. */}
-                    {!isMobile && <DashboardPodcastPanel />}
-
-                    <main className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
-                        {error && (
-                            <div
-                                role="alert"
-                                className="flex items-center justify-between rounded-md text-text-primary px-4 py-3 bg-status-danger/5 border border-status-danger/30 animate-fade-in-fast"
-                            >
-                                <span className="text-[13px] font-semibold">{error}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setRefreshKey((v) => v + 1)}
-                                    className="bg-transparent border-none text-text-primary cursor-pointer font-semibold text-[12px] px-2 py-1 rounded-md transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
-                                >
-                                    Retry
-                                </button>
-                            </div>
-                        )}
-                        {showSkeleton ? (
-                            <DashboardSkeleton isMobile={isMobile} />
-                        ) : (
-                            <>
-                                <DashboardAlertsPanel
-                                    plantNotifications={plantNotifications}
-                                    setEmbeddedView={setEmbeddedView}
-                                    setEmbeddedViewProps={setEmbeddedViewProps}
-                                    setEmbeddedViewSearch={setEmbeddedViewSearch}
-                                />
-                                <FleetOverviewSection
-                                    accentColor={accentColor}
-                                    displayStats={displayStats}
-                                    isAggregate={isAggregate}
-                                    selectedRegion={selectedRegion}
-                                    stats={stats}
-                                />
-                                <DashboardPeopleSection
-                                    accentColor={accentColor}
-                                    displayStats={displayStats}
-                                    isAggregate={isAggregate}
-                                    managerStats={managerStats}
-                                />
-                                <div className="h-8" aria-hidden="true" />
-                            </>
-                        )}
-                    </main>
-
+                <div className="flex w-full flex-col gap-6 px-4 pb-10 sm:px-6 lg:px-8">
                     <DashboardAtAGlance
                         alertCount={alertCount}
                         displayStats={displayStats}
                         loading={showSkeleton}
                         openIssues={openIssues}
                     />
+                    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+                        <main className="flex min-w-0 flex-col gap-6">
+                            {error && (
+                                <div
+                                    role="alert"
+                                    className="flex items-center justify-between rounded-md text-text-primary px-4 py-3 bg-status-danger/5 border border-status-danger/30 animate-fade-in-fast"
+                                >
+                                    <span className="text-[13px] font-semibold">{error}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setRefreshKey((v) => v + 1)}
+                                        className="bg-transparent border-none text-text-primary cursor-pointer font-semibold text-[12px] px-2 py-1 rounded-md transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                                    >
+                                        Retry
+                                    </button>
+                                </div>
+                            )}
+                            {showSkeleton ? (
+                                <DashboardSkeleton isMobile={isMobile} />
+                            ) : (
+                                <>
+                                    <DashboardAlertsPanel
+                                        plantNotifications={plantNotifications}
+                                        setEmbeddedView={setEmbeddedView}
+                                        setEmbeddedViewProps={setEmbeddedViewProps}
+                                        setEmbeddedViewSearch={setEmbeddedViewSearch}
+                                    />
+                                    <FleetOverviewSection
+                                        accentColor={accentColor}
+                                        displayStats={displayStats}
+                                        isAggregate={isAggregate}
+                                        selectedRegion={selectedRegion}
+                                        stats={stats}
+                                    />
+                                    <DashboardPeopleSection
+                                        accentColor={accentColor}
+                                        displayStats={displayStats}
+                                        isAggregate={isAggregate}
+                                        managerStats={managerStats}
+                                    />
+                                </>
+                            )}
+                        </main>
+                        {/* The podcast is desktop-only: the player and episode list take
+                            more height than a phone can spare. */}
+                        {!isMobile && <DashboardPodcastPanel />}
+                    </div>
                 </div>
             </div>
 
@@ -320,6 +317,7 @@ export default function DashboardView() {
                 regionGroups={selectedRegion?.type === 'Office' ? regionGroups : []}
                 showAllPlants={true}
                 showMyPlants={false}
+                selectedPlantCode={dashboardPlant || ''}
                 userPlantCode={userPlantCode}
             />
             {embeddedView && (

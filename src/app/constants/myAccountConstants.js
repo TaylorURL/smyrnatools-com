@@ -1,11 +1,11 @@
 import { formatCentralDate } from '../../utils/PlanUtility'
 export const AUTH_FUNCTION = '/auth-service'
 
-export const FIELD_LABEL_CLASS = 'block text-[11px] font-semibold uppercase tracking-wider mb-2'
+export const FIELD_LABEL_CLASS = 'block text-[12px] font-medium mb-1.5'
 
 export const FieldStyle = {
-    background: 'var(--bg-secondary)',
-    border: '1px solid var(--border-light)',
+    background: 'var(--bg-primary)',
+    border: '1px solid var(--border-medium)',
     color: 'var(--text-primary)'
 }
 

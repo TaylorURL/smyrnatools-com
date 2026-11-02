@@ -27,10 +27,10 @@ const AssetModals = forwardRef(function AssetModals(
         config,
         filteredOperatorsForRecap,
         filteredResult,
-        isLoading,
+        isLoading: _isLoading,
         items: _items,
         allItems: _allItems,
-        itemsLoaded,
+        itemsLoaded: _itemsLoaded,
         operators,
         plants,
         selectedPlant,
@@ -235,10 +235,8 @@ const AssetModals = forwardRef(function AssetModals(
             {config.hasRecap && (
                 <RecapModalSection
                     isAllPlants={!selectedPlant}
-                    isLoading={isLoading}
                     isOpen={modals.recap}
                     mixers={filteredResult.filtered}
-                    mixersLoaded={itemsLoaded}
                     onClose={() => closeModal('recap')}
                     operators={filteredOperatorsForRecap}
                     plantCode={selectedPlant || ''}

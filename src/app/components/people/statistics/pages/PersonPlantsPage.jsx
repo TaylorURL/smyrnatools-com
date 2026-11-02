@@ -53,36 +53,21 @@ export function PersonPlantsPage({ accentColor, kind, stats }) {
                         <table className="w-full text-[12px] border-collapse">
                             <thead>
                                 <tr className="text-text-tertiary">
-                                    <th
-                                        scope="col"
-                                        className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                    >
+                                    <th scope="col" className="text-left font-medium text-[12px] px-3 py-2">
                                         Plant
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                    >
+                                    <th scope="col" className="text-right font-medium text-[12px] px-2 py-2">
                                         Total
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                    >
+                                    <th scope="col" className="text-right font-medium text-[12px] px-2 py-2">
                                         Active
                                     </th>
                                     {isOperators && (
-                                        <th
-                                            scope="col"
-                                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                        >
+                                        <th scope="col" className="text-right font-medium text-[12px] px-2 py-2">
                                             Trainers
                                         </th>
                                     )}
-                                    <th
-                                        scope="col"
-                                        className="text-right font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                    >
+                                    <th scope="col" className="text-right font-medium text-[12px] px-3 py-2">
                                         Share
                                     </th>
                                 </tr>

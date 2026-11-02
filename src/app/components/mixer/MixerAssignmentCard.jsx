@@ -3,12 +3,12 @@ import React from 'react'
 import DetailViewSection from '../sections/DetailViewSection'
 
 const FIELD_BUTTON_BASE =
-    'operator-select-button form-control text-left active:scale-[0.97] disabled:active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'
+    'operator-select-button form-control text-left transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'
 
 const DISABLED_FIELD_CLASSES = 'bg-bg-secondary opacity-80 cursor-not-allowed'
 
 const UNDO_BUTTON_CLASSES =
-    'undo-operator-button unassign-operator-button bg-status-active text-white cursor-pointer text-[1rem] h-[38px] min-w-[140px] border-0 box-border ml-2 px-4 rounded-md active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent hover:brightness-105'
+    'undo-operator-button unassign-operator-button bg-status-active text-white cursor-pointer text-[1rem] h-[38px] min-w-[140px] border-0 box-border ml-2 px-4 rounded-md transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent hover:brightness-105'
 
 /**
  * Renders the Assigned Plant and Assigned Operator selectors with their
@@ -60,7 +60,7 @@ export default function MixerAssignmentCard({
                         (assignedOperator ? (
                             <button
                                 type="button"
-                                className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                                className="unassign-operator-button transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                 aria-label="Unassign Operator"
                                 onClick={onUnassignOperator}
                             >
@@ -80,8 +80,11 @@ export default function MixerAssignmentCard({
                         ))}
                 </div>
                 {isCleanlinessBlocking && (
-                    <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-status-warning/10 rounded-md text-status-warning text-[0.8125rem]">
-                        <i className="fas fa-exclamation-triangle" />
+                    <div className="flex items-start gap-2 mt-2 px-3 py-2 rounded-md border border-[color:var(--tint-warning-line)] bg-[color:var(--notice-warning-bg)] text-[color:var(--notice-warning-strong)] text-[0.8125rem] leading-snug">
+                        <i
+                            className="fas fa-exclamation-triangle mt-0.5 text-[color:var(--notice-warning-icon)]"
+                            aria-hidden="true"
+                        />
                         <span>Cleanliness must be 3+ stars to assign an operator</span>
                     </div>
                 )}

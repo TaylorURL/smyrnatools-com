@@ -1,6 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo, useState } from 'react'
-import ReactDOM from 'react-dom'
 
 import { UserService } from '../../../services/UserService'
 import APIUtility from '../../../utils/APIUtility'
@@ -9,12 +8,13 @@ import GrammarUtility from '../../../utils/GrammarUtility'
 import { ValidationUtility } from '../../../utils/ValidationUtility'
 import { useAccentColor } from '../../hooks/useAccentColor'
 import useVerificationModalData from '../../hooks/useVerificationModalData'
-import { Banner } from '../verification/VerificationAtoms'
+import Dialog from '../ui/Dialog'
 import VerificationChecklistSection, { parseHoursValue } from '../verification/VerificationChecklistSection'
 import VerificationCommentsSection from '../verification/VerificationCommentsSection'
 import VerificationIssuesSection from '../verification/VerificationIssuesSection'
 import VerificationOperatorSection from '../verification/VerificationOperatorSection'
 import ConfirmDialog from './ConfirmDialog'
+import useDialogClose from './useDialogClose'
 
 /**
  * Translates a raw error message from the verify API call into a clear,
@@ -52,21 +52,29 @@ function buildVerifyFailureReason(rawMessage, itemTypeDisplay) {
     return `We could not save this verification. Try again — if it keeps failing, refresh the page or contact support.`
 }
 
-function ProgressTrack({ accentColor, blockers, total }) {
+/** A flat danger notice: the reason verification can't go ahead. */
+const NOTICE_DANGER =
+    'rounded-[4px] border border-[color:var(--notice-danger-border)] bg-[color:var(--notice-danger-bg)] px-3 py-2 text-[13px] leading-snug text-[color:var(--notice-danger-strong)]'
+
+/** How many of the requirements are met, as a line of text and a thin bar
+ *  that turns green once nothing is left in the way. */
+function ProgressTrack({ blockers, total }) {
     const completed = total - blockers
     const percent = total === 0 ? 100 : Math.round((completed / total) * 100)
     return (
-        <div className="mt-3">
-            <div className="flex items-baseline justify-between mb-1.5">
-                <span className="text-[11.5px] font-medium text-text-secondary">
+        <div>
+            <div className="mb-1.5 flex items-baseline justify-between">
+                <span className="text-[12px] font-medium text-text-secondary">
                     {blockers === 0 ? 'Ready to verify' : `${completed} of ${total} requirements met`}
                 </span>
-                <span className="text-[11px] font-mono tabular-nums text-text-tertiary">{percent}%</span>
+                <span className="text-[12px] tabular-nums text-text-tertiary">{percent}%</span>
             </div>
             <div className="h-1 w-full overflow-hidden rounded-full bg-bg-tertiary">
                 <div
-                    className="h-full rounded-full transition-[width] duration-300"
-                    style={{ background: blockers === 0 ? 'var(--status-active)' : accentColor, width: `${percent}%` }}
+                    className={`h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none ${
+                        blockers === 0 ? 'bg-status-active' : 'bg-accent'
+                    }`}
+                    style={{ width: `${percent}%` }}
                 />
             </div>
         </div>
@@ -105,6 +113,7 @@ export default function VerificationRequirementsModal({
     status
 }) {
     const accentColor = useAccentColor()
+    const { anchorRef, handleClose } = useDialogClose(onClose)
     const [isSavingPhone, setIsSavingPhone] = useState(false)
     const [pendingDeleteIssueId, setPendingDeleteIssueId] = useState(null)
     const [pendingDeleteCommentId, setPendingDeleteCommentId] = useState(null)
@@ -302,177 +311,136 @@ export default function VerificationRequirementsModal({
 
     return (
         <>
-            {ReactDOM.createPortal(
-                <div
-                    className="fixed inset-0 z-system flex items-center justify-center p-4 bg-[var(--scrim)] backdrop-blur-sm animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="verification-modal-title"
-                >
-                    <div className="flex w-full max-w-[560px] flex-col overflow-hidden rounded-lg max-h-[90vh] bg-bg-primary border border-border-light shadow-2xl animate-[popIn_220ms_cubic-bezier(0.23,1,0.32,1)_both] motion-reduce:animate-none">
-                        <div className="px-5 pt-4 pb-3 shrink-0 border-b border-border-light">
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                    <h2
-                                        id="verification-modal-title"
-                                        className="text-[16px] font-semibold leading-tight text-text-primary"
-                                    >
-                                        Verify {itemTypeDisplay}
-                                    </h2>
-                                    <p className="mt-0.5 text-[12px] leading-snug text-text-tertiary">
-                                        Review the items below before confirming verification.
-                                    </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.92]"
-                                    onClick={onClose}
-                                    title="Close"
-                                    aria-label="Close"
-                                >
-                                    <i className="fas fa-times text-[13px]" />
-                                </button>
-                            </div>
-                            <ProgressTrack accentColor={accentColor} blockers={blockers} total={totalRequirements} />
+            <Dialog
+                open
+                onClose={handleClose}
+                size="md"
+                title={`Verify ${itemTypeDisplay.toLowerCase()}`}
+                description="Review the items below before confirming verification."
+                zClassName="z-system"
+                bodyClassName="bg-bg-secondary px-6 py-5"
+                toolbar={<ProgressTrack blockers={blockers} total={totalRequirements} />}
+                footer={
+                    <>
+                        <button type="button" onClick={onClose} disabled={isVerifying} className="btn-secondary">
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSaveAndVerify}
+                            disabled={!canVerify || isVerifying}
+                            aria-busy={isVerifying}
+                            className="btn-primary"
+                        >
+                            {isVerifying && <i className="fas fa-spinner fa-spin text-[12px]" aria-hidden="true" />}
+                            {isVerifying
+                                ? `Verifying ${itemTypeDisplay.toLowerCase()}…`
+                                : canVerify
+                                  ? `Verify ${itemTypeDisplay.toLowerCase()}`
+                                  : 'Complete required items'}
+                        </button>
+                    </>
+                }
+            >
+                <div ref={anchorRef} className="flex flex-col gap-3">
+                    {sectionsReady.checklist && (
+                        <VerificationChecklistSection
+                            expanded={isSectionExpanded('checklist')}
+                            hours={hours}
+                            hoursOk={hoursOk}
+                            lastChipDate={lastChipDate}
+                            lastServiceDate={lastServiceDate}
+                            make={make}
+                            makeOk={makeOk}
+                            model={model}
+                            modelOk={modelOk}
+                            needsHours={needsHours}
+                            needsMake={needsMake}
+                            needsModel={needsModel}
+                            needsVin={needsVin}
+                            needsYear={needsYear}
+                            onToggle={() => toggleSection('checklist')}
+                            requiredFieldsOk={requiredFieldsOk}
+                            serviceOverdue={serviceOverdue}
+                            setHours={setHours}
+                            setLastChipDate={setLastChipDate}
+                            setLastServiceDate={setLastServiceDate}
+                            setMake={setMake}
+                            setModel={setModel}
+                            setVin={setVin}
+                            setYear={setYear}
+                            vin={vin}
+                            vinInfo={vinInfo}
+                            vinOk={vinOk}
+                            year={year}
+                            yearOk={yearOk}
+                        />
+                    )}
+
+                    {assignedOperator && sectionsReady.operator && (
+                        <VerificationOperatorSection
+                            accentColor={accentColor}
+                            expanded={isSectionExpanded('operator')}
+                            isLoadingOperator={isLoadingOperator}
+                            isSavingPhone={isSavingPhone}
+                            onSavePhone={handleSaveOperatorPhone}
+                            onSaveRating={handleSaveOperatorRating}
+                            onToggle={() => toggleSection('operator')}
+                            operatorData={operatorData}
+                            operatorOk={operatorOk}
+                            operatorPhone={operatorPhone}
+                            operatorRating={operatorRating}
+                            phoneOk={phoneOk}
+                            ratingOk={ratingOk}
+                            setOperatorPhone={setOperatorPhone}
+                        />
+                    )}
+
+                    {itemId && service && sectionsReady.issues && (
+                        <VerificationIssuesSection
+                            accentColor={accentColor}
+                            canAddIssue={typeof service?.addIssue === 'function'}
+                            canDelete={canDelete}
+                            expanded={isSectionExpanded('issues')}
+                            hasHighSeverityIssues={hasHighSeverityIssues}
+                            isLoadingIssues={isLoadingIssues}
+                            onAddIssue={handleAddIssue}
+                            onCompleteIssue={handleCompleteIssue}
+                            onDeleteIssue={handleDeleteIssue}
+                            onToggle={() => toggleSection('issues')}
+                            openIssues={openIssues}
+                            userNames={userNames}
+                        />
+                    )}
+
+                    {itemId && service && sectionsReady.comments && (
+                        <VerificationCommentsSection
+                            accentColor={accentColor}
+                            canAddComment={typeof service?.addComment === 'function'}
+                            comments={comments}
+                            expanded={isSectionExpanded('comments')}
+                            isLoadingComments={isLoadingComments}
+                            onAddComment={handleAddComment}
+                            onDeleteComment={handleDeleteComment}
+                            onToggle={() => toggleSection('comments')}
+                            userNames={userNames}
+                        />
+                    )}
+
+                    {isMixerInShopWithoutIssues && (
+                        <div className={NOTICE_DANGER}>
+                            Mixers in &quot;In Shop&quot; status need at least one active issue before they can be
+                            verified. Add an issue describing why this mixer is in the shop.
                         </div>
+                    )}
 
-                        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-2.5 bg-bg-secondary">
-                            {sectionsReady.checklist && (
-                                <VerificationChecklistSection
-                                    expanded={isSectionExpanded('checklist')}
-                                    hours={hours}
-                                    hoursOk={hoursOk}
-                                    lastChipDate={lastChipDate}
-                                    lastServiceDate={lastServiceDate}
-                                    make={make}
-                                    makeOk={makeOk}
-                                    model={model}
-                                    modelOk={modelOk}
-                                    needsHours={needsHours}
-                                    needsMake={needsMake}
-                                    needsModel={needsModel}
-                                    needsVin={needsVin}
-                                    needsYear={needsYear}
-                                    onToggle={() => toggleSection('checklist')}
-                                    requiredFieldsOk={requiredFieldsOk}
-                                    serviceOverdue={serviceOverdue}
-                                    setHours={setHours}
-                                    setLastChipDate={setLastChipDate}
-                                    setLastServiceDate={setLastServiceDate}
-                                    setMake={setMake}
-                                    setModel={setModel}
-                                    setVin={setVin}
-                                    setYear={setYear}
-                                    vin={vin}
-                                    vinInfo={vinInfo}
-                                    vinOk={vinOk}
-                                    year={year}
-                                    yearOk={yearOk}
-                                />
-                            )}
-
-                            {assignedOperator && sectionsReady.operator && (
-                                <VerificationOperatorSection
-                                    accentColor={accentColor}
-                                    expanded={isSectionExpanded('operator')}
-                                    isLoadingOperator={isLoadingOperator}
-                                    isSavingPhone={isSavingPhone}
-                                    onSavePhone={handleSaveOperatorPhone}
-                                    onSaveRating={handleSaveOperatorRating}
-                                    onToggle={() => toggleSection('operator')}
-                                    operatorData={operatorData}
-                                    operatorOk={operatorOk}
-                                    operatorPhone={operatorPhone}
-                                    operatorRating={operatorRating}
-                                    phoneOk={phoneOk}
-                                    ratingOk={ratingOk}
-                                    setOperatorPhone={setOperatorPhone}
-                                />
-                            )}
-
-                            {itemId && service && sectionsReady.issues && (
-                                <VerificationIssuesSection
-                                    accentColor={accentColor}
-                                    canAddIssue={typeof service?.addIssue === 'function'}
-                                    canDelete={canDelete}
-                                    expanded={isSectionExpanded('issues')}
-                                    hasHighSeverityIssues={hasHighSeverityIssues}
-                                    isLoadingIssues={isLoadingIssues}
-                                    onAddIssue={handleAddIssue}
-                                    onCompleteIssue={handleCompleteIssue}
-                                    onDeleteIssue={handleDeleteIssue}
-                                    onToggle={() => toggleSection('issues')}
-                                    openIssues={openIssues}
-                                    userNames={userNames}
-                                />
-                            )}
-
-                            {itemId && service && sectionsReady.comments && (
-                                <VerificationCommentsSection
-                                    accentColor={accentColor}
-                                    canAddComment={typeof service?.addComment === 'function'}
-                                    comments={comments}
-                                    expanded={isSectionExpanded('comments')}
-                                    isLoadingComments={isLoadingComments}
-                                    onAddComment={handleAddComment}
-                                    onDeleteComment={handleDeleteComment}
-                                    onToggle={() => toggleSection('comments')}
-                                    userNames={userNames}
-                                />
-                            )}
-
-                            {isMixerInShopWithoutIssues && (
-                                <Banner tone="danger" icon="fa-exclamation-triangle">
-                                    Mixers in &quot;In Shop&quot; status need at least one active issue before they can
-                                    be verified. Add an issue describing why this mixer is in the shop.
-                                </Banner>
-                            )}
-
-                            {verifyError && (
-                                <div
-                                    role="alert"
-                                    aria-live="polite"
-                                    className="animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none"
-                                >
-                                    <Banner tone="danger" icon="fa-exclamation-circle">
-                                        {verifyError}
-                                    </Banner>
-                                </div>
-                            )}
+                    {verifyError && (
+                        <div role="alert" aria-live="polite" className={NOTICE_DANGER}>
+                            {verifyError}
                         </div>
-
-                        <div className="flex gap-2 px-4 py-3 shrink-0 bg-bg-primary border-t border-border-light">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                disabled={isVerifying}
-                                className="rounded-md px-4 py-2 text-[12.5px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.97] disabled:active:scale-[0.97]"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleSaveAndVerify}
-                                disabled={!canVerify || isVerifying}
-                                aria-busy={isVerifying}
-                                className="flex-1 flex items-center justify-center gap-2 rounded-md px-4 py-2 text-[12.5px] font-semibold text-white cursor-pointer disabled:cursor-not-allowed transition-[filter,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-105 active:scale-[0.97] disabled:active:scale-[0.97]"
-                                style={{
-                                    background: canVerify ? accentColor : 'var(--text-tertiary)',
-                                    opacity: !canVerify || isVerifying ? 0.65 : 1
-                                }}
-                            >
-                                <i className={`fas ${isVerifying ? 'fa-spinner fa-spin' : 'fa-check'} text-[11px]`} />
-                                {isVerifying
-                                    ? `Verifying ${itemTypeDisplay.toLowerCase()}...`
-                                    : canVerify
-                                      ? `Verify ${itemTypeDisplay.toLowerCase()}`
-                                      : 'Complete required items'}
-                            </button>
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+                    )}
+                </div>
+            </Dialog>
             <ConfirmDialog
                 isOpen={pendingDeleteIssueId !== null}
                 onConfirm={confirmDeleteIssue}

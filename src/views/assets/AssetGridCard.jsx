@@ -1,6 +1,7 @@
 import React from 'react'
 
 import Badge from '../../app/components/common/Badge'
+import CountBubble from '../../app/components/common/CountBubble'
 import StarRating from '../../app/components/common/StarRating'
 
 /**
@@ -26,33 +27,9 @@ const getStatusTone = (badgeClass) => {
     return STATUS_TOKEN_TO_TONE[token] || 'neutral'
 }
 
-const getInitials = (name) => {
-    if (!name) return '—'
-    const parts = String(name).split(' ').filter(Boolean)
-    return parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : (name[0] || '?').toUpperCase()
-}
-
-/** 9+ clamp for badge counts (avoids "10" pushing pill out of round). */
-const formatBadgeCount = (count) => (count > 9 ? '9+' : count)
-
-/** Corner count on an action icon. Clamped at 9+ rather than Badge's own 99+,
- *  since a three-character count would stretch a dot this small. */
-function CountBadge({ count, tone = 'accent' }) {
-    if (!count) return null
-    return (
-        <Badge
-            tone={tone === 'danger' ? 'danger' : 'accent'}
-            size="xs"
-            shape="pill"
-            uppercase={false}
-            className="absolute -top-1 -right-1 min-w-[14px] justify-center"
-        >
-            {formatBadgeCount(count)}
-        </Badge>
-    )
-}
-
-function CardFooterAction({ count, countTone, icon, label, onActivate, divider }) {
+/** Text action along the card's footer; a count follows the label in the
+ *  status colour it belongs to. */
+function CardFooterAction({ count, countTone, icon, label, onActivate }) {
     return (
         <button
             type="button"
@@ -61,22 +38,16 @@ function CardFooterAction({ count, countTone, icon, label, onActivate, divider }
                 onActivate?.()
             }}
             aria-label={label}
-            className={`relative flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-semibold cursor-pointer text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset ${
-                divider ? 'border-r border-border-light' : ''
-            }`}
+            className="inline-flex h-8 items-center gap-1.5 rounded-[3px] border-none bg-transparent px-2 text-[12px] text-text-secondary cursor-pointer transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
         >
-            <i className={`fas ${icon}`} />
+            <i className={`fas ${icon} text-[11px]`} aria-hidden="true" />
             <span>{label}</span>
             {count > 0 && (
-                <Badge
-                    tone={countTone === 'danger' ? 'danger' : 'accent'}
-                    size="xs"
-                    shape="pill"
-                    uppercase={false}
-                    className="min-w-[16px] justify-center"
+                <span
+                    className={`font-mono text-[11px] font-medium tabular-nums ${countTone === 'danger' ? 'text-status-danger' : 'text-text-primary'}`}
                 >
-                    {formatBadgeCount(count)}
-                </Badge>
+                    {count > 99 ? '99+' : count}
+                </span>
             )}
         </button>
     )
@@ -92,10 +63,10 @@ function AssignmentIconButton({ ariaLabel, count, icon, onActivate }) {
             }}
             title={ariaLabel}
             aria-label={ariaLabel}
-            className="relative inline-flex h-6 w-6 items-center justify-center rounded-md border-none bg-transparent text-[10px] text-text-secondary transition-colors duration-150 hover:bg-accent hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="relative inline-flex h-6 w-6 items-center justify-center rounded-[3px] border-none bg-transparent text-[10.5px] text-text-tertiary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
             <i className={`fas ${icon}`} />
-            {count > 0 && <CountBadge count={count} tone="accent" />}
+            <CountBubble count={count} size="sm" tone="accent" className="absolute -right-1.5 -top-1.5" />
         </button>
     )
 }
@@ -151,155 +122,101 @@ function AssetGridCard({
             onClick={handleSelect}
             onKeyDown={handleKeyDown}
             aria-label={`${config.singularLabel} ${number}`}
-            className="group flex flex-col overflow-hidden rounded-card border border-border-light bg-bg-secondary shadow-sm cursor-pointer transition duration-200 hover:-translate-y-0.5 hover:shadow-card hover:border-border-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+            className="group flex h-full flex-col rounded-card border border-border-light bg-bg-primary cursor-pointer transition-colors duration-150 hover:border-border-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary"
         >
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent text-white text-lg">
-                    <i className={`fas ${config.icon}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="truncate font-heading text-lg font-semibold tracking-tight text-text-primary tabular-nums">
-                        #{number}
+            <div className="px-4 pb-3 pt-4">
+                <div className="flex items-baseline justify-between gap-3">
+                    <div className="flex min-w-0 items-baseline gap-2">
+                        <span className="truncate font-heading text-[22px] font-semibold leading-none tracking-tight text-text-primary tabular-nums">
+                            {number}
+                        </span>
+                        <span className="shrink-0 text-[12px] text-text-tertiary">{config.singularLabel}</span>
+                        {config.hasVerification && isVerified !== undefined && (
+                            <i
+                                className={`fas ${isVerified ? 'fa-circle-check text-status-active' : 'fa-circle-exclamation text-status-warning'} shrink-0 text-[11px]`}
+                                title={isVerified ? 'Verified this week' : 'Not verified this week'}
+                                aria-label={isVerified ? 'Verified' : 'Unverified'}
+                            />
+                        )}
                     </div>
-                    <div className="text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
-                        {config.singularLabel}
-                    </div>
-                </div>
-                {config.hasVerification && isVerified !== undefined && (
-                    <Badge
-                        tone={isVerified ? 'success' : 'warning'}
-                        variant="soft"
-                        size="sm"
-                        shape="pill"
-                        uppercase={false}
-                        icon={isVerified ? 'check-circle' : 'exclamation-circle'}
-                        className="shrink-0 px-2.5 py-1"
-                    >
-                        {isVerified ? 'Verified' : 'Unverified'}
+                    <Badge tone={getStatusTone(statusBadgeClass)} size="sm" uppercase={false}>
+                        {`${displayStatus || '---'}${statusDays ? ` · ${statusDays}d` : ''}`}
                     </Badge>
+                </div>
+                {(config.hasOperatorAssignment || config.hasTractorAssignment) && (
+                    <div className="mt-2.5 flex min-h-[24px] items-center gap-1">
+                        <span
+                            className={`min-w-0 flex-1 truncate text-[13px] ${subtitleName ? 'text-text-primary' : 'italic text-text-tertiary'}`}
+                        >
+                            {subtitleName || 'Not assigned'}
+                        </span>
+                        {config.hasOperatorAssignment && operator?.name && (
+                            <>
+                                <AssignmentIconButton
+                                    ariaLabel="Operator comments"
+                                    count={operator.commentsCount}
+                                    icon="fa-comment"
+                                    onActivate={() => onShowOperatorCommentModal?.(operator)}
+                                />
+                                <AssignmentIconButton
+                                    ariaLabel="Operator history"
+                                    icon="fa-history"
+                                    onActivate={() => onShowOperatorHistoryModal?.(operator)}
+                                />
+                            </>
+                        )}
+                    </div>
                 )}
-                <Badge
-                    tone={getStatusTone(statusBadgeClass)}
-                    size="md"
-                    shape="rounded-md"
-                    uppercase={false}
-                    className="shrink-0 px-2.5 py-1"
-                >
-                    {`${displayStatus || '---'}${statusDays ? ` (${statusDays}d)` : ''}`}
-                </Badge>
             </div>
 
-            {(config.hasOperatorAssignment || config.hasTractorAssignment) && (
-                <div
-                    className={`flex items-center gap-2.5 px-5 py-2.5 bg-bg-hover/60 ${!subtitleName ? 'opacity-60' : ''}`}
-                >
-                    <div
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${
-                            subtitleName
-                                ? 'bg-gradient-to-br from-accent to-accent-hover'
-                                : 'bg-bg-tertiary text-text-tertiary'
-                        }`}
-                    >
-                        {getInitials(config.hasOperatorAssignment ? operator?.name : tractor?.truckNumber)}
-                    </div>
-                    <span
-                        className={`flex-1 truncate text-xs font-semibold ${
-                            subtitleName ? 'text-text-primary' : 'italic text-text-tertiary'
-                        }`}
-                    >
-                        {subtitleName || 'Not Assigned'}
-                    </span>
-                    {config.hasOperatorAssignment && operator?.name && (
-                        <div className="flex gap-1">
-                            <AssignmentIconButton
-                                ariaLabel="Operator comments"
-                                count={operator.commentsCount}
-                                icon="fa-comment"
-                                onActivate={() => onShowOperatorCommentModal?.(operator)}
-                            />
-                            <AssignmentIconButton
-                                ariaLabel="Operator history"
-                                icon="fa-history"
-                                onActivate={() => onShowOperatorHistoryModal?.(operator)}
-                            />
-                        </div>
-                    )}
-                </div>
-            )}
-
-            <div className="grid grid-cols-2">
-                {fields.map((field, idx) => {
+            <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border-light px-4 py-3">
+                {fields.map((field) => {
                     const value = field.getValue
                         ? field.getValue(item, { operator, plantName, tractor })
                         : (item[field.key] ?? '---')
                     const isOverdue = field.isOverdue?.(item)
                     const warning = field.getWarning?.(item)
-                    const isLastRow = idx >= fields.length - 2
-                    const isOdd = idx % 2 === 0
-
                     return (
-                        <div
-                            key={field.label}
-                            className={`flex flex-col gap-0.5 px-5 py-3 ${!isLastRow ? 'border-b border-border-light' : ''} ${isOdd ? 'border-r border-border-light' : ''}`}
-                        >
-                            <span className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                                {field.label}
-                            </span>
-                            <span className="text-[13px] font-semibold text-text-primary">
+                        <div key={field.label} className="flex min-w-0 flex-col gap-0.5">
+                            <dt className="text-[11.5px] text-text-tertiary">{field.label}</dt>
+                            <dd className="m-0 text-[13px] text-text-primary">
                                 {field.type === 'stars' ? (
-                                    <span className="inline-flex items-center gap-1">
+                                    <span className="inline-flex flex-wrap items-center gap-1.5">
                                         <StarRating value={value || 0} tone="warning" size="sm" />
-                                        {warning && (
-                                            <Badge
-                                                tone="danger"
-                                                variant="soft"
-                                                size="xs"
-                                                shape="rounded-md"
-                                                uppercase={false}
-                                                className="ml-1"
-                                            >
-                                                {warning}
-                                            </Badge>
-                                        )}
+                                        {warning && <span className="text-[11.5px] text-status-danger">{warning}</span>}
                                     </span>
                                 ) : field.type === 'monospace' ? (
-                                    <span className="font-mono text-[11px] tabular-nums text-text-secondary">
+                                    <span className="font-mono text-[12px] tabular-nums text-text-secondary">
                                         {value}
                                     </span>
                                 ) : (
-                                    <span className="inline-flex items-center gap-1.5">
-                                        {value}
-                                        {isOverdue && (
-                                            <Badge tone="danger" variant="soft" size="xs" shape="rounded-md">
-                                                Overdue
-                                            </Badge>
-                                        )}
+                                    <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
+                                        <span className="tabular-nums">{value}</span>
+                                        {isOverdue && <span className="text-[11.5px] text-status-danger">Overdue</span>}
                                     </span>
                                 )}
-                            </span>
+                            </dd>
                         </div>
                     )
                 })}
-            </div>
+            </dl>
 
-            <div className="flex border-t border-border-light">
+            <div className="mt-auto flex items-center gap-1 border-t border-border-light px-2 py-1.5">
                 <CardFooterAction
                     count={item.commentsCount}
                     countTone="accent"
-                    divider
-                    icon="fa-comments"
+                    icon="fa-comment"
                     label="Comments"
                     onActivate={onShowCommentModal}
                 />
                 <CardFooterAction
                     count={item.openIssuesCount}
                     countTone="danger"
-                    divider
-                    icon="fa-tools"
+                    icon="fa-wrench"
                     label="Issues"
                     onActivate={onShowIssueModal}
                 />
-                <CardFooterAction icon="fa-history" label="History" onActivate={onShowHistoryModal} />
+                <CardFooterAction icon="fa-clock-rotate-left" label="History" onActivate={onShowHistoryModal} />
             </div>
         </div>
     )

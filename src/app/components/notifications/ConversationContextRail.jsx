@@ -42,7 +42,7 @@ function ContextEmpty({ children }) {
 function ContextStat({ label, value }) {
     return (
         <div className="rounded px-2.5 py-2 flex flex-col gap-0.5 bg-bg-secondary border border-border-light">
-            <span className="text-[9.5px] font-bold uppercase tracking-wider text-text-tertiary">{label}</span>
+            <span className="text-[12px] font-medium text-text-tertiary">{label}</span>
             <span className="text-[15px] font-bold font-mono tabular-nums text-text-primary">{value}</span>
         </div>
     )
@@ -62,7 +62,7 @@ function ContextActionButton({ accentColor, active = false, danger = false, icon
         <button
             type="button"
             onClick={onClick}
-            className="flex items-center gap-2 rounded px-3 py-2 text-[12px] font-semibold cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 border active:scale-[0.97]"
+            className="flex items-center gap-2 rounded px-3 py-2 text-[12px] font-semibold cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 border"
             style={styles}
         >
             <i className={`fas ${icon} text-[11px] text-center w-3.5`} />
@@ -162,13 +162,13 @@ export default function ConversationContextRail({
                                         key={`${type}-${meta.itemNumber || Math.random()}`}
                                         onClick={() => isViewable && onAttachmentClick?.(type, meta)}
                                         disabled={!isViewable}
-                                        className="flex items-center gap-2 rounded text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary px-2.5 py-1.5 cursor-pointer disabled:cursor-default bg-bg-primary border border-border-light active:scale-[0.97] disabled:active:scale-[0.97]"
+                                        className="flex items-center gap-2 rounded text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary px-2.5 py-1.5 cursor-pointer disabled:cursor-default bg-bg-primary border border-border-light"
                                     >
                                         <i className={`${icon} text-[11px]`} style={{ color: accentColor }} />
                                         <span className="font-mono tabular-nums text-[11.5px] font-bold text-text-primary">
                                             {meta.itemNumber || '—'}
                                         </span>
-                                        <span className="ml-auto text-[9.5px] uppercase tracking-wider font-semibold text-text-tertiary">
+                                        <span className="ml-auto text-[12px] font-medium text-text-tertiary">
                                             {label}
                                         </span>
                                         {isViewable && (

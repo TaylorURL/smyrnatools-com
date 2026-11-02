@@ -1,36 +1,57 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
+import React, { useCallback, useEffect, useRef } from 'react'
+
+import Dialog from '../../ui/Dialog'
+
+const ASK_PATTERN = /^are you sure you want to delete (.+?)\?\s*(.*)$/is
+
+/**
+ * Callers word the prompt as "Are you sure you want to delete Truck #2100?
+ * This action cannot be undone." and title it "Confirm Delete". The dialog
+ * asks the question in its title instead ("Delete Truck #2100?") and keeps
+ * the consequence as the line under it. A message in any other shape is
+ * shown as given.
+ */
+function deleteCopy(deleteTitle, deleteMessage) {
+    const match = ASK_PATTERN.exec(deleteMessage || '')
+    if (match) return { body: match[2] || 'This can’t be undone.', title: `Delete ${match[1]}?` }
+    const title =
+        !deleteTitle || /^confirm delete$/i.test(deleteTitle)
+            ? 'Delete this record?'
+            : deleteTitle.endsWith('?')
+              ? deleteTitle
+              : `${deleteTitle}?`
+    return { body: deleteMessage, title }
+}
 
 export default function DetailViewDeleteModal({ deleteMessage, deleteTitle, onDeleteCancel, onDeleteConfirm, show }) {
-    if (!show) return null
-    return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-shell-modal flex items-center justify-center bg-[var(--scrim)] p-5">
-            <div className="w-full max-w-[360px] overflow-hidden rounded bg-bg-primary shadow-modal">
-                <div className="p-6 text-center">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded bg-[var(--tint-danger-wash)]">
-                        <i className="fas fa-trash-alt text-2xl text-text-primary"></i>
-                    </div>
-                    <h3 className="m-0 mb-1.5 text-lg font-bold text-text-primary">{deleteTitle}</h3>
-                    <p className="m-0 text-[13px] text-text-secondary">{deleteMessage}</p>
-                </div>
-                <div className="flex gap-2.5 border-t border-border-light bg-bg-secondary px-5 py-3.5">
-                    <button
-                        type="button"
-                        className="dv-btn flex-1 rounded-[10px] border-none bg-bg-tertiary px-4 py-2.5 text-[13px] font-semibold text-text-secondary cursor-pointer"
-                        onClick={onDeleteCancel}
-                    >
+    // Callers pass an inline cancel, so the identity changes on every render
+    // of the record page. The dialog re-runs its focus handling whenever
+    // `onClose` changes, so it gets one stable close that calls the latest.
+    const onCancelRef = useRef(onDeleteCancel)
+    useEffect(() => {
+        onCancelRef.current = onDeleteCancel
+    })
+    const handleCancel = useCallback(() => onCancelRef.current?.(), [])
+
+    const { body, title } = deleteCopy(deleteTitle, deleteMessage)
+    return (
+        <Dialog
+            open={show}
+            onClose={handleCancel}
+            size="sm"
+            title={title}
+            footer={
+                <>
+                    <button type="button" className="btn-secondary" onClick={handleCancel}>
                         Cancel
                     </button>
-                    <button
-                        type="button"
-                        className="dv-btn flex-1 rounded-[10px] border-none bg-[var(--danger)] px-4 py-2.5 text-[13px] font-semibold text-[color:var(--on-accent)] cursor-pointer"
-                        onClick={onDeleteConfirm}
-                    >
+                    <button type="button" className="btn-danger" onClick={onDeleteConfirm}>
                         Delete
                     </button>
-                </div>
-            </div>
-        </div>,
-        document.body
+                </>
+            }
+        >
+            {body && <p className="m-0 text-[13px] leading-relaxed text-text-secondary">{body}</p>}
+        </Dialog>
     )
 }
