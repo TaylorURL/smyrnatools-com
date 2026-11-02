@@ -218,8 +218,10 @@ export function SidebarContent({
     const loading = visibleMenuItems.length === 0
     return (
         <div className="flex h-full min-h-0 flex-col text-white" style={{ background: sidebarBackground(accentColor) }}>
+            {/* The logo sits in the middle of the rail; the drawer's close
+                button is pinned to the right edge so it doesn't push it over. */}
             <div
-                className={`flex shrink-0 items-center ${compact ? 'justify-center px-2 pb-3 pt-4' : 'justify-between px-4 pb-4 pt-5'}`}
+                className={`relative flex shrink-0 items-center justify-center ${compact ? 'px-2 pb-3 pt-4' : 'px-4 pb-4 pt-5'}`}
             >
                 <img
                     src={SRM_LOGO_URL}
@@ -234,7 +236,7 @@ export function SidebarContent({
                         type="button"
                         aria-label="Close menu"
                         onClick={onClose}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-[4px] text-white/70 cursor-pointer hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                        className="absolute right-3 inline-flex h-9 w-9 items-center justify-center rounded-[4px] text-white/70 cursor-pointer hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                     >
                         <i className="fas fa-times" aria-hidden="true" />
                     </button>
