@@ -6,7 +6,7 @@ The internal operations app for Smyrna Ready Mix, a ready-mix concrete company.
 
 [smyrnatools.com](https://www.smyrnatools.com)
 
-<img src="https://img.shields.io/badge/version-2026.45.0-222d65?style=for-the-badge" alt="Version 2026.45.0" />
+<img src="https://img.shields.io/badge/version-2026.45.1-222d65?style=for-the-badge" alt="Version 2026.45.1" />
 
 I built Smyrna Tools while I was running plants for Smyrna Ready Mix. Managers track their trucks, equipment, operators and plants in one place. Everything is behind a company sign-in. The only public pages are login, privacy, terms and contact.
 
@@ -26,7 +26,7 @@ Roles carry named permissions like `region.select.all` and `detailview.delete`, 
 
 ## Assets
 
-`BaseAssetService` does CRUD, history, comments, issues and verification once. Each asset type passes a config and gets thin typed methods on top. Change summaries come from `ai-service`, which calls the xAI API on the server so the key never reaches the browser. Plan schedule snapshots are taken at 5:30 PM Chicago time by `pg_cron` and `pg_net` calling an edge function from inside Postgres.
+`BaseAssetService` does CRUD, history, comments, issues and verification once. Each asset type passes a config and gets thin typed methods on top. Change summaries come from `ai-service`, which calls the xAI API on the server so the key never reaches the browser, and falls back to Claude when Grok fails. Plan schedule snapshots are taken at 5:30 PM Chicago time by `pg_cron` and `pg_net` calling an edge function from inside Postgres.
 
 <details>
 <summary>Running it locally</summary>
