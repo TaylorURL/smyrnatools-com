@@ -58,7 +58,7 @@ export default function ReplyBar({ accentColor, onSend, otherName }) {
                 type="button"
                 onClick={handleSend}
                 disabled={!canSend}
-                className="h-8 w-8 flex items-center justify-center rounded text-white shrink-0 active:scale-[0.92] disabled:active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                className="h-8 w-8 flex items-center justify-center rounded text-white shrink-0 transition-transform duration-150 ease-out motion-reduce:transition-none"
                 style={{
                     background: canSend ? accentColor : 'var(--bg-tertiary)',
                     color: canSend ? 'var(--on-accent)' : 'var(--text-tertiary)',

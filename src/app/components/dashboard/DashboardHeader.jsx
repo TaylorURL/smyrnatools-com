@@ -1,20 +1,12 @@
 import React from 'react'
 
-import Badge from '../common/Badge'
-
-const ACTION_BUTTON_CLASS =
-    'inline-flex items-center gap-1.5 rounded-md text-[12px] font-semibold px-2.5 h-[30px] cursor-pointer ' +
-    'bg-bg-secondary border border-border-light text-text-primary ' +
-    'transition duration-150 hover:bg-bg-hover hover:border-border-medium ' +
-    'active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none ' +
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ' +
-    'focus-visible:ring-offset-bg-primary'
+import { formatCentralDate } from '../../../utils/PlanUtility'
 
 /**
- * Slim sticky dashboard header: one-line title, an inline region and scope
- * pill, and a row of action buttons for the plant filter and refresh. The
- * skeleton state matches the live layout height so the header does not shift
- * as the dashboard loads.
+ * Dashboard page header: the title, a line naming the region and today's
+ * date, and the plant filter and refresh. It sits on the page background with
+ * the same inset as the content under it, so the title lines up with the
+ * first column of numbers.
  */
 export default function DashboardHeader({
     accentColor: _accentColor,
@@ -26,59 +18,53 @@ export default function DashboardHeader({
     refreshing,
     regionDisplayName
 }) {
+    const dateLabel = formatCentralDate(new Date(), { day: 'numeric', month: 'long', weekday: 'long' })
     return (
-        <div className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b border-border-light bg-bg-primary px-3 sm:px-4 py-2.5 animate-fade-in-fast">
-            <h1 className="font-heading text-lg font-semibold tracking-tight m-0 shrink-0 text-text-primary">
-                Dashboard
-            </h1>
-            {isLoading ? (
-                <div className="h-6 w-56 rounded-md animate-pulse bg-bg-tertiary" />
-            ) : (
-                <Badge
-                    tone="neutral"
-                    variant="custom"
-                    size="lg"
-                    shape="rounded-md"
-                    weight="medium"
-                    uppercase={false}
-                    className="max-w-full bg-bg-secondary border border-border-light text-text-primary transition-colors duration-150"
-                >
-                    <i className="fas fa-location-dot text-[10px] text-text-tertiary" aria-hidden="true" />
-                    <span className="truncate">{regionDisplayName || 'Region'}</span>
-                    {heroRegionSub && (
-                        <span className="hidden sm:inline truncate text-text-tertiary">· {heroRegionSub}</span>
+        <header className="shrink-0 bg-bg-secondary">
+            <div className="flex w-full flex-wrap items-end gap-x-4 gap-y-3 px-4 pb-5 pt-6 sm:px-6 lg:px-8">
+                <div className="min-w-0 flex-1">
+                    <h1 className="m-0 font-heading text-[28px] font-semibold leading-none tracking-tight text-text-primary">
+                        Dashboard
+                    </h1>
+                    {isLoading ? (
+                        <div className="mt-2.5 h-4 w-64 rounded-sm bg-bg-tertiary animate-pulse motion-reduce:animate-none" />
+                    ) : (
+                        <p className="m-0 mt-2 truncate text-[13px] text-text-secondary">
+                            <span className="font-medium text-text-primary">{regionDisplayName || 'Region'}</span>
+                            {heroRegionSub && <span> · {heroRegionSub}</span>}
+                            <span className="hidden sm:inline"> · {dateLabel}</span>
+                        </p>
                     )}
-                </Badge>
-            )}
-            <div className="flex-1 min-w-[8px]" />
-            <div className="flex items-center gap-1.5">
-                {onPlantFilterClick && (
-                    <button
-                        type="button"
-                        onClick={onPlantFilterClick}
-                        className={ACTION_BUTTON_CLASS}
-                        aria-label="Filter dashboard by plant"
-                    >
-                        <i className="fas fa-filter text-[11px]" aria-hidden="true" />
-                        {!isMobile && <span>Filter</span>}
-                    </button>
-                )}
-                {onRefresh && (
-                    <button
-                        type="button"
-                        onClick={onRefresh}
-                        disabled={refreshing}
-                        className={`${ACTION_BUTTON_CLASS} justify-center w-[30px] px-0`}
-                        title="Refresh"
-                        aria-label="Refresh dashboard data"
-                    >
-                        <i
-                            className={`fas fa-arrows-rotate text-[11px] ${refreshing ? 'animate-spin motion-reduce:animate-none' : ''}`}
-                            aria-hidden="true"
-                        />
-                    </button>
-                )}
+                </div>
+                <div className="flex items-center gap-2">
+                    {onPlantFilterClick && (
+                        <button
+                            type="button"
+                            onClick={onPlantFilterClick}
+                            className="btn-secondary"
+                            aria-label="Filter dashboard by plant"
+                        >
+                            <i className="fas fa-sliders text-[11px]" aria-hidden="true" />
+                            {!isMobile && <span>Plants</span>}
+                        </button>
+                    )}
+                    {onRefresh && (
+                        <button
+                            type="button"
+                            onClick={onRefresh}
+                            disabled={refreshing}
+                            className="btn-secondary w-9 justify-center px-0"
+                            title="Refresh"
+                            aria-label="Refresh dashboard data"
+                        >
+                            <i
+                                className={`fas fa-arrows-rotate text-[12px] ${refreshing ? 'animate-spin motion-reduce:animate-none' : ''}`}
+                                aria-hidden="true"
+                            />
+                        </button>
+                    )}
+                </div>
             </div>
-        </div>
+        </header>
     )
 }

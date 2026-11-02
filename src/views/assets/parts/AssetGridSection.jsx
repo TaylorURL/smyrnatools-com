@@ -42,7 +42,7 @@ export default function AssetGridSection({
                     return (
                         <div
                             key={item.id}
-                            className="animate-fade-in-up"
+                            className="h-full animate-fade-in-up"
                             style={{ animationDelay: `${index * staggerDelay}ms` }}
                         >
                             <AssetGridCard

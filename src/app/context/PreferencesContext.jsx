@@ -5,7 +5,7 @@ import { UserPreferencesService } from '../../services/UserPreferencesService'
 import APIUtility from '../../utils/APIUtility'
 import { importChunk } from '../../utils/ChunkRecovery'
 import { logDatabaseError } from '../../utils/DatabaseErrorUtility'
-import { DEFAULT_ACCENT_COLOR } from '../constants/themeConstants'
+import { DEFAULT_ACCENT_COLOR, normalizeThemeMode } from '../constants/themeConstants'
 
 const PREFS_FUNCTION = '/user-preferences-service'
 // Region derivation is the only thing here that reaches the database, and the
@@ -232,7 +232,7 @@ export const PreferencesProvider = ({ children }) => {
                                 ? { ...defaultPreferences.selectedRegion, ...data.selected_region }
                                 : defaultPreferences.selectedRegion,
                             startPage: data.start_page || defaultPreferences.startPage,
-                            themeMode: data.theme_mode || defaultPreferences.themeMode,
+                            themeMode: normalizeThemeMode(data.theme_mode),
                             tractorFilters: data.tractor_filters
                                 ? {
                                       ...data.tractor_filters,

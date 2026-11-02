@@ -59,10 +59,14 @@ const TopSectionDesktop = ({
         aria-label="Page controls"
     >
         {hideRealContent && skeletonContent}
-        <div className="flex flex-col gap-3" style={hideRealContent ? { display: 'none' } : undefined}>
+        <div className="flex flex-col gap-4" style={hideRealContent ? { display: 'none' } : undefined}>
             <div className="flex items-center gap-3 justify-between flex-wrap">
                 <div className={`flex items-center gap-3 min-w-0${revealControls ? ' animate-reveal-left' : ''}`}>
-                    <h1 className="text-[18px] font-bold tracking-tight m-0 truncate text-text-primary">{title}</h1>
+                    {title && (
+                        <h1 className="m-0 mr-3 truncate font-heading text-[28px] font-semibold leading-none tracking-tight text-text-primary">
+                            {title}
+                        </h1>
+                    )}
                     {badge && (
                         <TopSectionBadgeRow onClick={onBadgeClick} onPillClick={onPillClick} accentColor={accentColor}>
                             {badge}
@@ -107,7 +111,7 @@ const TopSectionDesktop = ({
                             onChange={onSearchInputChange}
                             onClear={onClearSearch}
                             placeholder={searchPlaceholder}
-                            className="min-w-[220px] max-w-[420px]"
+                            className="w-[320px] max-w-full"
                         />
                     </div>
                 )}

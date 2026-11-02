@@ -1,29 +1,33 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-/** Horizontal section-tab strip for mobile detail views; optional
- *  `footerActions` render pinned to the right edge of the strip. */
-export default function DetailViewMobileNav({ accent, activeSection, footerActions, sections, setActiveSection }) {
+/** Bottom bar for mobile detail views: the record's actions (Save, Delete)
+ *  on a row of their own above an evenly split section-tab strip. Sharing one
+ *  scrolling row, the tabs truncated to "Basic Inf…" and the actions ran off
+ *  the right edge of the screen. */
+export default function DetailViewMobileNav({ activeSection, footerActions, sections, setActiveSection }) {
     return (
-        <nav className="dv-mobile-nav">
-            {sections.map((section) => (
-                <button
-                    type="button"
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className="dv-mobile-nav-btn"
-                    style={{
-                        background: activeSection === section.id ? `${accent}15` : 'var(--bg-secondary)',
-                        color: activeSection === section.id ? accent : 'var(--text-secondary)'
-                    }}
-                >
-                    <i className={section.icon || 'fas fa-circle'}></i>
-                    <span className="max-w-[60px] truncate">{section.title}</span>
-                </button>
-            ))}
-            {footerActions && (
-                <div className="ml-auto flex gap-1 border-l border-border-light pl-2">{footerActions}</div>
-            )}
+        <nav className="dv-mobile-nav" aria-label="Sections">
+            {footerActions && <div className="dv-mobile-nav-actions">{footerActions}</div>}
+            <div className="flex overflow-hidden rounded-[4px] border border-border-medium">
+                {sections.map((section) => {
+                    const isActive = activeSection === section.id
+                    return (
+                        <button
+                            type="button"
+                            key={section.id}
+                            onClick={() => setActiveSection(section.id)}
+                            aria-current={isActive ? 'true' : undefined}
+                            className={`dv-mobile-nav-btn ${
+                                isActive
+                                    ? 'bg-bg-tertiary font-medium text-text-primary'
+                                    : 'bg-bg-primary text-text-secondary'
+                            }`}
+                        >
+                            <span className="truncate">{section.title}</span>
+                        </button>
+                    )
+                })}
+            </div>
         </nav>
     )
 }

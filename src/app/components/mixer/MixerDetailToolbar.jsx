@@ -1,7 +1,8 @@
 import React from 'react'
 
 const buttonClasses = 'global-button-secondary'
-const footerButtonClasses = `${buttonClasses} flex-1 justify-center`
+const saveButtonClasses = 'global-button-primary flex-1 justify-center'
+const deleteButtonClasses = 'global-button-danger flex-1 justify-center'
 
 /** Header buttons: Issues / Comments / History. Always visible to anyone with access. */
 export function MixerDetailHeaderActions({ onOpenComments, onOpenHistory, onOpenIssues }) {
@@ -27,12 +28,12 @@ export function MixerDetailHeaderActions({ onOpenComments, onOpenHistory, onOpen
 export function MixerDetailFooterActions({ canDeleteMixer, isSaving, onDelete, onSave }) {
     return (
         <>
-            <button type="button" className={footerButtonClasses} onClick={onSave} disabled={isSaving}>
+            <button type="button" className={saveButtonClasses} onClick={onSave} disabled={isSaving}>
                 <i className="fas fa-save"></i>
                 <span>{isSaving ? 'Saving...' : 'Save'}</span>
             </button>
             {canDeleteMixer && (
-                <button type="button" className={footerButtonClasses} onClick={onDelete} disabled={isSaving}>
+                <button type="button" className={deleteButtonClasses} onClick={onDelete} disabled={isSaving}>
                     <i className="fas fa-trash-alt"></i>
                     <span>Delete</span>
                 </button>

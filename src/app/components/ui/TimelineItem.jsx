@@ -49,5 +49,5 @@ export function TimelineDuration({ text }) {
 }
 
 export function TimelineSectionTitle({ title }) {
-    return <h3 className="m-0 mb-1 text-[9.5px] font-bold uppercase tracking-wider text-text-secondary">{title}</h3>
+    return <h3 className="m-0 mb-1 text-[12px] font-medium text-text-secondary">{title}</h3>
 }

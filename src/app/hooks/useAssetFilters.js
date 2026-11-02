@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 
+const PHONE_MAX_WIDTH = 768
+
+/** True on a phone-width viewport, where the asset views open on the cards
+ *  whatever view mode the (desktop-set) preferences hold. */
+export const isPhoneViewport = () => typeof window !== 'undefined' && window.innerWidth < PHONE_MAX_WIDTH
+
 /** Creates a debounced wrapper that delays invocation until after `delay` ms of inactivity. */
 function debounce(fn, delay) {
     let timer = null
@@ -56,6 +62,10 @@ export default function useAssetFilters({
     })
     const [viewMode, setViewMode] = useState(() => {
         if (embedded) return 'list'
+        // A phone opens on the cards. The list is a dozen columns wide and on
+        // a narrow screen can only be read by scrolling it sideways, so the
+        // saved preference, which the desktop sets, does not decide here.
+        if (isPhoneViewport()) return 'grid'
         if (savedFilters?.viewMode != null) return savedFilters.viewMode
         if (preferences.defaultViewMode != null) return preferences.defaultViewMode
         return localStorage.getItem(config.viewModeStorageKey) || 'grid'

@@ -348,7 +348,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                         <>
                             <button
                                 type="button"
-                                className="global-button-secondary flex-1 justify-center"
+                                className="global-button-primary flex-1 justify-center"
                                 onClick={handleSave}
                                 disabled={isSaving || !canEditPickup}
                             >
@@ -358,7 +358,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                             {canDeletePickup && (
                                 <button
                                     type="button"
-                                    className="global-button-secondary flex-1 justify-center"
+                                    className="global-button-danger flex-1 justify-center"
                                     onClick={handleDelete}
                                     disabled={isSaving || !canEditPickup}
                                 >

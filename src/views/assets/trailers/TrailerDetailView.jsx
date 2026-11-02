@@ -390,7 +390,7 @@ function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
                         <>
                             <button
                                 type="button"
-                                className="global-button-secondary flex-1 justify-center"
+                                className="global-button-primary flex-1 justify-center"
                                 onClick={async () => {
                                     await handleSave()
                                     setHasUnsavedChanges(false)
@@ -403,7 +403,7 @@ function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
                             {canDeleteTrailer && (
                                 <button
                                     type="button"
-                                    className="global-button-secondary flex-1 justify-center"
+                                    className="global-button-danger flex-1 justify-center"
                                     onClick={() => setShowDeleteConfirmation(true)}
                                     disabled={isSaving}
                                 >

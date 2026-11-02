@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
 
-import AccountAtAGlance from '../../../app/components/myaccount/AccountAtAGlance'
 import AccountSideNav from '../../../app/components/myaccount/AccountSideNav'
 import AccountSkeleton from '../../../app/components/myaccount/AccountSkeleton'
 import AccountStatStrip from '../../../app/components/myaccount/AccountStatStrip'
@@ -246,15 +245,10 @@ function MyAccountView({ onSelectView, userId }) {
             />
 
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-                <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-4 lg:px-6 flex gap-4">
-                    <AccountSideNav
-                        accentColor={accentColor}
-                        activeId={activeSection}
-                        onJump={jumpTo}
-                        sections={sectionsForTab}
-                    />
+                <div className="flex w-full gap-8 px-4 sm:px-6 lg:px-8">
+                    <AccountSideNav activeId={activeSection} onJump={jumpTo} sections={sectionsForTab} />
 
-                    <main className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
+                    <main className="flex-1 min-w-0 max-w-[960px] py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
                         {message && (
                             <div
                                 role={messageIsError ? 'alert' : 'status'}
@@ -351,16 +345,6 @@ function MyAccountView({ onSelectView, userId }) {
 
                         <div className="h-8" />
                     </main>
-
-                    <AccountAtAGlance
-                        additionalPlants={additionalPlants}
-                        email={email}
-                        joinedAt={joinedAt}
-                        plantCode={plantCode}
-                        regionName={regionLabel}
-                        sessions={sessions}
-                        userRole={userRole}
-                    />
                 </div>
             </div>
 

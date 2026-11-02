@@ -23,7 +23,8 @@ module.exports = {
             },
             fontFamily: {
                 sans: ['var(--font-body)', 'system-ui', 'sans-serif'],
-                heading: ['var(--font-heading)', 'system-ui', 'sans-serif']
+                heading: ['var(--font-heading)', 'system-ui', 'sans-serif'],
+                mono: ['var(--font-mono)', 'ui-monospace', 'monospace']
             },
             boxShadow: {
                 card: 'var(--shadow-card)',
@@ -35,8 +36,8 @@ module.exports = {
                 glow: 'var(--drop-shadow-glow)'
             },
             borderRadius: {
-                card: '12px',
-                modal: '16px'
+                card: '6px',
+                modal: '8px'
             },
             animation: {
                 'fade-in': 'fadeIn 0.3s ease',
@@ -49,8 +50,10 @@ module.exports = {
                 'fade-in-up': 'fadeInUp 0.45s ease-out both',
                 'reveal-left': 'revealFromLeft 0.5s ease-out both',
                 'reveal-right': 'revealFromRight 0.5s ease-out both',
+                'drawer-in-left': 'drawerInLeft 0.22s ease-out both',
                 'reveal-up': 'revealFromUp 0.5s ease-out both',
                 'pop-in': 'popIn 0.2s ease-out',
+                'dialog-in': 'dialogIn 0.16s ease-out',
                 'slide-in-row': 'slideInRow 0.4s ease-out both',
                 'comment-slide-in': 'commentSlideIn 0.3s ease-out',
                 'comment-fade-in': 'fadeIn 0.2s ease',
@@ -147,6 +150,10 @@ module.exports = {
                     '0%': { opacity: '0', transform: 'translateX(-18px)' },
                     '100%': { opacity: '1', transform: 'translateX(0)' }
                 },
+                drawerInLeft: {
+                    '0%': { transform: 'translateX(-100%)' },
+                    '100%': { transform: 'translateX(0)' }
+                },
                 revealFromRight: {
                     '0%': { opacity: '0', transform: 'translateX(18px)' },
                     '100%': { opacity: '1', transform: 'translateX(0)' }
@@ -154,6 +161,10 @@ module.exports = {
                 revealFromUp: {
                     '0%': { opacity: '0', transform: 'translateY(14px)' },
                     '100%': { opacity: '1', transform: 'translateY(0)' }
+                },
+                dialogIn: {
+                    '0%': { opacity: '0', transform: 'translateY(6px) scale(0.985)' },
+                    '100%': { opacity: '1', transform: 'translateY(0) scale(1)' }
                 },
                 popIn: {
                     '0%': { transform: 'scale(0.8)', opacity: '0' },

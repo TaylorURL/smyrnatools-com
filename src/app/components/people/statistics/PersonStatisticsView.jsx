@@ -23,11 +23,6 @@ import {
 } from './PersonStatisticsPages'
 import { PersonStatisticsSectionTabs, PersonStatisticsSidebar, usePersonStatsSections } from './PersonStatisticsSidebar'
 
-const TITLES = {
-    managers: 'Manager Roster',
-    operators: 'Operator Roster'
-}
-
 /**
  * Statistics dashboard for an operator or manager roster. Owns its own
  * fetch so the surface is fully decoupled from the list view's state —
@@ -35,7 +30,7 @@ const TITLES = {
  * Statistics surface (KPI strip, sticky sidebar, mobile section tabs)
  * so the two products feel like one.
  */
-function PersonStatisticsView({ kind, title }) {
+function PersonStatisticsView({ kind }) {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || DEFAULT_ACCENT_COLOR
     const [activeSection, setActiveSection] = useState('overview')
@@ -153,14 +148,8 @@ function PersonStatisticsView({ kind, title }) {
 
     return (
         <div className="flex-1 min-h-0 overflow-y-auto animate-fade-in-fast" data-content-scroll>
-            <div className="px-3 sm:px-4 md:px-6 py-4 flex flex-col gap-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex flex-col">
-                        <span className="text-[18px] font-bold text-text-primary leading-tight">
-                            {title || TITLES[kind]}
-                        </span>
-                        <span className="text-[12px] text-text-secondary">Roster statistics &amp; health</span>
-                    </div>
+            <div className="px-4 sm:px-6 lg:px-8 py-5 flex flex-col gap-5">
+                <div className="flex items-center flex-wrap gap-2">
                     <PersonStatisticsControls
                         accentColor={accentColor}
                         anchor={periodState.anchor}
@@ -182,24 +171,24 @@ function PersonStatisticsView({ kind, title }) {
                 <PersonStatisticsKpiStrip kind={kind} summary={stats.summary} />
 
                 <PersonStatisticsSectionTabs
-                    accentColor={accentColor}
                     activeSection={safeActiveSection}
                     onSelect={setActiveSection}
                     sections={sections}
                 />
 
-                <div className="flex gap-4 items-start">
+                <div className="flex gap-6 items-start">
                     <PersonStatisticsSidebar
-                        accentColor={accentColor}
                         activeSection={safeActiveSection}
                         onSelect={setActiveSection}
                         sections={sections}
                     />
-                    <TabFadeIn animationKey={safeActiveSection} className="flex-1 min-w-0 flex flex-col gap-3">
+                    <TabFadeIn animationKey={safeActiveSection} className="flex-1 min-w-0 flex flex-col gap-4">
                         {sectionMeta && (
-                            <div className="flex items-baseline gap-2">
-                                <h2 className="text-[15px] font-bold m-0 text-text-primary">{sectionMeta.label}</h2>
-                                <span className="text-[11.5px] text-text-tertiary">{sectionMeta.description}</span>
+                            <div className="flex flex-col gap-0.5">
+                                <h2 className="m-0 font-heading text-[20px] font-semibold tracking-tight text-text-primary">
+                                    {sectionMeta.label}
+                                </h2>
+                                <span className="text-[13px] text-text-secondary">{sectionMeta.description}</span>
                             </div>
                         )}
                         {renderActiveSection()}

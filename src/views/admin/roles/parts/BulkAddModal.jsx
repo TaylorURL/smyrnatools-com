@@ -1,16 +1,13 @@
 import React, { useState } from 'react'
 
-import RoleModal, {
-    RoleFormField,
-    RoleModalBody,
-    RoleModalFooter,
-    RoleTextInput
-} from '../../../../app/components/ui/RoleModal'
+import RoleModal, { RoleFormField, RoleModalFooter, RoleTextInput } from '../../../../app/components/ui/RoleModal'
 
-/** Adds one permission node to any number of roles at once. A role that
- *  already carries the node is shown greyed and cannot be selected, so the
- *  count in the submit label is the number of roles that will actually
- *  change. */
+const LINK_BUTTON =
+    'cursor-pointer border-none bg-transparent p-0 text-[12px] font-medium text-text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'
+
+/** Adds one permission node to any number of roles at once. The node goes
+ *  in the field above the list; a role that already carries it is shown
+ *  greyed and cannot be selected. */
 const BulkAddModal = ({ isOpen, onClose, roles, onBulkAdd, accentColor: _accentColor }) => {
     const [permission, setPermission] = useState('')
     const [selectedRoleIds, setSelectedRoleIds] = useState(new Set())
@@ -44,90 +41,95 @@ const BulkAddModal = ({ isOpen, onClose, roles, onBulkAdd, accentColor: _accentC
 
     if (!isOpen) return null
 
+    const node = permission.trim()
     const sortedRoles = [...roles].sort((a, b) => (b.weight || 0) - (a.weight || 0))
-    const alreadyHave = sortedRoles.filter(
-        (r) => permission.trim() && Array.isArray(r.permissions) && r.permissions.includes(permission.trim())
-    )
+    const alreadyHave = sortedRoles.filter((r) => node && Array.isArray(r.permissions) && r.permissions.includes(node))
 
     return (
-        <RoleModal isOpen={isOpen} onClose={onClose} title="Bulk Add Permission">
-            <RoleModalBody>
-                <RoleFormField label="Permission Node">
-                    <RoleTextInput
-                        value={permission}
-                        onChange={setPermission}
-                        placeholder="e.g. reports.qc_strength"
-                        autoFocus
-                    />
-                </RoleFormField>
-                {permission.trim() && alreadyHave.length > 0 && (
-                    <div className="-mt-2 mb-2 px-1 text-xs text-text-tertiary">
-                        Already on: {alreadyHave.map((r) => r.name).join(', ')}
-                    </div>
-                )}
-                <RoleFormField label="Add to Roles">
-                    <div className="mb-2 flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={selectAll}
-                            className="rounded-md bg-bg-tertiary px-2 py-1 text-[11px] font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
-                        >
-                            Select All
+        <RoleModal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Add permission to roles"
+            bodyClassName="p-0"
+            toolbar={
+                <div className="flex flex-col gap-4">
+                    <RoleFormField
+                        label="Permission node"
+                        hint={
+                            node && alreadyHave.length > 0
+                                ? `Already on ${alreadyHave.map((r) => r.name).join(', ')}`
+                                : undefined
+                        }
+                    >
+                        <RoleTextInput
+                            value={permission}
+                            onChange={setPermission}
+                            placeholder="e.g. reports.qc_strength"
+                            autoFocus
+                        />
+                    </RoleFormField>
+                    <div className="flex items-center gap-4 text-[12px]">
+                        <span className="font-medium text-text-secondary">Roles</span>
+                        <button type="button" onClick={selectAll} className={LINK_BUTTON}>
+                            Select all
                         </button>
-                        <button
-                            type="button"
-                            onClick={selectNone}
-                            className="rounded-md bg-bg-tertiary px-2 py-1 text-[11px] font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97]"
-                        >
-                            Select None
+                        <button type="button" onClick={selectNone} className={LINK_BUTTON}>
+                            Select none
                         </button>
-                        <span className="ml-auto text-[11px] tabular-nums text-text-tertiary">
+                        <span className="ml-auto tabular-nums text-text-secondary">
                             {selectedRoleIds.size} selected
                         </span>
                     </div>
-                    <div className="max-h-[280px] overflow-y-auto rounded-md border border-border-light bg-bg-primary">
-                        {sortedRoles.map((role) => {
-                            const isSelected = selectedRoleIds.has(role.id)
-                            const alreadyHasIt =
-                                permission.trim() &&
-                                Array.isArray(role.permissions) &&
-                                role.permissions.includes(permission.trim())
-                            return (
-                                <label
-                                    key={role.id}
-                                    className={`flex cursor-pointer items-center gap-3 border-b border-border-light px-3 py-2.5 transition-colors duration-150 last:border-b-0 ${
-                                        isSelected ? 'bg-accent/10' : 'hover:bg-bg-hover'
-                                    } ${alreadyHasIt ? 'cursor-not-allowed opacity-40' : ''}`}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={isSelected}
-                                        onChange={() => toggleRole(role.id)}
-                                        disabled={alreadyHasIt}
-                                        className="h-4 w-4 cursor-pointer rounded accent-accent disabled:cursor-not-allowed"
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                        <span className="text-sm font-medium text-text-primary">{role.name}</span>
-                                        <span className="ml-2 text-xs font-mono tabular-nums text-text-tertiary">
-                                            w:{role.weight || 0}
-                                        </span>
-                                    </div>
-                                    {alreadyHasIt && (
-                                        <span className="shrink-0 text-[10px] uppercase tracking-wider text-text-tertiary">
-                                            already has
-                                        </span>
-                                    )}
-                                </label>
-                            )
-                        })}
-                    </div>
-                </RoleFormField>
-            </RoleModalBody>
+                </div>
+            }
+        >
+            {sortedRoles.length === 0 ? (
+                <div className="flex min-h-[160px] flex-col items-center justify-center gap-1 px-6 text-center">
+                    <p className="m-0 text-[15px] font-medium text-text-primary">No roles yet</p>
+                    <p className="m-0 text-[13px] text-text-secondary">Create a role first, then add permissions.</p>
+                </div>
+            ) : (
+                <div role="group" aria-label="Roles">
+                    {sortedRoles.map((role) => {
+                        const isSelected = selectedRoleIds.has(role.id)
+                        const alreadyHasIt = node && Array.isArray(role.permissions) && role.permissions.includes(node)
+                        return (
+                            <label
+                                key={role.id}
+                                className={`flex items-center gap-3 border-b border-border-light px-6 py-2.5 text-[13px] transition-colors duration-150 ${
+                                    alreadyHasIt
+                                        ? 'cursor-not-allowed opacity-50'
+                                        : isSelected
+                                          ? 'cursor-pointer bg-bg-tertiary font-medium'
+                                          : 'cursor-pointer hover:bg-bg-hover'
+                                }`}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => toggleRole(role.id)}
+                                    disabled={alreadyHasIt}
+                                    className="h-4 w-4 shrink-0 cursor-pointer accent-accent disabled:cursor-not-allowed"
+                                />
+                                <span className="min-w-0 flex-1 truncate text-text-primary">{role.name}</span>
+                                {alreadyHasIt && (
+                                    <span className="shrink-0 text-[12px] font-normal text-text-tertiary">
+                                        Already has it
+                                    </span>
+                                )}
+                                <span className="shrink-0 text-[12px] font-normal tabular-nums text-text-tertiary">
+                                    Weight {role.weight || 0}
+                                </span>
+                            </label>
+                        )
+                    })}
+                </div>
+            )}
             <RoleModalFooter
                 onCancel={onClose}
                 onSubmit={handleSubmit}
-                submitText={`Add to ${selectedRoleIds.size} Role${selectedRoleIds.size !== 1 ? 's' : ''}`}
-                loadingText="Adding..."
+                submitText={`Add to ${selectedRoleIds.size} role${selectedRoleIds.size !== 1 ? 's' : ''}`}
+                loadingText="Adding…"
                 isLoading={saving}
                 disabled={!permission.trim() || selectedRoleIds.size === 0}
             />

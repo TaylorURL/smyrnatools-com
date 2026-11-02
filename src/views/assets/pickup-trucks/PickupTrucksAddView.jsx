@@ -9,10 +9,10 @@ import { getSessionUserId } from '../../../services/SessionService'
 
 // Theme-aware native <select> styling. `appearance-none` strips the browser
 // chevron so the inline-SVG (uses `currentColor`, so it follows --text-primary
-// across dark/light/grayed themes) renders consistently. Matches the input
+// across the light and dark themes) renders consistently. Matches the input
 // height ladder and focus treatment used elsewhere in the add-view forms.
 const SELECT_CLS =
-    'h-11 w-full cursor-pointer rounded-xl bg-bg-secondary border border-border-light text-text-primary text-sm px-4 pr-10 appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[length:1rem_1rem] bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2024%2024%27%20stroke%3D%27currentColor%27%3E%3Cpath%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%272%27%20d%3D%27M19%209l-7%207-7-7%27%2F%3E%3C%2Fsvg%3E")] hover:border-border-medium focus:outline-none focus-visible:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 [color-scheme:light] dark:[color-scheme:dark]'
+    'h-11 w-full cursor-pointer rounded-card bg-bg-secondary border border-border-light text-text-primary text-sm px-4 pr-10 appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[length:1rem_1rem] bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2024%2024%27%20stroke%3D%27currentColor%27%3E%3Cpath%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%272%27%20d%3D%27M19%209l-7%207-7-7%27%2F%3E%3C%2Fsvg%3E")] hover:border-border-medium focus:outline-none focus-visible:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 [color-scheme:light] dark:[color-scheme:dark]'
 
 /**
  * Slide-in form for creating a new pickup truck record. Supports VIN
@@ -74,7 +74,7 @@ function PickupTrucksAddView({ onClose, onAdded }) {
         <AddViewSection title="Add Pickup Truck" onClose={onClose} error={error}>
             <form onSubmit={handleSubmit} autoComplete="off">
                 <div className="space-y-4">
-                    <div className="text-lg font-semibold">
+                    <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
                         <i className="fas fa-building"></i>
                         <span>Assignment & Status</span>
                     </div>
@@ -94,7 +94,7 @@ function PickupTrucksAddView({ onClose, onAdded }) {
                     </div>
                 </div>
                 <div className="space-y-4">
-                    <div className="text-lg font-semibold">
+                    <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
                         <i className="fas fa-car"></i>
                         <span>Vehicle Information</span>
                     </div>
@@ -141,7 +141,7 @@ function PickupTrucksAddView({ onClose, onAdded }) {
                     </div>
                 </div>
                 <div className="space-y-4">
-                    <div className="text-lg font-semibold">
+                    <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
                         <i className="fas fa-user"></i>
                         <span>Usage Details</span>
                     </div>

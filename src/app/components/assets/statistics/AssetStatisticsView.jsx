@@ -34,7 +34,7 @@ import AssetStatisticsVerificationPage from './pages/AssetStatisticsVerification
  * memoization over it, and its realtime stream keeps the whole page live
  * with no per-section fetching.
  */
-function AssetStatisticsView({ config, onSelectAsset, title }) {
+function AssetStatisticsView({ config, onSelectAsset }) {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || DEFAULT_ACCENT_COLOR
     const [activeSection, setActiveSection] = useState('overview')
@@ -139,12 +139,8 @@ function AssetStatisticsView({ config, onSelectAsset, title }) {
 
     return (
         <div className="flex-1 min-h-0 overflow-y-auto animate-fade-in-fast" data-content-scroll>
-            <div className="px-3 sm:px-4 md:px-6 py-4 flex flex-col gap-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex flex-col">
-                        <span className="text-[18px] font-bold text-text-primary leading-tight">{title}</span>
-                        <span className="text-[12px] text-text-secondary">Fleet statistics &amp; health</span>
-                    </div>
+            <div className="px-4 sm:px-6 lg:px-8 py-5 flex flex-col gap-5">
+                <div className="flex items-center flex-wrap gap-2">
                     <AssetStatisticsControls
                         accentColor={accentColor}
                         anchor={periodState.anchor}
@@ -166,24 +162,24 @@ function AssetStatisticsView({ config, onSelectAsset, title }) {
                 <AssetStatisticsKpiStrip config={config} summary={stats.summary} />
 
                 <AssetStatisticsSectionTabs
-                    accentColor={accentColor}
                     activeSection={safeActiveSection}
                     onSelect={setActiveSection}
                     sections={sections}
                 />
 
-                <div className="flex gap-4 items-start">
+                <div className="flex gap-6 items-start">
                     <AssetStatisticsSidebar
-                        accentColor={accentColor}
                         activeSection={safeActiveSection}
                         onSelect={setActiveSection}
                         sections={sections}
                     />
-                    <TabFadeIn animationKey={safeActiveSection} className="flex-1 min-w-0 flex flex-col gap-3">
+                    <TabFadeIn animationKey={safeActiveSection} className="flex-1 min-w-0 flex flex-col gap-4">
                         {sectionMeta && (
-                            <div className="flex items-baseline gap-2">
-                                <h2 className="text-[15px] font-bold m-0 text-text-primary">{sectionMeta.label}</h2>
-                                <span className="text-[11.5px] text-text-tertiary">{sectionMeta.description}</span>
+                            <div className="flex flex-col gap-0.5">
+                                <h2 className="m-0 font-heading text-[20px] font-semibold tracking-tight text-text-primary">
+                                    {sectionMeta.label}
+                                </h2>
+                                <span className="text-[13px] text-text-secondary">{sectionMeta.description}</span>
                             </div>
                         )}
 

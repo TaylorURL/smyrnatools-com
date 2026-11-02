@@ -32,7 +32,7 @@ export default function AccountStatStrip({ additionalPlants, joinedAt, plantCode
     const additionalCount = additionalPlants?.length || 0
     return (
         <section className="scroll-mt-4" id="overview">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 rounded overflow-hidden border border-border-light">
+            <div className="grid grid-cols-2 overflow-hidden rounded-card border border-border-light sm:grid-cols-3 lg:grid-cols-6">
                 <StatCell label="Account age" value={formatAccountAge(joinedAt)} hint={formatJoinedDate(joinedAt)} />
                 <StatCell label="Sessions" value={sessions.length} hint={sessionsHint} />
                 <StatCell label="Region" value={regionName || '—'} />

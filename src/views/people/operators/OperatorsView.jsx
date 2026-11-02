@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import TabFadeIn from '../../../app/components/common/TabFadeIn'
-import PersonViewTabBar from '../../../app/components/people/PersonViewTabBar'
+import { PERSON_TABS } from '../../../app/components/people/PersonViewTabBar'
 import PersonStatisticsView from '../../../app/components/people/statistics/PersonStatisticsView'
 import CommentModalSection from '../../../app/components/sections/CommentModalSection'
 import GridViewModeSection from '../../../app/components/sections/GridViewModeSection'
@@ -9,8 +9,8 @@ import HistoryViewSection from '../../../app/components/sections/HistoryViewSect
 import ListViewModeSection from '../../../app/components/sections/ListViewModeSection'
 import TopSection from '../../../app/components/sections/TopSection'
 import AssetListSkeleton from '../../../app/components/ui/AssetListSkeleton'
+import PageHeader from '../../../app/components/ui/PageHeader'
 import { usePreferences } from '../../../app/context/PreferencesContext'
-import { useAccentColor } from '../../../app/hooks/useAccentColor'
 import useIsWideViewport from '../../../app/hooks/useIsWideViewport'
 import useOperatorsData from '../../../app/hooks/useOperatorsData'
 import useOperatorsRealtime from '../../../app/hooks/useOperatorsRealtime'
@@ -69,7 +69,6 @@ function OperatorsView({
     exactMatch = false
 }) {
     const { preferences, updateOperatorFilter, resetOperatorFilters } = usePreferences()
-    const accentColor = useAccentColor()
     const headerRef = useRef(null)
     /** Always open the list — tab choice is per-session so navigating away
      *  and back doesn't strand the user on a statistics tab they no longer
@@ -290,13 +289,7 @@ function OperatorsView({
      *  the global header for non-embedded mounts. */
     const renderTabHeader = () =>
         embedded ? null : (
-            <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-4 md:px-6 pt-3 pb-2 border-b border-border-light bg-bg-primary">
-                <div className="flex items-center gap-3">
-                    <i className="fas fa-id-badge text-[14px] text-text-primary" />
-                    <span className="text-[14px] font-bold text-text-primary">{title}</span>
-                </div>
-                <PersonViewTabBar accentColor={accentColor} activeTab={activeTab} onChange={setActiveTab} />
-            </div>
+            <PageHeader title={title} tabs={PERSON_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
         )
 
     if (!embedded && activeTab === 'statistics') {
@@ -332,7 +325,7 @@ function OperatorsView({
                         <div className="flex-1 min-w-0">
                             <TopSection
                                 isLoading={isLoading}
-                                title={title}
+                                title={null}
                                 flushTop={true}
                                 showCoverOverlay={true}
                                 forwardedRef={headerRef}

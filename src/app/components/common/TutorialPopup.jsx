@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useId, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import { useTutorial } from '../../context/TutorialContext'
@@ -15,16 +15,49 @@ const TUTORIALS = {
         message: 'Click on your profile to access account settings and customize your preferences.',
         position: 'bottom-left',
         targetSelector: '[data-tutorial-target="account-nav"]',
-        title: 'Customize Your Experience'
+        title: 'Customize your experience'
     },
     'preferences-tab-hint': {
         arrowPosition: 'left',
         message: 'Check out the Preferences tab to customize your accent color and other settings.',
         position: 'right',
         targetSelector: '[data-tutorial-target="preferences-tab"]',
-        title: 'Preferences Tab'
+        title: 'Preferences tab'
     }
 }
+/**
+ * The pointer on the bubble's edge, aimed at the target: a small square turned
+ * 45 degrees, half of it outside the bubble. Only the two sides that face out
+ * carry the border, so the inner half disappears into the bubble's own fill.
+ */
+const ARROWS = {
+    bottom: {
+        // Sits over the footer, so it takes the footer's fill.
+        className: 'border-b border-r bg-bg-secondary',
+        style: { bottom: -6, left: '50%', transform: 'translateX(-50%) rotate(45deg)' }
+    },
+    left: {
+        className: 'border-b border-l bg-bg-primary',
+        style: { left: -6, top: '50%', transform: 'translateY(-50%) rotate(45deg)' }
+    },
+    right: {
+        className: 'border-r border-t bg-bg-primary',
+        style: { right: -6, top: '50%', transform: 'translateY(-50%) rotate(45deg)' }
+    },
+    top: {
+        className: 'border-l border-t bg-bg-primary',
+        style: { left: '50%', top: -6, transform: 'translateX(-50%) rotate(45deg)' }
+    },
+    'top-left': {
+        className: 'border-l border-t bg-bg-primary',
+        style: { left: 16, top: -6, transform: 'rotate(45deg)' }
+    },
+    'top-right': {
+        className: 'border-l border-t bg-bg-primary',
+        style: { right: 16, top: -6, transform: 'rotate(45deg)' }
+    }
+}
+
 /**
  * @param {Object} props
  * @param {string} props.tutorialId - Key into the TUTORIALS registry.
@@ -36,6 +69,8 @@ function TutorialPopup({ tutorialId, onDismiss }) {
     const [targetRect, setTargetRect] = useState(null)
     const [isReady, setIsReady] = useState(false)
     const popupRef = useRef(null)
+    const titleId = useId()
+    const messageId = useId()
     const tutorial = TUTORIALS[tutorialId]
     useEffect(() => {
         if (!tutorial) return
@@ -134,80 +169,7 @@ function TutorialPopup({ tutorialId, onDismiss }) {
         }
     }, [tutorial, tutorialId, isReady])
     if (!tutorial) return null
-    // Arrow border colors depend on the runtime accent color, so they must be
-    // inline styles rather than theme classes.
-    const getArrowStyle = () => {
-        const base = 'absolute h-0 w-0 border-solid'
-        switch (tutorial.arrowPosition) {
-            case 'top':
-                return {
-                    className: base,
-                    style: {
-                        borderColor: `transparent transparent ${accentColor} transparent`,
-                        borderWidth: '0 8px 8px 8px',
-                        left: '50%',
-                        top: -8,
-                        transform: 'translateX(-50%)'
-                    }
-                }
-            case 'top-right':
-                return {
-                    className: base,
-                    style: {
-                        borderColor: `transparent transparent ${accentColor} transparent`,
-                        borderWidth: '0 8px 8px 8px',
-                        right: 16,
-                        top: -8
-                    }
-                }
-            case 'top-left':
-                return {
-                    className: base,
-                    style: {
-                        borderColor: `transparent transparent ${accentColor} transparent`,
-                        borderWidth: '0 8px 8px 8px',
-                        left: 16,
-                        top: -8
-                    }
-                }
-            case 'bottom':
-                return {
-                    className: base,
-                    style: {
-                        borderColor: 'var(--bg-primary) transparent transparent transparent',
-                        borderWidth: '8px 8px 0 8px',
-                        bottom: -8,
-                        left: '50%',
-                        transform: 'translateX(-50%)'
-                    }
-                }
-            case 'left':
-                return {
-                    className: base,
-                    style: {
-                        borderColor: `transparent ${accentColor} transparent transparent`,
-                        borderWidth: '8px 8px 8px 0',
-                        left: -8,
-                        top: '50%',
-                        transform: 'translateY(-50%)'
-                    }
-                }
-            case 'right':
-                return {
-                    className: base,
-                    style: {
-                        borderColor: 'transparent transparent transparent var(--bg-primary)',
-                        borderWidth: '8px 0 8px 8px',
-                        right: -8,
-                        top: '50%',
-                        transform: 'translateY(-50%)'
-                    }
-                }
-            default:
-                return { className: base, style: {} }
-        }
-    }
-    const arrow = getArrowStyle()
+    const arrow = ARROWS[tutorial.arrowPosition]
     return ReactDOM.createPortal(
         <>
             {isReady && (
@@ -229,9 +191,9 @@ function TutorialPopup({ tutorialId, onDismiss }) {
                             </mask>
                         </defs>
                         <rect
-                            fill="rgba(0,0,0,0.6)"
                             height="100%"
                             mask="url(#tutorial-mask)"
+                            style={{ fill: 'var(--scrim-cutout)' }}
                             width="100%"
                             x="0"
                             y="0"
@@ -239,10 +201,10 @@ function TutorialPopup({ tutorialId, onDismiss }) {
                     </svg>
                     {targetRect && (
                         <div
-                            className="pointer-events-none fixed z-tour-halo box-border rounded-xl animate-tutorial-pulse"
+                            className="pointer-events-none fixed z-tour-halo box-border rounded-card animate-tutorial-pulse motion-reduce:animate-none"
                             style={{
                                 '--tutorial-accent': accentColor,
-                                border: `3px solid ${accentColor}`,
+                                border: `2px solid ${accentColor}`,
                                 height: targetRect.height + 16,
                                 left: targetRect.left - 8,
                                 top: targetRect.top - 8,
@@ -254,29 +216,34 @@ function TutorialPopup({ tutorialId, onDismiss }) {
             )}
             <div
                 ref={popupRef}
-                className={`fixed z-app-state w-[280px] overflow-hidden rounded-xl bg-bg-primary shadow-modal transition-[opacity,transform] duration-300 ease-in-out ${isReady ? 'visible scale-100 opacity-100' : 'invisible scale-95 opacity-0'}`}
+                role="dialog"
+                aria-modal="false"
+                aria-labelledby={titleId}
+                aria-describedby={messageId}
+                className={`fixed z-app-state w-[280px] rounded-modal border border-border-light bg-bg-primary shadow-modal transition-opacity duration-200 ease-out motion-reduce:transition-none ${isReady ? 'visible opacity-100' : 'invisible opacity-0'}`}
                 style={{
                     left: position ? position.left : -9999,
                     top: position ? position.top : -9999
                 }}
             >
-                <div className={arrow.className} style={arrow.style} />
-                <div className="flex items-center gap-2.5 px-4 py-3.5" style={{ background: accentColor }}>
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20">
-                        <i className="fas fa-lightbulb text-sm text-white" />
-                    </div>
-                    <span className="text-sm font-semibold text-white">{tutorial.title}</span>
+                {arrow && (
+                    <span
+                        aria-hidden="true"
+                        className={`absolute h-2.5 w-2.5 border-border-light ${arrow.className}`}
+                        style={arrow.style}
+                    />
+                )}
+                <div className="px-4 pb-4 pt-3.5">
+                    <h2 id={titleId} className="m-0 text-[15px] font-medium leading-snug text-text-primary">
+                        {tutorial.title}
+                    </h2>
+                    <p id={messageId} className="m-0 mt-1 text-[13px] leading-relaxed text-text-secondary">
+                        {tutorial.message}
+                    </p>
                 </div>
-                <div className="p-4">
-                    <p className="m-0 mb-4 text-[13px] leading-relaxed text-text-secondary">{tutorial.message}</p>
-                    <button
-                        type="button"
-                        onClick={onDismiss}
-                        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border-none px-4 py-2.5 text-[13px] font-semibold text-white active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                        style={{ background: accentColor }}
-                    >
-                        <span>Got It</span>
-                        <i className="fas fa-check" />
+                <div className="flex justify-end gap-2 rounded-b-modal border-t border-border-light bg-bg-secondary px-4 py-3">
+                    <button type="button" onClick={onDismiss} className="btn-primary">
+                        Got it
                     </button>
                 </div>
             </div>

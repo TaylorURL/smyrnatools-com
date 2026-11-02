@@ -42,21 +42,16 @@ function RegionGridCard({ region, onSelect }) {
     return (
         <button
             type="button"
-            className="group flex flex-col overflow-hidden rounded-card border border-border-light bg-bg-primary text-left shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:border-border-medium hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:translate-y-0 motion-reduce:transition-none motion-reduce:transform-none"
+            className="group flex flex-col overflow-hidden rounded-card border border-border-light bg-bg-primary text-left transition-colors duration-150 ease-out hover:border-border-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:translate-y-0 motion-reduce:transition-none motion-reduce:transform-none"
             onClick={() => onSelect(code)}
             aria-label={`Open region ${code}${name ? ` — ${name}` : ''}`}
         >
             <div className="flex items-center gap-3 border-b border-border-light px-5 py-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent/10 text-base text-accent transition-colors duration-200 group-hover:bg-accent group-hover:text-white">
-                    <i className={`fas fa-${meta.icon}`} aria-hidden="true" />
-                </div>
                 <div className="min-w-0 flex-1">
-                    <div className="truncate font-heading text-lg font-bold tracking-tight text-text-primary">
+                    <div className="truncate font-heading text-[20px] font-semibold tracking-tight text-text-primary">
                         #{code}
                     </div>
-                    <div className="truncate text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
-                        Region
-                    </div>
+                    <div className="truncate text-[12px] font-medium text-text-tertiary">Region</div>
                 </div>
                 <Badge tone={meta.tone} size="md" shape="pill" weight="semibold" icon={meta.icon} uppercase={false}>
                     {type || 'N/A'}
@@ -64,7 +59,7 @@ function RegionGridCard({ region, onSelect }) {
             </div>
 
             <div className="px-5 py-3">
-                <span className="block text-[10px] font-medium uppercase tracking-wider text-text-tertiary">Name</span>
+                <span className="block text-[12px] font-medium text-text-tertiary">Name</span>
                 <span className="mt-0.5 block truncate text-[13px] font-semibold text-text-primary">{name || '—'}</span>
             </div>
         </button>
@@ -315,7 +310,7 @@ function RegionsEmptyState({ hasSearch, onAddClick }) {
             </p>
             <button
                 type="button"
-                className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white transition duration-150 hover:bg-accent-hover hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.98] motion-reduce:transition-none motion-reduce:transform-none"
+                className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white transition duration-150 hover:bg-accent-hover hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary motion-reduce:transition-none motion-reduce:transform-none"
                 onClick={onAddClick}
             >
                 Add Region

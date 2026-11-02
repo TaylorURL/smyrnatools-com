@@ -1,46 +1,31 @@
 import React from 'react'
 
-import { formatCentralDate } from '../../../utils/PlanUtility'
+import { Stat, StatGroup } from '../ui/Panel'
 
-const SKELETON_ROW_LABELS = [
-    'Asset Total',
-    'Active',
-    'Spare',
-    'In Shop',
-    'Stationary',
-    'Allocation',
-    'Verified',
-    'Operators',
-    'Open Alerts',
-    'Open Issues'
-]
-
-const ASIDE_CLASS = 'hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-y-auto w-60 max-h-screen'
+const KPI_LABELS = ['Fleet', 'Active', 'In shop', 'Spare', 'Allocation', 'Verified', 'Operators', 'Open issues']
 
 /**
- * Right-rail snapshot for the dashboard. Hidden below the `xl` breakpoint,
- * where the fleet table in the centre column already carries these numbers.
+ * The dashboard's headline numbers in one ruled strip across the top of the
+ * page, eight to a row on a wide screen and four or two as it narrows. The
+ * fleet table below breaks the same numbers down by asset type.
  *
- * Renders a skeleton variant while `loading` so the third column keeps its
- * width instead of collapsing and reflowing the other two.
+ * Renders a skeleton with the same labels while `loading`, so the strip keeps
+ * its height and nothing under it moves when the numbers arrive.
  */
 export function DashboardAtAGlance({ alertCount, displayStats, loading = false, openIssues }) {
     if (loading) {
         return (
-            <aside className={ASIDE_CLASS} aria-busy="true" aria-label="Loading dashboard snapshot">
-                <div className="h-3 w-32 mb-2 rounded-md animate-pulse motion-reduce:animate-none bg-bg-tertiary" />
-                <div className="flex flex-col">
-                    {SKELETON_ROW_LABELS.map((label) => (
-                        <div
-                            key={label}
-                            className="flex items-baseline justify-between py-1.5 border-b border-border-light"
-                        >
-                            <span className="text-[12px] text-text-secondary">{label}</span>
-                            <span className="h-3 w-12 rounded-md animate-pulse motion-reduce:animate-none bg-bg-tertiary" />
-                        </div>
-                    ))}
-                </div>
-            </aside>
+            <StatGroup columns={8} aria-busy="true">
+                {KPI_LABELS.map((label) => (
+                    <Stat
+                        key={label}
+                        label={label}
+                        value={
+                            <span className="inline-block h-7 w-14 rounded-sm bg-bg-tertiary align-middle animate-pulse motion-reduce:animate-none" />
+                        }
+                    />
+                ))}
+            </StatGroup>
         )
     }
 
@@ -59,52 +44,43 @@ export function DashboardAtAGlance({ alertCount, displayStats, loading = false, 
         (stats.tractors?.spare || 0) +
         (stats.trailers?.spare || 0) +
         (stats.equipment?.spare || 0)
-    const stationary = stats.pickups?.stationary || 0
     const active =
         (stats.mixers?.active || 0) +
         (stats.tractors?.active || 0) +
         (stats.trailers?.active || 0) +
         (stats.equipment?.active || 0) +
         (stats.pickups?.active || 0)
-
-    const dateLabel = formatCentralDate(new Date(), {
-        day: 'numeric',
-        month: 'long',
-        weekday: 'long',
-        year: 'numeric'
-    })
-
-    const rows = [
-        { label: 'Asset Total', value: (stats.fleetTotal || 0).toLocaleString() },
-        { label: 'Active', value: active.toLocaleString() },
-        { label: 'Spare', value: spare.toLocaleString() },
-        { label: 'In Shop', value: inShop.toLocaleString() },
-        { label: 'Stationary', value: stationary.toLocaleString() },
-        { label: 'Allocation', value: `${allocation}%` },
-        { label: 'Verified', value: `${verified}%` },
-        { label: 'Operators', value: (ops.active || 0).toLocaleString() },
-        { label: 'Open Alerts', value: (alertCount || 0).toString() },
-        { label: 'Open Issues', value: (openIssues || 0).toString() }
-    ]
+    const stationary = stats.pickups?.stationary || 0
 
     return (
-        <aside className={`${ASIDE_CLASS} animate-fade-in-up`} aria-label="Dashboard at-a-glance snapshot">
-            <div className="text-[12px] font-medium mb-1.5 text-text-tertiary uppercase tracking-wider">
-                {dateLabel}
-            </div>
-            <div className="flex flex-col">
-                {rows.map((row) => (
-                    <div
-                        key={row.label}
-                        className="flex items-baseline justify-between py-1.5 px-1 -mx-1 rounded transition-colors duration-150 border-b border-border-light hover:bg-bg-hover"
-                    >
-                        <span className="text-[12px] text-text-secondary">{row.label}</span>
-                        <span className="text-[13px] font-semibold font-mono tabular-nums text-text-primary">
-                            {row.value}
-                        </span>
-                    </div>
-                ))}
-            </div>
-        </aside>
+        <StatGroup columns={8} className="animate-fade-in-fast motion-reduce:animate-none">
+            <Stat label="Fleet" value={(stats.fleetTotal || 0).toLocaleString()} hint="assets" />
+            <Stat
+                label="Active"
+                value={active.toLocaleString()}
+                hint={stationary ? `${stationary} stationary` : 'in service'}
+            />
+            <Stat
+                label="In shop"
+                value={inShop.toLocaleString()}
+                valueColor={inShop > 0 ? 'var(--status-shop)' : undefined}
+                hint="out of service"
+            />
+            <Stat label="Spare" value={spare.toLocaleString()} hint="ready, unassigned" />
+            <Stat label="Allocation" value={`${allocation}%`} hint="active of fleet" />
+            <Stat
+                label="Verified"
+                value={`${verified}%`}
+                valueColor={verified < 60 ? 'var(--status-warning)' : undefined}
+                hint="this week"
+            />
+            <Stat label="Operators" value={(ops.active || 0).toLocaleString()} hint="active" />
+            <Stat
+                label="Open issues"
+                value={(openIssues || 0).toLocaleString()}
+                valueColor={openIssues > 0 ? 'var(--status-danger)' : undefined}
+                hint={`${alertCount || 0} alert${alertCount === 1 ? '' : 's'}`}
+            />
+        </StatGroup>
     )
 }

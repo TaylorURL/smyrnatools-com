@@ -1,12 +1,10 @@
 import React from 'react'
 
-const SUBTLE_BUTTON_CLASS =
-    'hidden md:flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer bg-bg-secondary border border-border-light text-text-primary hover:bg-bg-hover hover:border-border-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:opacity-50 disabled:cursor-not-allowed'
+const SUBTLE_BUTTON_CLASS = 'btn-secondary !hidden md:!inline-flex'
 
 /**
  * Toolbar buttons (Recap + Export + Export Issues) shown next to the search
- * row. Styled to match the Plan-tab `ActionButton` aesthetic — flat, subtle,
- * 12px font, no accent fill.
+ * row, in the shared secondary button style.
  */
 export default function AssetTopActions({
     canExportData,
@@ -21,7 +19,7 @@ export default function AssetTopActions({
 }) {
     const recapButton = config.hasRecap ? (
         <button aria-label="Recap" className={SUBTLE_BUTTON_CLASS} onClick={onOpenRecap} type="button">
-            <i className="fa-solid fa-clock-rotate-left" />
+            <i className="fa-solid fa-clock-rotate-left text-[12px]" />
             <span>Recap</span>
         </button>
     ) : null
@@ -34,7 +32,7 @@ export default function AssetTopActions({
             onClick={onExportData}
             type="button"
         >
-            <i className={`fas ${isExportingData ? 'fa-spinner fa-spin' : 'fa-file-arrow-down'}`} />
+            <i className={`fas ${isExportingData ? 'fa-spinner fa-spin' : 'fa-file-arrow-down'} text-[12px]`} />
             <span>{isExportingData ? 'Exporting…' : 'Export'}</span>
         </button>
     ) : null
@@ -47,7 +45,7 @@ export default function AssetTopActions({
             onClick={onExportIssues}
             type="button"
         >
-            <i className={`fas ${isExportingIssues ? 'fa-spinner fa-spin' : 'fa-file-export'}`} />
+            <i className={`fas ${isExportingIssues ? 'fa-spinner fa-spin' : 'fa-file-export'} text-[12px]`} />
             <span>{isExportingIssues ? 'Exporting…' : 'Export Issues'}</span>
         </button>
     )

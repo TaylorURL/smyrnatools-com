@@ -308,7 +308,7 @@ function AppContent() {
                 )
             default:
                 return (
-                    <div className="relative mx-auto my-8 flex h-[70vh] w-full max-w-[600px] flex-col items-center justify-center overflow-x-hidden rounded-xl bg-bg-primary p-8 text-center shadow-md">
+                    <div className="relative mx-auto my-8 flex h-[70vh] w-full max-w-[600px] flex-col items-center justify-center overflow-x-hidden rounded-card bg-bg-primary p-8 text-center shadow-md">
                         <h2 className="mb-4 text-[28px] text-text-primary">View Not Found</h2>
                         <p className="mb-6 text-base text-text-secondary">
                             No view is registered under the name &quot;{selectedView.view}&quot;. Choose one from the
@@ -327,6 +327,7 @@ function AppContent() {
             <Suspense fallback={null}>
                 <MessagesProvider userId={userId}>
                     <Navigation
+                        footer={<AppFooter />}
                         selectedView={selectedView.view}
                         onSelectView={handleViewSelection}
                         onExternalLink={setWebViewURL}
@@ -342,7 +343,6 @@ function AppContent() {
                     </Navigation>
                 </MessagesProvider>
             </Suspense>
-            <AppFooter />
             {offlineMode && <OfflineOverlay onRetry={handleRetryConnection} onReload={handleReloadIfOnline} />}
             {isGuestOnly && <LockedOverlay reason="guest-only" />}
         </div>

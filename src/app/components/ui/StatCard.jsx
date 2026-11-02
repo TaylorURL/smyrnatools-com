@@ -9,7 +9,7 @@ export default function StatCard({ label, value, sublabel, className = '' }) {
         <div
             className={`rounded-card p-3 flex flex-col gap-1 bg-bg-secondary border border-border-light transition-shadow duration-200 hover:shadow-card ${className}`}
         >
-            <div className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">{label}</div>
+            <div className="text-[12px] font-medium text-text-tertiary">{label}</div>
             <div className="font-heading text-base font-bold leading-tight tabular-nums truncate text-text-primary">
                 {value}
             </div>

@@ -3,31 +3,22 @@ import React, { useMemo } from 'react'
 import DateUtility from '../../../utils/DateUtility'
 import { ATTACHMENT_ICONS, FILTER_PILLS, SECTION_LABEL_CLASS } from '../../constants/notificationsConstants'
 import Badge from '../common/Badge'
+import CountBubble from '../common/CountBubble'
 import UserAvatar from '../common/UserAvatar'
 
-function SidebarSection({ accentColor, badge, children, icon, label }) {
+function SidebarSection({ badge, children, label }) {
     return (
         <div>
-            <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
-                {icon && <i className={`fas ${icon} text-[10px] text-text-tertiary text-center w-3`} />}
-                <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
-                    {label}
-                </span>
-                {badge != null && badge > 0 && (
-                    <span
-                        className="force-white-text font-mono tabular-nums rounded px-1 text-[9px] font-bold"
-                        style={{ background: accentColor }}
-                    >
-                        {badge}
-                    </span>
-                )}
+            <div className="flex items-center gap-2 border-b border-border-light bg-bg-secondary px-4 py-1.5">
+                <span className={`${SECTION_LABEL_CLASS} text-text-secondary`}>{label}</span>
+                {badge > 0 && <span className="text-[12px] tabular-nums text-text-tertiary">{badge}</span>}
             </div>
             <div>{children}</div>
         </div>
     )
 }
 
-function ConversationRow({ accentColor, active, conversation, displayName, muted = false, onSelect, pinned = false }) {
+function ConversationRow({ active, conversation, displayName, muted = false, onSelect, pinned = false }) {
     const latest = conversation.lastMessage
     const hasUnread = conversation.unread > 0 && !muted
     /** Most recent attachment in the thread — surfaced as a chip on the row
@@ -50,24 +41,14 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
         <button
             type="button"
             onClick={() => onSelect(conversation)}
-            className="flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary border-b border-border-light active:scale-[0.97]"
-            style={{
-                background: active ? `${accentColor}14` : hasUnread ? `${accentColor}0A` : 'transparent',
-                borderLeft: active ? `2px solid ${accentColor}` : '2px solid transparent'
-            }}
+            aria-current={active ? 'true' : undefined}
+            className={`flex w-full cursor-pointer items-start gap-3 border-0 border-b border-solid border-border-light px-4 py-3 text-left transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${
+                active ? 'bg-bg-tertiary' : 'bg-transparent hover:bg-bg-hover'
+            }`}
         >
             <UserAvatar name={displayName} userId={conversation.otherId} size={36} rounded="md">
                 {hasUnread && (
-                    <Badge
-                        tone="accent"
-                        size="xs"
-                        shape="pill"
-                        weight="bold"
-                        uppercase={false}
-                        className="absolute -top-1 -right-1 tabular-nums"
-                    >
-                        {conversation.unread > 9 ? '9+' : conversation.unread}
-                    </Badge>
+                    <CountBubble count={conversation.unread} size="sm" className="absolute -right-1.5 -top-1.5" />
                 )}
             </UserAvatar>
             <div className="min-w-0 flex-1">
@@ -81,25 +62,25 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
                         )}
                         {muted && <i className="fas fa-bell-slash text-[9px] text-text-tertiary" />}
                         <span
-                            className={`truncate text-[12.5px] ${hasUnread ? 'font-bold' : 'font-semibold'} text-text-primary`}
+                            className={`truncate text-[13px] ${hasUnread ? 'font-semibold' : 'font-medium'} text-text-primary`}
                         >
                             {displayName}
                         </span>
                     </span>
-                    <span className="shrink-0 text-[10px] font-mono tabular-nums text-text-tertiary">
+                    <span className="shrink-0 text-[11px] tabular-nums text-text-tertiary">
                         {DateUtility.formatTimeAgo(latest?.createdAt)}
                     </span>
                 </div>
                 {latest?.subject && (
                     <p
-                        className="m-0 truncate text-[10.5px] mt-0.5"
+                        className="m-0 truncate text-[12px] mt-0.5"
                         style={{ color: hasUnread ? 'var(--text-primary)' : 'var(--text-secondary)' }}
                     >
                         {latest.subject}
                     </p>
                 )}
                 <p
-                    className="m-0 truncate text-[11px] mt-0.5"
+                    className="m-0 truncate text-[12px] mt-0.5"
                     style={{ color: hasUnread ? 'var(--text-primary)' : 'var(--text-secondary)' }}
                 >
                     {latest?.body}
@@ -144,7 +125,6 @@ function SidebarSkeleton() {
  *  bubble to the top regardless of recency. Filter pills above the sections
  *  apply on top of the search box. */
 export default function ConversationSidebar({
-    accentColor,
     activeConversationId,
     activeFilter = 'all',
     conversations,
@@ -170,11 +150,11 @@ export default function ConversationSidebar({
 
     return (
         <aside className="shrink-0 flex flex-col w-full lg:w-[320px] min-h-0 bg-bg-primary border-r border-border-light">
-            <div className="px-3 py-2 shrink-0 border-b border-border-light">
+            <div className="px-4 pt-3 pb-0 shrink-0">
                 <div className="relative">
                     <i
                         aria-hidden="true"
-                        className="fas fa-magnifying-glass pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary"
+                        className="fas fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary"
                     />
                     <input
                         type="search"
@@ -182,7 +162,7 @@ export default function ConversationSidebar({
                         onChange={(e) => onSearchChange(e.target.value)}
                         placeholder="Search conversations…"
                         aria-label="Search conversations"
-                        className="w-full rounded text-[12px] pl-7 pr-7 py-1.5 outline-none bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
+                        className="w-full h-9 rounded-[4px] text-[13px] pl-8 pr-7 outline-none bg-bg-primary border border-border-medium text-text-primary placeholder:text-text-tertiary transition-colors duration-150 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
                     />
                     {search && (
                         <button
@@ -197,8 +177,8 @@ export default function ConversationSidebar({
                 </div>
             </div>
 
-            <div className="flex items-center gap-1.5 flex-wrap px-3 py-2 shrink-0 border-b border-border-light">
-                {FILTER_PILLS.map(({ icon, id, label }) => {
+            <div className="flex items-end gap-5 px-4 shrink-0 border-b border-border-light">
+                {FILTER_PILLS.map(({ id, label }) => {
                     const isActive = activeFilter === id
                     const count = counts[id] ?? 0
                     return (
@@ -206,26 +186,15 @@ export default function ConversationSidebar({
                             type="button"
                             key={id}
                             onClick={() => onFilterChange?.(id)}
-                            className={`inline-flex items-center gap-1 rounded text-[11px] font-semibold border cursor-pointer px-1.5 py-0.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none ${
-                                isActive ? 'force-white-text' : ''
-                            } active:scale-[0.97]`}
-                            style={{
-                                background: isActive ? accentColor : 'var(--bg-secondary)',
-                                borderColor: isActive ? accentColor : 'var(--border-light)',
-                                color: isActive ? undefined : 'var(--text-secondary)'
-                            }}
+                            aria-pressed={isActive}
+                            className={`-mb-px inline-flex items-center gap-1.5 border-0 border-b-2 border-solid bg-transparent pb-2.5 pt-3 text-[13px] cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                isActive
+                                    ? 'border-text-primary font-medium text-text-primary'
+                                    : 'border-transparent text-text-secondary hover:text-text-primary'
+                            }`}
                         >
-                            <i className={`fas ${icon} text-[9.5px]`} />
                             <span>{label}</span>
-                            <span
-                                className="font-mono tabular-nums rounded px-1 text-[10px]"
-                                style={{
-                                    background: isActive ? 'rgba(255,255,255,0.2)' : 'var(--bg-tertiary)',
-                                    color: isActive ? undefined : 'var(--text-tertiary)'
-                                }}
-                            >
-                                {count}
-                            </span>
+                            <span className="tabular-nums text-text-tertiary">{count}</span>
                         </button>
                     )
                 })}
@@ -251,16 +220,10 @@ export default function ConversationSidebar({
                 ) : (
                     <>
                         {pinned.length > 0 && (
-                            <SidebarSection
-                                accentColor={accentColor}
-                                badge={pinned.length}
-                                icon="fa-thumbtack"
-                                label="Pinned"
-                            >
+                            <SidebarSection badge={pinned.length} label="Pinned">
                                 {pinned.map((conv) => (
                                     <ConversationRow
                                         key={conv.otherId}
-                                        accentColor={accentColor}
                                         active={conv.otherId === activeConversationId}
                                         conversation={conv}
                                         displayName={userNames[conv.otherId] || 'Loading…'}
@@ -272,11 +235,10 @@ export default function ConversationSidebar({
                             </SidebarSection>
                         )}
                         {unread.length > 0 && (
-                            <SidebarSection accentColor={accentColor} badge={unreadCount} icon="fa-bell" label="Unread">
+                            <SidebarSection badge={unreadCount} label="Unread">
                                 {unread.map((conv) => (
                                     <ConversationRow
                                         key={conv.otherId}
-                                        accentColor={accentColor}
                                         active={conv.otherId === activeConversationId}
                                         conversation={conv}
                                         displayName={userNames[conv.otherId] || 'Loading…'}
@@ -287,15 +249,10 @@ export default function ConversationSidebar({
                             </SidebarSection>
                         )}
                         {recent.length > 0 && (
-                            <SidebarSection
-                                accentColor={accentColor}
-                                icon="fa-clock-rotate-left"
-                                label={pinned.length || unread.length ? 'Recent' : 'All'}
-                            >
+                            <SidebarSection label={pinned.length || unread.length ? 'Recent' : 'All'}>
                                 {recent.map((conv) => (
                                     <ConversationRow
                                         key={conv.otherId}
-                                        accentColor={accentColor}
                                         active={conv.otherId === activeConversationId}
                                         conversation={conv}
                                         displayName={userNames[conv.otherId] || 'Loading…'}

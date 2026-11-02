@@ -176,11 +176,13 @@ export default function DashboardPodcastPanel() {
 
     return (
         <aside
-            className="flex flex-col gap-3 w-full pt-3 pb-0 lg:w-[300px] lg:shrink-0 lg:py-5 lg:pr-3 animate-fade-in-up"
+            className="flex w-full min-w-0 flex-col gap-3 self-start animate-fade-in-up motion-reduce:animate-none"
             aria-label="SRM podcast player"
         >
-            <header className="flex items-baseline justify-between gap-2 px-1">
-                <span className="font-heading text-[13px] font-semibold text-text-primary">SRM Podcast</span>
+            <header className="flex items-baseline justify-between gap-2 px-0.5">
+                <span className="font-heading text-[16px] font-semibold tracking-tight text-text-primary">
+                    SRM Podcast
+                </span>
                 {episodes.length > 0 && (
                     <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
                         {episodes.length} ep
@@ -246,7 +248,7 @@ export default function DashboardPodcastPanel() {
                             type="button"
                             onClick={togglePlay}
                             disabled={!selected || audioError}
-                            className="w-10 h-10 rounded-full border-0 flex items-center justify-center text-white cursor-pointer transition duration-150 active:scale-[0.95] disabled:cursor-not-allowed disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                            className="w-10 h-10 rounded-full border-0 flex items-center justify-center text-white cursor-pointer transition duration-150 disabled:cursor-not-allowed disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                             style={{ background: accent }}
                             aria-label={isPlaying ? 'Pause' : 'Play'}
                             title={isPlaying ? 'Pause' : 'Play'}
@@ -315,7 +317,7 @@ export default function DashboardPodcastPanel() {
             </div>
 
             {!loading && !error && episodes.length > 1 && (
-                <div className="text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary px-1">Episodes</div>
+                <div className="text-[12px] font-medium text-text-tertiary px-1">Episodes</div>
             )}
 
             <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 pr-0.5">

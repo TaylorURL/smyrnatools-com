@@ -20,7 +20,7 @@ export default function AttachmentPreview({ accentColor, light, meta, type }) {
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                     <span
-                        className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                        className="text-[12px] font-medium px-1.5 py-0.5 rounded"
                         style={{
                             background: light ? 'rgba(255,255,255,0.2)' : 'var(--bg-tertiary)',
                             color: light ? 'white' : accentColor
@@ -33,7 +33,7 @@ export default function AttachmentPreview({ accentColor, light, meta, type }) {
                     )}
                     {meta.severity && (
                         <span
-                            className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
+                            className="text-[12px] font-medium px-1.5 py-0.5 rounded text-white"
                             style={{
                                 background:
                                     meta.severity === 'High'

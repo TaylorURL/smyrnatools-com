@@ -7,43 +7,32 @@ const COLLAPSED_LIMIT = 3
 const STAGGER_MS = 40
 const NO_ROWS = []
 
-/** Severity → coupled visual treatment. Keeping icon/accent/tint/chip
- *  styles in one record prevents the row and the header chip from ever
- *  disagreeing on what "warning" looks like. */
+/** Severity → icon and colour. Keeping them in one record means a row and
+ *  the header count can't disagree on what "warning" looks like. */
 const SEVERITY_CONFIG = {
     danger: {
-        accent: 'bg-status-danger',
-        chipBg: 'bg-status-danger/10',
-        chipText: 'text-status-danger',
         icon: 'fas fa-circle-exclamation',
         iconColor: 'text-status-danger',
         label: 'Critical',
-        tint: 'bg-status-danger/[0.045]'
+        plural: 'critical'
     },
     info: {
-        accent: 'bg-border-medium',
-        chipBg: 'bg-bg-hover',
-        chipText: 'text-text-secondary',
         icon: 'fas fa-circle-info',
         iconColor: 'text-text-tertiary',
         label: 'Info',
-        tint: ''
+        plural: 'info'
     },
     warning: {
-        accent: 'bg-status-warning',
-        chipBg: 'bg-status-warning/10',
-        chipText: 'text-status-warning',
         icon: 'fas fa-triangle-exclamation',
         iconColor: 'text-status-warning',
         label: 'Warning',
-        tint: 'bg-status-warning/[0.035]'
+        plural: 'warnings'
     }
 }
 
-/** Inline triage row — left rail (color rule + severity icon), monospace
- *  identifier, message, right-aligned metric, optional chevron when
- *  actionable. Renders as a focusable button when interactive so keyboard
- *  users get the same affordances as mouse users. */
+/** One triage row, ruled off from the next: severity icon, identifier,
+ *  message, the figure on the right and a chevron when it opens something.
+ *  It's a button when it opens something, so the keyboard reaches it. */
 function AlertRow({ id, index, message, metric, onClick, severity = 'info', staggerOffset }) {
     const config = SEVERITY_CONFIG[severity] || SEVERITY_CONFIG.info
     const Wrapper = onClick ? 'button' : 'div'
@@ -57,57 +46,41 @@ function AlertRow({ id, index, message, metric, onClick, severity = 'info', stag
             type={interactive ? 'button' : undefined}
             style={animationStyle}
             className={[
-                'group relative flex items-center gap-2.5 w-full pl-3 pr-2 py-1.5 rounded-md text-left bg-transparent border-0',
-                config.tint,
-                'transition-[background-color,transform] duration-150 ease-out',
-                interactive ? 'cursor-pointer hover:bg-bg-hover active:scale-[0.985]' : '',
+                'group flex items-center gap-3 w-full px-4 py-2.5 text-left bg-transparent border-0 border-b border-solid border-border-light last:border-b-0',
+                'transition-colors duration-150 ease-out',
+                interactive ? 'cursor-pointer hover:bg-bg-hover' : '',
                 interactive
-                    ? 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary'
+                    ? 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent'
                     : '',
                 shouldAnimate ? 'animate-dv-fade-in motion-reduce:animate-none' : ''
             ]
                 .filter(Boolean)
                 .join(' ')}
         >
-            <span
-                aria-hidden="true"
-                className={`absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-full ${config.accent}`}
-            />
-            <i className={`${config.icon} text-[11px] shrink-0 ${config.iconColor}`} aria-label={config.label} />
+            <i className={`${config.icon} text-[12px] w-3.5 shrink-0 ${config.iconColor}`} aria-label={config.label} />
             {id && (
-                <span className="font-mono text-[11.5px] font-semibold shrink-0 min-w-[52px] text-text-primary">
-                    {id}
-                </span>
+                <span className="font-mono text-[12px] font-medium shrink-0 min-w-[56px] text-text-primary">{id}</span>
             )}
-            <span className="text-[12.5px] flex-1 min-w-0 truncate text-text-secondary">{message}</span>
+            <span className="text-[13px] flex-1 min-w-0 truncate text-text-secondary">{message}</span>
             {metric != null && (
-                <span className="font-mono text-[12px] tabular-nums font-semibold shrink-0 text-text-primary">
-                    {metric}
-                </span>
+                <span className="text-[13px] tabular-nums font-semibold shrink-0 text-text-primary">{metric}</span>
             )}
             {interactive && (
                 <i
                     aria-hidden="true"
-                    className="fas fa-chevron-right text-[10px] shrink-0 ml-0.5 text-text-tertiary transition-[transform,color] duration-150 ease-out group-hover:text-text-secondary group-hover:translate-x-0.5 motion-reduce:group-hover:translate-x-0"
+                    className="fas fa-chevron-right text-[10px] shrink-0 text-text-tertiary transition-colors duration-150 ease-out group-hover:text-text-secondary"
                 />
             )}
         </Wrapper>
     )
 }
 
-/** Tiny header pill with a colored dot + tabular count + label. Renders
- *  only when the count is > 0 so the breakdown stays clean. */
-function SeverityChip({ count, severity }) {
-    if (!count) return null
-    const config = SEVERITY_CONFIG[severity]
-    return (
-        <span
-            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] font-semibold tabular-nums ${config.chipBg} ${config.chipText}`}
-        >
-            <span className={`w-1 h-1 rounded-full ${config.accent}`} aria-hidden="true" />
-            {count} {config.label}
-        </span>
-    )
+/** The header's tally, as a line of text: "3 warnings · 2 info". */
+function severitySummary(counts) {
+    return ['danger', 'warning', 'info']
+        .filter((severity) => counts[severity] > 0)
+        .map((severity) => `${counts[severity]} ${SEVERITY_CONFIG[severity].plural}`)
+        .join(' · ')
 }
 
 /**
@@ -240,12 +213,7 @@ export default function DashboardAlertsPanel({
     if (totalCount === 0) {
         return (
             <Panel id="alerts" title="Alerts">
-                <div className="flex items-center justify-center gap-2 py-1 text-[12.5px] text-text-secondary">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-status-active/10">
-                        <i className="fas fa-check text-[10px] text-status-active" aria-hidden="true" />
-                    </span>
-                    <span>All clear. No active alerts.</span>
-                </div>
+                <p className="m-0 text-[13px] text-text-secondary">All clear. No active alerts.</p>
             </Panel>
         )
     }
@@ -257,17 +225,11 @@ export default function DashboardAlertsPanel({
      * already on screen and shouldn't re-animate when the user toggles. */
     const staggerOffset = expanded ? COLLAPSED_LIMIT : visibleRows.length
 
-    const headerRight = (
-        <div className="flex items-center gap-1.5">
-            <SeverityChip count={counts.danger} severity="danger" />
-            <SeverityChip count={counts.warning} severity="warning" />
-            <SeverityChip count={counts.info} severity="info" />
-        </div>
-    )
+    const headerRight = <span className="text-[12px] tabular-nums text-text-secondary">{severitySummary(counts)}</span>
 
     return (
-        <Panel id="alerts" title="Alerts" right={headerRight}>
-            <div className="flex flex-col gap-0.5">
+        <Panel id="alerts" title="Alerts" right={headerRight} innerClassName="">
+            <div className="flex flex-col">
                 {visibleRows.map((row, idx) => (
                     <AlertRow
                         key={row.key}
@@ -285,7 +247,7 @@ export default function DashboardAlertsPanel({
                         type="button"
                         onClick={() => setExpanded((prev) => !prev)}
                         aria-expanded={expanded}
-                        className="self-start inline-flex items-center gap-1.5 text-[12px] font-semibold mt-1.5 px-2 py-1 rounded-md bg-transparent cursor-pointer text-text-secondary transition-[color,background-color,transform] duration-150 ease-out hover:text-text-primary hover:bg-bg-hover active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                        className="flex w-full items-center gap-1.5 border-0 bg-transparent px-4 py-2.5 text-left text-[13px] font-medium cursor-pointer text-text-secondary transition-colors duration-150 ease-out hover:text-text-primary hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
                     >
                         <span>{expanded ? 'Show less' : `View ${hiddenCount} more`}</span>
                         <i

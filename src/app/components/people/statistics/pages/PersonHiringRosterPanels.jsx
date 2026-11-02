@@ -25,34 +25,19 @@ export function PersonHiringRosterPanels({ noHireList, plantsMissingTrainers, re
                         <table className="w-full text-[12px] border-collapse">
                             <thead>
                                 <tr className="text-text-tertiary">
-                                    <th
-                                        scope="col"
-                                        className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                    >
+                                    <th scope="col" className="text-left font-medium text-[12px] px-3 py-2">
                                         Name
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="text-left font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                    >
+                                    <th scope="col" className="text-left font-medium text-[12px] px-2 py-2">
                                         Plant
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="text-left font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                    >
+                                    <th scope="col" className="text-left font-medium text-[12px] px-2 py-2">
                                         Position
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="text-left font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                    >
+                                    <th scope="col" className="text-left font-medium text-[12px] px-2 py-2">
                                         Status
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="text-right font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                    >
+                                    <th scope="col" className="text-right font-medium text-[12px] px-3 py-2">
                                         Days on Roster
                                     </th>
                                 </tr>
@@ -98,16 +83,10 @@ export function PersonHiringRosterPanels({ noHireList, plantsMissingTrainers, re
                             <table className="w-full text-[12px] border-collapse">
                                 <thead>
                                     <tr className="text-text-tertiary">
-                                        <th
-                                            scope="col"
-                                            className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                        >
+                                        <th scope="col" className="text-left font-medium text-[12px] px-3 py-2">
                                             Plant
                                         </th>
-                                        <th
-                                            scope="col"
-                                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                        >
+                                        <th scope="col" className="text-right font-medium text-[12px] px-3 py-2">
                                             Active Roster
                                         </th>
                                     </tr>
@@ -147,22 +126,13 @@ export function PersonHiringRosterPanels({ noHireList, plantsMissingTrainers, re
                             <table className="w-full text-[12px] border-collapse">
                                 <thead>
                                     <tr className="text-text-tertiary">
-                                        <th
-                                            scope="col"
-                                            className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                        >
+                                        <th scope="col" className="text-left font-medium text-[12px] px-3 py-2">
                                             Name
                                         </th>
-                                        <th
-                                            scope="col"
-                                            className="text-left font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                        >
+                                        <th scope="col" className="text-left font-medium text-[12px] px-2 py-2">
                                             Plant
                                         </th>
-                                        <th
-                                            scope="col"
-                                            className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                        >
+                                        <th scope="col" className="text-left font-medium text-[12px] px-3 py-2">
                                             Position
                                         </th>
                                     </tr>

@@ -94,15 +94,9 @@ const RoleCard = ({
                 onClick={onToggle}
                 className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
             >
-                <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-base text-white shadow-sm"
-                    style={{ background: accentColor }}
-                >
-                    <i className="fas fa-shield-alt" aria-hidden="true" />
-                </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate font-heading text-lg font-bold tracking-tight text-text-primary">
+                        <span className="truncate font-heading text-[20px] font-semibold tracking-tight text-text-primary">
                             {role.name}
                         </span>
                         {isElevated && (
@@ -156,7 +150,7 @@ const RoleCard = ({
                                         e.stopPropagation()
                                         setAddingPerm(true)
                                     }}
-                                    className="inline-flex items-center gap-1.5 rounded-md bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition duration-150 hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97]"
+                                    className="inline-flex items-center gap-1.5 rounded-md bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition duration-150 hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary"
                                 >
                                     <i className="fas fa-plus text-[9px]" aria-hidden="true" />
                                     Add Permission
@@ -167,7 +161,7 @@ const RoleCard = ({
                                         e.stopPropagation()
                                         onEditWeight(role)
                                     }}
-                                    className="inline-flex items-center gap-1.5 rounded-md bg-bg-tertiary px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97]"
+                                    className="inline-flex items-center gap-1.5 rounded-md bg-bg-tertiary px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary"
                                 >
                                     <i className="fas fa-balance-scale text-[9px]" aria-hidden="true" />
                                     Edit Weight
@@ -197,7 +191,7 @@ const RoleCard = ({
                                     handleCopyPermissions()
                                 }}
                                 disabled={permissions.length === 0}
-                                className="inline-flex items-center gap-1.5 rounded-md bg-bg-tertiary px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-[0.97]"
+                                className="inline-flex items-center gap-1.5 rounded-md bg-bg-tertiary px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
                                 title="Copy all permission nodes, one per line"
                             >
                                 <i className={`fas ${copied ? 'fa-check' : 'fa-copy'} text-[9px]`} aria-hidden="true" />
@@ -210,7 +204,7 @@ const RoleCard = ({
                                         e.stopPropagation()
                                         handlePastePermissions()
                                     }}
-                                    className="inline-flex items-center gap-1.5 rounded-md bg-bg-tertiary px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97]"
+                                    className="inline-flex items-center gap-1.5 rounded-md bg-bg-tertiary px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary"
                                     title="Paste permissions from clipboard, merging with existing"
                                 >
                                     <i className="fas fa-paste text-[9px]" aria-hidden="true" />
@@ -236,7 +230,7 @@ const RoleCard = ({
                                 type="button"
                                 onClick={handleAddPerm}
                                 disabled={!newPerm.trim()}
-                                className="rounded-md px-3 py-2 text-xs font-semibold text-white shadow-sm transition duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97] disabled:opacity-40 disabled:active:scale-[0.97]"
+                                className="rounded-md px-3 py-2 text-xs font-semibold text-white shadow-sm transition duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary disabled:opacity-40"
                                 style={{ background: accentColor }}
                             >
                                 Add
@@ -247,7 +241,7 @@ const RoleCard = ({
                                     setAddingPerm(false)
                                     setNewPerm('')
                                 }}
-                                className="rounded-md bg-bg-tertiary px-3 py-2 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97]"
+                                className="rounded-md bg-bg-tertiary px-3 py-2 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                             >
                                 Cancel
                             </button>
@@ -271,9 +265,7 @@ const RoleCard = ({
                                                 className={`fas ${icon} text-[10px] text-text-tertiary`}
                                                 aria-hidden="true"
                                             />
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
-                                                {ns}
-                                            </span>
+                                            <span className="text-[12px] font-medium text-text-tertiary">{ns}</span>
                                             <span className="text-[10px] text-text-tertiary opacity-70">
                                                 {nsPerms.length}
                                             </span>

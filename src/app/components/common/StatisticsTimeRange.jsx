@@ -5,13 +5,14 @@ import { formatPeriodLabel, shiftAnchor } from '../../../utils/PlanStatisticsUti
 import { getTodayDate } from '../../../utils/PlanUtility'
 import { STATISTICS_PERIODS } from '../../hooks/useStatisticsPeriod'
 
-/** Period pill row — segmented chip style with active = accent fill, inactive = transparent. */
-function PeriodSelector({ accentColor, period, setPeriod }) {
+/** Period row — joined buttons; the chosen period is pressed in (darker
+ *  fill, darker text), the same as every other switcher in the app. */
+function PeriodSelector({ period, setPeriod }) {
     return (
         <div
             role="group"
             aria-label="Statistics time period"
-            className="inline-flex items-center rounded-md p-0.5 bg-bg-tertiary border border-border-light"
+            className="inline-flex h-9 items-stretch overflow-hidden rounded-[4px] border border-border-medium bg-bg-primary"
         >
             {STATISTICS_PERIODS.map(({ id, label }) => {
                 const isActive = period === id
@@ -21,11 +22,11 @@ function PeriodSelector({ accentColor, period, setPeriod }) {
                         key={id}
                         onClick={() => setPeriod(id)}
                         aria-pressed={isActive}
-                        className="rounded text-xs font-semibold border-0 cursor-pointer px-2.5 py-1.5 transition-colors duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-tertiary motion-reduce:transition-none"
-                        style={{
-                            background: isActive ? accentColor : 'transparent',
-                            color: isActive ? 'var(--on-accent)' : 'var(--text-secondary)'
-                        }}
+                        className={`border-0 border-r border-solid border-border-light px-3 text-[13px] cursor-pointer transition-colors duration-150 last:border-r-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none ${
+                            isActive
+                                ? 'bg-bg-tertiary font-medium text-text-primary'
+                                : 'bg-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+                        }`}
                     >
                         {label}
                     </button>
@@ -37,22 +38,12 @@ function PeriodSelector({ accentColor, period, setPeriod }) {
 
 /** Calendar nav arrows + label + Today shortcut, or a date-range picker
  *  when the period is Custom. Hidden entirely for `allTime`. */
-function PeriodNavigator({
-    accentColor,
-    anchor,
-    customEnd,
-    customStart,
-    period,
-    range,
-    setAnchor,
-    setCustomEnd,
-    setCustomStart
-}) {
+function PeriodNavigator({ anchor, customEnd, customStart, period, range, setAnchor, setCustomEnd, setCustomStart }) {
     if (period === 'allTime') return null
     if (period === 'custom') {
         const dateInputClass =
-            'rounded-md px-2 py-1 text-xs bg-bg-primary border border-border-light text-text-primary ' +
-            'transition-colors duration-150 hover:border-border-medium ' +
+            'h-9 rounded-[4px] px-2 text-[13px] bg-bg-primary border border-border-medium text-text-primary ' +
+            'transition-colors duration-150 ' +
             'focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 ' +
             '[color-scheme:light] dark:[color-scheme:dark]'
         return (
@@ -79,31 +70,32 @@ function PeriodNavigator({
     }
     const periodLabel = formatPeriodLabel(period, range)
     return (
-        <div className="inline-flex items-center gap-0.5 rounded-md text-sm font-semibold px-1 py-0.5 bg-bg-tertiary border border-border-light">
+        <div className="inline-flex h-9 items-center rounded-[4px] border border-border-medium bg-bg-primary">
             <button
                 type="button"
                 onClick={() => setAnchor(shiftAnchor(anchor, period, -1))}
                 aria-label="Previous period"
                 title="Previous period"
-                className="border-0 bg-transparent cursor-pointer p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors duration-150 active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+                className="h-full w-8 border-0 bg-transparent cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none"
             >
-                <i className="fas fa-chevron-left text-xs" aria-hidden="true" />
+                <i className="fas fa-chevron-left text-[11px]" aria-hidden="true" />
             </button>
-            <span className="px-2 text-xs font-semibold text-text-primary tabular-nums">{periodLabel}</span>
+            <span className="min-w-[120px] px-1 text-center text-[13px] font-medium text-text-primary tabular-nums">
+                {periodLabel}
+            </span>
             <button
                 type="button"
                 onClick={() => setAnchor(shiftAnchor(anchor, period, 1))}
                 aria-label="Next period"
                 title="Next period"
-                className="border-0 bg-transparent cursor-pointer p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors duration-150 active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+                className="h-full w-8 border-0 bg-transparent cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none"
             >
-                <i className="fas fa-chevron-right text-xs" aria-hidden="true" />
+                <i className="fas fa-chevron-right text-[11px]" aria-hidden="true" />
             </button>
             <button
                 type="button"
                 onClick={() => setAnchor(getTodayDate())}
-                className="border-0 bg-transparent cursor-pointer px-2 py-1 rounded text-xs font-semibold transition-colors duration-150 hover:bg-bg-hover active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
-                style={{ color: accentColor }}
+                className="h-full border-0 border-l border-solid border-border-light bg-transparent cursor-pointer px-3 text-[13px] text-text-primary transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none"
             >
                 Today
             </button>

@@ -1,18 +1,79 @@
-import React, { useEffect, useRef, useState } from 'react'
-import ReactDOM from 'react-dom'
+import React, { useEffect, useState } from 'react'
 
 import { getSessionUserId } from '../../../services/SessionService'
 import { UserService } from '../../../services/UserService'
 import ErrorMessage from '../common/ErrorMessage'
+import useDialogClose from '../common/useDialogClose'
+import Dialog from '../ui/Dialog'
 
 /** Id of the form-level error banner. Fields marked invalid name it in
  *  aria-describedby, so the message reaches a screen reader from the field. */
 export const ADD_VIEW_ERROR_ID = 'add-view-error'
 
 /**
+ * Every add form ends with a row holding its submit button. That row is
+ * pinned to the bottom of the scrolling body and drawn as the dialog's footer
+ * band, so the action stays in reach on a long form and sits where every
+ * other dialog keeps it. (Written out in full so Tailwind finds every class.)
+ */
+const FORM_FOOTER = [
+    '[&_form>div:last-child]:sticky',
+    '[&_form>div:last-child]:bottom-0',
+    '[&_form>div:last-child]:z-raised',
+    '[&_form>div:last-child]:-mx-6',
+    '[&_form>div:last-child]:mt-0',
+    '[&_form>div:last-child]:flex',
+    '[&_form>div:last-child]:items-center',
+    '[&_form>div:last-child]:justify-end',
+    '[&_form>div:last-child]:gap-2',
+    '[&_form>div:last-child]:border-t',
+    '[&_form>div:last-child]:border-border-light',
+    '[&_form>div:last-child]:bg-bg-secondary',
+    '[&_form>div:last-child]:px-6',
+    '[&_form>div:last-child]:py-3.5'
+].join(' ')
+
+/**
+ * The form inside the dialog. `.add-view-form` styles every field the add
+ * forms render; its own padding and overflow are switched off here because
+ * the dialog body sets the padding and the footer row has to reach its
+ * edges.
+ *
+ * Its effect runs before Dialog's. React's `autoFocus` focuses a form's first
+ * field during commit without leaving an attribute behind, and Dialog would
+ * then move focus to its panel. Marking the field lets Dialog land on it
+ * instead, and handing focus back to `opener` first keeps Dialog's focus
+ * restore pointed at the button that opened the form.
+ */
+function AddViewBody({ anchorRef, children, error, onDismissError, opener }) {
+    useEffect(() => {
+        const field = document.activeElement
+        if (!field || !anchorRef.current?.contains(field)) return
+        field.setAttribute('data-autofocus', '')
+        field.blur()
+        if (opener && opener !== document.body && typeof opener.focus === 'function') {
+            opener.focus({ preventScroll: true })
+        }
+    }, [anchorRef, opener])
+
+    return (
+        <div ref={anchorRef} className="px-6 pt-5">
+            <div className={`add-view-form gap-5 overflow-visible !p-0 ${FORM_FOOTER}`}>
+                <ErrorMessage id={ADD_VIEW_ERROR_ID} message={error} onDismiss={onDismissError} />
+                {children}
+            </div>
+        </div>
+    )
+}
+
+/**
+ * The dialog every "Add …" form opens in. It checks the user may add before
+ * showing the form, and turns a duplicate-key error from the server into a
+ * sentence about the number that is already taken.
+ *
  * @param {Object} props
- * @param {string} props.title - Modal header title.
- * @param {Function} props.onClose - Closes the modal.
+ * @param {string} props.title - Dialog title.
+ * @param {Function} props.onClose - Closes the dialog.
  * @param {React.ReactNode} props.children - Form content.
  * @param {string} [props.error] - External error message to display.
  * @param {boolean} [props.isListItem=false] - When true, also checks list.add permission.
@@ -20,7 +81,9 @@ export const ADD_VIEW_ERROR_ID = 'add-view-error'
 function AddViewSection({ title, onClose, children, error, isListItem = false }) {
     const [hasPermission, setHasPermission] = useState(null)
     const [internalError, setInternalError] = useState(null)
-    const pointerDownTargetRef = useRef(null)
+    // Whatever had focus when the form was asked for: the Add button, as a rule.
+    const [opener] = useState(() => (typeof document === 'undefined' ? null : document.activeElement))
+    const { anchorRef, handleClose } = useDialogClose(onClose)
     useEffect(() => {
         async function checkPermission() {
             const userId = getSessionUserId()
@@ -64,18 +127,6 @@ function AddViewSection({ title, onClose, children, error, isListItem = false })
             setInternalError(null)
         }
     }, [error])
-    // Dismiss on backdrop click only when the pointer both went down and came
-    // up on the backdrop itself, so a drag that starts inside the modal (like
-    // selecting text in an input) and ends outside does not close it.
-    const handleBackdropPointerDown = (e) => {
-        pointerDownTargetRef.current = e.target
-    }
-    const handleBackdropClick = (e) => {
-        if (e.target === e.currentTarget && pointerDownTargetRef.current === e.currentTarget) {
-            onClose()
-        }
-        pointerDownTargetRef.current = null
-    }
     if (typeof document === 'undefined' || !document.body) {
         return null
     }
@@ -83,97 +134,40 @@ function AddViewSection({ title, onClose, children, error, isListItem = false })
         return null
     }
     if (!hasPermission) {
-        return ReactDOM.createPortal(
-            <div
-                className="fixed inset-0 z-panel flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in-fast"
-                onPointerDown={handleBackdropPointerDown}
-                onClick={handleBackdropClick}
+        return (
+            <Dialog
+                open
+                onClose={handleClose}
+                size="md"
+                title={title}
+                zClassName="z-panel"
+                footer={
+                    <button type="button" className="btn-secondary" onClick={handleClose}>
+                        Close
+                    </button>
+                }
             >
                 <div
-                    className="animate-pop-in bg-bg-primary border border-border-light rounded-card shadow-card flex flex-col max-h-[90vh] max-w-[650px] w-full overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
+                    ref={anchorRef}
+                    className="flex min-h-[160px] flex-col items-center justify-center gap-1 text-center"
                 >
-                    <div className="flex items-center justify-between bg-bg-secondary border-b border-border-light rounded-t-card py-5 px-6">
-                        <div className="flex items-center gap-3.5">
-                            <i className="fas fa-lock text-accent text-xl"></i>
-                            <div>
-                                <h2 className="text-text-primary text-lg font-bold leading-tight m-0">
-                                    Permission Denied
-                                </h2>
-                                <span className="text-text-secondary text-xs font-medium uppercase tracking-wide">
-                                    Access Restricted
-                                </span>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-text-secondary text-xl cursor-pointer transition duration-200 p-2 hover:bg-border-light hover:text-text-primary"
-                            onClick={onClose}
-                            aria-label="Close"
-                        >
-                            <i className="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div className="flex-1 min-h-0 overflow-y-auto">
-                        <div className="flex flex-col gap-5 p-6">
-                            <div className="flex flex-col items-center gap-3.5 bg-bg-primary border border-border-light rounded-[10px] py-12 px-8 text-center">
-                                <i className="fas fa-ban text-text-primary text-5xl mb-2 opacity-30"></i>
-                                <p className="text-text-primary text-base font-semibold leading-relaxed m-0">
-                                    You are not permitted to create assets or items.
-                                </p>
-                                <span className="text-text-secondary text-sm font-medium">
-                                    Please contact your RMI or District Manager.
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                    <p className="m-0 text-[15px] font-medium text-text-primary">You can’t add assets or items</p>
+                    <p className="m-0 text-[13px] text-text-secondary">Ask your RMI or District Manager for access.</p>
                 </div>
-            </div>,
-            document.body
+            </Dialog>
         )
     }
-    return ReactDOM.createPortal(
-        <div
-            className="fixed inset-0 z-panel flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in-fast"
-            onPointerDown={handleBackdropPointerDown}
-            onClick={handleBackdropClick}
-        >
-            <div
-                className="animate-pop-in bg-bg-primary border border-border-light rounded-card shadow-card flex flex-col max-h-[90vh] max-w-[650px] w-full overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
+    return (
+        <Dialog open onClose={handleClose} size="lg" title={title} zClassName="z-panel" bodyClassName="p-0">
+            <AddViewBody
+                anchorRef={anchorRef}
+                error={internalError}
+                onDismissError={() => setInternalError(null)}
+                opener={opener}
             >
-                <div className="flex items-center justify-between bg-bg-secondary border-b border-border-light rounded-t-card py-5 px-6">
-                    <div className="flex items-center gap-3.5">
-                        <i className="fas fa-plus-circle text-accent text-xl"></i>
-                        <div>
-                            <h2 className="text-text-primary text-lg font-bold leading-tight m-0">{title}</h2>
-                            <span className="text-text-secondary text-xs font-medium uppercase tracking-wide">
-                                Create New
-                            </span>
-                        </div>
-                    </div>
-                    <button
-                        type="button"
-                        className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-text-secondary text-xl cursor-pointer transition duration-200 p-2 hover:bg-border-light hover:text-text-primary"
-                        onClick={onClose}
-                        aria-label="Close"
-                    >
-                        <i className="fas fa-times"></i>
-                    </button>
-                </div>
-                <div className="flex-1 min-h-0 overflow-y-auto">
-                    <div className="flex flex-col gap-5 p-6 add-view-form">
-                        <ErrorMessage
-                            id={ADD_VIEW_ERROR_ID}
-                            message={internalError}
-                            onDismiss={() => setInternalError(null)}
-                        />
-                        {children}
-                    </div>
-                </div>
-            </div>
-        </div>,
-        document.body
+                {children}
+            </AddViewBody>
+        </Dialog>
     )
 }
 export default AddViewSection

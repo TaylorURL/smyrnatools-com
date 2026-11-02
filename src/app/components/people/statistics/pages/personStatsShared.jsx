@@ -4,43 +4,36 @@ import React from 'react'
 import { fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { formatCentralDate } from '../../../../../utils/PlanUtility'
 
-/** Highlight row used by the Overview snapshot card — mirrors the asset
- *  surface so the two products read as one. */
-export function HighlightRow({ hint, icon, label, value }) {
+/** One fact in the Overview snapshot: the label in a fixed column, the value
+ *  and its context beside it — the same row the asset statistics use. */
+export function HighlightRow({ hint, icon: _icon, label, value }) {
     return (
-        <div className="flex items-start gap-3 px-3 py-2.5 border-t border-border-light first:border-t-0">
-            <i className={`fas ${icon} text-[11px] mt-1 w-4 text-center text-text-tertiary`} />
-            <div className="flex-1 min-w-0">
-                <div className="text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary">{label}</div>
-                <div className="font-semibold truncate text-text-primary" style={{ fontSize: 13.5 }}>
-                    {value}
-                </div>
-                {hint && <div className="text-[11px] text-text-tertiary truncate">{hint}</div>}
+        <div className="grid grid-cols-[160px_minmax(0,1fr)] items-baseline gap-4 px-4 py-2.5 border-t border-border-light first:border-t-0">
+            <div className="text-[13px] text-text-secondary">{label}</div>
+            <div className="min-w-0">
+                <span className="text-[14px] font-medium text-text-primary">{value}</span>
+                {hint && <span className="ml-2 text-[12px] text-text-tertiary">{hint}</span>}
             </div>
         </div>
     )
 }
 
-/** Launchpad tile — same affordance as the asset overview's tiles so the
- *  navigation pattern feels identical. */
-export function LaunchpadTile({ hint, icon, label, onSelect, section, value }) {
+/** A tile that opens one statistics section — the same tile the asset
+ *  overview uses. */
+export function LaunchpadTile({ hint, icon: _icon, label, onSelect, section, value }) {
     return (
         <button
             type="button"
             onClick={() => onSelect?.(section)}
-            className="flex flex-col gap-1 items-start rounded-lg border bg-bg-secondary border-border-light cursor-pointer p-3 text-left hover:border-current transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none text-text-secondary active:scale-[0.97]"
+            className="group flex flex-col gap-1 items-start rounded-card border border-border-light bg-bg-primary cursor-pointer px-4 py-3 text-left transition-colors duration-150 ease-out hover:border-border-medium hover:bg-bg-hover motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
-            <span className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider">
-                <i className={`fas ${icon} text-[11px] text-text-primary`} />
-                {label}
-            </span>
-            <span className="font-mono tabular-nums font-bold leading-none text-text-primary" style={{ fontSize: 22 }}>
+            <span className="text-[12px] text-text-secondary">{label}</span>
+            <span className="font-heading text-[24px] font-semibold leading-tight tabular-nums text-text-primary">
                 {value}
             </span>
-            {hint && <span className="text-[10.5px] text-text-tertiary">{hint}</span>}
-            <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-text-primary">
-                Open
-                <i className="fas fa-arrow-right text-[9px]" />
+            {hint && <span className="text-[12px] text-text-tertiary">{hint}</span>}
+            <span className="mt-1 text-[12px] font-medium text-text-secondary group-hover:text-text-primary">
+                Open →
             </span>
         </button>
     )
@@ -91,9 +84,7 @@ export function TierTile({ color, count, hint, label, total }) {
         <div className="rounded-lg p-3 flex flex-col gap-1 bg-bg-secondary border border-border-light">
             <div className="flex items-center gap-2">
                 <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
-                <span className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary truncate">
-                    {label}
-                </span>
+                <span className="text-[12px] font-medium text-text-tertiary truncate">{label}</span>
             </div>
             <div className="flex items-baseline gap-2">
                 <span className="font-mono tabular-nums font-bold text-text-primary" style={{ fontSize: 22 }}>

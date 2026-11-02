@@ -3,19 +3,14 @@ import React from 'react'
 
 import { DateUtility } from '../../../utils/DateUtility'
 import { HistoryUtility } from '../../../utils/HistoryUtility'
-import { RESOLVED_ISSUE_COLOR, SEVERITY_COLORS, SEVERITY_PALETTES } from '../../constants/historyConstants'
+import { RESOLVED_ISSUE_COLOR, SEVERITY_COLORS } from '../../constants/historyConstants'
+import { SEVERITY_TO_TONE } from '../../constants/issueModalConstants'
 import Badge from '../common/Badge'
 import ErrorMessage from '../common/ErrorMessage'
 import HistoryEmptyState from '../ui/HistoryEmptyState'
 import StatCard from '../ui/StatCard'
 import StatCardGrid from '../ui/StatCardGrid'
 import TimelineItem, { TimelineDate, TimelineHeader, TimelineMeta, TimelineSectionTitle } from '../ui/TimelineItem'
-
-const LOW_SEVERITY_FALLBACK = SEVERITY_PALETTES.Low
-
-function paletteFor(severity) {
-    return SEVERITY_PALETTES[severity] ?? LOW_SEVERITY_FALLBACK
-}
 
 /** Combines service entries and issues into one chronological timeline. */
 function buildCombinedTimeline(serviceData, issues) {
@@ -41,7 +36,7 @@ function buildCombinedTimeline(serviceData, issues) {
 /** A service-history row in the combined timeline. */
 function ServiceRow({ entry, isLast }) {
     return (
-        <TimelineItem dotClassName="bg-green-600" isLast={isLast}>
+        <TimelineItem dotClassName="bg-status-active" isLast={isLast}>
             <TimelineHeader
                 label={
                     <>
@@ -56,19 +51,15 @@ function ServiceRow({ entry, isLast }) {
     )
 }
 
-/** Header line for an issue card: status icon, severity chip, resolved chip. */
-function IssueCardHeader({ isCompleted, sevPalette, severity }) {
+/** Header line for an issue card: severity and, once closed, resolved. */
+function IssueCardHeader({ isCompleted, severity }) {
     return (
-        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-            <i
-                className={isCompleted ? 'fas fa-check-circle text-[11px]' : 'fas fa-exclamation-circle text-[11px]'}
-                style={{ color: 'var(--text-primary)' }}
-            />
-            <Badge variant="custom" bg={sevPalette.bg} fg={sevPalette.color} size="xs" weight="bold">
+        <div className="mb-1 flex flex-wrap items-center gap-1.5">
+            <Badge tone={SEVERITY_TO_TONE[severity] ?? 'warning'} size="sm">
                 {severity}
             </Badge>
             {isCompleted && (
-                <Badge tone="success" size="xs" weight="bold">
+                <Badge tone="success" size="sm">
                     Resolved
                 </Badge>
             )}
@@ -97,19 +88,16 @@ function IssueCardFooter({ entry, getCreatorName, issue, onCompleteIssue }) {
                 </span>
             )}
             {!entry.isCompleted && (
-                <Badge
-                    as="button"
-                    tone="success"
-                    size="md"
-                    weight="bold"
-                    icon="check"
+                <button
+                    type="button"
                     onClick={() => onCompleteIssue(issue.id)}
                     title="Mark as resolved"
                     aria-label="Mark issue as resolved"
-                    className="border-none active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-active/40"
+                    className="btn-secondary"
                 >
-                    Mark Resolved
-                </Badge>
+                    <i className="fas fa-check text-[12px]" aria-hidden="true" />
+                    Mark resolved
+                </button>
             )}
         </div>
     )
@@ -118,8 +106,9 @@ function IssueCardFooter({ entry, getCreatorName, issue, onCompleteIssue }) {
 /** An issue row in the combined timeline, with its own dot+rail. */
 function IssueRow({ entry, getCreatorName, isLast, onCompleteIssue, onDeleteIssue }) {
     const issue = entry.issue
-    const severityColor = entry.isCompleted ? RESOLVED_ISSUE_COLOR : (SEVERITY_COLORS[issue.severity] ?? '#3b82f6')
-    const sevPalette = paletteFor(issue.severity)
+    const severityColor = entry.isCompleted
+        ? RESOLVED_ISSUE_COLOR
+        : (SEVERITY_COLORS[issue.severity] ?? 'var(--status-shop)')
     return (
         <div className="flex gap-2.5 py-1.5">
             <div className="flex flex-col items-center w-5 flex-shrink-0 -space-y-0.5">
@@ -132,30 +121,20 @@ function IssueRow({ entry, getCreatorName, isLast, onCompleteIssue, onDeleteIssu
                 />
                 {!isLast && <div className="w-px flex-1 bg-[var(--border-light)]" />}
             </div>
-            <div
-                className="flex-1 rounded p-2.5"
-                style={{
-                    background: entry.isCompleted ? 'rgba(22, 163, 74, 0.06)' : 'var(--bg-secondary)',
-                    border: `1px solid ${entry.isCompleted ? 'rgba(22, 163, 74, 0.35)' : 'var(--border-light)'}`
-                }}
-            >
+            <div className="flex-1 rounded-[4px] border border-border-light bg-bg-secondary p-3">
                 <div className="flex justify-between items-start gap-2">
                     <div className="flex-1 min-w-0">
-                        <IssueCardHeader
-                            isCompleted={entry.isCompleted}
-                            sevPalette={sevPalette}
-                            severity={issue.severity}
-                        />
-                        <div className="text-[12.5px] leading-snug text-text-primary">{issue.issue}</div>
+                        <IssueCardHeader isCompleted={entry.isCompleted} severity={issue.severity} />
+                        <div className="text-[13px] leading-snug text-text-primary">{issue.issue}</div>
                     </div>
                     <button
                         type="button"
                         onClick={() => onDeleteIssue(issue.id)}
                         title="Delete issue"
                         aria-label="Delete issue"
-                        className="rounded border-none cursor-pointer flex items-center justify-center bg-[rgba(220,_38,_38,_0.12)] text-text-primary h-8 w-8 active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-[rgba(220,_38,_38,_0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger/40"
+                        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-tertiary transition-colors duration-150 hover:bg-bg-tertiary hover:text-status-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
                     >
-                        <i className="fas fa-trash text-[10px]" />
+                        <i className="fas fa-trash text-[12px]" aria-hidden="true" />
                     </button>
                 </div>
                 <IssueCardFooter

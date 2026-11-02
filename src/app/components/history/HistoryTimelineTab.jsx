@@ -5,40 +5,36 @@ import UserLabel from '../common/UserLabel'
 import HistoryEmptyState from '../ui/HistoryEmptyState'
 import HistoryAiSummary from './HistoryAiSummary'
 
-/** Single history-row card showing field name, before/after values, and author. */
-function HistoryChangeCard({ entry, formatValue, type }) {
+/** One ruled history row: which field, when, what it was and became, and who changed it. */
+function HistoryChangeRow({ entry, formatValue, type }) {
     const fieldName = entry.fieldName ?? entry.field_name
     const isCreatedEntry = fieldName === 'created'
     return (
-        <div className="rounded-md p-2.5 bg-bg-secondary border border-border-light transition-colors duration-150 hover:border-border-medium">
-            <div className="flex justify-between items-center mb-1.5">
-                <div className="text-[12.5px] font-semibold capitalize text-text-primary">
+        <div className="border-b border-border-light py-3">
+            <div className="flex items-baseline justify-between gap-3">
+                <span className="text-[13px] font-medium capitalize text-text-primary">
                     {HistoryUtility.formatFieldName(fieldName, type)}
-                </div>
-                <div className="text-[11px] tabular-nums text-text-tertiary">
+                </span>
+                <span className="shrink-0 text-[12px] tabular-nums text-text-tertiary">
                     {HistoryUtility.formatHistoryTimestamp(entry.changedAt ?? entry.changed_at)}
-                </div>
+                </span>
             </div>
             {isCreatedEntry ? (
-                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <span className="text-[12px] font-semibold text-text-primary">
-                        {formatValue(fieldName, entry.newValue ?? entry.new_value)}
-                    </span>
+                <div className="mt-0.5 text-[13px] font-medium text-text-primary">
+                    {formatValue(fieldName, entry.newValue ?? entry.new_value)}
                 </div>
             ) : (
-                <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
-                    <span className="text-[12px] text-text-tertiary">
-                        <span className="text-[9.5px] font-bold uppercase tracking-wider mr-1">From</span>
+                <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[13px]">
+                    <span className="text-text-tertiary line-through">
                         {formatValue(fieldName, entry.oldValue ?? entry.old_value)}
                     </span>
-                    <i className="fas fa-arrow-right text-[10px] text-accent" />
-                    <span className="text-[12px] font-semibold text-text-primary">
-                        <span className="text-[9.5px] font-bold uppercase tracking-wider mr-1">To</span>
+                    <i className="fas fa-arrow-right text-[10px] text-text-tertiary" aria-hidden="true" />
+                    <span className="font-medium text-text-primary">
                         {formatValue(fieldName, entry.newValue ?? entry.new_value)}
                     </span>
                 </div>
             )}
-            <div className="text-[11px] text-text-tertiary">
+            <div className="mt-1 text-[12px] text-text-tertiary">
                 <UserLabel userId={entry.changedBy ?? entry.changed_by} showIcon />
             </div>
         </div>
@@ -73,7 +69,7 @@ export default function HistoryTimelineTab({
 
     return (
         <div className="flex gap-5">
-            <div className={`flex flex-col gap-3 min-w-0 pr-1 transition duration-500 ease-in-out ${listColumnClass}`}>
+            <div className={`flex flex-col min-w-0 pr-1 transition duration-500 ease-in-out ${listColumnClass}`}>
                 {sortedHistory.length === 0 ? (
                     <HistoryEmptyState
                         title={`No history records found for this ${type}.`}
@@ -81,12 +77,7 @@ export default function HistoryTimelineTab({
                     />
                 ) : (
                     sortedHistory.map((entry, index) => (
-                        <HistoryChangeCard
-                            key={entry.id ?? index}
-                            entry={entry}
-                            formatValue={formatValue}
-                            type={type}
-                        />
+                        <HistoryChangeRow key={entry.id ?? index} entry={entry} formatValue={formatValue} type={type} />
                     ))
                 )}
             </div>
