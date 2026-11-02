@@ -5,7 +5,7 @@ import { formatCentralDate } from '../utils/PlanUtility'
 const DEFAULT_MODEL = 'grok-4'
 const FAST_MODEL = 'grok-3-mini-fast'
 const MAX_RECENT_CHANGES = 10
-/** Grok-backed content generation, currently used to summarize asset history. */
+/** Grok-backed content generation with a Claude backup, currently used to summarize asset history. */
 class AIServiceImpl {
     /**
      * Single entry point to the model. Requests go to the `ai-service` edge
