@@ -26,9 +26,7 @@ function SubStatusTile({ accent, count, days, label, share }) {
         <div className="rounded-lg p-3 flex flex-col gap-1 bg-bg-secondary border border-border-light">
             <div className="flex items-center gap-2">
                 <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
-                <span className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary truncate">
-                    {label}
-                </span>
+                <span className="text-[12px] font-medium text-text-tertiary truncate">{label}</span>
             </div>
             <div className="flex items-baseline gap-2">
                 <span className="font-mono tabular-nums font-bold text-text-primary" style={{ fontSize: 22 }}>
@@ -177,51 +175,45 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
                             <table className="w-full text-[12px] border-collapse">
                                 <thead>
                                     <tr className="text-text-tertiary">
-                                        <th
-                                            scope="col"
-                                            className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                        >
+                                        <th scope="col" className="text-left font-medium text-[12px] px-3 py-2">
                                             Plant
                                         </th>
-                                        <th
-                                            scope="col"
-                                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                        >
+                                        <th scope="col" className="text-right font-medium text-[12px] px-2 py-2">
                                             Total
                                         </th>
                                         {supportsSubStatuses && (
                                             <>
                                                 <th
                                                     scope="col"
-                                                    className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
+                                                    className="text-right font-medium text-[12px] px-2 py-2"
                                                     title="In active repair"
                                                 >
                                                     In Shop
                                                 </th>
                                                 <th
                                                     scope="col"
-                                                    className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
+                                                    className="text-right font-medium text-[12px] px-2 py-2"
                                                     title="Outsourced repair work"
                                                 >
                                                     3rd Party
                                                 </th>
                                                 <th
                                                     scope="col"
-                                                    className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
+                                                    className="text-right font-medium text-[12px] px-2 py-2"
                                                     title="Done, awaiting pickup"
                                                 >
                                                     Ready
                                                 </th>
                                                 <th
                                                     scope="col"
-                                                    className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
+                                                    className="text-right font-medium text-[12px] px-2 py-2"
                                                     title="Waiting to enter the shop"
                                                 >
                                                     Waiting
                                                 </th>
                                                 <th
                                                     scope="col"
-                                                    className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
+                                                    className="text-right font-medium text-[12px] px-2 py-2"
                                                     title="Down in the yard, urgent"
                                                 >
                                                     Down
@@ -304,28 +296,16 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
                         <table className="w-full text-[12px] border-collapse">
                             <thead>
                                 <tr className="text-text-tertiary">
-                                    <th
-                                        scope="col"
-                                        className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                    >
+                                    <th scope="col" className="text-left font-medium text-[12px] px-3 py-2">
                                         Asset
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="text-left font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                    >
+                                    <th scope="col" className="text-left font-medium text-[12px] px-2 py-2">
                                         Plant
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="text-left font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                    >
+                                    <th scope="col" className="text-left font-medium text-[12px] px-2 py-2">
                                         Status
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="text-right font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                    >
+                                    <th scope="col" className="text-right font-medium text-[12px] px-3 py-2">
                                         Waiting
                                     </th>
                                 </tr>
@@ -337,7 +317,7 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
                                             <button
                                                 type="button"
                                                 onClick={() => onSelectAsset?.(row)}
-                                                className="font-mono tabular-nums font-semibold bg-transparent border-none cursor-pointer p-0 text-left text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                                className="font-mono tabular-nums font-semibold bg-transparent border-none cursor-pointer p-0 text-left text-text-primary transition-transform duration-150 ease-out motion-reduce:transition-none"
                                             >
                                                 {row.identifier}
                                             </button>

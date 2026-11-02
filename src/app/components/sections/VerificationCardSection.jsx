@@ -156,7 +156,7 @@ function VerificationCardSection({
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <div
-                        className="flex items-center justify-center w-12 h-12 rounded-xl border-2"
+                        className="flex items-center justify-center w-12 h-12 rounded-card border-2"
                         style={{
                             background: isVerified ? accentColor : 'var(--bg-primary)',
                             borderColor: accentColor
@@ -219,9 +219,7 @@ function VerificationCardSection({
                 <>
                     <div className="border-t border-border-light"></div>
                     <div>
-                        <div className="text-text-secondary text-[11px] font-semibold tracking-wide uppercase mb-3">
-                            Recent Changes
-                        </div>
+                        <div className="text-text-secondary text-[12px] font-medium mb-3">Recent Changes</div>
                         <div className="flex flex-col">
                             {recentHistory.slice(0, 4).map((entry, index) => (
                                 <div

@@ -24,7 +24,7 @@ export default function AccountSkeleton() {
             </div>
 
             <div className="flex-1 overflow-hidden">
-                <div className="mx-auto w-full max-w-[var(--container-max)] px-3 sm:px-4 lg:px-6 flex gap-4 h-full">
+                <div className="w-full px-4 sm:px-6 lg:px-8 flex gap-8 h-full">
                     <div className="hidden lg:flex flex-col gap-1.5 py-5 w-[200px]">
                         <Bar className="h-3 w-16 mb-2" />
                         {[1, 2, 3, 4, 5].map((i) => (
@@ -35,7 +35,7 @@ export default function AccountSkeleton() {
                         ))}
                     </div>
 
-                    <div className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-4">
+                    <div className="flex-1 min-w-0 max-w-[960px] py-4 sm:py-6 flex flex-col gap-4">
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 rounded overflow-hidden border border-border-light">
                             {[1, 2, 3, 4, 5, 6].map((i) => (
                                 <div

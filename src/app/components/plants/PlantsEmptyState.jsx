@@ -13,7 +13,7 @@ function PlantsEmptyState({ hasSearch, onAddClick }) {
             </p>
             <button
                 type="button"
-                className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white transition duration-150 hover:bg-accent-hover hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.98] motion-reduce:transition-none motion-reduce:transform-none"
+                className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white transition duration-150 hover:bg-accent-hover hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary motion-reduce:transition-none motion-reduce:transform-none"
                 onClick={onAddClick}
             >
                 Add Plant

@@ -95,11 +95,9 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
     return (
         <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
-                    Currently Co-Located With
-                </div>
+                <div className="text-[12px] font-medium text-text-tertiary">Currently Co-Located With</div>
                 {selectedRows.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-border-light bg-bg-secondary px-4 py-3 text-[12px] text-text-tertiary">
+                    <div className="rounded-card border border-dashed border-border-light bg-bg-secondary px-4 py-3 text-[12px] text-text-tertiary">
                         This plant stands alone. Add a sibling or custom code below to mark it as the same physical
                         location as another plant.
                     </div>
@@ -127,7 +125,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                                 )}
                                 <button
                                     type="button"
-                                    className="flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.92] disabled:active:scale-[0.97]"
+                                    className="flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50"
                                     onClick={() => remove(row.plantCode)}
                                     disabled={disabled}
                                     aria-label={`Remove ${row.plantCode} from co-location`}
@@ -142,9 +140,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
             </div>
 
             <div className="flex flex-col gap-2">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
-                    Add a Sibling Plant
-                </div>
+                <div className="text-[12px] font-medium text-text-tertiary">Add a Sibling Plant</div>
                 <div className="relative">
                     <i
                         aria-hidden="true"
@@ -152,7 +148,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                     />
                     <input
                         type="search"
-                        className="w-full rounded-xl border border-border-light bg-bg-secondary pl-9 pr-9 py-2.5 text-sm text-text-primary outline-none transition-colors placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
+                        className="w-full rounded-card border border-border-light bg-bg-secondary pl-9 pr-9 py-2.5 text-sm text-text-primary outline-none transition-colors placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
                         placeholder="Filter plants by code or name…"
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
@@ -170,7 +166,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                         </button>
                     )}
                 </div>
-                <div className="rounded-xl border border-border-light bg-bg-secondary max-h-64 overflow-y-auto">
+                <div className="rounded-card border border-border-light bg-bg-secondary max-h-64 overflow-y-auto">
                     {addableCandidates.length === 0 ? (
                         <div className="px-4 py-6 text-center text-[12px] text-text-tertiary">
                             {candidates.length === selectedRows.filter((r) => !r.isCustom).length
@@ -184,7 +180,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                                 key={candidate.plantCode}
                                 disabled={disabled}
                                 onClick={() => add(candidate.plantCode)}
-                                className="flex w-full items-center gap-3 border-none bg-transparent px-4 py-2.5 text-left cursor-pointer hover:bg-bg-hover transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.97] disabled:active:scale-[0.97]"
+                                className="flex w-full items-center gap-3 border-none bg-transparent px-4 py-2.5 text-left cursor-pointer hover:bg-bg-hover transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60"
                                 style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border-light)' }}
                             >
                                 <i className="fas fa-plus text-[11px] text-text-tertiary" aria-hidden="true" />
@@ -201,9 +197,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
             </div>
 
             <div className="flex flex-col gap-2">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
-                    Add a Custom Code
-                </div>
+                <div className="text-[12px] font-medium text-text-tertiary">Add a Custom Code</div>
                 <div className="text-[11.5px] text-text-secondary">
                     For dispatch codes that share this site but aren&apos;t set up as their own plant in Tools (e.g.
                     Baytown&apos;s <span className="font-mono tabular-nums">404</span>, Conroe&apos;s{' '}
@@ -212,7 +206,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                 <div className="flex flex-col sm:flex-row gap-2">
                     <input
                         type="text"
-                        className="flex-1 rounded-xl border border-border-light bg-bg-secondary px-4 py-2.5 text-sm font-mono tabular-nums text-text-primary outline-none transition-colors placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-60"
+                        className="flex-1 rounded-card border border-border-light bg-bg-secondary px-4 py-2.5 text-sm font-mono tabular-nums text-text-primary outline-none transition-colors placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-60"
                         placeholder="e.g. 404"
                         value={customCodeInput}
                         onChange={(e) => {
@@ -229,7 +223,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                     />
                     <button
                         type="button"
-                        className="rounded-xl border border-border-light bg-bg-primary px-5 py-2.5 text-sm font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97] disabled:active:scale-[0.97]"
+                        className="rounded-card border border-border-light bg-bg-primary px-5 py-2.5 text-sm font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-50"
                         onClick={handleAddCustom}
                         disabled={disabled || !customCodeInput.trim()}
                     >

@@ -73,12 +73,12 @@ export function usePersonStatsSections({ kind, summary }) {
     )
 }
 
-export function PersonStatisticsSidebar({ accentColor, activeSection, onSelect, sections }) {
+export function PersonStatisticsSidebar({ activeSection, onSelect, sections }) {
     return (
-        <aside className="hidden md:flex shrink-0 flex-col gap-0.5 sticky top-0 self-start py-2 pr-1 w-[220px]">
-            <div className="text-[10px] font-bold uppercase tracking-[0.08em] px-3 py-2 text-text-tertiary">
-                Statistics
-            </div>
+        <aside
+            aria-label="Statistics sections"
+            className="hidden md:flex shrink-0 flex-col gap-px sticky top-0 self-start w-[200px]"
+        >
             {sections.map((section) => {
                 const active = section.id === activeSection
                 return (
@@ -86,16 +86,15 @@ export function PersonStatisticsSidebar({ accentColor, activeSection, onSelect, 
                         type="button"
                         key={section.id}
                         onClick={() => onSelect(section.id)}
-                        className="flex items-center gap-2.5 rounded-md border-none cursor-pointer text-left px-3 py-2 transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
-                        style={{
-                            background: active ? `${accentColor}15` : 'transparent',
-                            color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
-                        }}
                         title={section.description}
-                        aria-pressed={active}
+                        aria-current={active ? 'page' : undefined}
+                        className={`flex h-8 items-center rounded-[4px] border-none cursor-pointer text-left px-2.5 text-[13px] transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                            active
+                                ? 'bg-bg-tertiary font-medium text-text-primary'
+                                : 'bg-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+                        }`}
                     >
-                        <i className={`fas ${section.icon} text-[12px] w-3.5 text-center`} aria-hidden="true" />
-                        <span className="text-[12.5px] font-semibold truncate">{section.label}</span>
+                        <span className="truncate">{section.label}</span>
                     </button>
                 )
             })}
@@ -103,10 +102,10 @@ export function PersonStatisticsSidebar({ accentColor, activeSection, onSelect, 
     )
 }
 
-export function PersonStatisticsSectionTabs({ accentColor, activeSection, onSelect, sections }) {
+export function PersonStatisticsSectionTabs({ activeSection, onSelect, sections }) {
     return (
         <div
-            className="md:hidden flex items-center gap-1 overflow-x-auto pb-1 -mx-1 px-1"
+            className="md:hidden flex items-end gap-5 overflow-x-auto border-b border-border-light"
             style={{ scrollbarWidth: 'none' }}
         >
             {sections.map((section) => {
@@ -116,16 +115,15 @@ export function PersonStatisticsSectionTabs({ accentColor, activeSection, onSele
                         type="button"
                         key={section.id}
                         onClick={() => onSelect(section.id)}
-                        className="flex items-center gap-1.5 rounded-md border-none cursor-pointer px-2.5 py-1.5 text-[12px] font-semibold shrink-0 active:scale-[0.97] transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
-                        style={{
-                            background: active ? `${accentColor}15` : 'var(--bg-tertiary)',
-                            color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
-                        }}
                         title={section.description}
-                        aria-pressed={active}
+                        aria-current={active ? 'page' : undefined}
+                        className={`-mb-px shrink-0 border-0 border-b-2 border-solid bg-transparent pb-2.5 pt-1 text-[13px] cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                            active
+                                ? 'border-text-primary font-medium text-text-primary'
+                                : 'border-transparent text-text-secondary hover:text-text-primary'
+                        }`}
                     >
-                        <i className={`fas ${section.icon} text-[11px]`} aria-hidden="true" />
-                        <span>{section.label}</span>
+                        {section.label}
                     </button>
                 )
             })}

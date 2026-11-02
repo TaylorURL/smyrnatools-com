@@ -20,6 +20,7 @@ export const ICONS = {
     Managers: 'fa-user-tie',
     Mixers: 'fa-truck',
     MyAccount: 'fa-user',
+    Notifications: 'fa-envelope',
     Operators: 'fa-users',
     People: 'fa-users',
     'Pickup Trucks': 'fa-truck-pickup',

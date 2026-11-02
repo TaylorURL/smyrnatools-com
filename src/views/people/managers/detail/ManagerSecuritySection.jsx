@@ -24,7 +24,7 @@ export default function ManagerSecuritySection({
                             <span className="text-text-secondary text-sm">••••••••</span>
                             <button
                                 type="button"
-                                className="flex items-center gap-2 rounded-xl border border-border-light bg-bg-primary px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
+                                className="flex items-center gap-2 rounded-card border border-border-light bg-bg-primary px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
                                 onClick={onShowPasswordField}
                             >
                                 <i className="fas fa-key"></i> Change Password
@@ -50,7 +50,7 @@ export default function ManagerSecuritySection({
                         </p>
                         <button
                             type="button"
-                            className="flex items-center gap-2 rounded-xl border border-border-light bg-bg-primary px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
+                            className="flex items-center gap-2 rounded-card border border-border-light bg-bg-primary px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
                             onClick={onCancelPasswordChange}
                         >
                             <i className="fas fa-times"></i> Cancel

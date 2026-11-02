@@ -1,29 +1,24 @@
 import React from 'react'
 
-import Badge from '../../common/Badge'
-
 /**
- * Toggleable pill button used by the recap modal's date/type filter rows.
- * Active state uses the unified Badge's accent tone in solid variant; idle
- * uses the soft tint. Theme tokens flow through Badge, which reads
- * `var(--accent)` directly via the `accent` tone, so all three themes stay
- * consistent without an accent-color prop.
+ * One option in the recap modal's joined date / type switchers. The chosen
+ * one is pressed in — darker fill and text — the same as every other
+ * switcher in the app; the toolbar draws the shared border around a row.
  */
 function RecapFilterPill({ active, label, onClick }) {
     return (
-        <Badge
-            as="button"
-            tone="accent"
-            variant={active ? 'solid' : 'soft'}
-            active={active}
-            size="md"
-            shape="rounded-md"
-            weight="semibold"
-            uppercase={false}
+        <button
+            type="button"
             onClick={onClick}
+            aria-pressed={active}
+            className={`h-8 border-0 border-r border-solid border-border-light px-3 text-[13px] cursor-pointer transition-colors duration-150 ease-out last:border-r-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none ${
+                active
+                    ? 'bg-bg-tertiary font-medium text-text-primary'
+                    : 'bg-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+            }`}
         >
             {label}
-        </Badge>
+        </button>
     )
 }
 

@@ -15,9 +15,9 @@ const CreateRoleModal = ({ isOpen, onClose, onCreate }) => {
     const [weight, setWeight] = useState(DEFAULT_WEIGHT)
     if (!isOpen) return null
     return (
-        <RoleModal isOpen={isOpen} onClose={onClose} title="Create Role">
+        <RoleModal isOpen={isOpen} onClose={onClose} title="Create role">
             <RoleModalBody>
-                <RoleFormField label="Role Name">
+                <RoleFormField label="Role name">
                     <RoleTextInput value={name} onChange={setName} placeholder="e.g. Plant Manager" autoFocus />
                 </RoleFormField>
                 <RoleFormField label="Weight">
@@ -33,7 +33,7 @@ const CreateRoleModal = ({ isOpen, onClose, onCreate }) => {
                     setWeight(DEFAULT_WEIGHT)
                     onClose()
                 }}
-                submitText="Create"
+                submitText="Create role"
                 disabled={!name.trim()}
             />
         </RoleModal>

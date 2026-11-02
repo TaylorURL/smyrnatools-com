@@ -68,22 +68,13 @@ export function AssetStatisticsIssuesPage({ onSelectAsset, stats }) {
                         <table className="w-full text-[12px] border-collapse">
                             <thead>
                                 <tr className="text-text-tertiary">
-                                    <th
-                                        scope="col"
-                                        className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                    >
+                                    <th scope="col" className="text-left font-medium text-[12px] px-3 py-2">
                                         Plant
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="text-right font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                    >
+                                    <th scope="col" className="text-right font-medium text-[12px] px-3 py-2">
                                         Open Issues
                                     </th>
-                                    <th
-                                        scope="col"
-                                        className="text-right font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                                    >
+                                    <th scope="col" className="text-right font-medium text-[12px] px-3 py-2">
                                         Fleet
                                     </th>
                                 </tr>

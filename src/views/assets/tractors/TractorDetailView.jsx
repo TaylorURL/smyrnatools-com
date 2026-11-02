@@ -113,7 +113,7 @@ function TractorDetailView({ tractorId, onClose }) {
                         <>
                             <button
                                 type="button"
-                                className="global-button-secondary flex-1 justify-center"
+                                className="global-button-primary flex-1 justify-center"
                                 onClick={actions.handleSave}
                                 disabled={actions.isSaving}
                             >
@@ -123,7 +123,7 @@ function TractorDetailView({ tractorId, onClose }) {
                             {actions.canDeleteTractor && (
                                 <button
                                     type="button"
-                                    className="global-button-secondary flex-1 justify-center"
+                                    className="global-button-danger flex-1 justify-center"
                                     onClick={() => actions.setShowDeleteConfirmation(true)}
                                     disabled={actions.isSaving}
                                 >

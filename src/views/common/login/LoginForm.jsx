@@ -229,8 +229,8 @@ function LoginForm() {
         return (
             <Suspense
                 fallback={
-                    <div className="flex h-screen supports-[height:1dvh]:h-[100dvh] items-center justify-center bg-slate-950/40 backdrop-blur-xl">
-                        <i className="fas fa-spinner fa-spin text-2xl text-white" />
+                    <div className="flex min-h-[260px] w-full items-center justify-center rounded-card border border-white/10 bg-slate-950/45 backdrop-blur-xl">
+                        <i className="fas fa-circle-notch fa-spin text-xl text-white/80" aria-hidden="true" />
                     </div>
                 }
             >

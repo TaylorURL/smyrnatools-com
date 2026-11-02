@@ -31,15 +31,15 @@
  * The app's only stylesheet. Everything here is something Tailwind cannot
  * express on its own:
  *   1. The Tailwind layer directives themselves.
- *   2. The @font-face rules for Rajdhani and Exo 2, served from this origin
- *      out of public/fonts and cut to the Latin ranges the app sets.
+ *   2. The @font-face rules for IBM Plex Sans, Sans Condensed and Mono,
+ *      served from this origin out of public/fonts and cut to Latin.
  *   3. The theme tokens. Custom properties have no utility equivalent, and
  *      tailwind.config.js points its colors / fontFamily extensions at these
  *      var(--…) names, so the two files have to agree.
  *   4. @layer base resets for the native form elements preflight leaves
  *      alone — the <select> chevron above all.
  *   5. A shim repainting raw palette utilities (bg-white, bg-gray-*,
- *      bg-slate-*, text-gray-*, …) for the dark and grayed themes. Semantic
+ *      bg-slate-*, text-gray-*, …) for the dark theme. Semantic
  *      tokens (bg-bg-primary, text-text-primary, …) already follow the
  *      theme and need no entry here.
  *   6. @layer components classes for the badges and cards used across
@@ -51,144 +51,134 @@
 
 /* Faces
  *
- * Both families are served from this origin out of public/fonts, cut to the
- * Latin and Latin Extended ranges the app sets. Rajdhani ships one file per
- * weight; Exo 2 is a variable face, so one file covers 300 through 700 and
- * the browser picks the instance from font-weight.
+ * IBM Plex, served from this origin out of public/fonts and cut to Latin:
+ * Plex Sans for reading and controls, Plex Sans Condensed for headings and
+ * the big numbers, Plex Mono for anything read digit by digit — truck
+ * numbers, VINs, hours, counts. One family in three cuts, engineered rather
+ * than decorative, which suits a fleet console read on a plant floor.
+ * (Licence: public/fonts/IBM-Plex-LICENSE.txt, SIL OFL 1.1.)
  *
- * Each family is followed in --font-heading / --font-body by an Arial-backed
- * fallback whose overrides give it the same ascent, descent and average
- * character width as the face it stands in for, so the line a reader sees
- * during the swap occupies the space the web font will.
+ * Arial stands in during the swap, sized to Plex's metrics so the line does
+ * not jump when the web font lands.
  */
 
 @font-face {
-    font-family: 'Rajdhani';
+    font-family: 'IBM Plex Sans';
     font-style: normal;
     font-weight: 400;
     font-display: swap;
-    src: url('/fonts/rajdhani-400-latin.woff2') format('woff2');
+    src: url('/fonts/plex-sans-400-latin.woff2') format('woff2');
     unicode-range:
         U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
         U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-    font-family: 'Rajdhani';
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/plex-sans-500-latin.woff2') format('woff2');
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+        U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/plex-sans-600-latin.woff2') format('woff2');
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+        U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/plex-sans-700-latin.woff2') format('woff2');
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+        U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'IBM Plex Sans Condensed';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/plex-sans-condensed-500-latin.woff2') format('woff2');
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+        U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'IBM Plex Sans Condensed';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/plex-sans-condensed-600-latin.woff2') format('woff2');
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+        U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'IBM Plex Sans Condensed';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/plex-sans-condensed-700-latin.woff2') format('woff2');
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+        U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'IBM Plex Mono';
     font-style: normal;
     font-weight: 400;
     font-display: swap;
-    src: url('/fonts/rajdhani-400-latin-ext.woff2') format('woff2');
+    src: url('/fonts/plex-mono-400-latin.woff2') format('woff2');
     unicode-range:
-        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
-        U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+        U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-    font-family: 'Rajdhani';
+    font-family: 'IBM Plex Mono';
     font-style: normal;
     font-weight: 500;
     font-display: swap;
-    src: url('/fonts/rajdhani-500-latin.woff2') format('woff2');
+    src: url('/fonts/plex-mono-500-latin.woff2') format('woff2');
     unicode-range:
         U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
         U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-    font-family: 'Rajdhani';
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: url('/fonts/rajdhani-500-latin-ext.woff2') format('woff2');
-    unicode-range:
-        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
-        U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-    font-family: 'Rajdhani';
+    font-family: 'IBM Plex Mono';
     font-style: normal;
     font-weight: 600;
     font-display: swap;
-    src: url('/fonts/rajdhani-600-latin.woff2') format('woff2');
+    src: url('/fonts/plex-mono-600-latin.woff2') format('woff2');
     unicode-range:
         U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
         U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-    font-family: 'Rajdhani';
-    font-style: normal;
-    font-weight: 600;
-    font-display: swap;
-    src: url('/fonts/rajdhani-600-latin-ext.woff2') format('woff2');
-    unicode-range:
-        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
-        U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-    font-family: 'Rajdhani';
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url('/fonts/rajdhani-700-latin.woff2') format('woff2');
-    unicode-range:
-        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
-        U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-    font-family: 'Rajdhani';
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url('/fonts/rajdhani-700-latin-ext.woff2') format('woff2');
-    unicode-range:
-        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
-        U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-    font-family: 'Exo 2';
-    font-style: normal;
-    font-weight: 300 700;
-    font-display: swap;
-    src: url('/fonts/exo2-latin.woff2') format('woff2');
-    unicode-range:
-        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
-        U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-    font-family: 'Exo 2';
-    font-style: normal;
-    font-weight: 300 700;
-    font-display: swap;
-    src: url('/fonts/exo2-latin-ext.woff2') format('woff2');
-    unicode-range:
-        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
-        U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-    font-family: 'Rajdhani Fallback';
+    font-family: 'Plex Fallback';
     font-display: swap;
     src: local('Arial');
-    size-adjust: 91.07%;
-    ascent-override: 102.12%;
-    descent-override: 37.99%;
-    line-gap-override: 0%;
-}
-
-@font-face {
-    font-family: 'Exo 2 Fallback';
-    font-display: swap;
-    src: local('Arial');
-    size-adjust: 102.06%;
-    ascent-override: 97.88%;
-    descent-override: 19.69%;
+    size-adjust: 100.6%;
+    ascent-override: 102%;
+    descent-override: 27%;
     line-gap-override: 0%;
 }
 
@@ -208,11 +198,11 @@
     --success-color: #34c759;
     --warning-color: #ff9500;
     --danger-color: #ff3b30;
-    --background-color: #eef2f7;
-    --card-background: #f8fafc;
-    --text-color: #334155;
+    --background-color: #f4f4f1;
+    --card-background: #ffffff;
+    --text-color: #2b2e33;
     --text-light: #888888;
-    --border-color: rgba(15, 23, 42, 0.12);
+    --border-color: #e1e0da;
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
@@ -220,24 +210,25 @@
     --radius-sm: 4px;
     --radius-md: 8px;
     --radius-lg: 12px;
-    --font-heading: 'Rajdhani', 'Rajdhani Fallback', 'Inter', system-ui, sans-serif;
-    --font-body: 'Exo 2', 'Exo 2 Fallback', 'Inter', system-ui, sans-serif;
-    --font-family: 'Exo 2', 'Exo 2 Fallback', 'Inter', system-ui, sans-serif;
-    --bg-primary: #f8fafc;
-    --bg-secondary: #f1f5f9;
-    --bg-tertiary: #e7edf3;
-    --bg-hover: #dbe2eb;
-    --text-primary: #1e293b;
-    --text-secondary: #6c757d;
-    --text-tertiary: #94a3b8;
+    --font-heading: 'IBM Plex Sans Condensed', 'IBM Plex Sans', 'Plex Fallback', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', 'Plex Fallback', system-ui, sans-serif;
+    --font-family: 'IBM Plex Sans', 'Plex Fallback', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f4f4f1;
+    --bg-tertiary: #ebeae5;
+    --bg-hover: #e4e3dd;
+    --text-primary: #15171a;
+    --text-secondary: #585d64;
+    --text-tertiary: #8a8e94;
     --accent: #1e3a5f;
     --accent-light: color-mix(in srgb, var(--accent) 10%, white);
     --accent-dark: color-mix(in srgb, var(--accent) 85%, black);
     --accent-hover: color-mix(in srgb, var(--accent) 80%, black);
     --accent-transparent: color-mix(in srgb, var(--accent) 10%, transparent);
-    --border-light: rgba(15, 23, 42, 0.11);
-    --border-medium: rgba(15, 23, 42, 0.18);
-    --border-dark: rgba(15, 23, 42, 0.3);
+    --border-light: #e1e0da;
+    --border-medium: #cdcbc4;
+    --border-dark: #a7a59e;
     --shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     --shadow-hover: 0 5px 15px rgba(0, 0, 0, 0.1);
     --danger: #dc3545;
@@ -272,14 +263,14 @@
     --role-dispatcher: #0d9488;
     --role-safety: #dc2626;
     --role-other: #64748b;
-    --status-active: #16a34a;
+    --status-active: #1d7f45;
     /* Aliases for the two spellings src/views still names. */
     --error: var(--danger);
     --status-inshop: var(--status-shop);
-    --status-warning: #ca8a04;
-    --status-danger: #dc2626;
-    --status-shop: #2563eb;
-    --status-spare: #64748b;
+    --status-warning: #a8670d;
+    --status-danger: #c42b2b;
+    --status-shop: #2563a8;
+    --status-spare: #6e7178;
     --notice-danger: #dc2626;
     --notice-danger-strong: #991b1b;
     --notice-danger-soft: #b91c1c;
@@ -341,7 +332,7 @@
     --tint-purple-ink: #9333ea;
     --tint-orange-ink: #ea580c;
     --tint-orange-ink-soft: #9a3412;
-    --bg-sunken: #eef2f7;
+    --bg-sunken: #efeee9;
     --ink-soft: #334155;
     --ink-subtle: #64748b;
     --ink-faint: #94a3b8;
@@ -378,9 +369,9 @@
      * a bar or sticky strip, a dialog, and the halo on a live status dot.
      * tailwind.config.js points shadow-card / shadow-raised / shadow-modal /
      * shadow-glow at these, so the numbers live in one place. */
-    --shadow-card: 0 2px 4px rgba(0, 0, 0, 0.1);
-    --shadow-raised: 0 2px 8px rgba(0, 0, 0, 0.12);
-    --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.3);
+    --shadow-card: 0 1px 2px rgba(21, 23, 26, 0.04);
+    --shadow-raised: 0 1px 3px rgba(21, 23, 26, 0.07);
+    --shadow-modal: 0 18px 48px rgba(21, 23, 26, 0.2), 0 0 0 1px rgba(21, 23, 26, 0.06);
     --shadow-glow: 0 0 6px currentColor;
     --drop-shadow-glow: 0 0 6px rgba(255, 255, 255, 0.3);
 
@@ -504,28 +495,37 @@ html.dark {
     --success-color: #34c759;
     --warning-color: #ff9f0a;
     --danger-color: #ff453a;
-    --background-color: #1a1a1a;
-    --card-background: #242424;
-    --text-color: #f5f5f5;
+    --background-color: #0f1011;
+    --card-background: #17181a;
+    --text-color: #ededeb;
     --text-light: #787878;
-    --border-color: rgba(255, 255, 255, 0.12);
+    --border-color: rgba(255, 255, 255, 0.08);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.8);
     --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.6);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
     --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
-    --bg-primary: #1a1a1a;
-    --bg-secondary: #242424;
-    --bg-tertiary: #303030;
-    --bg-hover: #3c3c3c;
-    --text-primary: #f5f5f5;
-    --text-secondary: #a8a8a8;
+    --bg-primary: #17181a;
+    --bg-secondary: #0f1011;
+    --bg-tertiary: #1f2023;
+    --bg-hover: #26282b;
+    --text-primary: #ededeb;
+    --text-secondary: #a2a5aa;
+    --status-active: #3fb873;
+    --status-warning: #dca23e;
+    --status-danger: #ef6464;
+    --status-shop: #5c9de8;
+    --status-spare: #9aa0a8;
+    --text-tertiary: #6f7378;
+    --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.02);
+    --shadow-raised: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --shadow-modal: 0 18px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.07);
     --accent-light: color-mix(in srgb, var(--accent) 16%, black);
     --accent-dark: color-mix(in srgb, var(--accent) 70%, white);
     --accent-hover: color-mix(in srgb, var(--accent) 70%, white);
     --accent-transparent: color-mix(in srgb, var(--accent) 10%, transparent);
-    --border-light: rgba(255, 255, 255, 0.12);
-    --border-medium: rgba(255, 255, 255, 0.17);
-    --border-dark: rgba(255, 255, 255, 0.24);
+    --border-light: rgba(255, 255, 255, 0.08);
+    --border-medium: rgba(255, 255, 255, 0.13);
+    --border-dark: rgba(255, 255, 255, 0.2);
     --shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
     --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.35);
     --danger: #ef4444;
@@ -592,7 +592,7 @@ html.dark {
     --tint-purple-ink: #c084fc;
     --tint-orange-ink: #fb923c;
     --tint-orange-ink-soft: #fed7aa;
-    --bg-sunken: #171717;
+    --bg-sunken: #121314;
     --ink-soft: #cccccc;
     --ink-subtle: #777777;
     --ink-faint: #555555;
@@ -610,125 +610,6 @@ html.dark {
     --focus-ring: rgba(96, 165, 250, 0.18);
     --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     --select-chevron-sm: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23a1a1aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-}
-
-/* "Grayed Out" theme
- * A medium-gray surface variant. Sits clearly between Light (white) and
- * Dark (black) — the user reads this as "gray theme", not "dark theme",
- * so the palette leans noticeably lighter than the dark token block.
- * Pairs with `html.dark` so Tailwind `dark:` variants still apply; the
- * more-specific selector here overrides the dark token block with the
- * gray palette. */
-html.dark.theme-grayed {
-    /* color-scheme: light keeps native form controls (date / time / color
-     * pickers, autofill chrome, scrollbars) rendering in their light style
-     * so they read against the gray surface instead of dropping to the
-     * browser's dark-mode near-black. */
-    color-scheme: light;
-    --background-color: #5b6270;
-    --card-background: #656c7a;
-    --text-color: #f5f5f5;
-    --text-light: #d5d8de;
-    --border-color: rgba(255, 255, 255, 0.11);
-    --bg-primary: #5b6270;
-    --bg-secondary: #565d6b;
-    --bg-tertiary: #515663;
-    --bg-hover: #6a7180;
-    --text-primary: #f5f5f5;
-    --text-secondary: #d5d8de;
-    --text-tertiary: #a8acb6;
-    --border-light: rgba(255, 255, 255, 0.11);
-    --border-medium: rgba(255, 255, 255, 0.21);
-    --border-dark: rgba(255, 255, 255, 0.29);
-    --shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-    --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.2);
-    --accent-light: color-mix(in srgb, var(--accent) 20%, var(--bg-primary));
-    --accent-dark: color-mix(in srgb, var(--accent) 70%, white);
-    --accent-hover: color-mix(in srgb, var(--accent) 70%, white);
-    --accent-transparent: color-mix(in srgb, var(--accent) 14%, transparent);
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.18);
-    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.18);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.22);
-    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.24);
-    --notice-danger: #ffc9c9;
-    --notice-danger-strong: #ffdada;
-    --notice-danger-soft: #ffdada;
-    --notice-danger-bg: #6e525a;
-    --notice-danger-surface: rgba(255, 201, 201, 0.12);
-    --notice-danger-fill: rgba(255, 201, 201, 0.16);
-    --notice-danger-border: #7d6068;
-    --notice-danger-border-strong: #8f6f78;
-    --notice-warning: #ffe0a3;
-    --notice-warning-icon: #ffe0a3;
-    --notice-warning-strong: #ffedcc;
-    --notice-warning-soft: #ffedcc;
-    --notice-warning-bg: #6c624c;
-    --notice-warning-bg-strong: #6c624c;
-    --notice-warning-border: #7d7159;
-    --notice-warning-border-strong: #8f8266;
-    --notice-success: #b6e8c8;
-    --notice-success-bg: #4f6e5c;
-    --notice-success-border: #5d7d6a;
-    --notice-success-border-strong: #6d8f7a;
-    --notice-info: #c4dcf5;
-    --notice-info-bg: #525d70;
-    --notice-info-border: #6d7686;
-    --notice-neutral-bg: #5b6270;
-    --tint-danger-wash: #64535a;
-    --tint-success-wash: #566b5e;
-    --tint-warning-wash: #6a6154;
-    --tint-yellow-wash: #6a6554;
-    --tint-info-wash: #565f70;
-    --tint-emerald-wash: #566b64;
-    --tint-indigo-wash: #5b5a70;
-    --tint-sky-wash: #525d70;
-    --tint-orange-wash: #6a5c4c;
-    --tint-emerald-bg: #4f6e5c;
-    --tint-purple-bg: #63527a;
-    --tint-orange-bg: #7a5f4c;
-    --tint-indigo-bg: #5a5a7a;
-    --tint-sky-bg: #525d70;
-    --tint-danger-bg-strong: #7d6068;
-    --tint-success-bg-strong: #5d7d6a;
-    --tint-danger-line: #7d6068;
-    --tint-success-line: #5d7d6a;
-    --tint-warning-line: #7d7159;
-    --tint-yellow-line: #7d7159;
-    --tint-info-line: #6d7686;
-    --tint-danger-ink: #ffc9c9;
-    --tint-danger-ink-soft: #ffdada;
-    --tint-danger-ink-deep: #ffe8e8;
-    --tint-success-ink: #b6e8c8;
-    --tint-success-ink-deep: #cdf0da;
-    --tint-emerald-ink: #a7e8d0;
-    --tint-warning-ink: #ffe0a3;
-    --tint-warning-ink-deep: #ffedcc;
-    --tint-info-ink: #c4dcf5;
-    --tint-info-ink-deep: #d5e6f7;
-    --tint-sky-ink: #c4dcf5;
-    --tint-cyan-ink: #b6e6f0;
-    --tint-indigo-ink: #c9c9f0;
-    --tint-purple-ink: #ddc0f5;
-    --tint-orange-ink: #ffcda3;
-    --tint-orange-ink-soft: #ffe4cc;
-    --bg-sunken: #515663;
-    --ink-soft: #dde0e6;
-    --ink-subtle: #a6abb8;
-    --ink-faint: #888d99;
-    --ink-ghost: #7a8090;
-    --accent-text: #b9d4ea;
-    --tint-info-bg: #525d70;
-    --badge-danger-bg: #6e525a;
-    --badge-warning-bg: #6c624c;
-    --badge-success-bg: #4f6e5c;
-    --badge-info-bg: #525d70;
-    --badge-neutral-bg: #5b6270;
-    --rating-star: #ffe0a3;
-    --rating-star-hover: #ffedcc;
-    --rating-star-wash: rgba(255, 224, 163, 0.16);
-    --focus-ring: rgba(196, 220, 245, 0.2);
-    --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d5d8de'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-    --select-chevron-sm: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23d5d8de' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
 }
 
 html.theme-transitioning,
@@ -1151,7 +1032,7 @@ html.theme-transitioning *::after {
         box-shadow: var(--ring);
     }
 
-    /* Badge text is theme-aware (black in light, white in dark/grayed).
+    /* Badge text is theme-aware (black in light, white in dark).
      * The tinted background carries the semantic meaning so the text
      * doesn't need to repeat the color, and pinning text to the
      * theme-aware token guarantees contrast at every theme without
@@ -1218,7 +1099,7 @@ html.theme-transitioning *::after {
     }
 
     .add-view-form form {
-        @apply flex flex-col gap-1 min-w-0;
+        @apply flex flex-col gap-6 min-w-0;
     }
 
     .add-view-form * {
@@ -1261,8 +1142,8 @@ html.theme-transitioning *::after {
     }
 
     .add-view-form label {
-        @apply text-sm font-medium;
-        color: var(--text-primary);
+        @apply text-[12px] font-medium;
+        color: var(--text-secondary);
     }
 
     .add-view-form input[type='text'],
@@ -1271,12 +1152,12 @@ html.theme-transitioning *::after {
     .add-view-form input[type='date'],
     .add-view-form input[type='datetime-local'],
     .add-view-form textarea {
-        @apply box-border w-full max-w-full rounded-xl text-sm outline-none;
+        @apply box-border w-full max-w-full rounded-[4px] text-[13px] outline-none;
         padding: var(--control-padding);
         transition:
             border-color 150ms,
             box-shadow 150ms;
-        border: 1px solid var(--border-light);
+        border: 1px solid var(--border-medium);
         color: var(--text-primary);
         background: var(--bg-primary);
     }
@@ -1289,13 +1170,13 @@ html.theme-transitioning *::after {
     }
 
     .add-view-form select {
-        @apply w-full max-w-full cursor-pointer rounded-xl text-sm outline-none;
+        @apply w-full max-w-full cursor-pointer rounded-[4px] text-[13px] outline-none;
         padding: var(--control-padding);
         @apply pr-10;
         transition:
             border-color 150ms,
             box-shadow 150ms;
-        border: 1px solid var(--border-light);
+        border: 1px solid var(--border-medium);
         color: var(--text-primary);
         background: var(--bg-primary);
         appearance: none;
@@ -1312,18 +1193,31 @@ html.theme-transitioning *::after {
     }
 
     .add-view-form button[type='button']:not(.form-submit) {
-        @apply w-full cursor-pointer rounded-xl text-left text-sm;
+        @apply w-full cursor-pointer rounded-[4px] text-left text-[13px];
         padding: var(--control-padding);
         transition:
             border-color 150ms,
             background 150ms;
-        border: 1px solid var(--border-light);
+        border: 1px solid var(--border-medium);
         color: var(--text-primary);
         background: var(--bg-primary);
     }
 
     .add-view-form button[type='button']:not(.form-submit):hover {
         background: var(--bg-secondary);
+    }
+
+    /* One control height for the whole form. Inputs, selects and the plant
+       picker button each took their height from a different line-height,
+       so a row could hold a 36px field beside a 42px one. */
+    .add-view-form input[type='text'],
+    .add-view-form input[type='tel'],
+    .add-view-form input[type='number'],
+    .add-view-form input[type='date'],
+    .add-view-form input[type='datetime-local'],
+    .add-view-form select,
+    .add-view-form button[type='button']:not(.form-submit) {
+        @apply h-10 leading-5;
     }
 
     .add-view-form .form-actions {
@@ -1333,16 +1227,16 @@ html.theme-transitioning *::after {
 
     .add-view-form button[type='submit'],
     .add-view-form .form-submit {
-        @apply cursor-pointer rounded-xl text-sm font-semibold text-white;
-        padding: var(--control-padding);
+        @apply inline-flex h-9 cursor-pointer items-center gap-2 rounded-[4px] px-4 text-[13px] font-medium;
         transition: filter 150ms;
         background: var(--accent);
-        border: none;
+        color: var(--on-accent);
+        border: 1px solid var(--accent);
     }
 
     .add-view-form button[type='submit']:hover,
     .add-view-form .form-submit:hover {
-        filter: brightness(0.85);
+        filter: brightness(1.15);
     }
 
     .add-view-form button[type='submit']:disabled,
@@ -1437,7 +1331,7 @@ html.theme-transitioning *::after {
     }
 
     .form-group {
-        @apply mb-3 overflow-hidden;
+        @apply mb-4 overflow-hidden;
     }
 
     .form-group:last-child {
@@ -1445,12 +1339,12 @@ html.theme-transitioning *::after {
     }
 
     .form-group label {
-        @apply mb-1 block text-[0.6875rem] font-bold uppercase tracking-[0.06em];
-        color: var(--text-tertiary);
+        @apply mb-1.5 block text-[12px] font-medium;
+        color: var(--text-secondary);
     }
 
     .form-control {
-        @apply box-border w-full max-w-full rounded text-[0.8125rem];
+        @apply box-border min-h-[36px] w-full max-w-full rounded-[4px] text-[13px];
         /* Written as raw CSS, not a Tailwind arbitrary value, because
          * Prettier re-inserts a space after the comma inside
          * `transition-[border-color,box-shadow]` and Tailwind's JIT
@@ -1458,8 +1352,8 @@ html.theme-transitioning *::after {
         transition:
             border-color 150ms,
             box-shadow 150ms;
-        padding: var(--control-padding);
-        border: 1px solid var(--border-light);
+        padding: 0.4375rem 0.75rem;
+        border: 1px solid var(--border-medium);
         color: var(--text-primary);
         background: var(--bg-primary);
     }
@@ -1625,17 +1519,72 @@ html.theme-transitioning *::after {
         background: var(--bg-tertiary);
     }
 
-    .global-button-secondary {
-        @apply inline-flex cursor-pointer items-center gap-1.5 rounded text-xs font-semibold;
-        padding: var(--control-padding);
-        transition: background 150ms;
-        background: var(--bg-secondary);
+    /* Buttons. One shape for the whole app: 36px tall, 4px corners, 13px
+       medium label. Secondary sits on a surface with a mid-grey rule;
+       primary is the accent; danger is a red outline. */
+    .btn-secondary,
+    .btn-primary,
+    .btn-danger {
+        @apply inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-[4px] border px-3.5 text-[13px] font-medium;
+        transition:
+            background-color 150ms,
+            border-color 150ms,
+            filter 150ms;
+    }
+
+    .btn-secondary {
+        background: var(--bg-primary);
+        border-color: var(--border-medium);
         color: var(--text-primary);
-        border: 1px solid var(--border-light);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background: var(--bg-hover);
+    }
+
+    .btn-primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--on-accent);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        filter: brightness(1.15);
+    }
+
+    .btn-danger {
+        background: var(--bg-primary);
+        border-color: color-mix(in srgb, var(--status-danger) 40%, transparent);
+        color: var(--status-danger);
+    }
+
+    .btn-danger:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--status-danger) 8%, var(--bg-primary));
+        border-color: var(--status-danger);
+    }
+
+    .btn-secondary:focus-visible,
+    .btn-primary:focus-visible,
+    .btn-danger:focus-visible {
+        @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-bg-secondary;
+    }
+
+    .btn-secondary:disabled,
+    .btn-primary:disabled,
+    .btn-danger:disabled {
+        @apply cursor-not-allowed opacity-50;
+    }
+
+    .global-button-secondary {
+        @apply inline-flex h-9 cursor-pointer items-center gap-2 rounded-[4px] px-3.5 text-[13px] font-medium;
+        transition: background 150ms;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-medium);
     }
 
     .global-button-secondary:hover {
-        background: var(--bg-tertiary);
+        background: var(--bg-hover);
     }
 
     .global-button-secondary:disabled {
@@ -1643,6 +1592,54 @@ html.theme-transitioning *::after {
     }
 
     .global-button-secondary i {
+        @apply text-[0.6875rem];
+    }
+
+    /* The detail views' commit action. Save used to share the secondary
+       body with Delete beside it, so the two most consequential buttons on
+       the screen looked identical. */
+    .global-button-primary {
+        @apply inline-flex h-9 cursor-pointer items-center gap-2 rounded-[4px] px-3.5 text-[13px] font-medium;
+        transition:
+            filter 150ms,
+            box-shadow 150ms;
+        background: var(--accent);
+        color: var(--on-accent);
+        border: 1px solid var(--accent);
+    }
+
+    .global-button-primary:hover:not(:disabled) {
+        filter: brightness(1.15);
+    }
+
+    .global-button-primary:disabled {
+        @apply cursor-not-allowed opacity-50;
+    }
+
+    .global-button-primary i {
+        @apply text-[0.6875rem];
+    }
+
+    .global-button-danger {
+        @apply inline-flex h-9 cursor-pointer items-center gap-2 rounded-[4px] px-3.5 text-[13px] font-medium;
+        transition:
+            background 150ms,
+            border-color 150ms;
+        background: var(--bg-primary);
+        color: var(--status-danger);
+        border: 1px solid color-mix(in srgb, var(--status-danger) 35%, transparent);
+    }
+
+    .global-button-danger:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--status-danger) 8%, var(--bg-primary));
+        border-color: var(--status-danger);
+    }
+
+    .global-button-danger:disabled {
+        @apply cursor-not-allowed opacity-50;
+    }
+
+    .global-button-danger i {
         @apply text-[0.6875rem];
     }
 
@@ -2035,7 +2032,9 @@ html.theme-transitioning *::after {
         @apply flex flex-row flex-wrap gap-2;
     }
 
-    .dv-footer-actions .global-button-secondary {
+    .dv-footer-actions .global-button-secondary,
+    .dv-footer-actions .global-button-primary,
+    .dv-footer-actions .global-button-danger {
         @apply flex-1 justify-center;
     }
 
@@ -2043,12 +2042,16 @@ html.theme-transitioning *::after {
         @apply flex-col;
     }
 
-    .dv-sidebar-collapsed .dv-footer-actions .global-button-secondary {
+    .dv-sidebar-collapsed .dv-footer-actions .global-button-secondary,
+    .dv-sidebar-collapsed .dv-footer-actions .global-button-primary,
+    .dv-sidebar-collapsed .dv-footer-actions .global-button-danger {
         @apply min-w-[48px] p-2.5;
         flex: unset;
     }
 
-    .dv-sidebar-collapsed .dv-footer-actions .global-button-secondary span {
+    .dv-sidebar-collapsed .dv-footer-actions .global-button-secondary span,
+    .dv-sidebar-collapsed .dv-footer-actions .global-button-primary span,
+    .dv-sidebar-collapsed .dv-footer-actions .global-button-danger span {
         @apply hidden;
     }
 
@@ -2062,16 +2065,23 @@ html.theme-transitioning *::after {
         }
 
         .dv-mobile-nav {
-            @apply gap-2 p-3;
+            @apply flex-col gap-2 p-3;
             display: flex !important;
             position: fixed;
             inset: auto 0 0 0;
             background: var(--bg-primary);
             border-top: 1px solid var(--border-light);
+            box-shadow: var(--shadow-raised);
             z-index: var(--z-dropdown);
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            min-height: 72px;
+            padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+        }
+
+        .dv-mobile-nav-actions {
+            @apply flex gap-2;
+        }
+
+        .dv-mobile-nav-actions > * {
+            @apply min-h-[40px] flex-1 justify-center;
         }
 
         .dv-mobile-nav::-webkit-scrollbar {
@@ -2079,32 +2089,11 @@ html.theme-transitioning *::after {
         }
 
         .dv-mobile-nav-btn {
-            flex: 0 0 auto;
-            padding: var(--control-padding);
-            min-height: 48px;
-            border: none;
-            border-radius: 10px;
-            font-size: var(--label-sm-size);
-            line-height: var(--label-sm-leading);
-            font-weight: var(--label-sm-weight);
-            letter-spacing: var(--label-sm-tracking);
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            min-width: 72px;
-            transition:
-                background 150ms,
-                color 150ms;
-        }
-
-        .dv-mobile-nav-btn i {
-            font-size: 18px;
+            @apply flex h-10 min-w-0 flex-1 cursor-pointer items-center justify-center border-0 border-r border-solid border-border-light px-2 text-[13px] normal-case tracking-normal last:border-r-0;
         }
 
         .dv-main-content {
-            @apply !p-3 !pb-[5.5rem];
+            @apply !p-3 !pb-[10rem];
         }
 
         .dv-header {
@@ -2150,24 +2139,15 @@ html.theme-transitioning *::after {
     }
     @media (max-width: 480px) {
         .dv-mobile-nav {
-            @apply p-2;
-            min-height: 68px;
+            @apply px-2 pt-2;
         }
 
         .dv-mobile-nav-btn {
-            min-width: 64px;
-            padding: var(--control-padding);
-            font-size: var(--label-xs-size);
-            line-height: var(--label-xs-leading);
-            letter-spacing: var(--label-xs-tracking);
-        }
-
-        .dv-mobile-nav-btn i {
-            font-size: 16px;
+            @apply px-1 text-[12.5px];
         }
 
         .dv-main-content {
-            @apply !p-3 !pb-[5.25rem];
+            @apply !p-3 !pb-[9.5rem];
         }
 
         .detail-card {
@@ -2868,138 +2848,12 @@ html.dark .text-sky-700 {
 }
 
 /*
- * "Grayed Out" theme — surface re-mapping
- *
- * The dark shim above repaints every raw color utility (bg-white, bg-gray-50,
- * bg-slate-100, dark:bg-gray-900, etc.) through the surface, ink and border
- * tokens, and the grayed token block above re-points those same tokens at a
- * medium gray palette — readable, "slightly dark", but never black. So every
- * utility the dark shim covers already follows this theme with no rule here.
- *
- * What remains below is the handful of utilities the dark shim does not
- * name, and the places where a gray surface needs a different step of the
- * ramp than a near-black one does.
- */
-
-/* Tailwind-compiled dark: variants (currently only gray-800 / gray-900 are
- * used as `dark:bg-*` in source). Map them to the same gray surface set so
- * darker-meaning utilities still degrade to gray rather than near-black. */
-html.dark.theme-grayed .dark\:bg-gray-800 {
-    background-color: var(--bg-secondary);
-}
-
-html.dark.theme-grayed .dark\:bg-gray-900 {
-    background-color: var(--bg-tertiary);
-}
-
-/* Component overrides — gradient-driven metric card needs the gray gradient,
- * unassign button needs to read as a button against the lighter surface. */
-html.dark.theme-grayed .metric-card {
-    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-}
-
-html.dark.theme-grayed .bg-emerald-100 {
-    background-color: var(--tint-emerald-bg);
-}
-
-html.dark.theme-grayed .bg-red-100,
-html.dark.theme-grayed .bg-red-200 {
-    background-color: var(--badge-danger-bg);
-}
-
-html.dark.theme-grayed .bg-amber-100,
-html.dark.theme-grayed .bg-yellow-100 {
-    background-color: var(--badge-warning-bg);
-}
-
-html.dark.theme-grayed .bg-blue-100 {
-    background-color: var(--badge-info-bg);
-}
-
-html.dark.theme-grayed .bg-green-100,
-html.dark.theme-grayed .bg-green-200 {
-    background-color: var(--badge-success-bg);
-}
-
-html.dark.theme-grayed .bg-sky-50,
-html.dark.theme-grayed .bg-sky-100 {
-    background-color: var(--tint-sky-bg);
-}
-
-html.dark.theme-grayed .border-sky-200 {
-    border-color: var(--tint-info-line);
-}
-
-/* Native form controls — make sure inputs / textareas read as fields on the
- * gray surface. The native dark-mode chrome (color-scheme: dark) was
- * rendering them near-black; the grayed theme uses color-scheme: light
- * instead, and these rules pin background / text / border to gray tokens so
- * any consumer style still composes cleanly. */
-html.dark.theme-grayed select {
-    background-color: var(--bg-secondary);
-    color: var(--text-primary);
-    border-color: var(--border-light);
-}
-
-html.dark.theme-grayed input[type='text'],
-html.dark.theme-grayed input[type='tel'],
-html.dark.theme-grayed input[type='email'],
-html.dark.theme-grayed input[type='password'],
-html.dark.theme-grayed input[type='number'],
-html.dark.theme-grayed input[type='search'],
-html.dark.theme-grayed input[type='url'],
-html.dark.theme-grayed input[type='date'],
-html.dark.theme-grayed input[type='datetime-local'],
-html.dark.theme-grayed input[type='time'],
-html.dark.theme-grayed input[type='month'],
-html.dark.theme-grayed input[type='week'],
-html.dark.theme-grayed textarea {
-    background-color: var(--bg-secondary);
-    color: var(--text-primary);
-    border-color: var(--border-light);
-}
-
-html.dark.theme-grayed input::placeholder,
-html.dark.theme-grayed textarea::placeholder {
-    color: var(--text-tertiary);
-    opacity: 1;
-}
-
-/* Date / time / month / week picker indicator — the dark-rendered icon
- * leaks through even with color-scheme: light on some platforms; invert
- * tip so it stays readable against the gray field. */
-html.dark.theme-grayed input[type='date']::-webkit-calendar-picker-indicator,
-html.dark.theme-grayed input[type='datetime-local']::-webkit-calendar-picker-indicator,
-html.dark.theme-grayed input[type='time']::-webkit-calendar-picker-indicator,
-html.dark.theme-grayed input[type='month']::-webkit-calendar-picker-indicator,
-html.dark.theme-grayed input[type='week']::-webkit-calendar-picker-indicator {
-    filter: invert(0.85);
-}
-
-/* Form scaffolding wrappers — pin the fields and the section card to the
- * token values, which the grayed token block has already re-pointed at the
- * gray palette. Without these, a form whose own styles hardcode a white card
- * keeps that white against the gray surface. */
-html.dark.theme-grayed .add-view-form input,
-html.dark.theme-grayed .add-view-form select,
-html.dark.theme-grayed .add-view-form textarea {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    border-color: var(--border-light);
-}
-
-html.dark.theme-grayed .add-view-form .form-section {
-    background-color: var(--bg-secondary);
-    border-color: var(--border-light);
-}
-
-/*
  * Site-wide badge text — theme-aware, never a fixed hue.
  *
  * Meaning lives in a badge's background (green = good, red = bad, amber =
  * warning, blue = info); the text only has to read against it. Pinning that
  * text to var(--text-primary) makes it flip with the theme and clear contrast
- * in all three without per-badge tuning.
+ * in both without per-badge tuning.
  *
  * Badges reach this rule two ways. Named classes (`.status-badge-*`,
  * `.allocation-pill-*`, `.trainer-badge`) are listed outright. The long tail

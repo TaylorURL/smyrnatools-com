@@ -4,67 +4,47 @@ import ReactDOM from 'react-dom'
 
 import { UserService } from '../../../services/UserService'
 import DateUtility from '../../../utils/DateUtility'
-import { useAccentColor } from '../../hooks/useAccentColor'
-import Badge from './Badge'
 import UserAvatar from './UserAvatar'
 
-const SECTION_LABEL =
-    'flex items-center gap-2 px-3 pt-2.5 pb-1 text-[9.5px] font-semibold uppercase tracking-wider text-text-tertiary'
+const SECTION_LABEL = 'px-4 pb-1 pt-3 text-[12px] font-medium text-text-tertiary'
 
-/** Single conversation row in the messages popup. Avatar uses the other
- *  participant's accent colour; the unread tint/badge use the viewer's
- *  accent because it signals the viewer's unread state. */
-function ConversationRow({ accentColor, conversation, displayName, onSelectConversation, onViewAll }) {
+/** Single conversation row in the messages popup: the other person, when the
+ *  latest message arrived, and a one-line preview. Unread conversations are
+ *  set in a heavier weight and say how many messages are new. */
+function ConversationRow({ conversation, displayName, onSelectConversation, onViewAll }) {
     const latest = conversation.lastMessage
     const hasUnread = conversation.unread > 0
+    const preview = [latest?.subject, latest?.body].filter(Boolean).join(' · ')
 
     return (
         <button
             type="button"
-            className="flex w-full items-center gap-2.5 border-b border-border-light px-3 py-2 text-left cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:bg-bg-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
-            style={{ background: hasUnread ? `${accentColor}0D` : 'transparent' }}
+            className="flex w-full cursor-pointer items-center gap-3 border-b border-border-light bg-transparent px-4 py-2.5 text-left transition-colors duration-150 ease-out last:border-b-0 hover:bg-bg-hover focus-visible:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none"
             onClick={() => (onSelectConversation ? onSelectConversation(conversation.otherId) : onViewAll())}
         >
-            <UserAvatar name={displayName} userId={conversation.otherId} size="md" rounded="md">
-                {hasUnread && (
-                    <Badge
-                        variant="custom"
-                        size="xs"
-                        shape="rounded"
-                        weight="bold"
-                        uppercase={false}
-                        bg={accentColor}
-                        fg="var(--on-accent)"
-                        className="absolute -right-1 -top-1 min-w-[14px] justify-center border border-bg-primary font-mono tabular-nums"
-                    >
-                        {conversation.unread}
-                    </Badge>
-                )}
-            </UserAvatar>
-            <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
+            <UserAvatar name={displayName} userId={conversation.otherId} size="md" />
+            <span className="min-w-0 flex-1">
+                <span className="flex items-baseline justify-between gap-3">
                     <span
-                        className={`truncate text-[12px] text-text-primary ${hasUnread ? 'font-semibold' : 'font-medium'}`}
+                        className={`truncate text-[13px] text-text-primary ${hasUnread ? 'font-semibold' : 'font-medium'}`}
                     >
                         {displayName}
                     </span>
-                    <span className="shrink-0 font-mono text-[10px] tabular-nums text-text-tertiary">
+                    <span className="shrink-0 text-[12px] tabular-nums text-text-tertiary">
                         {DateUtility.formatTimeAgo(latest?.createdAt)}
                     </span>
-                </div>
-                {latest?.subject && (
-                    <p
-                        className={`m-0 truncate text-[10.5px] ${hasUnread ? 'text-text-primary' : 'text-text-secondary'}`}
-                    >
-                        {latest.subject}
-                    </p>
-                )}
-                <p className="m-0 truncate text-[10.5px] text-text-secondary">{latest?.body}</p>
-            </div>
-            <div className="flex shrink-0 items-center gap-1 font-mono text-[10px] tabular-nums text-text-tertiary">
-                <span>{conversation.messages.length}</span>
-                <i className="fas fa-chevron-right text-[8px]" aria-hidden="true" />
-            </div>
+                </span>
+                <span className="flex items-baseline justify-between gap-3">
+                    <span className={`truncate text-[12px] ${hasUnread ? 'text-text-primary' : 'text-text-secondary'}`}>
+                        {preview}
+                    </span>
+                    {hasUnread && (
+                        <span className="shrink-0 text-[12px] font-medium tabular-nums text-text-primary">
+                            {conversation.unread} new
+                        </span>
+                    )}
+                </span>
+            </span>
         </button>
     )
 }
@@ -74,7 +54,6 @@ function ConversationRow({ accentColor, conversation, displayName, onSelectConve
  * Footer links to the full NotificationsView (messages center).
  */
 function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, anchorRect, messagesHook }) {
-    const accentColor = useAccentColor()
     const panelRef = useRef(null)
     const { conversations = [], loading, markAllRead, unreadCount } = messagesHook
     const [userNames, setUserNames] = useState({})
@@ -153,110 +132,54 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                 aria-modal="false"
                 aria-label="Messages"
                 style={modalStyle}
-                className="flex max-h-[76vh] w-96 flex-col overflow-hidden rounded border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
+                className="flex max-h-[76vh] w-96 max-w-[calc(100vw-16px)] flex-col overflow-hidden rounded-card border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
             >
-                <div className="flex shrink-0 items-center justify-between border-b border-border-light px-3 py-2">
-                    <div className="flex items-center gap-2">
-                        <div
-                            className="flex h-6 w-6 items-center justify-center rounded bg-bg-tertiary"
-                            style={{ color: accentColor }}
-                        >
-                            <i className="fas fa-envelope text-[11px]" aria-hidden="true" />
-                        </div>
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
-                            Messages
-                        </span>
-                        {unreadCount > 0 && (
-                            <Badge
-                                variant="custom"
-                                size="xs"
-                                shape="rounded"
-                                weight="bold"
-                                bg={accentColor}
-                                fg="var(--on-accent)"
-                                className="font-mono tabular-nums"
-                            >
-                                {unreadCount}
-                            </Badge>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-1.5">
+                <div className="flex shrink-0 items-center gap-2 border-b border-border-light py-2 pl-4 pr-2">
+                    <span className="text-[14px] font-semibold text-text-primary">Messages</span>
+                    {unreadCount > 0 && (
+                        <span className="text-[12px] tabular-nums text-text-secondary">{unreadCount} unread</span>
+                    )}
+                    <span className="ml-auto flex items-center gap-1">
                         {unreadCount > 0 && (
                             <button
                                 type="button"
                                 onClick={markAllRead}
-                                className="rounded border border-border-light bg-bg-secondary px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-text-secondary cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                                className="h-7 cursor-pointer rounded-[4px] border-none bg-transparent px-2 text-[12px] font-medium text-text-secondary transition-colors duration-150 ease-out hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
                             >
-                                Mark All Read
+                                Mark all read
                             </button>
                         )}
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex h-6 w-6 items-center justify-center rounded text-text-secondary cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-secondary transition-colors duration-150 ease-out hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
                             aria-label="Close messages"
                         >
-                            <i className="fas fa-times text-[11px]" aria-hidden="true" />
+                            <i className="fas fa-times text-[12px]" aria-hidden="true" />
                         </button>
-                    </div>
+                    </span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-bg-primary">
+                <div className="min-h-0 flex-1 overflow-y-auto">
                     {loading ? (
-                        <div>
-                            {Array.from({ length: 4 }).map((_, i) => (
-                                <div
-                                    key={i}
-                                    className="flex animate-pulse items-center gap-2.5 border-b border-border-light px-3 py-2 motion-reduce:animate-none"
-                                    style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
-                                >
-                                    <div className="h-7 w-7 shrink-0 rounded bg-bg-tertiary" />
-                                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <div
-                                                className="h-3 rounded bg-bg-tertiary"
-                                                style={{ width: `${60 + i * 10}%` }}
-                                            />
-                                            <div className="h-2.5 w-10 shrink-0 rounded bg-bg-tertiary" />
-                                        </div>
-                                        <div
-                                            className="h-2.5 rounded bg-bg-secondary"
-                                            style={{ width: `${80 - i * 8}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="flex items-center justify-center gap-2 px-4 py-10 text-[13px] text-text-secondary">
+                            <i className="fas fa-spinner fa-spin text-[12px]" aria-hidden="true" />
+                            Loading messages
                         </div>
                     ) : displayedConversations.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-10 text-text-tertiary">
-                            <i className="fas fa-envelope-open mb-2 text-2xl" aria-hidden="true" />
-                            <span className="text-[12px] font-semibold text-text-primary">No messages</span>
-                            <span className="mt-0.5 text-[10.5px]">Your inbox is empty</span>
+                        <div className="flex flex-col items-center justify-center gap-1 px-4 py-10 text-center">
+                            <p className="m-0 text-[15px] font-medium text-text-primary">No messages</p>
+                            <p className="m-0 text-[13px] text-text-secondary">Your inbox is empty.</p>
                         </div>
                     ) : (
                         <div>
                             {unreadConversations.length > 0 && (
                                 <>
-                                    <div className={SECTION_LABEL}>
-                                        <span>Unread</span>
-                                        <Badge
-                                            variant="custom"
-                                            size="xs"
-                                            shape="rounded"
-                                            weight="bold"
-                                            uppercase={false}
-                                            bg={accentColor}
-                                            fg="var(--on-accent)"
-                                            className="font-mono tabular-nums"
-                                        >
-                                            {unreadCount}
-                                        </Badge>
-                                    </div>
-                                    <div>
+                                    {readConversations.length > 0 && <div className={SECTION_LABEL}>Unread</div>}
+                                    <div className={readConversations.length > 0 ? 'border-b border-border-light' : ''}>
                                         {unreadConversations.map((conv) => (
                                             <ConversationRow
                                                 key={conv.otherId}
-                                                accentColor={accentColor}
                                                 conversation={conv}
                                                 displayName={userNames[conv.otherId] || 'Loading...'}
                                                 onSelectConversation={onSelectConversation}
@@ -269,16 +192,11 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
 
                             {readConversations.length > 0 && (
                                 <>
-                                    {unreadConversations.length > 0 && (
-                                        <div className={SECTION_LABEL}>
-                                            <span>Recent</span>
-                                        </div>
-                                    )}
+                                    {unreadConversations.length > 0 && <div className={SECTION_LABEL}>Recent</div>}
                                     <div>
                                         {readConversations.map((conv) => (
                                             <ConversationRow
                                                 key={conv.otherId}
-                                                accentColor={accentColor}
                                                 conversation={conv}
                                                 displayName={userNames[conv.otherId] || 'Loading...'}
                                                 onSelectConversation={onSelectConversation}
@@ -296,11 +214,9 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                     <button
                         type="button"
                         onClick={onViewAll}
-                        className="flex w-full items-center justify-center gap-1.5 px-3 py-2 text-[10.5px] font-semibold uppercase tracking-wider cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
-                        style={{ color: accentColor }}
+                        className="flex w-full cursor-pointer items-center border-none bg-transparent px-4 py-2.5 text-left text-[13px] font-medium text-text-primary underline-offset-2 transition-colors duration-150 ease-out hover:bg-bg-hover hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none"
                     >
-                        View All Messages
-                        <i className="fas fa-arrow-right text-[10px]" aria-hidden="true" />
+                        Open messages
                     </button>
                 </div>
             </div>

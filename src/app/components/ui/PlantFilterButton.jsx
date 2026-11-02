@@ -25,19 +25,16 @@ function PlantFilterButton({
             aria-expanded={isOpen}
             aria-pressed={!!active}
             title={title}
-            className="text-xs font-medium cursor-pointer rounded-md py-1.5 px-2 inline-flex items-center gap-1.5 transition-colors duration-150 hover:bg-bg-hover active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary motion-reduce:transition-none"
+            className="inline-flex h-9 items-center gap-2 rounded-[4px] px-3 text-[13px] cursor-pointer transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 motion-reduce:transition-none"
             style={{
-                background: tinted ? `${accentColor}14` : 'var(--bg-secondary)',
-                border: `1px solid ${tinted ? accentColor : 'var(--border-light)'}`,
-                color: tinted ? accentColor : 'var(--text-primary)'
+                background: tinted ? `${accentColor}12` : 'var(--bg-primary)',
+                border: `1px solid ${tinted ? accentColor : 'var(--border-medium)'}`,
+                color: 'var(--text-primary)'
             }}
         >
+            <i className="fas fa-industry text-[11px] text-text-tertiary" aria-hidden="true" />
             <span className="truncate max-w-[200px]">{displayText}</span>
-            <i
-                className="fas fa-chevron-down text-[9px]"
-                style={{ color: tinted ? accentColor : 'var(--text-tertiary)' }}
-                aria-hidden="true"
-            />
+            <i className="fas fa-chevron-down text-[9px] text-text-tertiary" aria-hidden="true" />
         </button>
     )
 }

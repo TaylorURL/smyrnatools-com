@@ -43,9 +43,7 @@ function computeStatusDistribution(allStatusPeriodsData, currentStatus, totalDay
 function StatusDistributionBar({ statusPercentages }) {
     return (
         <div className="rounded p-3 bg-bg-primary border border-border-light">
-            <div className="text-[9.5px] font-bold uppercase tracking-wider mb-2 text-text-secondary">
-                Asset Status Distribution
-            </div>
+            <div className="text-[12px] font-medium mb-2 text-text-secondary">Asset Status Distribution</div>
             <div className="flex h-2 rounded-full overflow-hidden mb-2 bg-bg-tertiary">
                 {statusPercentages.map(
                     (sp, idx) =>
@@ -114,7 +112,7 @@ export default function HistoryOverviewTab({ allStatusPeriodsData, history, item
                             <TimelineDuration text={HistoryUtility.pluralizeDays(statusDaysMap[currentStatus])} />
                         </TimelineMeta>
                         <TimelineMeta>
-                            <span className="text-xs text-slate-500 italic">No status changes recorded</span>
+                            <span className="text-xs text-text-secondary italic">No status changes recorded</span>
                         </TimelineMeta>
                     </TimelineItem>
                 ) : (
@@ -139,11 +137,11 @@ export default function HistoryOverviewTab({ allStatusPeriodsData, history, item
                                     <TimelineDuration text={HistoryUtility.pluralizeDays(period.days)} />
                                 </TimelineMeta>
                                 <div className="flex items-center gap-3 flex-wrap mt-1">
-                                    <span className="text-xs text-slate-500">
+                                    <span className="text-xs text-text-secondary">
                                         Started by: <UserLabel userId={period.changedBy} showIcon={false} />
                                     </span>
                                     {period.endChangedBy && (
-                                        <span className="text-xs text-slate-500">
+                                        <span className="text-xs text-text-secondary">
                                             Ended by: <UserLabel userId={period.endChangedBy} showIcon={false} />
                                         </span>
                                     )}

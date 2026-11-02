@@ -1,49 +1,14 @@
-/* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
 import AssetView from '../../../views/assets/AssetView'
-import { DEFAULT_ACCENT_COLOR } from '../../constants/themeConstants'
-import { usePreferences } from '../../context/PreferencesContext'
 import TabFadeIn from '../common/TabFadeIn'
+import PageHeader from '../ui/PageHeader'
 import AssetStatisticsView from './statistics/AssetStatisticsView'
 
 const BASE_TABS = [
-    { icon: 'fa-list', id: 'list', label: 'List' },
-    { icon: 'fa-chart-column', id: 'statistics', label: 'Statistics' }
+    { id: 'list', label: 'List' },
+    { id: 'statistics', label: 'Statistics' }
 ]
-
-/** Tab strip for the shell. The active pill is filled with the user's chosen
- *  accent, which is a runtime preference rather than a theme token, so it has
- *  to be applied as an inline style. */
-function AssetTabBar({ accentColor, activeTab, onChange, tabs }) {
-    return (
-        <div
-            className="flex items-center gap-1 rounded-lg p-0.5 bg-bg-tertiary border border-border-light"
-            role="tablist"
-        >
-            {tabs.map((tab) => {
-                const active = tab.id === activeTab
-                return (
-                    <button
-                        type="button"
-                        key={tab.id}
-                        role="tab"
-                        aria-selected={active}
-                        onClick={() => onChange(tab.id)}
-                        className="flex items-center gap-1.5 rounded-md text-[12px] font-semibold border-none cursor-pointer px-3 py-1.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
-                        style={{
-                            background: active ? accentColor : 'transparent',
-                            color: active ? 'var(--on-accent)' : 'var(--text-secondary)'
-                        }}
-                    >
-                        <i className={`fas ${tab.icon} text-[11px]`} />
-                        <span>{tab.label}</span>
-                    </button>
-                )
-            })}
-        </div>
-    )
-}
 
 /**
  * Header and tab chrome around one asset type's two surfaces: the list
@@ -65,8 +30,6 @@ export default function AssetViewShell({
     setSelectedView,
     title
 }) {
-    const { preferences } = usePreferences()
-    const accentColor = preferences.accentColor || DEFAULT_ACCENT_COLOR
     const [activeTab, setActiveTab] = useState('list')
 
     const tabs = BASE_TABS
@@ -76,6 +39,7 @@ export default function AssetViewShell({
             <AssetView
                 config={config}
                 embedded
+                hideSectionTitle
                 exactMatch={exactMatch}
                 initialSearch={initialSearch}
                 onSelectItem={onSelectItem}
@@ -87,18 +51,18 @@ export default function AssetViewShell({
 
     return (
         <div className={`flex flex-col h-full ${config.viewClassName}-shell`}>
-            <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-4 md:px-6 pt-3 pb-2 border-b border-border-light bg-bg-primary">
-                <div className="flex items-center gap-3">
-                    <i className={`fas ${config.icon} text-[14px]`} style={{ color: accentColor }} />
-                    <span className="text-[14px] font-bold text-text-primary">{title || config.pluralLabel}</span>
-                </div>
-                <AssetTabBar accentColor={accentColor} activeTab={activeTab} onChange={setActiveTab} tabs={tabs} />
-            </div>
+            <PageHeader
+                title={title || config.pluralLabel}
+                tabs={tabs}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+            />
             <TabFadeIn animationKey={activeTab} className="flex-1 min-h-0 flex flex-col">
                 {activeTab === 'list' && (
                     <AssetView
                         config={config}
                         embedded={false}
+                        hideSectionTitle
                         exactMatch={exactMatch}
                         initialSearch={initialSearch}
                         onSelectItem={onSelectItem}

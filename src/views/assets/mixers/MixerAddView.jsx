@@ -76,7 +76,7 @@ function MixerAddView({ plants, onClose, onMixerAdded }) {
         <AddViewSection title="Add New Mixer" onClose={onClose} error={error}>
             <form onSubmit={handleSubmit} autoComplete="off">
                 <div className="space-y-4">
-                    <div className="text-lg font-semibold">
+                    <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
                         <i className="fas fa-truck"></i>
                         <span> Basic Information</span>
                     </div>
@@ -97,7 +97,7 @@ function MixerAddView({ plants, onClose, onMixerAdded }) {
                     </div>
                 </div>
                 <div className="space-y-4">
-                    <div className="text-lg font-semibold">
+                    <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
                         <i className="fas fa-building"></i>
                         <span> Assignment & Status</span>
                     </div>

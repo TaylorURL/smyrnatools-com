@@ -9,7 +9,7 @@ import { useAccentColor } from '../../app/hooks/useAccentColor'
 import useAssetCounts from '../../app/hooks/useAssetCounts'
 import useAssetData from '../../app/hooks/useAssetData'
 import useAssetFilteredResult from '../../app/hooks/useAssetFilteredResult'
-import useAssetFilters from '../../app/hooks/useAssetFilters'
+import useAssetFilters, { isPhoneViewport } from '../../app/hooks/useAssetFilters'
 import useAssetVerification from '../../app/hooks/useAssetVerification'
 import useIsWideViewport from '../../app/hooks/useIsWideViewport'
 import { PlantService } from '../../services/PlantService'
@@ -21,6 +21,8 @@ import AssetMainContent from './parts/AssetMainContent'
 import AssetSidePanel from './parts/AssetSidePanel'
 import AssetTopSection from './parts/AssetTopSection'
 
+const SIDE_PANEL_MIN_WIDTH = 1800
+
 /**
  * The list and grid view every asset type is served from; what differs
  * between types lives in the config it is handed, not here.
@@ -29,6 +31,9 @@ import AssetTopSection from './parts/AssetTopSection'
  * rather than opening a modal, and on a wide viewport in list mode the
  * comment and issue surfaces open as a right-hand panel instead of over the
  * table.
+ *
+ * `hideSectionTitle` drops the heading over the list controls, for a host
+ * (AssetViewShell) whose own header already names the page.
  */
 function AssetView({
     config,
@@ -36,6 +41,7 @@ function AssetView({
     onSelectItem,
     setSelectedView: _setSelectedView,
     embedded = false,
+    hideSectionTitle = false,
     initialSearch = '',
     exactMatch = false
 }) {
@@ -95,7 +101,10 @@ function AssetView({
     const [isExportingData, setIsExportingData] = useState(false)
     const [embeddedModal, setEmbeddedModal] = useState(null)
 
-    const isWideViewport = useIsWideViewport()
+    // The rail takes 440px from the list. Below this width that squeezes the
+    // table until its right-hand columns clip, so narrower screens get the
+    // same comment and issue views as a dialog instead.
+    const isWideViewport = useIsWideViewport(SIDE_PANEL_MIN_WIDTH)
     const [sidePanel, setSidePanel] = useState(null)
     const useSidePanel = !embedded && filters.viewMode === 'list' && isWideViewport
     const sidePanelDelegate = useSidePanel ? setSidePanel : null
@@ -126,6 +135,7 @@ function AssetView({
             filters.setExtraTypeFilter(savedFilters.equipmentTypeFilter || '')
         if (savedFilters.typeFilter !== undefined) filters.setExtraTypeFilter(savedFilters.typeFilter || '')
 
+        if (isPhoneViewport()) return
         if (savedFilters.viewMode != null) filters.setViewMode(savedFilters.viewMode)
         else if (preferences.defaultViewMode != null) filters.setViewMode(preferences.defaultViewMode)
         else {
@@ -334,7 +344,7 @@ function AssetView({
                                 onExportIssues={handleExportIssues}
                                 onOpenEmbeddedOperators={handleOpenEmbeddedOperators}
                                 onOpenRecap={() => modalsRef.current?.openRecap()}
-                                pageTitle={pageTitle}
+                                pageTitle={hideSectionTitle ? null : pageTitle}
                                 resetFilters={resetFilters}
                                 updateFilter={updateFilter}
                                 updateFilterRef={updateFilterRef}

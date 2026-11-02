@@ -62,11 +62,6 @@ const ASSET_TYPES_WITH_PLANT = ['mixer', 'tractor', 'trailer', 'equipment', 'pic
 const ASSET_TYPES_WITH_CLEANLINESS = ['mixer', 'tractor', 'trailer', 'equipment']
 export const AI_TYPEWRITER_CHARS_PER_TICK = 4
 export const AI_TYPEWRITER_TICK_MS = 10
-export const SEVERITY_PALETTES = {
-    High: { bg: 'var(--notice-danger-fill)', color: 'var(--notice-danger-soft)' },
-    Low: { bg: 'var(--tint-sky-bg)', color: 'var(--tint-sky-ink)' },
-    Medium: { bg: 'var(--notice-warning-bg-strong)', color: 'var(--notice-warning-soft)' }
-}
 /** The full tab strip for the history modal, in display order. `show` is
  *  passed the asset type and decides whether that tab is offered at all. */
 export const HISTORY_TAB_DEFINITIONS = [

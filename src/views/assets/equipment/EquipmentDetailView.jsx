@@ -108,7 +108,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                         <>
                             <button
                                 type="button"
-                                className="global-button-secondary flex-1 justify-center"
+                                className="global-button-primary flex-1 justify-center"
                                 onClick={() => actions.handleSave()}
                                 disabled={actions.isSaving}
                             >
@@ -118,7 +118,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                             {actions.canDeleteEquipment && (
                                 <button
                                     type="button"
-                                    className="global-button-secondary flex-1 justify-center"
+                                    className="global-button-danger flex-1 justify-center"
                                     onClick={() => actions.setShowDeleteConfirmation(true)}
                                     disabled={actions.isSaving}
                                 >

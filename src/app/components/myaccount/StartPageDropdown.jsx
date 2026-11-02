@@ -4,7 +4,7 @@ import { FieldStyle, START_PAGE_OPTIONS } from '../../constants/myAccountConstan
 
 /** Custom styled dropdown for selecting the default start page — uses the
  *  shared icon list from `START_PAGE_OPTIONS`. Closes on outside click. */
-export default function StartPageDropdown({ accentColor, onChange, value }) {
+export default function StartPageDropdown({ onChange, value }) {
     const [open, setOpen] = useState(false)
     const ref = useRef(null)
     const selected = START_PAGE_OPTIONS.find((o) => o.id === value) || START_PAGE_OPTIONS[0]
@@ -24,18 +24,10 @@ export default function StartPageDropdown({ accentColor, onChange, value }) {
                 onClick={() => setOpen((prev) => !prev)}
                 aria-haspopup="listbox"
                 aria-expanded={open}
-                className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left outline-none transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-accent/30 active:scale-[0.97]"
+                className="flex h-9 w-full items-center justify-between rounded-[4px] px-3 text-left outline-none cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-accent"
                 style={FieldStyle}
             >
-                <span className="flex items-center gap-3">
-                    <span
-                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-bg-tertiary"
-                        style={{ color: accentColor }}
-                    >
-                        <i className={`fas ${selected.icon} text-[14px]`} />
-                    </span>
-                    <span className="text-[14px] font-semibold text-text-primary">{selected.id}</span>
-                </span>
+                <span className="text-[14px] text-text-primary">{selected.id}</span>
                 <i
                     className={`fas fa-chevron-down text-[11px] transition-transform ${open ? 'rotate-180' : ''} text-text-tertiary`}
                 />
@@ -44,10 +36,9 @@ export default function StartPageDropdown({ accentColor, onChange, value }) {
                 <div
                     role="listbox"
                     aria-label="Start page"
-                    className="absolute left-0 right-0 z-dropdown mt-1.5 max-h-72 overflow-y-auto rounded-lg py-1.5 bg-bg-primary border border-border-light"
-                    style={{ boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.18))' }}
+                    className="absolute left-0 right-0 z-dropdown mt-1 max-h-72 overflow-y-auto rounded-card p-1 bg-bg-primary border border-border-light shadow-modal"
                 >
-                    {START_PAGE_OPTIONS.map(({ icon, id }) => {
+                    {START_PAGE_OPTIONS.map(({ id }) => {
                         const isActive = id === value
                         return (
                             <button
@@ -59,25 +50,11 @@ export default function StartPageDropdown({ accentColor, onChange, value }) {
                                     onChange(id)
                                     setOpen(false)
                                 }}
-                                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-primary active:scale-[0.97] focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
-                                style={{
-                                    background: isActive ? `${accentColor}14` : 'transparent',
-                                    fontWeight: isActive ? 600 : 500
-                                }}
+                                className={`flex h-9 w-full items-center rounded-[4px] border-none px-3 text-left text-[13px] cursor-pointer text-text-primary transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${
+                                    isActive ? 'bg-bg-tertiary font-medium' : 'bg-transparent hover:bg-bg-hover'
+                                }`}
                             >
-                                <span
-                                    className="flex h-7 w-7 items-center justify-center rounded-md"
-                                    style={{
-                                        background: isActive ? `${accentColor}20` : 'var(--bg-tertiary)',
-                                        color: accentColor
-                                    }}
-                                >
-                                    <i className={`fas ${icon} text-[12px]`} />
-                                </span>
                                 {id}
-                                {isActive && (
-                                    <i className="fas fa-check ml-auto text-[11px]" style={{ color: accentColor }} />
-                                )}
                             </button>
                         )
                     })}

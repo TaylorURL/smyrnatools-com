@@ -1,115 +1,129 @@
-import React, { useEffect } from 'react'
-import ReactDOM from 'react-dom'
+import React, { createContext, useCallback, useContext, useEffect, useId, useRef } from 'react'
 
-const BACKDROP_CLASSES = 'fixed inset-0 z-app-state flex items-center justify-center p-4'
-const SCRIM_CLASSES =
-    'absolute inset-0 cursor-default bg-black/40 backdrop-blur-sm animate-fade-in-fast motion-reduce:animate-none'
-const MODAL_BASE_CLASSES =
-    'relative w-full bg-bg-secondary border border-border-light rounded-modal shadow-modal overflow-hidden animate-pop-in motion-reduce:animate-none'
-const HEADER_CLASSES = 'flex items-center justify-between px-6 py-4 border-b border-border-light bg-accent'
-const CLOSE_BUTTON_CLASSES =
-    'size-8 flex items-center justify-center rounded-md text-white transition-colors duration-150 hover:bg-white/15 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none'
-const BODY_CLASSES = 'px-6 py-5'
-const FOOTER_CLASSES = 'flex items-center gap-3 px-6 py-4 border-t border-border-light bg-bg-tertiary/40'
-const PRIMARY_BUTTON_CLASSES =
-    'flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-accent hover:bg-accent-hover text-white font-semibold rounded-md transition-colors duration-150 text-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none'
-const SECONDARY_BUTTON_CLASSES =
-    'px-4 py-3 bg-bg-tertiary hover:bg-bg-hover text-text-primary border border-border-light font-semibold rounded-md transition-colors duration-150 text-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none'
+import Dialog, { DIALOG_INPUT, DialogField } from './Dialog'
 
-function RoleModal({ children, isOpen, maxWidth = 'max-w-md', onClose, subtitle, title, titleIcon }) {
+/** Older callers sized the panel with a Tailwind max width; map those onto
+ *  the dialog's sizes. */
+const SIZE_FOR_MAX_WIDTH = {
+    'max-w-2xl': 'lg',
+    'max-w-3xl': 'lg',
+    'max-w-4xl': 'xl',
+    'max-w-lg': 'md',
+    'max-w-md': 'md',
+    'max-w-sm': 'sm',
+    'max-w-xl': 'lg'
+}
+
+/** Lets a `RoleFormField` label point at the `RoleTextInput` inside it. */
+const FieldIdContext = createContext(undefined)
+
+/**
+ * Shell for the role admin popups, on the shared `Dialog`. Callers compose it
+ * from `RoleModalBody` and `RoleModalFooter` as before; the footer is lifted
+ * out of the children into the dialog's footer bar so it stays put while
+ * the body scrolls. `toolbar` and `bodyClassName` pass through for a popup
+ * whose body is a ruled list.
+ */
+function RoleModal({
+    bodyClassName,
+    children,
+    eyebrow,
+    isOpen,
+    maxWidth = 'max-w-md',
+    onClose,
+    size,
+    subtitle,
+    title,
+    toolbar
+}) {
+    // Callers pass an inline close; keep the dialog's `onClose` identity
+    // stable so a re-render doesn't re-run its focus handling.
+    const onCloseRef = useRef(onClose)
     useEffect(() => {
-        if (!isOpen) return undefined
-        const handleKey = (event) => {
-            if (event.key === 'Escape') onClose?.()
-        }
-        document.addEventListener('keydown', handleKey)
-        return () => document.removeEventListener('keydown', handleKey)
-    }, [isOpen, onClose])
+        onCloseRef.current = onClose
+    })
+    const handleClose = useCallback(() => onCloseRef.current?.(), [])
 
-    if (!isOpen) return null
-    return ReactDOM.createPortal(
-        <div className={BACKDROP_CLASSES} role="dialog" aria-modal="true" aria-label={title}>
-            <button type="button" aria-label="Close" className={SCRIM_CLASSES} onClick={onClose} />
-            <div className={`${MODAL_BASE_CLASSES} ${maxWidth}`}>
-                <div className={HEADER_CLASSES}>
-                    <div className="flex items-center gap-3">
-                        {titleIcon && <i className={`${titleIcon} text-white`} aria-hidden="true" />}
-                        <div>
-                            <h2 className="font-heading font-semibold text-white tracking-tight">{title}</h2>
-                            {subtitle && <span className="text-xs text-white/70">{subtitle}</span>}
-                        </div>
-                    </div>
-                    <button className={CLOSE_BUTTON_CLASSES} onClick={onClose} type="button" aria-label="Close">
-                        <i className="fas fa-times" aria-hidden="true" />
-                    </button>
-                </div>
-                {children}
-            </div>
-        </div>,
-        document.body
+    const parts = React.Children.toArray(children)
+    const footer = parts.filter((child) => child?.type === RoleModalFooter)
+    const body = parts.filter((child) => child?.type !== RoleModalFooter)
+
+    return (
+        <Dialog
+            open={Boolean(isOpen)}
+            onClose={handleClose}
+            size={size || SIZE_FOR_MAX_WIDTH[maxWidth] || 'md'}
+            eyebrow={eyebrow}
+            title={title}
+            description={subtitle}
+            toolbar={toolbar}
+            bodyClassName={bodyClassName}
+            footer={footer.length > 0 ? footer : undefined}
+            zClassName="z-app-state"
+        >
+            {body}
+        </Dialog>
     )
 }
 
 export function RoleModalBody({ children }) {
-    return <div className={BODY_CLASSES}>{children}</div>
+    return <div className="flex flex-col gap-4">{children}</div>
 }
 
-export function RoleModalFooter({
-    disabled,
-    isLoading,
-    loadingText,
-    onCancel,
-    onSubmit,
-    submitIcon = 'fas fa-plus',
-    submitText
-}) {
+/** Cancel, then the one primary action. Rendered into the dialog's footer
+ *  bar by `RoleModal`. */
+export function RoleModalFooter({ disabled, isLoading, loadingText, onCancel, onSubmit, submitIcon, submitText }) {
     return (
-        <div className={FOOTER_CLASSES}>
-            <button
-                className={PRIMARY_BUTTON_CLASSES}
-                disabled={disabled || isLoading}
-                onClick={onSubmit}
-                type="button"
-            >
+        <>
+            <button className="btn-secondary" disabled={isLoading} onClick={onCancel} type="button">
+                Cancel
+            </button>
+            <button className="btn-primary" disabled={disabled || isLoading} onClick={onSubmit} type="button">
                 {isLoading ? (
                     <>
-                        <i className="fas fa-spinner fa-spin" aria-hidden="true" />
+                        <i className="fas fa-spinner fa-spin text-[12px]" aria-hidden="true" />
                         {loadingText}
                     </>
                 ) : (
                     <>
-                        <i className={submitIcon} aria-hidden="true" />
+                        {submitIcon && <i className={`${submitIcon} text-[12px]`} aria-hidden="true" />}
                         {submitText}
                     </>
                 )}
             </button>
-            <button className={SECONDARY_BUTTON_CLASSES} disabled={isLoading} onClick={onCancel} type="button">
-                Cancel
-            </button>
-        </div>
+        </>
     )
 }
 
-export function RoleFormField({ children, label, sublabel }) {
+export function RoleFormField({ children, hint, label, sublabel }) {
+    const id = useId()
     return (
-        <div className="mb-4 last:mb-0">
-            <label className="block text-sm font-semibold text-text-primary mb-2">
-                {label}
-                {sublabel && <span className="font-normal text-text-tertiary ml-1">{sublabel}</span>}
-            </label>
-            {children}
-        </div>
+        <FieldIdContext.Provider value={id}>
+            <DialogField
+                htmlFor={id}
+                hint={hint}
+                label={
+                    <>
+                        {label}
+                        {sublabel && <span className="ml-1 font-normal text-text-tertiary">{sublabel}</span>}
+                    </>
+                }
+            >
+                {children}
+            </DialogField>
+        </FieldIdContext.Provider>
     )
 }
 
-/** The one text field every role modal uses. `autoFocus` is forwarded rather
- *  than swallowed: each of these modals mounts its body only once opened, so
- *  the field it marks is the one the caret lands in. */
+/** The one text field every role modal uses. `autoFocus` marks it as the
+ *  field the dialog puts the caret in when it opens. */
 export function RoleTextInput({ autoFocus = false, disabled, onChange, placeholder, type = 'text', value }) {
+    const id = useContext(FieldIdContext)
     return (
         <input
-            autoFocus={autoFocus}
-            className="w-full px-4 py-3 border border-border-light rounded-md text-sm bg-bg-primary text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:bg-bg-tertiary disabled:text-text-tertiary disabled:cursor-not-allowed"
+            id={id}
+            data-autofocus={autoFocus || undefined}
+            className={DIALOG_INPUT}
             disabled={disabled}
             onChange={(event) =>
                 !disabled && onChange(type === 'number' ? parseInt(event.target.value, 10) || 0 : event.target.value)

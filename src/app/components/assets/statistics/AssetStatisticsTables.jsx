@@ -43,70 +43,40 @@ export function PlantScorecardTable({ accent, config, hasService, rows, totalFle
             <table className="w-full text-[12px] border-collapse">
                 <thead>
                     <tr className="text-text-tertiary">
-                        <th
-                            scope="col"
-                            className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                        >
+                        <th scope="col" className="text-left font-medium text-[12px] px-3 py-2">
                             Plant
                         </th>
-                        <th
-                            scope="col"
-                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                        >
+                        <th scope="col" className="text-right font-medium text-[12px] px-2 py-2">
                             Total
                         </th>
-                        <th
-                            scope="col"
-                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                        >
+                        <th scope="col" className="text-right font-medium text-[12px] px-2 py-2">
                             Active
                         </th>
-                        <th
-                            scope="col"
-                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                        >
+                        <th scope="col" className="text-right font-medium text-[12px] px-2 py-2">
                             Spare
                         </th>
-                        <th
-                            scope="col"
-                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                        >
+                        <th scope="col" className="text-right font-medium text-[12px] px-2 py-2">
                             Shop
                         </th>
                         {config?.hasVerification && (
-                            <th
-                                scope="col"
-                                className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                            >
+                            <th scope="col" className="text-right font-medium text-[12px] px-2 py-2">
                                 Verified
                             </th>
                         )}
                         {hasService && (
-                            <th
-                                scope="col"
-                                className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                            >
+                            <th scope="col" className="text-right font-medium text-[12px] px-2 py-2">
                                 Overdue
                             </th>
                         )}
                         {config?.hasOperatorAssignment && (
-                            <th
-                                scope="col"
-                                className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                            >
+                            <th scope="col" className="text-right font-medium text-[12px] px-2 py-2">
                                 No Op
                             </th>
                         )}
-                        <th
-                            scope="col"
-                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                        >
+                        <th scope="col" className="text-right font-medium text-[12px] px-2 py-2">
                             Issues
                         </th>
-                        <th
-                            scope="col"
-                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                        >
+                        <th scope="col" className="text-right font-medium text-[12px] px-3 py-2">
                             Share
                         </th>
                     </tr>
@@ -192,28 +162,16 @@ export function AssetWatchlistTable({ headerLabel, onSelect, rows, valueAccessor
             <table className="w-full text-[12px] border-collapse">
                 <thead>
                     <tr className="text-text-tertiary">
-                        <th
-                            scope="col"
-                            className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                        >
+                        <th scope="col" className="text-left font-medium text-[12px] px-3 py-2">
                             Asset
                         </th>
-                        <th
-                            scope="col"
-                            className="text-left font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                        >
+                        <th scope="col" className="text-left font-medium text-[12px] px-2 py-2">
                             Plant
                         </th>
-                        <th
-                            scope="col"
-                            className="text-left font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                        >
+                        <th scope="col" className="text-left font-medium text-[12px] px-2 py-2">
                             Status
                         </th>
-                        <th
-                            scope="col"
-                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-3 py-2"
-                        >
+                        <th scope="col" className="text-right font-medium text-[12px] px-3 py-2">
                             {headerLabel}
                         </th>
                     </tr>
@@ -228,7 +186,7 @@ export function AssetWatchlistTable({ headerLabel, onSelect, rows, valueAccessor
                                     <button
                                         type="button"
                                         onClick={() => onSelect?.(row)}
-                                        className="font-mono tabular-nums font-semibold bg-transparent border-none cursor-pointer p-0 text-left text-text-primary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                        className="font-mono tabular-nums font-semibold bg-transparent border-none cursor-pointer p-0 text-left text-text-primary transition-transform duration-150 ease-out motion-reduce:transition-none"
                                     >
                                         {row.identifier}
                                     </button>

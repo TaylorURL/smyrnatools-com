@@ -1,30 +1,31 @@
-/* eslint-disable react/forbid-dom-props */
-import React, { useCallback, useEffect, useState } from 'react'
-import ReactDOM from 'react-dom'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { UserService } from '../../../services/UserService'
-import { SEVERITY_PALETTE, SEVERITY_TO_TONE } from '../../constants/issueModalConstants'
-import { DEFAULT_ACCENT_COLOR } from '../../constants/themeConstants'
-import { usePreferences } from '../../context/PreferencesContext'
+import { SEVERITY_TO_TONE } from '../../constants/issueModalConstants'
 import Badge from '../common/Badge'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import { SkeletonStack } from '../common/Skeleton'
-import UserAvatar from '../common/UserAvatar'
-import { formatDate, getNameInitials } from './issue-modal/issueModalHelpers'
+import Dialog, { DIALOG_TEXTAREA } from '../ui/Dialog'
+import DockedPanel from './DockedPanel'
+import { formatDate } from './issue-modal/issueModalHelpers'
 import { IssueRowSkeleton } from './issue-modal/IssueModalSkeletons'
+import SegmentedChoice from './issue-modal/SegmentedChoice'
 import SendIssueMessageModal from './issue-modal/SendIssueMessageModal'
+
+const SEVERITY_OPTIONS = ['Low', 'Medium', 'High'].map((sev) => ({ id: sev, label: sev }))
+
+const ROW_ACTION_CLS =
+    'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none'
 
 /**
  * Issue list and composer for one asset. `displayMode: 'panel'` drops the
- * portal and the overlay and renders the card inline, which is how the
- * right-side panel on the list views mounts it. The nested
- * SendIssueMessageModal stays a portal either way so the panel's own stacking
- * context cannot clip it.
+ * shared `Dialog` and renders the same header, switcher, composer and list
+ * inline as a card, which is how the right-side panel on the list views
+ * mounts it. The nested SendIssueMessageModal is a portal either way so the
+ * panel's own stacking context cannot clip it.
  */
 function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, displayMode = 'modal' }) {
-    const { preferences } = usePreferences()
-    const accent = preferences?.accentColor || DEFAULT_ACCENT_COLOR
     const [issues, setIssues] = useState([])
     const [newIssue, setNewIssue] = useState('')
     const [severity, setSeverity] = useState('Medium')
@@ -36,6 +37,23 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
     const [activeTab, setActiveTab] = useState('open')
     const [messageIssue, setMessageIssue] = useState(null)
     const [pendingDeleteId, setPendingDeleteId] = useState(null)
+
+    // The Dialog's close handler stays the same function for its whole life:
+    // a new one would re-run its open effect and pull focus out of the
+    // composer whenever a parent re-renders. While the delete confirmation or
+    // the send-message dialog is up, Escape belongs to that one, so the
+    // dialog underneath ignores it.
+    const onCloseRef = useRef(onClose)
+    const nestedOpenRef = useRef(false)
+    useEffect(() => {
+        onCloseRef.current = onClose
+        nestedOpenRef.current = pendingDeleteId !== null || messageIssue !== null
+    }, [onClose, pendingDeleteId, messageIssue])
+    const handleDialogClose = useCallback(() => {
+        if (!nestedOpenRef.current) onCloseRef.current()
+    }, [])
+    const closeMessage = useCallback(() => setMessageIssue(null), [])
+    const cancelDelete = useCallback(() => setPendingDeleteId(null), [])
 
     useEffect(() => {
         async function checkDeletePermission() {
@@ -142,262 +160,148 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
         return 'Unknown'
     }
 
-    const handleBackdropClick = (e) => {
-        if (e.target === e.currentTarget) onClose()
-    }
-
     const displayIssues = activeTab === 'open' ? openIssues : resolvedIssues
-    if (typeof document === 'undefined' || !document.body) return null
-
-    const TabBtn = ({ id, label, count, icon }) => {
-        const isActive = activeTab === id
-        return (
-            <button
-                type="button"
-                onClick={() => setActiveTab(id)}
-                className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
-                style={{
-                    background: isActive ? accent : 'var(--bg-tertiary)',
-                    color: isActive ? 'var(--on-accent)' : 'var(--text-secondary)'
-                }}
-            >
-                <i className={`fas ${icon} text-[10px]`} />
-                {label}
-                {count > 0 && (
-                    <span
-                        className="rounded px-1 font-mono tabular-nums"
-                        style={{
-                            background: isActive ? 'rgba(255,255,255,0.2)' : 'var(--bg-secondary)',
-                            color: isActive ? 'var(--on-accent)' : 'var(--text-secondary)'
-                        }}
-                    >
-                        {count}
-                    </span>
-                )}
-            </button>
-        )
-    }
-
     const isPanel = displayMode === 'panel'
+    const isSubmitDisabled = isSubmitting || !newIssue.trim()
+    const title = itemNumber || itemId
+    const eyebrow = isLoading
+        ? itemType
+        : `${itemType} · ${openIssues.length} open ${openIssues.length === 1 ? 'issue' : 'issues'}`
 
-    const card = (
-        <div
-            onClick={isPanel ? undefined : (e) => e.stopPropagation()}
-            className={
-                isPanel
-                    ? 'flex flex-col h-full w-full overflow-hidden rounded bg-bg-primary border border-border-light'
-                    : 'flex flex-col max-h-[90vh] max-w-[580px] w-full overflow-hidden rounded bg-bg-primary border border-border-light'
-            }
-        >
-            <div className="px-4 py-3 border-b border-border-light">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-bg-tertiary text-text-secondary">
-                            <i className="fas fa-exclamation-circle text-[12px]" />
-                        </div>
-                        <div className="min-w-0">
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
-                                {itemType} · Issues
-                            </div>
-                            <div className="text-[14px] font-semibold font-mono tabular-nums truncate text-text-primary">
-                                {itemNumber || itemId}
-                            </div>
-                        </div>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                        <i className="fas fa-times text-[12px]" />
-                    </button>
+    const toolbar = (
+        <SegmentedChoice
+            ariaLabel="Show issues"
+            onChange={setActiveTab}
+            options={[
+                { count: openIssues.length, id: 'open', label: 'Open' },
+                { count: resolvedIssues.length, id: 'resolved', label: 'Resolved' }
+            ]}
+            value={activeTab}
+        />
+    )
+
+    const body = (
+        <>
+            {error && (
+                <div className="px-6 pt-4">
+                    <ErrorMessage message={error} onDismiss={() => setError(null)} />
                 </div>
-                <div className="flex gap-1.5 mt-2.5">
-                    <TabBtn id="open" label="Open" count={openIssues.length} icon="fa-clock" />
-                    <TabBtn id="resolved" label="Resolved" count={resolvedIssues.length} icon="fa-check-circle" />
-                </div>
-            </div>
+            )}
 
-            <div className="flex-1 overflow-y-auto px-4 py-3">
-                <ErrorMessage message={error} onDismiss={() => setError(null)} />
-
-                {activeTab === 'open' && (
-                    <form onSubmit={handleAddIssue} className="mb-3">
-                        <div className="rounded p-2.5 bg-bg-secondary border border-border-light">
-                            <textarea
-                                value={newIssue}
-                                onChange={(e) => setNewIssue(e.target.value)}
-                                placeholder="What's the issue?"
-                                aria-label="Describe the issue"
-                                disabled={isSubmitting}
-                                rows="2"
-                                className="w-full rounded outline-none p-2 resize-none text-[12px] bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            {activeTab === 'open' && (
+                <form onSubmit={handleAddIssue} className="flex flex-col gap-3 border-b border-border-light px-6 py-4">
+                    <textarea
+                        value={newIssue}
+                        onChange={(e) => setNewIssue(e.target.value)}
+                        placeholder="What's the issue?"
+                        aria-label="Describe the issue"
+                        disabled={isSubmitting}
+                        rows="3"
+                        className={`${DIALOG_TEXTAREA} disabled:cursor-not-allowed disabled:bg-bg-tertiary disabled:text-text-tertiary`}
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <span className="text-[12px] font-medium text-text-secondary">Severity</span>
+                            <SegmentedChoice
+                                ariaLabel="Severity"
+                                onChange={setSeverity}
+                                options={SEVERITY_OPTIONS}
+                                value={severity}
                             />
-                            <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                    {['Low', 'Medium', 'High'].map((sev) => {
-                                        const config = SEVERITY_PALETTE[sev]
-                                        const isActive = severity === sev
-                                        const iconKey = config.icon.replace(/^fa-/, '')
-                                        return (
-                                            <Badge
-                                                key={sev}
-                                                as="button"
-                                                tone={SEVERITY_TO_TONE[sev]}
-                                                variant={isActive ? 'soft' : 'outline'}
-                                                size="md"
-                                                weight="semibold"
-                                                active={isActive}
-                                                icon={iconKey}
-                                                onClick={() => setSeverity(sev)}
-                                            >
-                                                {sev}
-                                            </Badge>
-                                        )
-                                    })}
-                                </div>
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting || !newIssue.trim()}
-                                    className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
-                                    style={{
-                                        background: isSubmitting || !newIssue.trim() ? 'var(--bg-tertiary)' : accent,
-                                        color:
-                                            isSubmitting || !newIssue.trim()
-                                                ? 'var(--text-tertiary)'
-                                                : 'var(--on-accent)',
-                                        cursor: isSubmitting || !newIssue.trim() ? 'not-allowed' : 'pointer'
-                                    }}
-                                >
-                                    <i className="fas fa-paper-plane text-[10px]" />
-                                    {isSubmitting ? 'Submitting' : 'Submit'}
-                                </button>
-                            </div>
                         </div>
-                    </form>
-                )}
+                        <button type="submit" disabled={isSubmitDisabled} className="btn-primary">
+                            {isSubmitting ? 'Submitting' : 'Submit'}
+                        </button>
+                    </div>
+                </form>
+            )}
 
-                {isLoading ? (
-                    <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
-                        <SkeletonStack count={3} gapClassName="gap-0">
-                            {() => <IssueRowSkeleton />}
-                        </SkeletonStack>
-                    </div>
-                ) : displayIssues.length === 0 ? (
-                    <div className="flex flex-col items-center py-8 px-4 text-center text-text-tertiary">
-                        <i
-                            className={`fas ${activeTab === 'open' ? 'fa-clipboard-check' : 'fa-trophy'} text-2xl mb-2`}
-                        />
-                        <p className="text-[12px] m-0 font-semibold text-text-secondary">
-                            {activeTab === 'open' ? 'No open issues' : 'No resolved issues yet'}
-                        </p>
-                    </div>
-                ) : (
-                    <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
-                        {displayIssues.map((issue) => {
-                            const sevConfig = SEVERITY_PALETTE[issue.severity] || SEVERITY_PALETTE.Medium
-                            const isResolved = !!issue.time_completed
-                            const creatorName = getCreatorName(issue)
-                            return (
-                                <div
-                                    key={issue.id}
-                                    className="flex items-start gap-2.5 px-3 py-2.5 border-b border-border-light"
-                                    style={{ opacity: isResolved ? 0.7 : 1 }}
-                                >
-                                    <UserAvatar
-                                        userId={issue.created_by}
-                                        initials={getNameInitials(creatorName)}
-                                        size="md"
-                                        rounded="md"
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                                            <span className="text-[12px] font-semibold text-text-primary">
-                                                {creatorName}
-                                            </span>
-                                            <Badge
-                                                tone={SEVERITY_TO_TONE[issue.severity] || 'warning'}
-                                                size="md"
-                                                weight="semibold"
-                                                icon={sevConfig.icon.replace(/^fa-/, '')}
-                                            >
-                                                {issue.severity}
-                                            </Badge>
-                                            <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
-                                                {formatDate(issue.time_created)}
-                                            </span>
-                                        </div>
-                                        <p className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap break-words text-text-secondary">
-                                            {issue.issue}
-                                        </p>
-                                        {isResolved && (
-                                            <div className="flex items-center gap-1 mt-1 text-[10.5px] font-semibold text-text-primary">
-                                                <i className="fas fa-check text-[9px]" />
-                                                Resolved {formatDate(issue.time_completed)}
-                                            </div>
-                                        )}
+            {isLoading ? (
+                <SkeletonStack count={3} gapClassName="gap-0">
+                    {() => <IssueRowSkeleton />}
+                </SkeletonStack>
+            ) : displayIssues.length === 0 ? (
+                <div className="flex flex-col items-center gap-1 px-6 py-10 text-center">
+                    <p className="m-0 text-[15px] font-medium text-text-primary">
+                        {activeTab === 'open' ? 'No open issues' : 'No resolved issues yet'}
+                    </p>
+                    <p className="m-0 text-[13px] text-text-secondary">
+                        {activeTab === 'open'
+                            ? 'Report one above when something needs fixing.'
+                            : 'Issues marked resolved show up here.'}
+                    </p>
+                </div>
+            ) : (
+                <ul className="m-0 list-none p-0">
+                    {displayIssues.map((issue) => {
+                        const isResolved = !!issue.time_completed
+                        return (
+                            <li
+                                key={issue.id}
+                                className="flex items-start gap-3 border-b border-border-light px-6 py-3 transition-colors duration-150 hover:bg-bg-hover motion-reduce:transition-none"
+                            >
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <Badge tone={SEVERITY_TO_TONE[issue.severity] || 'warning'} size="sm">
+                                            {issue.severity}
+                                        </Badge>
+                                        <span className="text-[13px] font-medium text-text-primary">
+                                            {getCreatorName(issue)}
+                                        </span>
+                                        <span className="text-[12px] tabular-nums text-text-tertiary">
+                                            {formatDate(issue.time_created)}
+                                        </span>
                                     </div>
-                                    <div className="flex shrink-0 gap-1">
-                                        {!isResolved && (
-                                            <>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleCompleteIssue(issue.id)}
-                                                    title="Mark resolved"
-                                                    className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-text-primary"
-                                                    onMouseEnter={(e) =>
-                                                        (e.currentTarget.style.background = 'var(--bg-tertiary)')
-                                                    }
-                                                    onMouseLeave={(e) =>
-                                                        (e.currentTarget.style.background = 'transparent')
-                                                    }
-                                                >
-                                                    <i className="fas fa-check text-[10px]" />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setMessageIssue(issue)}
-                                                    title="Send message"
-                                                    className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-text-primary"
-                                                    onMouseEnter={(e) =>
-                                                        (e.currentTarget.style.background = 'var(--bg-tertiary)')
-                                                    }
-                                                    onMouseLeave={(e) =>
-                                                        (e.currentTarget.style.background = 'transparent')
-                                                    }
-                                                >
-                                                    <i className="fas fa-paper-plane text-[10px]" />
-                                                </button>
-                                            </>
-                                        )}
-                                        {canDelete && (
+                                    <p className="m-0 mt-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-text-primary">
+                                        {issue.issue}
+                                    </p>
+                                    {isResolved && (
+                                        <p className="m-0 mt-1 text-[12px] text-text-secondary">
+                                            Resolved {formatDate(issue.time_completed)}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="-mr-2 flex shrink-0">
+                                    {!isResolved && (
+                                        <>
                                             <button
                                                 type="button"
-                                                onClick={() => handleDeleteIssue(issue.id)}
-                                                title="Delete"
-                                                className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-text-tertiary"
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.background = 'var(--bg-tertiary)'
-                                                    e.currentTarget.style.color = 'var(--status-danger)'
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.background = 'transparent'
-                                                    e.currentTarget.style.color = 'var(--text-tertiary)'
-                                                }}
+                                                onClick={() => handleCompleteIssue(issue.id)}
+                                                title="Mark resolved"
+                                                aria-label="Mark resolved"
+                                                className={`${ROW_ACTION_CLS} text-text-secondary hover:text-text-primary`}
                                             >
-                                                <i className="fas fa-trash text-[10px]" />
+                                                <i className="fas fa-check text-[12px]" aria-hidden="true" />
                                             </button>
-                                        )}
-                                    </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setMessageIssue(issue)}
+                                                title="Send message"
+                                                aria-label="Send message"
+                                                className={`${ROW_ACTION_CLS} text-text-secondary hover:text-text-primary`}
+                                            >
+                                                <i className="fas fa-paper-plane text-[12px]" aria-hidden="true" />
+                                            </button>
+                                        </>
+                                    )}
+                                    {canDelete && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteIssue(issue.id)}
+                                            title="Delete"
+                                            aria-label="Delete issue"
+                                            className={`${ROW_ACTION_CLS} text-text-tertiary hover:text-status-danger`}
+                                        >
+                                            <i className="fas fa-trash text-[12px]" aria-hidden="true" />
+                                        </button>
+                                    )}
                                 </div>
-                            )
-                        })}
-                    </div>
-                )}
-            </div>
-        </div>
+                            </li>
+                        )
+                    })}
+                </ul>
+            )}
+        </>
     )
 
     const overlays = (
@@ -408,15 +312,15 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                     itemNumber={itemNumber}
                     itemType={itemType}
                     creatorName={getCreatorName(messageIssue)}
-                    onClose={() => setMessageIssue(null)}
+                    onClose={closeMessage}
                 />
             )}
             <ConfirmDialog
                 isOpen={pendingDeleteId !== null}
                 onConfirm={confirmDeleteIssue}
-                onCancel={() => setPendingDeleteId(null)}
-                title="Delete Issue"
-                message="Are you sure you want to delete this issue?"
+                onCancel={cancelDelete}
+                title="Delete this issue?"
+                message="This can't be undone."
                 confirmLabel="Delete"
                 variant="danger"
             />
@@ -426,23 +330,29 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
     if (isPanel) {
         return (
             <>
-                {card}
+                <DockedPanel onClose={onClose} eyebrow={eyebrow} title={title} toolbar={toolbar} bodyClassName="p-0">
+                    {body}
+                </DockedPanel>
                 {overlays}
             </>
         )
     }
 
-    return ReactDOM.createPortal(
+    return (
         <>
-            <div
-                onClick={handleBackdropClick}
-                className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-[var(--scrim)]"
+            <Dialog
+                open
+                onClose={handleDialogClose}
+                size="md"
+                eyebrow={eyebrow}
+                title={title}
+                toolbar={toolbar}
+                bodyClassName="p-0"
             >
-                {card}
-            </div>
+                {body}
+            </Dialog>
             {overlays}
-        </>,
-        document.body
+        </>
     )
 }
 

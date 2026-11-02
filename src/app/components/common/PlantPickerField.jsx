@@ -28,7 +28,10 @@ function PlantPickerField({
     return (
         <>
             <div className="flex flex-col gap-1.5">
-                <label htmlFor={htmlFor} className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
+                <label
+                    htmlFor={htmlFor}
+                    className="text-[12px] font-medium text-text-tertiary [.add-view-form_&]:normal-case [.add-view-form_&]:tracking-normal [.add-view-form_&]:text-text-primary"
+                >
                     {label}
                 </label>
                 <button
@@ -38,7 +41,7 @@ function PlantPickerField({
                     aria-label={accessibleLabel}
                     aria-haspopup="dialog"
                     aria-expanded={!!isPlantModalOpen}
-                    className={`flex items-center justify-between gap-2 rounded-md ${surfaceClass} border border-border-light px-3 py-2.5 text-sm text-text-primary text-left transition-colors duration-150 hover:border-border-medium hover:bg-bg-hover focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 active:scale-[0.99] motion-reduce:transition-none`}
+                    className={`flex items-center justify-between gap-2 rounded-md ${surfaceClass} border border-border-light px-3 py-2.5 text-sm text-text-primary text-left transition-colors duration-150 hover:border-border-medium hover:bg-bg-hover focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 motion-reduce:transition-none`}
                 >
                     <span className="truncate">{plantDisplayText}</span>
                     <i className="fas fa-chevron-down text-[10px] text-text-tertiary shrink-0" aria-hidden="true" />

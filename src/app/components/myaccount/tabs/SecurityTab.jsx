@@ -28,19 +28,13 @@ export default function SecurityTab({ accentColor, onOpenPasswordModal, onRevoke
             <section id="sessions" className="scroll-mt-4">
                 <Card>
                     <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
-                        <div
-                            className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0 bg-bg-tertiary"
-                            style={{ color: accentColor }}
-                        >
-                            <i className="fas fa-laptop text-[16px]" />
-                        </div>
                         <div className="min-w-0 flex-1">
-                            <div className="text-[14px] font-semibold text-text-primary">Active Sessions</div>
-                            <div className="text-[12px] mt-0.5 text-text-tertiary">Manage your login sessions</div>
+                            <div className="font-heading text-[16px] font-semibold tracking-tight text-text-primary">
+                                Active sessions
+                            </div>
+                            <div className="text-[12px] mt-0.5 text-text-tertiary">Where you’re signed in</div>
                         </div>
-                        <Badge tone="neutral" size="md" shape="rounded-md" className="font-mono tabular-nums">
-                            {sessions.length}
-                        </Badge>
+                        <span className="text-[13px] tabular-nums text-text-secondary">{sessions.length}</span>
                     </div>
                     <div>
                         {sessions.length > 0 ? (
@@ -49,25 +43,15 @@ export default function SecurityTab({ accentColor, onOpenPasswordModal, onRevoke
                                     key={session.id}
                                     className="flex items-center justify-between gap-3 px-5 py-3.5"
                                     style={{
-                                        background: session.isCurrent ? 'rgba(22, 163, 74, 0.08)' : 'transparent',
                                         borderBottom:
                                             idx < sessions.length - 1 ? '1px solid var(--border-light)' : 'none'
                                     }}
                                 >
                                     <div className="flex items-center gap-3 min-w-0">
-                                        <div
-                                            className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
-                                            style={{
-                                                background: session.isCurrent
-                                                    ? 'rgba(22, 163, 74, 0.15)'
-                                                    : 'var(--bg-tertiary)',
-                                                color: 'var(--text-primary)'
-                                            }}
-                                        >
-                                            <i
-                                                className={`fas ${session.device === 'Mobile' ? 'fa-mobile-alt' : session.device === 'Tablet' ? 'fa-tablet-alt' : 'fa-desktop'} text-[14px]`}
-                                            />
-                                        </div>
+                                        <i
+                                            aria-hidden="true"
+                                            className={`fas ${session.device === 'Mobile' ? 'fa-mobile-alt' : session.device === 'Tablet' ? 'fa-tablet-alt' : 'fa-desktop'} w-4 shrink-0 text-center text-[14px] text-text-tertiary`}
+                                        />
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-[14px] font-semibold truncate text-text-primary">

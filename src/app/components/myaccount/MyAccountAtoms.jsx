@@ -2,21 +2,16 @@ import React from 'react'
 
 /** Card shell with consistent border / radius / background tokens. */
 export function Card({ children, className = '' }) {
-    return (
-        <div className={`rounded-card border border-border-light bg-bg-primary shadow-sm ${className}`}>{children}</div>
-    )
+    return <div className={`rounded-card border border-border-light bg-bg-primary ${className}`}>{children}</div>
 }
 
-/** Header row used at the top of most account cards — icon chip + title +
- *  optional description. */
-export function CardHeader({ accentColor: _accentColor, description, icon, title }) {
+/** Header row used at the top of most account cards — title and an optional
+ *  description, ruled off from the card body. */
+export function CardHeader({ accentColor: _accentColor, description, icon: _icon, title }) {
     return (
         <div className="flex items-center gap-3 border-b border-border-light px-5 py-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
-                <i className={`fas ${icon} text-[16px]`} aria-hidden="true" />
-            </div>
             <div className="flex min-w-0 flex-col gap-0.5">
-                <div className="font-heading text-[14px] font-semibold text-text-primary">{title}</div>
+                <div className="font-heading text-[16px] font-semibold tracking-tight text-text-primary">{title}</div>
                 {description && <div className="text-[12px] text-text-tertiary">{description}</div>}
             </div>
         </div>
@@ -24,36 +19,19 @@ export function CardHeader({ accentColor: _accentColor, description, icon, title
 }
 
 /** Filled accent-color button — primary form actions. */
-export function PrimaryButton({ accentColor, children, disabled, icon, onClick, type = 'button' }) {
+export function PrimaryButton({ children, disabled, icon, onClick, type = 'button' }) {
     return (
-        <button
-            type={type}
-            onClick={onClick}
-            disabled={disabled}
-            className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-[12px] font-semibold uppercase tracking-wider text-white shadow-sm transition duration-150 ease-out hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-[0.97] motion-reduce:transition-none"
-            style={{ background: accentColor }}
-        >
+        <button type={type} onClick={onClick} disabled={disabled} className="btn-primary">
             {icon && <i className={`fas ${icon} text-[12px]`} aria-hidden="true" />}
             {children}
         </button>
     )
 }
 
-/** Outlined secondary button — destructive variant flips border/fill to status-danger. */
+/** Outlined secondary button — the destructive variant is red. */
 export function SubtleButton({ children, danger = false, disabled = false, icon, onClick, type = 'button' }) {
-    const dangerClasses =
-        'bg-status-danger/10 border border-status-danger/35 text-status-danger hover:bg-status-danger/20 focus-visible:ring-status-danger'
-    const subtleClasses =
-        'bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:ring-accent'
     return (
-        <button
-            type={type}
-            onClick={onClick}
-            disabled={disabled}
-            className={`inline-flex items-center gap-2 rounded-md px-3.5 py-2.5 text-[12px] font-semibold uppercase tracking-wider transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-[0.97] motion-reduce:transition-none ${
-                danger ? dangerClasses : subtleClasses
-            }`}
-        >
+        <button type={type} onClick={onClick} disabled={disabled} className={danger ? 'btn-danger' : 'btn-secondary'}>
             {icon && <i className={`fas ${icon} text-[12px]`} aria-hidden="true" />}
             {children}
         </button>
@@ -69,7 +47,7 @@ export function Toggle({ accentColor, ariaLabel, checked, onChange }) {
             aria-checked={checked}
             aria-label={ariaLabel}
             onClick={onChange}
-            className="relative inline-flex h-6 w-11 shrink-0 rounded-full border border-border-light transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97] motion-reduce:transition-none"
+            className="relative inline-flex h-6 w-11 shrink-0 rounded-full border border-border-medium transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary motion-reduce:transition-none"
             style={{ background: checked ? accentColor : 'var(--bg-tertiary)' }}
         >
             <span
@@ -80,10 +58,11 @@ export function Toggle({ accentColor, ariaLabel, checked, onChange }) {
     )
 }
 
-/** Inline pill switcher — accepts a list of `{value, label, icon}` options. */
-export function SegmentedControl({ accentColor, onChange, options, value }) {
+/** Joined-button switcher — accepts a list of `{value, label, icon}` options.
+ *  The chosen one is pressed in: darker fill, darker text. */
+export function SegmentedControl({ onChange, options, value }) {
     return (
-        <div className="inline-flex items-center gap-1 rounded-md border border-border-light bg-bg-tertiary p-1">
+        <div className="inline-flex items-stretch overflow-hidden rounded-[4px] border border-border-medium bg-bg-primary">
             {options.map((opt) => {
                 const active = value === opt.value
                 return (
@@ -92,11 +71,11 @@ export function SegmentedControl({ accentColor, onChange, options, value }) {
                         key={opt.value}
                         onClick={() => onChange(opt.value)}
                         aria-pressed={active}
-                        className="inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-[12.5px] font-semibold uppercase tracking-wider transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] motion-reduce:transition-none"
-                        style={{
-                            background: active ? accentColor : 'transparent',
-                            color: active ? 'var(--on-accent)' : 'var(--text-secondary)'
-                        }}
+                        className={`inline-flex h-9 items-center gap-2 border-0 border-r border-solid border-border-medium px-3.5 text-[13px] cursor-pointer transition-colors duration-150 ease-out last:border-r-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none ${
+                            active
+                                ? 'bg-bg-tertiary font-medium text-text-primary'
+                                : 'bg-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+                        }`}
                     >
                         {opt.icon && <i className={`fas ${opt.icon} text-[12px]`} aria-hidden="true" />}
                         {opt.label}
@@ -108,13 +87,10 @@ export function SegmentedControl({ accentColor, onChange, options, value }) {
 }
 
 /** Single label / value detail row used in the Profile tab's scope card. */
-export function DetailRow({ icon, label, mono, value }) {
+export function DetailRow({ label, mono, value }) {
     return (
-        <div className="flex items-center justify-between border-b border-border-light py-3.5 last:border-b-0">
-            <div className="flex items-center gap-3">
-                <i className={`fas ${icon} w-5 text-center text-[13px] text-text-tertiary`} aria-hidden="true" />
-                <span className="text-[13px] text-text-secondary">{label}</span>
-            </div>
+        <div className="flex items-center justify-between border-b border-border-light py-3 last:border-b-0">
+            <span className="text-[13px] text-text-secondary">{label}</span>
             <span className={`text-[14px] font-semibold text-text-primary ${mono ? 'font-mono tabular-nums' : ''}`}>
                 {value}
             </span>
@@ -125,12 +101,12 @@ export function DetailRow({ icon, label, mono, value }) {
 /** Single cell in the at-a-glance stat strip. Flat label / mono value / hint. */
 export function StatCell({ hint, label, value }) {
     return (
-        <div className="flex flex-col gap-0.5 border-r border-border-light bg-bg-primary px-3 py-2.5 last:border-r-0">
-            <span className="text-[11px] text-text-secondary">{label}</span>
-            <span className="font-mono text-[20px] font-semibold leading-tight tabular-nums text-text-primary">
+        <div className="flex min-w-0 flex-col gap-1 border-r border-border-light bg-bg-primary px-4 py-3.5 last:border-r-0">
+            <span className="text-[12px] text-text-secondary">{label}</span>
+            <span className="truncate font-heading text-[22px] font-semibold leading-tight tracking-tight tabular-nums text-text-primary">
                 {value}
             </span>
-            {hint && <span className="text-[11px] text-text-tertiary">{hint}</span>}
+            {hint && <span className="truncate text-[11.5px] text-text-tertiary">{hint}</span>}
         </div>
     )
 }

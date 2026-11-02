@@ -21,7 +21,7 @@ function ChatHeaderIconButton({ accentColor, active = false, danger = false, ico
             onClick={onClick}
             title={title}
             aria-label={title}
-            className="flex h-8 w-8 items-center justify-center rounded cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 border active:scale-[0.92]"
+            className="flex h-8 w-8 items-center justify-center rounded cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 border"
             style={styles}
         >
             <i className={`fas ${icon} text-[11px]`} />
@@ -52,7 +52,7 @@ export default function ChatHeader({
                 <button
                     type="button"
                     onClick={onBack}
-                    className="flex h-8 w-8 items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary active:scale-[0.92]"
+                    className="flex h-8 w-8 items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-secondary"
                     aria-label="Back to inbox"
                 >
                     <i className="fas fa-arrow-left text-[12px]" />
@@ -71,7 +71,7 @@ export default function ChatHeader({
                     )}
                     {isMuted && <i className="fas fa-bell-slash text-[10px] text-text-tertiary" title="Muted" />}
                 </div>
-                <div className="text-[10.5px] m-0 font-mono tabular-nums uppercase tracking-wider text-text-tertiary">
+                <div className="text-[12px] m-0 font-mono tabular-nums text-text-tertiary">
                     {messageCount} message{messageCount !== 1 ? 's' : ''}
                 </div>
             </div>

@@ -166,7 +166,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                 <>
                     <button
                         type="button"
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-[0.97]"
+                        className="global-button-primary flex-1 justify-center"
                         onClick={handleSave}
                         disabled={saving || loading}
                     >
@@ -175,7 +175,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                     </button>
                     <button
                         type="button"
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-[0.97]"
+                        className="global-button-danger flex-1 justify-center"
                         onClick={() => setShowDeleteConfirmation(true)}
                         disabled={saving || loading}
                     >
@@ -196,7 +196,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                         <label>Region Code</label>
                         <input
                             type="text"
-                            className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
                             value={regionCode}
                             disabled
                         />
@@ -205,7 +205,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                         <label>Region Name</label>
                         <input
                             type="text"
-                            className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
                             value={regionName}
                             onChange={(e) => setRegionName(e.target.value)}
                         />
@@ -214,7 +214,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                         <label>Type</label>
                         <div className="relative">
                             <select
-                                className="w-full appearance-none cursor-pointer rounded-xl border border-border-light bg-bg-secondary pl-4 pr-10 py-3 text-sm text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+                                className="w-full appearance-none cursor-pointer rounded-card border border-border-light bg-bg-secondary pl-4 pr-10 py-3 text-sm text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                                 value={regionType}
                                 onChange={(e) => setRegionType(e.target.value)}
                             >
@@ -254,7 +254,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                 {p?.plant_name && <span className="opacity-80">{p.plant_name}</span>}
                                                 <button
                                                     type="button"
-                                                    className="ml-0.5 cursor-pointer bg-transparent border-none text-sm leading-none opacity-70 hover:opacity-100 active:scale-[0.97] transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded"
+                                                    className="ml-0.5 cursor-pointer bg-transparent border-none text-sm leading-none opacity-70 hover:opacity-100 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded"
                                                     onClick={() => removeChip(code)}
                                                     aria-label={`Remove ${code}`}
                                                 >
@@ -265,7 +265,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                     })}
                                     <button
                                         type="button"
-                                        className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer border border-border-light bg-bg-secondary text-text-secondary hover:bg-bg-tertiary hover:text-text-primary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                                        className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer border border-border-light bg-bg-secondary text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                         onClick={clearAllSelected}
                                     >
                                         Clear All
@@ -280,7 +280,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                     />
                                     <input
                                         type="search"
-                                        className="w-full rounded-xl border border-border-light bg-bg-secondary pl-10 pr-10 py-3 text-sm text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
+                                        className="w-full rounded-card border border-border-light bg-bg-secondary pl-10 pr-10 py-3 text-sm text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
                                         placeholder="Search by code or name"
                                         value={plantQuery}
                                         onChange={(e) => setPlantQuery(e.target.value)}
@@ -302,7 +302,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                 </span>
                                 <button
                                     type="button"
-                                    className="flex items-center gap-2 rounded-xl border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex items-center gap-2 rounded-card border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-50"
                                     onClick={selectAllFiltered}
                                     disabled={!filteredPlants.length}
                                 >
@@ -310,7 +310,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                 </button>
                             </div>
                             <div
-                                className="border border-border-light rounded-[10px] max-h-[280px] overflow-y-auto bg-bg-primary"
+                                className="max-h-[280px] overflow-y-auto rounded-card border border-border-light bg-bg-primary p-1"
                                 role="listbox"
                                 aria-label="All plants"
                                 aria-multiselectable="true"
@@ -322,22 +322,26 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                             key={p.plant_code}
                                             role="option"
                                             aria-selected={isSelected}
-                                            className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors duration-150 border-b border-border-light hover:bg-bg-tertiary ${isSelected ? 'bg-[color:color-mix(in_srgb,var(--accent)_10%,transparent)]' : ''}`}
+                                            className={`flex h-9 cursor-pointer items-center gap-3 rounded-[4px] px-2.5 text-[13px] transition-colors duration-150 motion-reduce:transition-none ${isSelected ? 'bg-bg-tertiary font-medium' : 'hover:bg-bg-hover'}`}
                                         >
                                             <input
                                                 type="checkbox"
                                                 checked={isSelected}
                                                 onChange={() => togglePlant(p.plant_code)}
-                                                className="size-4 rounded border-border-medium"
+                                                className="size-4 shrink-0 cursor-pointer rounded border-border-medium"
                                                 aria-label={`Toggle ${p.plant_code}`}
                                             />
-                                            <span className="font-bold text-sm text-text-primary">{p.plant_code}</span>
-                                            <span className="text-sm text-text-secondary">{p.plant_name}</span>
+                                            <span className="shrink-0 tabular-nums text-text-primary">
+                                                {p.plant_code}
+                                            </span>
+                                            <span className="min-w-0 truncate text-text-secondary">{p.plant_name}</span>
                                         </label>
                                     )
                                 })}
                                 {!filteredPlants.length && (
-                                    <div className="text-text-secondary text-sm py-4 text-center">No matches</div>
+                                    <div className="px-2.5 py-3 text-center text-[13px] text-text-secondary">
+                                        No matches
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -351,7 +355,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                             <div className="flex items-center gap-2">
                                 <input
                                     type="text"
-                                    className="flex-1 w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                                    className="flex-1 w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors focus:border-accent"
                                     placeholder="New district name..."
                                     value={newDistrictName}
                                     onChange={(e) => setNewDistrictName(e.target.value)}
@@ -364,7 +368,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                 />
                                 <button
                                     type="button"
-                                    className="flex items-center gap-1 rounded-xl border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-[0.97]"
+                                    className="flex items-center gap-1 rounded-card border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover"
                                     onClick={addNewDistrict}
                                     disabled={
                                         !newDistrictName.trim() || allDistrictNames.includes(newDistrictName.trim())
@@ -422,7 +426,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                                         )}
                                                                         <button
                                                                             type="button"
-                                                                            className="ml-0.5 cursor-pointer bg-transparent border-none text-sm leading-none opacity-70 hover:opacity-100 active:scale-[0.97] transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded"
+                                                                            className="ml-0.5 cursor-pointer bg-transparent border-none text-sm leading-none opacity-70 hover:opacity-100 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded"
                                                                             onClick={() =>
                                                                                 removeDistrictFromPlant(
                                                                                     code,
@@ -444,7 +448,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                     {unassignedPlants.length > 0 && (
                                                         <div className="relative">
                                                             <select
-                                                                className="w-full appearance-none cursor-pointer rounded-xl border border-border-light bg-bg-secondary pl-4 pr-10 py-3 text-[13px] text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+                                                                className="w-full appearance-none cursor-pointer rounded-card border border-border-light bg-bg-secondary pl-4 pr-10 py-3 text-[13px] text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                                                                 value=""
                                                                 onChange={(e) => {
                                                                     if (e.target.value)

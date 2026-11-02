@@ -32,7 +32,7 @@ function LegalPage({ title, summary, effective, children }) {
                             <span className="font-heading text-[15px] font-bold tracking-tight text-text-primary">
                                 Smyrna Tools
                             </span>
-                            <span className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-text-tertiary">
+                            <span className="text-[12px] font-medium text-text-tertiary">
                                 Operations · Fleet · Concrete
                             </span>
                         </span>
@@ -45,9 +45,7 @@ function LegalPage({ title, summary, effective, children }) {
                         {title}
                     </h1>
                     <p className="mb-0 mt-3 text-[15px] leading-relaxed text-text-secondary">{summary}</p>
-                    <p className="mb-0 mt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-tertiary">
-                        In effect {effective}
-                    </p>
+                    <p className="mb-0 mt-4 text-[12px] font-medium text-text-tertiary">In effect {effective}</p>
                     <div className="mt-9 flex flex-col gap-8">{children}</div>
                 </article>
             </main>

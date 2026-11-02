@@ -172,7 +172,7 @@ function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
                 <>
                     <button
                         type="button"
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
+                        className="global-button-primary flex-1 justify-center"
                         onClick={handleSave}
                         disabled={isSaving}
                     >
@@ -181,7 +181,7 @@ function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
                     </button>
                     <button
                         type="button"
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border-light bg-bg-primary px-5 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-hover"
+                        className="global-button-danger flex-1 justify-center"
                         onClick={() => setShowDeleteConfirmation(true)}
                         disabled={isSaving}
                     >
@@ -202,7 +202,7 @@ function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
                         <label>Plant Code</label>
                         <input
                             type="text"
-                            className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors focus:border-accent"
                             value={plantCode}
                             disabled
                         />
@@ -211,7 +211,7 @@ function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
                         <label>Plant Name</label>
                         <input
                             type="text"
-                            className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors focus:border-accent"
                             value={plantName}
                             onChange={(e) => setPlantName(e.target.value)}
                         />
@@ -222,7 +222,7 @@ function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
                         <label>Street Address</label>
                         <input
                             type="text"
-                            className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors focus:border-accent"
                             placeholder="123 Industry Blvd, Houston, TX 77001"
                             value={plantAddress}
                             onChange={(e) => setPlantAddress(e.target.value)}
@@ -237,7 +237,7 @@ function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
                             <input
                                 type="text"
                                 inputMode="decimal"
-                                className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm font-mono text-text-primary outline-none transition-colors focus:border-accent"
+                                className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] font-mono text-text-primary outline-none transition-colors focus:border-accent"
                                 placeholder="29.7604"
                                 value={latitudeInput}
                                 onChange={(e) => setLatitudeInput(e.target.value)}
@@ -248,7 +248,7 @@ function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
                             <input
                                 type="text"
                                 inputMode="decimal"
-                                className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm font-mono text-text-primary outline-none transition-colors focus:border-accent"
+                                className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] font-mono text-text-primary outline-none transition-colors focus:border-accent"
                                 placeholder="-95.3698"
                                 value={longitudeInput}
                                 onChange={(e) => setLongitudeInput(e.target.value)}

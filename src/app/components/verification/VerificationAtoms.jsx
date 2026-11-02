@@ -49,7 +49,7 @@ export function Section({ children, expanded, onToggle, status, subtitle, title 
             <button
                 type="button"
                 onClick={onToggle}
-                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left cursor-pointer border-none transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary bg-transparent active:scale-[0.97]"
+                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left cursor-pointer border-none transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary bg-transparent"
                 aria-expanded={expanded}
             >
                 <span className="shrink-0">{status}</span>
@@ -123,10 +123,10 @@ export function Banner({ children, icon, tone = 'warn' }) {
                 }
     return (
         <div
-            className="flex items-start gap-2 rounded-md px-3 py-2 text-[12px] leading-snug mb-2.5"
+            className="mb-2.5 flex items-start gap-2 rounded-[4px] border px-3 py-2 text-[13px] leading-snug"
             style={{
                 background: palette.bg,
-                borderLeft: `3px solid ${palette.accent}`,
+                borderColor: `color-mix(in srgb, ${palette.accent} 35%, transparent)`,
                 color: palette.fg
             }}
         >
@@ -166,7 +166,7 @@ export function IconButton({ bg, fg, icon, onClick, title }) {
             onClick={onClick}
             title={title}
             aria-label={title}
-            className="flex h-7 w-7 items-center justify-center rounded-md border-none cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95 active:scale-[0.92]"
+            className="flex h-7 w-7 items-center justify-center rounded-md border-none cursor-pointer transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:brightness-95"
             style={{ background: bg, color: fg }}
         >
             <i className={`fas ${icon} text-[11px]`} />

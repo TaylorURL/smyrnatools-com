@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react'
-import ReactDOM from 'react-dom'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { PlantService } from '../../../services/PlantService'
+import Dialog from '../ui/Dialog'
 import PlantManagersEditor from './PlantManagersEditor'
 
 /**
- * Modal sheet that lets the user attach / remove managers for a single
- * plant directly from `PlantsView` without opening the full detail surface.
+ * Dialog that lets the user attach / remove managers for a single plant
+ * directly from `PlantsView` without opening the full detail surface.
  * Owns the draft list locally and persists via `PlantService.updatePlantManagers`
  * on confirm. The parent passes `onSaved(persistedIds)` to update its
- * local plant list once the write lands.
+ * local plant list once the write lands. It can't be closed mid-save.
  */
 export default function PlantManagersQuickEditModal({ plant, onClose, onSaved }) {
     const plantCode = plant?.plant_code || plant?.plantCode || ''
@@ -23,23 +23,15 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState('')
 
-    // Lock body scroll while the modal is open so the underlying list
-    // doesn't shift behind the overlay.
+    // One stable close for the dialog — it re-runs its focus handling when
+    // `onClose` changes — that reads the latest prop and saving flag.
+    const latestRef = useRef({ isSaving, onClose })
     useEffect(() => {
-        const previous = document.body.style.overflow
-        document.body.style.overflow = 'hidden'
-        return () => {
-            document.body.style.overflow = previous
-        }
+        latestRef.current = { isSaving, onClose }
+    })
+    const handleClose = useCallback(() => {
+        if (!latestRef.current.isSaving) latestRef.current.onClose?.()
     }, [])
-
-    useEffect(() => {
-        const handleKey = (event) => {
-            if (event.key === 'Escape' && !isSaving) onClose?.()
-        }
-        window.addEventListener('keydown', handleKey)
-        return () => window.removeEventListener('keydown', handleKey)
-    }, [isSaving, onClose])
 
     const handleSave = async () => {
         if (!plantCode) return
@@ -56,76 +48,39 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
         }
     }
 
-    if (typeof document === 'undefined' || !document.body) return null
-
-    return ReactDOM.createPortal(
-        <div
-            className="fixed inset-0 z-panel flex items-center justify-center bg-text-primary/60 px-4 backdrop-blur-sm animate-fade-in-fast motion-reduce:animate-none"
-            onClick={() => {
-                if (!isSaving) onClose?.()
-            }}
-        >
-            <div
-                className="w-full max-w-lg overflow-hidden rounded-modal border border-border-light bg-bg-primary shadow-modal animate-pop-in motion-reduce:animate-none"
-                onClick={(event) => event.stopPropagation()}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="plant-managers-modal-title"
-            >
-                <div className="flex items-center justify-between gap-3 border-b border-border-light px-5 py-4">
-                    <div className="min-w-0">
-                        <div
-                            id="plant-managers-modal-title"
-                            className="truncate font-heading text-base font-semibold text-text-primary"
-                        >
-                            Managers · {plantName}
-                        </div>
-                        <div className="truncate text-[12px] text-text-tertiary">{plantCode}</div>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        disabled={isSaving}
-                        className="flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.92] disabled:opacity-50 disabled:active:scale-[0.97] motion-reduce:transition-none"
-                        aria-label="Close"
-                    >
-                        <i className="fas fa-times text-[12px]" aria-hidden="true" />
-                    </button>
-                </div>
-                <div className="px-5 py-4">
-                    <PlantManagersEditor managerIds={managerIds} onChange={setManagerIds} disabled={isSaving} />
-                    {error && (
-                        <div
-                            role="alert"
-                            aria-live="assertive"
-                            className="mt-3 flex items-center gap-2 rounded-card border border-status-danger/35 bg-status-danger/10 px-3 py-2 text-[12px] text-text-primary"
-                        >
-                            <i className="fas fa-exclamation-circle text-status-danger" aria-hidden="true" />
-                            {error}
-                        </div>
-                    )}
-                </div>
-                <div className="flex justify-end gap-2 border-t border-border-light bg-bg-secondary px-5 py-3">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        disabled={isSaving}
-                        className="rounded-md border border-border-light bg-bg-primary px-4 py-2 text-sm font-semibold text-text-secondary transition duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97] disabled:opacity-50 disabled:active:scale-[0.97] motion-reduce:transition-none"
-                    >
+    return (
+        <Dialog
+            open
+            onClose={handleClose}
+            size="md"
+            eyebrow={[plantCode && `Plant ${plantCode}`, plantName !== plantCode && plantName]
+                .filter(Boolean)
+                .join(' · ')}
+            title="Managers"
+            footer={
+                <>
+                    <button type="button" onClick={handleClose} disabled={isSaving} className="btn-secondary">
                         Cancel
                     </button>
-                    <button
-                        type="button"
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm transition duration-150 hover:bg-accent-hover hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary active:scale-[0.97] disabled:opacity-50 disabled:active:scale-[0.97] motion-reduce:transition-none"
-                    >
+                    <button type="button" onClick={handleSave} disabled={isSaving} className="btn-primary">
                         {isSaving && <i className="fas fa-spinner fa-spin text-[12px]" aria-hidden="true" />}
-                        {isSaving ? 'Saving…' : 'Save Managers'}
+                        {isSaving ? 'Saving…' : 'Save managers'}
                     </button>
-                </div>
+                </>
+            }
+        >
+            <div className="flex flex-col gap-4">
+                <PlantManagersEditor managerIds={managerIds} onChange={setManagerIds} disabled={isSaving} />
+                {error && (
+                    <div
+                        role="alert"
+                        aria-live="assertive"
+                        className="rounded-[4px] border border-[color:var(--notice-danger-border)] bg-[color:var(--notice-danger-bg)] px-3 py-2 text-[13px] text-[color:var(--notice-danger-strong)]"
+                    >
+                        {error}
+                    </div>
+                )}
             </div>
-        </div>,
-        document.body
+        </Dialog>
     )
 }

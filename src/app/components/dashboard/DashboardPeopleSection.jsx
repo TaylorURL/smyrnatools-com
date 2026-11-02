@@ -44,7 +44,7 @@ function TotalRow({ label, value }) {
 function SubHeader({ label, meta }) {
     return (
         <div className="flex items-baseline justify-between mb-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">{label}</span>
+            <span className="text-[12px] font-medium text-text-secondary">{label}</span>
             {meta && <span className="text-[11px] text-text-tertiary">{meta}</span>}
         </div>
     )
