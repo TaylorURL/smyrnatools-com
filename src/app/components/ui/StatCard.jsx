@@ -1,19 +1,21 @@
 import React from 'react'
 
 /**
- * Compact stat tile — small label + prominent numeric value + optional sublabel.
- * `tabular-nums` keeps values vertically aligned in dense stat grids.
+ * One hairline-ruled cell in a `StatCardGrid` strip — label above a condensed
+ * number, optional line under it — the same shape as `Panel`'s `Stat` at a
+ * size that fits a dialog. The cell rules only its own right and bottom edge;
+ * the grid's single outline covers the rest.
  */
 export default function StatCard({ label, value, sublabel, className = '' }) {
     return (
         <div
-            className={`rounded-card p-3 flex flex-col gap-1 bg-bg-secondary border border-border-light transition-shadow duration-200 hover:shadow-card ${className}`}
+            className={`flex min-w-0 flex-col gap-0.5 border-b border-r border-border-light bg-bg-primary px-3 py-2.5 ${className}`}
         >
-            <div className="text-[12px] font-medium text-text-tertiary">{label}</div>
-            <div className="font-heading text-base font-bold leading-tight tabular-nums truncate text-text-primary">
+            <div className="truncate text-[12px] font-medium text-text-secondary">{label}</div>
+            <div className="truncate font-heading text-[18px] font-semibold leading-tight tabular-nums text-text-primary">
                 {value}
             </div>
-            {sublabel && <div className="text-[11px] text-text-tertiary">{sublabel}</div>}
+            {sublabel && <div className="truncate text-[12px] text-text-tertiary">{sublabel}</div>}
         </div>
     )
 }

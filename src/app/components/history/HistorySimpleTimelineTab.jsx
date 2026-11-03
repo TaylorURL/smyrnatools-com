@@ -26,7 +26,7 @@ export default function HistorySimpleTimelineTab({ data, emptySubtitle, emptyTit
     const timeline = HistoryUtility.buildConsolidatedTimeline(data, valueKey, (e) => e[valueKey])
     const currentValue = data[data.length - 1][valueKey]
     return (
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-3">
             <StatCardGrid>
                 {statsConfig.map((stat, idx) => (
                     <StatCard
