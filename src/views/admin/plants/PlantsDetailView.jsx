@@ -202,7 +202,7 @@ function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
                         <label>Plant Code</label>
                         <input
                             type="text"
-                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors focus:border-accent"
+                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none focus-visible:outline-none transition-colors focus:border-accent"
                             value={plantCode}
                             disabled
                         />
@@ -211,7 +211,7 @@ function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
                         <label>Plant Name</label>
                         <input
                             type="text"
-                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors focus:border-accent"
+                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none focus-visible:outline-none transition-colors focus:border-accent"
                             value={plantName}
                             onChange={(e) => setPlantName(e.target.value)}
                         />
@@ -222,7 +222,7 @@ function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
                         <label>Street Address</label>
                         <input
                             type="text"
-                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors focus:border-accent"
+                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none focus-visible:outline-none transition-colors focus:border-accent"
                             placeholder="123 Industry Blvd, Houston, TX 77001"
                             value={plantAddress}
                             onChange={(e) => setPlantAddress(e.target.value)}
@@ -237,7 +237,7 @@ function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
                             <input
                                 type="text"
                                 inputMode="decimal"
-                                className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] font-mono text-text-primary outline-none transition-colors focus:border-accent"
+                                className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] font-mono text-text-primary outline-none focus-visible:outline-none transition-colors focus:border-accent"
                                 placeholder="29.7604"
                                 value={latitudeInput}
                                 onChange={(e) => setLatitudeInput(e.target.value)}
@@ -248,7 +248,7 @@ function PlantsDetailView({ plant, onClose, onDelete, onUpdate }) {
                             <input
                                 type="text"
                                 inputMode="decimal"
-                                className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] font-mono text-text-primary outline-none transition-colors focus:border-accent"
+                                className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] font-mono text-text-primary outline-none focus-visible:outline-none transition-colors focus:border-accent"
                                 placeholder="-95.3698"
                                 value={longitudeInput}
                                 onChange={(e) => setLongitudeInput(e.target.value)}

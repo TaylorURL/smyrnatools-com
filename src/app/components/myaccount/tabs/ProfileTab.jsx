@@ -62,7 +62,7 @@ export default function ProfileTab({
                                     onChange={(e) => setFirstName(e.target.value)}
                                     placeholder="Enter first name"
                                     required
-                                    className="w-full h-9 rounded-[4px] px-3 text-[14px] outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent"
+                                    className="w-full h-9 rounded-[4px] px-3 text-[14px] outline-none focus-visible:outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent"
                                     style={FieldStyle}
                                 />
                             </div>
@@ -76,7 +76,7 @@ export default function ProfileTab({
                                     onChange={(e) => setLastName(e.target.value)}
                                     placeholder="Enter last name"
                                     required
-                                    className="w-full h-9 rounded-[4px] px-3 text-[14px] outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent"
+                                    className="w-full h-9 rounded-[4px] px-3 text-[14px] outline-none focus-visible:outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent"
                                     style={FieldStyle}
                                 />
                             </div>
@@ -103,7 +103,7 @@ export default function ProfileTab({
                                     value={preferences.selectedRegion?.code || ''}
                                     onChange={onChangeRegion}
                                     disabled={!regionsLoaded}
-                                    className="appearance-none h-9 rounded-[4px] pl-3 pr-9 text-[13px] font-medium cursor-pointer outline-none transition-colors duration-150 hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="appearance-none h-9 rounded-[4px] pl-3 pr-9 text-[13px] font-medium cursor-pointer outline-none focus-visible:outline-none transition-colors duration-150 hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
                                     style={FieldStyle}
                                 >
                                     {permittedRegions.map((r) => (

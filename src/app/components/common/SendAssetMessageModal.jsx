@@ -4,6 +4,8 @@ import MessageService from '../../../services/MessageService'
 import { UserService } from '../../../services/UserService'
 import { usePreferences } from '../../context/PreferencesContext'
 import Dialog, { DIALOG_INPUT, DIALOG_TEXTAREA, DialogField } from '../ui/Dialog'
+import DialogListRow from './DialogListRow'
+import DialogSearchField from './DialogSearchField'
 import ErrorMessage from './ErrorMessage'
 import Skeleton, { SkeletonStack } from './Skeleton'
 
@@ -31,6 +33,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
     const [dropdownOpen, setDropdownOpen] = useState(false)
     const [recipientSearch, setRecipientSearch] = useState('')
     const dropdownRef = useRef(null)
+    const searchRef = useRef(null)
     const recipientId = useId()
     const messageId = useId()
     const { preferences } = usePreferences()
@@ -52,6 +55,12 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
+
+    // The search box appears after the dialog has opened, so Dialog's own
+    // autofocus has already run; focus it here each time the list opens.
+    useEffect(() => {
+        if (dropdownOpen) searchRef.current?.focus()
+    }, [dropdownOpen])
 
     useEffect(() => {
         let cancelled = false
@@ -186,72 +195,42 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
 
                                 {dropdownOpen && (
                                     <div className="mt-1 overflow-hidden rounded-[4px] border border-border-medium bg-bg-primary">
-                                        <div className="relative border-b border-border-light p-2">
-                                            <i
-                                                className="fas fa-search pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary"
-                                                aria-hidden="true"
-                                            />
-                                            <input
+                                        <div className="border-b border-border-light p-2">
+                                            <DialogSearchField
+                                                inputRef={searchRef}
+                                                label="Search recipients"
+                                                onChange={setRecipientSearch}
+                                                placeholder="Search recipients"
                                                 type="search"
                                                 value={recipientSearch}
-                                                onChange={(e) => setRecipientSearch(e.target.value)}
-                                                placeholder="Search recipients"
-                                                aria-label="Search recipients"
-                                                autoFocus
-                                                className="h-9 w-full rounded-[4px] border border-border-medium bg-bg-primary pl-8 pr-8 text-[13px] text-text-primary outline-none placeholder:text-text-tertiary transition-colors duration-150 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 motion-reduce:transition-none [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
                                             />
-                                            {recipientSearch && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setRecipientSearch('')}
-                                                    aria-label="Clear search"
-                                                    className="absolute right-3.5 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-tertiary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
-                                                >
-                                                    <i className="fas fa-times text-[10px]" aria-hidden="true" />
-                                                </button>
-                                            )}
                                         </div>
 
+                                        {/* The box draws its own bottom edge, so the last row drops its rule. */}
                                         <div
                                             role="listbox"
                                             aria-label="Recipients"
-                                            className="max-h-[220px] overflow-y-auto"
+                                            className="max-h-[220px] overflow-y-auto [&>button:last-child]:border-b-0"
                                         >
                                             {filteredManagers.length === 0 ? (
-                                                <p className="m-0 px-3 py-3 text-center text-[13px] text-text-secondary">
+                                                <p className="m-0 px-6 py-3 text-center text-[13px] text-text-secondary">
                                                     {managers.length === 0 ? 'No team members found' : 'No matches'}
                                                 </p>
                                             ) : (
-                                                filteredManagers.map((mgr) => {
-                                                    const isSelected = selectedManager?.id === mgr.id
-                                                    return (
-                                                        <button
-                                                            type="button"
-                                                            key={mgr.id}
-                                                            role="option"
-                                                            aria-selected={isSelected}
-                                                            onClick={() => {
-                                                                setSelectedManager(mgr)
-                                                                setDropdownOpen(false)
-                                                                setRecipientSearch('')
-                                                            }}
-                                                            className={`flex w-full cursor-pointer flex-col items-start border-0 border-b border-solid border-border-light px-3 py-2 text-left transition-colors duration-150 last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none ${
-                                                                isSelected
-                                                                    ? 'bg-bg-tertiary font-medium'
-                                                                    : 'bg-transparent hover:bg-bg-hover'
-                                                            }`}
-                                                        >
-                                                            <span className="text-[13px] text-text-primary">
-                                                                {mgr.firstName} {mgr.lastName}
-                                                            </span>
-                                                            {recipientMeta(mgr) && (
-                                                                <span className="text-[12px] font-normal text-text-secondary">
-                                                                    {recipientMeta(mgr)}
-                                                                </span>
-                                                            )}
-                                                        </button>
-                                                    )
-                                                })
+                                                filteredManagers.map((mgr) => (
+                                                    <DialogListRow
+                                                        key={mgr.id}
+                                                        role="option"
+                                                        current={selectedManager?.id === mgr.id}
+                                                        onClick={() => {
+                                                            setSelectedManager(mgr)
+                                                            setDropdownOpen(false)
+                                                            setRecipientSearch('')
+                                                        }}
+                                                        title={[mgr.firstName, mgr.lastName].filter(Boolean).join(' ')}
+                                                        detail={recipientMeta(mgr)}
+                                                    />
+                                                ))
                                             )}
                                         </div>
                                     </div>

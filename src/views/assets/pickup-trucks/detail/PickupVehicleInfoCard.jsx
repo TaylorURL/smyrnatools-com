@@ -4,7 +4,9 @@ import DetailViewSection from '../../../../app/components/sections/DetailViewSec
 
 /**
  * "Vehicle Information" card containing VIN, make, model, year, and comments.
- * Pure presentational — all state lives in the parent.
+ * Pure presentational — all state lives in the parent. It spans the full row,
+ * as Vehicle Information does on the mixer and tractor pages; with only two
+ * cards in the tab the section would otherwise pair it with Pickup Details.
  */
 export default function PickupVehicleInfoCard({
     vin,
@@ -29,7 +31,7 @@ export default function PickupVehicleInfoCard({
                     onChange={(e) => onVinChange(e.target.value.toUpperCase().replace(/[IOQ]/g, ''))}
                     maxLength="17"
                     className="form-control"
-                    disabled={!canEditPickup}
+                    readOnly={!canEditPickup}
                 />
             </div>
             <div className="form-row-2">
@@ -40,7 +42,7 @@ export default function PickupVehicleInfoCard({
                         value={make}
                         onChange={(e) => onMakeChange(e.target.value)}
                         className="form-control"
-                        disabled={!canEditPickup}
+                        readOnly={!canEditPickup}
                     />
                 </div>
                 <div className="form-group">
@@ -50,7 +52,7 @@ export default function PickupVehicleInfoCard({
                         value={model}
                         onChange={(e) => onModelChange(e.target.value)}
                         className="form-control"
-                        disabled={!canEditPickup}
+                        readOnly={!canEditPickup}
                     />
                 </div>
             </div>
@@ -61,7 +63,7 @@ export default function PickupVehicleInfoCard({
                     value={year}
                     onChange={(e) => onYearChange(e.target.value)}
                     className="form-control"
-                    disabled={!canEditPickup}
+                    readOnly={!canEditPickup}
                 />
             </div>
             <div className="form-group">
@@ -71,7 +73,7 @@ export default function PickupVehicleInfoCard({
                     onChange={(e) => onCommentsChange(e.target.value)}
                     className="form-control"
                     rows={3}
-                    disabled={!canEditPickup}
+                    readOnly={!canEditPickup}
                 />
             </div>
         </DetailViewSection.Card>

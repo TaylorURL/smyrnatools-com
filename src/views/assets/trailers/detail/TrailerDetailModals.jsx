@@ -60,7 +60,6 @@ export default function TrailerDetailModals({
                     onClose={onClosePlantModal}
                     plants={filteredPlants}
                     onSelect={onSelectPlant}
-                    searchPlaceholder="Search plants..."
                 />
             )}
             {showTractorModal && (

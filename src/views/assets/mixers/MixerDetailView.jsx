@@ -71,7 +71,16 @@ function MixerDetailView({ mixerId, onClose }) {
         [actions, mixerId]
     )
 
-    if (data.isLoading) return null
+    if (data.isLoading) {
+        return (
+            <DetailViewSection
+                title="Mixer Details"
+                onClose={onClose}
+                isLoading={true}
+                loadingMessage="Loading mixer details..."
+            />
+        )
+    }
     if (!data.mixer) {
         return (
             <DetailViewSection

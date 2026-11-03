@@ -1,4 +1,5 @@
-import { DAYS_IN_MS, DEFAULT_STATUS_COLOR, MILEAGE_MILESTONES, STATUS_COLORS } from '../app/constants/historyConstants'
+import { DAYS_IN_MS, MILEAGE_MILESTONES } from '../app/constants/historyConstants'
+import { getStatusColor as getPaletteStatusColor } from '../app/constants/statusPalette'
 import { DateUtility } from './DateUtility'
 
 interface HistoryEntry {
@@ -335,7 +336,7 @@ function getMaintenanceMilestone(miles: number): MileageMilestone {
 }
 
 function getStatusColor(status: string): string {
-    return (STATUS_COLORS as Record<string, string>)[status] ?? DEFAULT_STATUS_COLOR
+    return getPaletteStatusColor(status)
 }
 
 // Static import map so Vite can resolve each chunk at build time.

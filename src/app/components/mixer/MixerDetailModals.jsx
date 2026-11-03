@@ -68,7 +68,6 @@ export default function MixerDetailModals({
                     onClose={onClosePlantModal}
                     plants={filteredPlants}
                     onSelect={onSelectPlant}
-                    searchPlaceholder="Search plants..."
                 />
             )}
             {showOperatorModal && (
@@ -77,7 +76,8 @@ export default function MixerDetailModals({
                     onClose={onCloseOperatorModal}
                     onSelect={onOperatorAssign}
                     currentValue={assignedOperator}
-                    mixers={mixers}
+                    assets={mixers}
+                    assetLabel="mixer"
                     assignedPlant={assignedPlant}
                     readOnly={!canEditMixer}
                     operators={operatorModalOperators}

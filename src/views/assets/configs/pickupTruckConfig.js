@@ -106,7 +106,7 @@ const pickupTruckConfig = {
         { getValue: (item) => item.year || 'Unknown', label: 'Year' },
         {
             getValue: (item) => (typeof item.mileage === 'number' ? item.mileage.toLocaleString() : 'Unknown'),
-            getWarning: (item) => (typeof item.mileage === 'number' && item.mileage > 300000 ? 'HIGH' : null),
+            getWarning: (item) => (typeof item.mileage === 'number' && item.mileage > 300000 ? 'High' : null),
             label: 'Mileage'
         }
     ],
@@ -243,22 +243,6 @@ const pickupTruckConfig = {
     // predicate the filter runs instead of comparing against `status`.
     specialStatusFilters: {
         'Over 300k Miles': (item) => typeof item.mileage === 'number' && item.mileage > 300000
-    },
-
-    statusBadgeClasses: {
-        Active: 'bg-status-active/15 text-status-active',
-        'In Shop': 'bg-status-shop/15 text-status-shop',
-        Spare: 'bg-status-spare/15 text-status-spare',
-        Stationary: 'bg-status-shop/15 text-status-shop'
-    },
-
-    statusColors: {
-        Active: 'var(--status-active)',
-        'In Shop': 'var(--status-inshop)',
-        Retired: 'var(--status-retired)',
-        Sold: 'var(--status-sold)',
-        Spare: 'var(--status-spare)',
-        Stationary: 'var(--status-stationary)'
     },
 
     statusOptions: ['All Statuses', 'Active', 'Stationary', 'Spare', 'In Shop', 'Retired', 'Sold', 'Over 300k Miles'],

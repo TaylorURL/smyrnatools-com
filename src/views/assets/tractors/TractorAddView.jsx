@@ -1,20 +1,14 @@
 import React, { useEffect, useState } from 'react'
 
 import PlantPickerField from '../../../app/components/common/PlantPickerField'
-import AddViewSection from '../../../app/components/sections/AddViewSection'
+import AddViewSection, { AddViewActions } from '../../../app/components/sections/AddViewSection'
+import { DialogField } from '../../../app/components/ui/Dialog'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import usePlantPicker from '../../../app/hooks/usePlantPicker'
 import { Tractor } from '../../../app/models/tractors/Tractor'
 import { getSessionUserId } from '../../../services/SessionService'
 import { TractorService } from '../../../services/TractorService'
 import DateUtility from '../../../utils/DateUtility'
-
-// Theme-aware native <select> styling. `appearance-none` strips the browser
-// chevron so the inline-SVG (uses `currentColor`, so it follows --text-primary
-// across the light and dark themes) renders consistently. Matches the input
-// height ladder and focus treatment used elsewhere in the add-view forms.
-const SELECT_CLS =
-    'h-11 w-full cursor-pointer rounded-card bg-bg-secondary border border-border-light text-text-primary text-sm px-4 pr-10 appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[length:1rem_1rem] bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2024%2024%27%20stroke%3D%27currentColor%27%3E%3Cpath%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%272%27%20d%3D%27M19%209l-7%207-7-7%27%2F%3E%3C%2Fsvg%3E")] hover:border-border-medium focus:outline-none focus-visible:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 [color-scheme:light] dark:[color-scheme:dark]'
 
 /**
  * Slide-in form for creating a new tractor record. Requires truck number,
@@ -84,7 +78,7 @@ function TractorAddView({ plants, onClose, onTractorAdded }) {
     }
 
     return (
-        <AddViewSection title="Add New Tractor" onClose={onClose} error={error}>
+        <AddViewSection title="Add tractor" onClose={onClose} error={error}>
             <form onSubmit={handleSubmit} autoComplete="off">
                 <div className="space-y-4">
                     <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
@@ -92,8 +86,7 @@ function TractorAddView({ plants, onClose, onTractorAdded }) {
                         <span>Basic Information</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1">
-                            <label htmlFor="truckNumber">Truck Number*</label>
+                        <DialogField label="Truck Number*" htmlFor="truckNumber">
                             <input
                                 id="truckNumber"
                                 type="text"
@@ -104,52 +97,8 @@ function TractorAddView({ plants, onClose, onTractorAdded }) {
                                 required
                                 autoFocus
                             />
-                        </div>
-                    </div>
-                </div>
-                <div className="space-y-4">
-                    <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
-                        <i className="fas fa-building"></i>
-                        <span>Assignment & Status</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <PlantPickerField {...picker} />
-                        <div className="flex flex-col gap-1">
-                            <label htmlFor="status">Status</label>
-                            <select
-                                id="status"
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value)}
-                                className={SELECT_CLS}
-                            >
-                                <option value="">Select Status</option>
-                                <option value="Spare">Spare</option>
-                                <option value="In Shop">In Shop</option>
-                                <option value="Retired">Retired</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div className="space-y-4">
-                    <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
-                        <i className="fas fa-cogs"></i>
-                        <span>Equipment Details</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1">
-                            <label htmlFor="hasBlower">Has Blower</label>
-                            <select
-                                id="hasBlower"
-                                value={hasBlower ? 'Yes' : 'No'}
-                                onChange={(e) => setHasBlower(e.target.value === 'Yes')}
-                                className={SELECT_CLS}
-                            >
-                                <option value="No">No</option>
-                                <option value="Yes">Yes</option>
-                            </select>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <label htmlFor="hours">Hours</label>
+                        </DialogField>
+                        <DialogField label="Hours" htmlFor="hours">
                             <input
                                 id="hours"
                                 type="number"
@@ -159,29 +108,53 @@ function TractorAddView({ plants, onClose, onTractorAdded }) {
                                 min="0"
                                 step="any"
                             />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <label htmlFor="freight">Freight*</label>
+                        </DialogField>
+                    </div>
+                </div>
+                <div className="space-y-4">
+                    <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
+                        <i className="fas fa-building"></i>
+                        <span>Assignment & Status</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <PlantPickerField {...picker} />
+                        <DialogField label="Status" htmlFor="status">
+                            <select id="status" value={status} onChange={(e) => setStatus(e.target.value)}>
+                                <option value="">Select Status</option>
+                                <option value="Spare">Spare</option>
+                                <option value="In Shop">In Shop</option>
+                                <option value="Retired">Retired</option>
+                            </select>
+                        </DialogField>
+                    </div>
+                </div>
+                <div className="space-y-4">
+                    <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
+                        <i className="fas fa-cogs"></i>
+                        <span>Equipment Details</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <DialogField label="Has Blower" htmlFor="hasBlower">
                             <select
-                                id="freight"
-                                value={freight}
-                                onChange={(e) => setFreight(e.target.value)}
-                                required
-                                className={SELECT_CLS}
+                                id="hasBlower"
+                                value={hasBlower ? 'Yes' : 'No'}
+                                onChange={(e) => setHasBlower(e.target.value === 'Yes')}
                             >
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </DialogField>
+                        <DialogField label="Freight*" htmlFor="freight">
+                            <select id="freight" value={freight} onChange={(e) => setFreight(e.target.value)} required>
                                 <option value="">Select Freight</option>
                                 <option value="Cement">Cement</option>
                                 <option value="Aggregate">Aggregate</option>
                                 <option value="Dump Truck">Dump Truck</option>
                             </select>
-                        </div>
+                        </DialogField>
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 pt-4">
-                    <button type="submit" disabled={isSaving}>
-                        {isSaving ? 'Adding...' : 'Add Tractor'}
-                    </button>
-                </div>
+                <AddViewActions isSaving={isSaving} label="Add tractor" onCancel={onClose} />
             </form>
         </AddViewSection>
     )

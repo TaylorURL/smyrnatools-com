@@ -4,27 +4,7 @@ import Badge from '../../app/components/common/Badge'
 import CountBubble from '../../app/components/common/CountBubble'
 import StarRating from '../../app/components/common/StarRating'
 import StatusHistoryBar from '../../app/components/common/StatusHistoryBar'
-
-/**
- * Status name → Badge tone. Drives the solid-fill status pill across every
- * asset type so the palette is one mapping, not five duplicated CSS strings.
- */
-const STATUS_TO_TONE = {
-    Active: 'success',
-    'Down In Yard': 'danger',
-    'In Shop': 'info',
-    'No Hire': 'danger',
-    'Pending Start': 'info',
-    'Ready For Pickup': 'success',
-    Retired: 'neutral',
-    Sold: 'neutral',
-    Spare: 'neutral',
-    Stationary: 'info',
-    Terminated: 'danger',
-    'Third Party Work': 'neutral',
-    Training: 'warning',
-    'Waiting For Shop': 'warning'
-}
+import { getStatusTone } from '../../app/constants/statusPalette'
 
 const ICON_BUTTON_CLASS =
     'relative inline-flex items-center justify-center w-7 h-7 rounded-md border-none bg-transparent text-[11px] text-text-tertiary cursor-pointer transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset'
@@ -36,8 +16,6 @@ const OPERATOR_ACTION_CLASS =
 
 const CELL_BASE_CLASS = 'px-3 py-2.5 text-[13px] align-middle text-text-primary'
 const CELL_BOLD_CLASS = `${CELL_BASE_CLASS} font-semibold`
-
-const getStatusToneForStatus = (status) => STATUS_TO_TONE[status] || 'neutral'
 
 /**
  * One row of the asset list. The cells come from the asset config's column
@@ -106,12 +84,7 @@ export default function AssetListRow({
             return (
                 <td key={col.key} className={cellClass} style={widthStyle(col.width)}>
                     <div className="flex flex-col gap-1">
-                        <Badge
-                            tone={getStatusToneForStatus(displayStatus)}
-                            size="sm"
-                            shape="rounded-md"
-                            className="self-start"
-                        >
+                        <Badge tone={getStatusTone(displayStatus)} size="sm" shape="rounded-md" className="self-start">
                             {`${displayStatus || '---'}${daysSuffix}`}
                         </Badge>
                         <StatusHistoryBar

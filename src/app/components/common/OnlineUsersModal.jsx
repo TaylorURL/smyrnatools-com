@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom'
 
 import { UserPresenceService } from '../../../services/UserPresenceService'
 import { useUserAccents } from '../../hooks/useUserAccent'
+import { DIALOG_CLOSE_BUTTON, DIALOG_CLOSE_ICON } from '../ui/Dialog'
 import UserAvatar from './UserAvatar'
 
 const MILLISECONDS_PER_MINUTE = 60000
@@ -83,7 +84,7 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                 aria-modal="false"
                 aria-label="Online users"
                 style={modalStyle}
-                className="flex max-h-[76vh] w-96 max-w-[calc(100vw-16px)] flex-col overflow-hidden rounded-card border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
+                className="flex max-h-[76vh] w-96 max-w-[calc(100vw-16px)] flex-col overflow-hidden rounded-modal border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
             >
                 <div className="flex shrink-0 items-center gap-2 border-b border-border-light py-2 pl-4 pr-2">
                     <span className="text-[14px] font-semibold text-text-primary">Online now</span>
@@ -92,11 +93,11 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                     )}
                     <button
                         type="button"
-                        className="ml-auto flex h-7 w-7 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-secondary transition-colors duration-150 ease-out hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+                        className={`ml-auto ${DIALOG_CLOSE_BUTTON}`}
                         onClick={onClose}
                         aria-label="Close online users"
                     >
-                        <i className="fas fa-times text-[12px]" aria-hidden="true" />
+                        <i className={DIALOG_CLOSE_ICON} aria-hidden="true" />
                     </button>
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto">

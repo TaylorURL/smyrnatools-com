@@ -1,16 +1,16 @@
 import React from 'react'
 
+import { DIALOG_INPUT, DialogField } from '../ui/Dialog'
 import PlantDropdownModal from './PlantDropdownModal'
 
 /**
- * Plant-picker field used by every asset Add view: a label plus a trigger
- * button that opens a `PlantDropdownModal`. Bundles the picker UI with its
- * modal so each consumer only has to thread through the state `usePlantPicker`
+ * Plant-picker field used by every add form: a label plus a trigger button
+ * that opens a `PlantDropdownModal`. Bundles the picker UI with its modal so
+ * each consumer only has to thread through the state `usePlantPicker`
  * returns.
  *
- * `surface` tints the trigger to sit on its container: `'primary'` gives it the
- * primary background for use on a card, `'secondary'` the secondary background
- * for use on an already-raised surface such as a modal.
+ * The label and the trigger are DialogField and DIALOG_INPUT, so the plant
+ * field reads like the inputs and selects beside it.
  */
 function PlantPickerField({
     closePicker,
@@ -20,20 +20,12 @@ function PlantPickerField({
     openPicker,
     plantDisplayText,
     plants,
-    selectPlant,
-    surface = 'primary'
+    selectPlant
 }) {
-    const surfaceClass = surface === 'secondary' ? 'bg-bg-secondary' : 'bg-bg-primary'
     const accessibleLabel = `Select ${label.replace('*', '').trim().toLowerCase()}`
     return (
         <>
-            <div className="flex flex-col gap-1.5">
-                <label
-                    htmlFor={htmlFor}
-                    className="text-[12px] font-medium text-text-tertiary [.add-view-form_&]:normal-case [.add-view-form_&]:tracking-normal [.add-view-form_&]:text-text-primary"
-                >
-                    {label}
-                </label>
+            <DialogField label={label} htmlFor={htmlFor}>
                 <button
                     type="button"
                     id={htmlFor}
@@ -41,12 +33,12 @@ function PlantPickerField({
                     aria-label={accessibleLabel}
                     aria-haspopup="dialog"
                     aria-expanded={!!isPlantModalOpen}
-                    className={`flex items-center justify-between gap-2 rounded-md ${surfaceClass} border border-border-light px-3 py-2.5 text-sm text-text-primary text-left transition-colors duration-150 hover:border-border-medium hover:bg-bg-hover focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 motion-reduce:transition-none`}
+                    className={`${DIALOG_INPUT} flex cursor-pointer items-center justify-between gap-2 text-left motion-reduce:transition-none`}
                 >
                     <span className="truncate">{plantDisplayText}</span>
-                    <i className="fas fa-chevron-down text-[10px] text-text-tertiary shrink-0" aria-hidden="true" />
+                    <i className="fas fa-chevron-down shrink-0 text-[10px] text-text-tertiary" aria-hidden="true" />
                 </button>
-            </div>
+            </DialogField>
             {isPlantModalOpen && (
                 <PlantDropdownModal
                     isOpen={isPlantModalOpen}

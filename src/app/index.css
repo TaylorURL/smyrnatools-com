@@ -680,7 +680,11 @@ html.theme-transitioning *::after {
 
     /* Keyboard focus answers on every control rather than per component, so a
        control added later is reachable without anyone remembering to style it.
-       :focus-visible keeps the ring off a mouse press. */
+       :focus-visible keeps the ring off a mouse press. The outline follows the
+       element's own corners, so it sets no radius: inheriting the parent's
+       squared off rounded buttons on focus. A control that draws its own ring
+       turns this off with `focus-visible:outline-none`; plain `outline-none`
+       loses to these selectors on specificity. */
     button:focus-visible,
     a:focus-visible,
     [role='button']:focus-visible,
@@ -695,7 +699,6 @@ html.theme-transitioning *::after {
     span:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
-        border-radius: inherit;
     }
 
     /* A press that moves nothing reads as a press that missed. The step is
@@ -1137,8 +1140,9 @@ html.theme-transitioning *::after {
             grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
         }
     }
+    /* The same column as DialogField: label, 6px, control. */
     .add-view-form .form-group {
-        @apply flex flex-col gap-2;
+        @apply flex flex-col gap-1.5;
     }
 
     .add-view-form label {
@@ -1146,39 +1150,36 @@ html.theme-transitioning *::after {
         color: var(--text-secondary);
     }
 
+    /* Fields are drawn exactly as DIALOG_INPUT and DIALOG_TEXTAREA in
+       ui/Dialog.jsx draw them, so an add form reads like every other dialog
+       form; change both together. They live here rather than on each field
+       because these selectors outrank utility classes, which is why a
+       `className` on an add form's select never took effect. */
     .add-view-form input[type='text'],
     .add-view-form input[type='tel'],
     .add-view-form input[type='number'],
     .add-view-form input[type='date'],
     .add-view-form input[type='datetime-local'],
+    .add-view-form select,
     .add-view-form textarea {
-        @apply box-border w-full max-w-full rounded-[4px] text-[13px] outline-none;
-        padding: var(--control-padding);
-        transition:
-            border-color 150ms,
-            box-shadow 150ms;
-        border: 1px solid var(--border-medium);
-        color: var(--text-primary);
-        background: var(--bg-primary);
+        @apply box-border w-full max-w-full rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors duration-150 placeholder:text-text-tertiary;
     }
 
-    .add-view-form input:focus,
-    .add-view-form textarea:focus {
-        @apply border-blue-500;
-        --ring: var(--ring-focus);
-        box-shadow: var(--ring);
+    .add-view-form input[type='text'],
+    .add-view-form input[type='tel'],
+    .add-view-form input[type='number'],
+    .add-view-form input[type='date'],
+    .add-view-form input[type='datetime-local'],
+    .add-view-form select {
+        @apply h-9;
+    }
+
+    .add-view-form textarea {
+        @apply min-h-[96px] resize-y py-2 leading-relaxed;
     }
 
     .add-view-form select {
-        @apply w-full max-w-full cursor-pointer rounded-[4px] text-[13px] outline-none;
-        padding: var(--control-padding);
-        @apply pr-10;
-        transition:
-            border-color 150ms,
-            box-shadow 150ms;
-        border: 1px solid var(--border-medium);
-        color: var(--text-primary);
-        background: var(--bg-primary);
+        @apply cursor-pointer pr-10;
         appearance: none;
         background-image: var(--select-chevron);
         background-repeat: no-repeat;
@@ -1186,62 +1187,20 @@ html.theme-transitioning *::after {
         background-size: 18px;
     }
 
-    .add-view-form select:focus {
-        @apply border-blue-500;
-        --ring: var(--ring-focus);
-        box-shadow: var(--ring);
+    .add-view-form input[type='text']:focus-visible,
+    .add-view-form input[type='tel']:focus-visible,
+    .add-view-form input[type='number']:focus-visible,
+    .add-view-form input[type='date']:focus-visible,
+    .add-view-form input[type='datetime-local']:focus-visible,
+    .add-view-form select:focus-visible,
+    .add-view-form textarea:focus-visible {
+        @apply border-accent outline-none ring-2 ring-accent/30;
     }
 
-    .add-view-form button[type='button']:not(.form-submit) {
-        @apply w-full cursor-pointer rounded-[4px] text-left text-[13px];
-        padding: var(--control-padding);
-        transition:
-            border-color 150ms,
-            background 150ms;
-        border: 1px solid var(--border-medium);
-        color: var(--text-primary);
-        background: var(--bg-primary);
-    }
-
-    .add-view-form button[type='button']:not(.form-submit):hover {
-        background: var(--bg-secondary);
-    }
-
-    /* One control height for the whole form. Inputs, selects and the plant
-       picker button each took their height from a different line-height,
-       so a row could hold a 36px field beside a 42px one. */
-    .add-view-form input[type='text'],
-    .add-view-form input[type='tel'],
-    .add-view-form input[type='number'],
-    .add-view-form input[type='date'],
-    .add-view-form input[type='datetime-local'],
-    .add-view-form select,
-    .add-view-form button[type='button']:not(.form-submit) {
-        @apply h-10 leading-5;
-    }
-
-    .add-view-form .form-actions {
-        @apply mt-1 flex justify-end pt-2;
-        border-top: 1px solid var(--border-light);
-    }
-
-    .add-view-form button[type='submit'],
-    .add-view-form .form-submit {
-        @apply inline-flex h-9 cursor-pointer items-center gap-2 rounded-[4px] px-4 text-[13px] font-medium;
-        transition: filter 150ms;
-        background: var(--accent);
-        color: var(--on-accent);
-        border: 1px solid var(--accent);
-    }
-
-    .add-view-form button[type='submit']:hover,
-    .add-view-form .form-submit:hover {
-        filter: brightness(1.15);
-    }
-
-    .add-view-form button[type='submit']:disabled,
-    .add-view-form .form-submit:disabled {
-        @apply cursor-not-allowed opacity-50;
+    .add-view-form input:disabled,
+    .add-view-form select:disabled,
+    .add-view-form textarea:disabled {
+        @apply cursor-not-allowed bg-bg-tertiary text-text-tertiary;
     }
 
     @media (max-width: 480px) {

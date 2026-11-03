@@ -227,19 +227,6 @@ const tractorConfig = {
         Verified: (item) => item.isVerified?.()
     },
 
-    statusBadgeClasses: {
-        Active: 'bg-status-active/15 text-status-active',
-        'In Shop': 'bg-status-shop/15 text-status-shop',
-        Spare: 'bg-status-spare/15 text-status-spare'
-    },
-
-    statusColors: {
-        Active: 'var(--status-active)',
-        'In Shop': 'var(--status-inshop)',
-        Retired: 'var(--status-retired)',
-        Spare: 'var(--status-spare)'
-    },
-
     statusOptions: [
         'All Statuses',
         'Active',
