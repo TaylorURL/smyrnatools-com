@@ -14,15 +14,15 @@ import TimelineItem, {
     TimelineSectionTitle
 } from '../ui/TimelineItem'
 
-/** Horizontal bar showing one position's share of total changes. */
+/** A ruled row with a bar showing one position's share of total changes. */
 function PositionDistributionRow({ data, index }) {
     return (
-        <div className="rounded p-2 bg-bg-secondary border border-border-light">
-            <div className="flex items-center justify-between mb-1">
-                <span className="text-[12px] font-semibold text-text-primary">{data.position}</span>
-                <span className="text-[11px] font-mono tabular-nums text-text-tertiary">
+        <div className="border-b border-border-light py-2.5 last:border-b-0">
+            <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[13px] font-medium text-text-primary">{data.position}</span>
+                <span className="text-[12px] tabular-nums text-text-tertiary">
                     {data.count} {data.count === 1 ? 'time' : 'times'} ·{' '}
-                    <span className="text-text-primary font-semibold">{data.percentage}%</span>
+                    <span className="text-text-primary font-medium">{data.percentage}%</span>
                 </span>
             </div>
             <div className="h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
@@ -90,7 +90,7 @@ export default function HistoryPositionTab({ positionData }) {
                     ))}
             </div>
             <TimelineSectionTitle title="Position Distribution" />
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col">
                 {chartData.map((data, index) => (
                     <PositionDistributionRow key={index} data={data} index={index} />
                 ))}

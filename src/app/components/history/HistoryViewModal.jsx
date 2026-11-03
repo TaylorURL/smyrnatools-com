@@ -8,6 +8,9 @@ import TabButton from '../ui/TabButton'
  * line, underline tabs pinned in the toolbar, and the caller's tab content in
  * the scrolling body. `scrollContainerRef` is pointed at that scrolling body
  * so the timeline tab can watch how far it has been scrolled.
+ *
+ * No footer: nothing here is a form, so like the comments and issues popups
+ * it closes from the header's close button, Escape or the scrim.
  */
 export default function HistoryViewModal({
     activeTab,
@@ -49,11 +52,6 @@ export default function HistoryViewModal({
                         />
                     ))}
                 </div>
-            }
-            footer={
-                <button type="button" onClick={onClose} className="btn-secondary">
-                    Close
-                </button>
             }
         >
             <div ref={attachScrollContainer}>{children}</div>

@@ -3,29 +3,31 @@ import React from 'react'
 
 import Badge from '../common/Badge'
 
+/**
+ * One entry on a history timeline: a dot on a hairline rail, and the entry
+ * beside it on the dialog's own surface - no tinted card, the way the
+ * timeline tab's change rows sit. `dotColor` (a CSS colour) wins over
+ * `dotClassName` (a background class); with neither the dot takes the accent.
+ */
 export default function TimelineItem({ dotColor, dotClassName, isLast, children }) {
     return (
-        <div className="flex gap-2.5 py-1.5">
-            <div className="flex flex-col items-center w-5 flex-shrink-0 -space-y-0.5">
+        <div className="flex gap-3">
+            <div className="flex w-2.5 shrink-0 flex-col items-center" aria-hidden="true">
                 <div
-                    className={`w-2.5 h-2.5 rounded-full z-base ${dotClassName ?? ''}`}
-                    style={{
-                        background: dotColor || 'var(--accent)',
-                        boxShadow: '0 0 0 2px var(--bg-primary), 0 0 0 3px var(--border-light)'
-                    }}
-                    aria-hidden="true"
+                    className={`mt-[5px] h-2.5 w-2.5 shrink-0 rounded-full ${dotColor ? '' : dotClassName || 'bg-accent'}`}
+                    style={dotColor ? { background: dotColor } : undefined}
                 />
-                {!isLast && <div className="w-px flex-1 bg-border-light" />}
+                {!isLast && <div className="mt-1 w-px flex-1 bg-border-light" />}
             </div>
-            <div className="flex-1 rounded-card p-2.5 bg-bg-secondary border border-border-light">{children}</div>
+            <div className={`min-w-0 flex-1 ${isLast ? '' : 'pb-4'}`}>{children}</div>
         </div>
     )
 }
 
 export function TimelineHeader({ label, isCurrent, badge }) {
     return (
-        <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-[12.5px] font-semibold leading-tight text-text-primary">{label}</span>
+        <div className="mb-0.5 flex flex-wrap items-center gap-2">
+            <span className="text-[13px] font-medium leading-snug text-text-primary">{label}</span>
             {isCurrent && (
                 <Badge tone="success" size="md" shape="rounded-md">
                     Current
@@ -37,17 +39,19 @@ export function TimelineHeader({ label, isCurrent, badge }) {
 }
 
 export function TimelineMeta({ children }) {
-    return <div className="flex items-center gap-2.5 flex-wrap">{children}</div>
+    return <div className="flex flex-wrap items-center gap-2">{children}</div>
 }
 
 export function TimelineDate({ date }) {
-    return <span className="text-[11px] tabular-nums text-text-tertiary">{date}</span>
+    return <span className="text-[12px] tabular-nums text-text-tertiary">{date}</span>
 }
 
 export function TimelineDuration({ text }) {
-    return <span className="text-[11px] font-semibold text-accent">{text}</span>
+    return <span className="text-[12px] font-medium tabular-nums text-text-secondary">{text}</span>
 }
 
+/** A small label over a timeline or list. The extra space above it, inside a
+ *  tab's `gap-3` column, groups it with what follows rather than what precedes. */
 export function TimelineSectionTitle({ title }) {
-    return <h3 className="m-0 mb-1 text-[12px] font-medium text-text-secondary">{title}</h3>
+    return <h3 className="m-0 mt-2 text-[12px] font-medium text-text-secondary">{title}</h3>
 }

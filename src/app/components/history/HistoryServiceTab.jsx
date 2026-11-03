@@ -103,54 +103,42 @@ function IssueCardFooter({ entry, getCreatorName, issue, onCompleteIssue }) {
     )
 }
 
-/** An issue row in the combined timeline, with its own dot+rail. */
+/** An issue row in the combined timeline, its dot coloured by severity. */
 function IssueRow({ entry, getCreatorName, isLast, onCompleteIssue, onDeleteIssue }) {
     const issue = entry.issue
     const severityColor = entry.isCompleted
         ? RESOLVED_ISSUE_COLOR
         : (SEVERITY_COLORS[issue.severity] ?? 'var(--status-shop)')
     return (
-        <div className="flex gap-2.5 py-1.5">
-            <div className="flex flex-col items-center w-5 flex-shrink-0 -space-y-0.5">
-                <div
-                    className="w-2.5 h-2.5 rounded-full z-base"
-                    style={{
-                        background: severityColor,
-                        boxShadow: '0 0 0 2px var(--bg-primary), 0 0 0 3px var(--border-light)'
-                    }}
-                />
-                {!isLast && <div className="w-px flex-1 bg-[var(--border-light)]" />}
-            </div>
-            <div className="flex-1 rounded-[4px] border border-border-light bg-bg-secondary p-3">
-                <div className="flex justify-between items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                        <IssueCardHeader isCompleted={entry.isCompleted} severity={issue.severity} />
-                        <div className="text-[13px] leading-snug text-text-primary">{issue.issue}</div>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => onDeleteIssue(issue.id)}
-                        title="Delete issue"
-                        aria-label="Delete issue"
-                        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-tertiary transition-colors duration-150 hover:bg-bg-tertiary hover:text-status-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
-                    >
-                        <i className="fas fa-trash text-[12px]" aria-hidden="true" />
-                    </button>
+        <TimelineItem dotColor={severityColor} isLast={isLast}>
+            <div className="flex justify-between items-start gap-2">
+                <div className="flex-1 min-w-0">
+                    <IssueCardHeader isCompleted={entry.isCompleted} severity={issue.severity} />
+                    <div className="text-[13px] leading-snug text-text-primary">{issue.issue}</div>
                 </div>
-                <IssueCardFooter
-                    entry={entry}
-                    getCreatorName={getCreatorName}
-                    issue={issue}
-                    onCompleteIssue={onCompleteIssue}
-                />
+                <button
+                    type="button"
+                    onClick={() => onDeleteIssue(issue.id)}
+                    title="Delete issue"
+                    aria-label="Delete issue"
+                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-tertiary transition-colors duration-150 hover:bg-bg-tertiary hover:text-status-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+                >
+                    <i className="fas fa-trash text-[12px]" aria-hidden="true" />
+                </button>
             </div>
-        </div>
+            <IssueCardFooter
+                entry={entry}
+                getCreatorName={getCreatorName}
+                issue={issue}
+                onCompleteIssue={onCompleteIssue}
+            />
+        </TimelineItem>
     )
 }
 
 /**
  * Service-history tab: combines service entries and issues into one chronological
- * timeline. Each row is either a service marker or an issue card with delete and
+ * timeline. Each row is either a service marker or an issue with delete and
  * mark-resolved actions.
  */
 export default function HistoryServiceTab({
@@ -180,7 +168,7 @@ export default function HistoryServiceTab({
         : null
     const combinedTimeline = buildCombinedTimeline(serviceData, issues)
     return (
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-3">
             <StatCardGrid>
                 {lastService && (
                     <StatCard
