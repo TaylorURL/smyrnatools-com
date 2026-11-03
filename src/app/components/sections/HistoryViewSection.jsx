@@ -105,11 +105,15 @@ function HistoryViewSection({ item, onClose, type }) {
     const { analysisVisible, scrollContainerRef } = useHistoryAnalysisScrollCollapse(activeTab)
     const { displayText: aiDisplayText, isTypingComplete } = useHistoryAiTypewriter(aiSummary)
 
+    // A failed summary waits for the reader's "Try again". Without the error
+    // check, the failure ending the load re-ran this effect and asked again at
+    // once, forever: one popup left open on 2026-11-02 sent 837 requests in
+    // fifteen minutes while the provider was refusing every one.
     useEffect(() => {
-        if (!isLoading && activeTab === 'timeline' && !aiSummary && !aiSummaryLoading) {
+        if (!isLoading && activeTab === 'timeline' && !aiSummary && !aiSummaryLoading && !aiSummaryError) {
             generateAISummary()
         }
-    }, [isLoading, activeTab, aiSummary, aiSummaryLoading, generateAISummary])
+    }, [isLoading, activeTab, aiSummary, aiSummaryError, aiSummaryLoading, generateAISummary])
 
     const itemName = HistoryUtility.resolveItemName(type, item)
     const formatValue = buildFormatValue({ getOperatorName, getUserName, type })

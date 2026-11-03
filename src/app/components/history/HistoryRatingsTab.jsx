@@ -26,7 +26,7 @@ export default function HistoryRatingsTab({ ratingsData }) {
     const currentRating = ratingsData[ratingsData.length - 1].rating
     const highestRating = Math.max(...ratingsData.map((d) => d.rating))
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
             <StatCardGrid>
                 <StatCard
                     label="Current Rating"

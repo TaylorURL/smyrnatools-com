@@ -41,7 +41,7 @@ export default function HistoryMileageTab({ mileageData }) {
     const avgMileage = mileageData.reduce((sum, d) => sum + d.mileage, 0) / mileageData.length
     const milestone = HistoryUtility.getMaintenanceMilestone(currentMileage)
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
             <StatCardGrid>
                 <StatCard label="Current Mileage" value={currentMileage.toLocaleString()} sublabel={milestone.label} />
                 <StatCard

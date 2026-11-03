@@ -5,6 +5,8 @@ import { starLabel } from '../../../utils/PersonStatsUtility'
 import { CHART_HEIGHT, CHART_PADDING, CHART_WIDTH, MAX_STAR_RATING } from '../../constants/historyConstants'
 import HistoryEmptyState from './HistoryEmptyState'
 import StatCard from './StatCard'
+import StatCardGrid from './StatCardGrid'
+import { TimelineSectionTitle } from './TimelineItem'
 
 /* Left gutter wide enough for the longest axis label ("5 Stars") at 12px. */
 const AXIS_GUTTER = 72
@@ -23,13 +25,13 @@ export default function RatingChart({ data, title, emptyTitle, emptySubtitle }) 
     const currentRating = data[data.length - 1]?.rating ?? null
     return (
         <div className="flex flex-col gap-3">
-            <h3 className="m-0 font-heading text-sm font-bold text-text-primary">{title}</h3>
-            <div className="flex gap-3 flex-wrap">
+            <StatCardGrid>
                 <StatCard label="Average Rating" value={`${averageRating} Stars`} />
                 <StatCard label="Total Ratings" value={data.length} />
                 <StatCard label="Current Rating" value={currentRating == null ? '—' : starLabel(currentRating)} />
-            </div>
-            <div className="overflow-x-auto rounded-card p-3 bg-bg-secondary border border-border-light">
+            </StatCardGrid>
+            <TimelineSectionTitle title={title} />
+            <div className="overflow-x-auto rounded-card border border-border-light bg-bg-primary p-3">
                 <svg
                     className="w-full min-h-[250px]"
                     viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT + CHART_PADDING * 2}`}

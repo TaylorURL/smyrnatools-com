@@ -42,7 +42,7 @@ function computeStatusDistribution(allStatusPeriodsData, currentStatus, totalDay
 /** Horizontal stacked bar and legend showing how status time was distributed. */
 function StatusDistributionBar({ statusPercentages }) {
     return (
-        <div className="rounded p-3 bg-bg-primary border border-border-light">
+        <div className="rounded-card border border-border-light bg-bg-primary p-3">
             <div className="text-[12px] font-medium mb-2 text-text-secondary">Asset Status Distribution</div>
             <div className="flex h-2 rounded-full overflow-hidden mb-2 bg-bg-tertiary">
                 {statusPercentages.map(
@@ -59,15 +59,15 @@ function StatusDistributionBar({ statusPercentages }) {
                         )
                 )}
             </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-[11px]">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px]">
                 {statusPercentages.map((sp, idx) => (
                     <span key={idx} className="inline-flex items-center gap-1.5">
                         <span
                             className="inline-block rounded-sm shrink-0 h-2 w-2"
                             style={{ background: HistoryUtility.getStatusColor(sp.status) }}
                         />
-                        <span className="font-semibold text-text-primary">{sp.status}</span>
-                        <span className="font-mono tabular-nums text-text-tertiary">
+                        <span className="font-medium text-text-primary">{sp.status}</span>
+                        <span className="tabular-nums text-text-tertiary">
                             {sp.days}d · {sp.percentage}%
                         </span>
                     </span>
@@ -94,7 +94,7 @@ export default function HistoryOverviewTab({ allStatusPeriodsData, history, item
         totalDaysSinceCreation
     )
     return (
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-3">
             <StatusDistributionBar statusPercentages={statusPercentages} />
             <StatCardGrid>
                 <StatCard label="Current Status" value={currentStatus} />

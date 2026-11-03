@@ -127,6 +127,10 @@ export default function Dialog({
             }}
             style={{ background: 'var(--scrim)' }}
         >
+            {/* The panel takes focus only so Tab starts inside it; it is not a
+                control. `focus-visible:outline-none` outranks the base layer's
+                `div:focus-visible` ring, which plain `outline-none` does not,
+                so a key pressed inside no longer rings the whole dialog. */}
             <div
                 ref={panelRef}
                 role="dialog"
@@ -136,7 +140,7 @@ export default function Dialog({
                 tabIndex={-1}
                 className={`flex w-full ${SIZES[size] || SIZES.md} ${
                     tall ? 'h-[min(88vh,880px)]' : 'max-h-[min(88vh,880px)]'
-                } flex-col overflow-hidden rounded-t-modal border border-border-light bg-bg-primary shadow-modal outline-none animate-dialog-in motion-reduce:animate-none sm:rounded-modal`}
+                } flex-col overflow-hidden rounded-t-modal border border-border-light bg-bg-primary shadow-modal outline-none focus-visible:outline-none animate-dialog-in motion-reduce:animate-none sm:rounded-modal`}
             >
                 <header className="flex shrink-0 items-start gap-4 px-6 pb-4 pt-5">
                     <div className="min-w-0 flex-1">

@@ -54,6 +54,7 @@ interface AssetItem {
     make?: string
     model?: string
     name?: string
+    trailerNumber?: string
     truckNumber?: string
     vin?: string
     [key: string]: unknown
@@ -376,6 +377,10 @@ function resolveAssetIdentifier(type: AssetType, item: AssetItem): string {
 function resolveItemName(type: AssetType, item: AssetItem): string {
     if (type === 'mixer' || type === 'tractor') return `Truck #${item.truckNumber}`
     if (type === 'pickup-truck') return `${item.make ?? ''} ${item.model ?? ''} (${item.vin ?? 'Unknown'})`.trim()
+    // Equipment and trailers carry no `name`; their number is what the rest of
+    // the app titles them by, and what the comments and issues popups show.
+    if (type === 'equipment' && item.identifyingNumber) return item.identifyingNumber
+    if (type === 'trailer' && item.trailerNumber) return `Trailer #${item.trailerNumber}`
     return item.name ?? 'Item'
 }
 

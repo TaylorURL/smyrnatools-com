@@ -152,7 +152,7 @@ export default function HistoryOperatorsTab({ item, operatorData, statusData }) 
         ) ?? 'Not Assigned'
     const consolidatedTimeline = buildOperatorTimeline(operatorData, statusData, item)
     return (
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-3">
             <StatCardGrid>
                 <StatCard label="Current Operator" value={currentOperator ?? 'Not Assigned'} />
                 <StatCard label="Unique Operators" value={uniqueOperators} />
