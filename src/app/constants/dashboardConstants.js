@@ -1,6 +1,11 @@
 export const DASHBOARD_CACHE_KEY = 'dashboard_assets_cache_v1'
 export const DASHBOARD_CACHE_TTL_MS = 120000 // 2 minutes
 export const DASHBOARD_REFRESH_INTERVAL_MS = 600000 // 10 minutes
+/** Per-user prefixes for the old-notes prompt: the notes a plant manager chose
+ *  to keep (localStorage, so they stay kept) and whether this visit has
+ *  already asked (sessionStorage, so the next visit asks again). */
+export const STALE_NOTES_KEPT_KEY = 'stale_notes_kept_v1_'
+export const STALE_NOTES_ASKED_KEY = 'stale_notes_asked_v1_'
 /** What the dashboard renders before any data arrives, and the floor the
  *  count-up animation walks from. Every field a view reads has to be present
  *  here at zero or that view reads undefined on first paint. */

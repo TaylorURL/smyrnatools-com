@@ -2,9 +2,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { UserService } from '../../../services/UserService'
 import { formatCentralDate } from '../../../utils/PlanUtility'
+import { isStaleNote } from '../../../utils/StaleNoteUtility'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import Skeleton, { SkeletonStack } from '../common/Skeleton'
+import StaleNoteFlag from '../common/StaleNoteFlag'
 import Dialog, { DIALOG_TEXTAREA } from '../ui/Dialog'
 import DockedPanel from './DockedPanel'
 
@@ -204,6 +206,7 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
                                     <span className="text-[12px] tabular-nums text-text-tertiary">
                                         {formatDate(comment.createdAt || comment.created_at)}
                                     </span>
+                                    {isStaleNote(comment.createdAt || comment.created_at) && <StaleNoteFlag />}
                                 </div>
                                 <p className="m-0 mt-0.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-text-primary">
                                     {comment.text}
