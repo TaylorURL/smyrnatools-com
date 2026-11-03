@@ -10,6 +10,8 @@ import UserAvatar from './UserAvatar'
 const MILLISECONDS_PER_MINUTE = 60000
 const MILLISECONDS_PER_HOUR = 3600000
 const MILLISECONDS_PER_DAY = 86400000
+/** How often the "2m ago" labels are redrawn while the list is open. */
+const LABEL_TICK_MS = 15000
 
 function formatLastActivity(lastActivity) {
     if (!lastActivity) return 'Unknown'
@@ -43,6 +45,16 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
         }
         UserPresenceService.addOnlineUsersListener(handleUpdate)
         return () => UserPresenceService.removeOnlineUsersListener(handleUpdate)
+    }, [isOpen])
+
+    /* The list itself follows every presence change as it happens, so there is
+     * nothing to refresh by hand. Between changes only the time since each
+     * person's last activity moves, and this keeps those labels current. */
+    const [, setLabelTick] = useState(0)
+    useEffect(() => {
+        if (!isOpen) return
+        const id = setInterval(() => setLabelTick((tick) => tick + 1), LABEL_TICK_MS)
+        return () => clearInterval(id)
     }, [isOpen])
 
     useEffect(() => {
@@ -203,15 +215,6 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                             })}
                         </div>
                     )}
-                </div>
-                <div className="shrink-0 border-t border-border-light">
-                    <button
-                        type="button"
-                        onClick={() => UserPresenceService.refreshOnlineUsers(true)}
-                        className="flex w-full cursor-pointer items-center border-none bg-transparent px-4 py-2.5 text-left text-[13px] font-medium text-text-primary underline-offset-2 transition-colors duration-150 ease-out hover:bg-bg-hover hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none"
-                    >
-                        Refresh list
-                    </button>
                 </div>
             </div>
         </div>

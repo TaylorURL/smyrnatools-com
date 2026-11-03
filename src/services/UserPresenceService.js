@@ -114,6 +114,8 @@ class UserPresenceService {
         this.isOnlineUsersInitialized = false
         this.isOnlineUsersLoading = true
         this._refreshing = false
+        this._refreshQueued = false
+        this._refreshRun = 0
         this._userMetaCache = {}
     }
 
@@ -475,6 +477,7 @@ class UserPresenceService {
         this.isOnlineUsersInitialized = false
         this.isOnlineUsersLoading = true
         this.onlineUsers = []
+        this._refreshQueued = false
         this._userMetaCache = {}
     }
 
@@ -513,16 +516,27 @@ class UserPresenceService {
      * far more often than the timer alone would bring them, and one started
      * against a document the browser is tearing down is cancelled at the
      * transport rather than answered.
+     *
+     * The list has no refresh button, so it has to stay right on its own. A
+     * change that lands while a read is already under way is queued rather
+     * than dropped, since that read may have left before the change did, and
+     * one more read follows as soon as it finishes. Only the newest read
+     * writes the list, so a slow older one cannot put back someone who has
+     * already left.
      */
     async refreshOnlineUsers(force = false) {
         if (this.pageIsGoingAway) return
-        if (this._refreshing && !force) return
+        if (this._refreshing && !force) {
+            this._refreshQueued = true
+            return
+        }
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
             this.isOnlineUsersLoading = false
             this._notifyOnlineUsersListeners()
             return
         }
         this._refreshing = true
+        const run = ++this._refreshRun
         try {
             const fiveMinutesAgo = new Date(Date.now() - STALE_THRESHOLD).toISOString()
             const hasDevicesCol = await checkActiveDevicesCol()
@@ -555,6 +569,7 @@ class UserPresenceService {
             if (uncached.length > 0) {
                 await Promise.all(uncached.map((p) => this._fetchAndCacheMeta(p.user_id)))
             }
+            if (run !== this._refreshRun) return
             this.onlineUsers = presenceList
                 .map((p) => {
                     const meta = this._userMetaCache[p.user_id] || {}
@@ -580,7 +595,13 @@ class UserPresenceService {
             this.isOnlineUsersLoading = false
             this._notifyOnlineUsersListeners()
         } finally {
-            this._refreshing = false
+            if (run === this._refreshRun) {
+                this._refreshing = false
+                if (this._refreshQueued) {
+                    this._refreshQueued = false
+                    this.refreshOnlineUsers()
+                }
+            }
         }
     }
 
