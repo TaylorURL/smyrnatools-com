@@ -162,7 +162,7 @@ export default function ConversationSidebar({
                         onChange={(e) => onSearchChange(e.target.value)}
                         placeholder="Search conversations…"
                         aria-label="Search conversations"
-                        className="w-full h-9 rounded-[4px] text-[13px] pl-8 pr-7 outline-none bg-bg-primary border border-border-medium text-text-primary placeholder:text-text-tertiary transition-colors duration-150 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
+                        className="w-full h-9 rounded-[4px] text-[13px] pl-8 pr-7 outline-none focus-visible:outline-none bg-bg-primary border border-border-medium text-text-primary placeholder:text-text-tertiary transition-colors duration-150 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
                     />
                     {search && (
                         <button

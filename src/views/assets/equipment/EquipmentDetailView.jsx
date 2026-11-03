@@ -22,7 +22,16 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
     const [showHistory, setShowHistory] = useState(false)
     const [showPlantModal, setShowPlantModal] = useState(false)
 
-    if (state.isLoading) return null
+    if (state.isLoading) {
+        return (
+            <DetailViewSection
+                title="Equipment Details"
+                onClose={onClose}
+                isLoading={true}
+                loadingMessage="Loading equipment details..."
+            />
+        )
+    }
 
     if (!state.equipment) {
         return (
@@ -82,7 +91,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                 onDeleteCancel={() => actions.setShowDeleteConfirmation(false)}
                 deleteTitle="Confirm Delete"
                 deleteMessage={`Are you sure you want to delete ${state.equipment.equipmentType} #${state.equipment.identifyingNumber}? This action cannot be undone.`}
-                itemAssignedPlant={state.assignedPlant}
+                itemAssignedPlant={state.equipment?.assignedPlant}
                 onCanEditChange={actions.setCanEditEquipment}
                 currentRegion={state.currentRegion}
                 assetType="equipment"

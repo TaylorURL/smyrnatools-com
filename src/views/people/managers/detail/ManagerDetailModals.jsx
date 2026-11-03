@@ -25,7 +25,6 @@ export default function ManagerDetailModals({
                     onClose={onClosePlantModal}
                     plants={filteredPlants}
                     onSelect={onSelectPlant}
-                    searchPlaceholder="Search plants..."
                 />
             )}
             {showAdditionalPlantsModal && (
@@ -34,7 +33,6 @@ export default function ManagerDetailModals({
                     onClose={onCloseAdditionalPlantsModal}
                     plants={additionalPlantOptions}
                     onSelect={onToggleAdditionalPlant}
-                    searchPlaceholder="Search plants..."
                     allowMultiple={true}
                     selectedPlantCodes={additionalPlants}
                 />

@@ -60,7 +60,7 @@ function RecapFiltersToolbar({
                         aria-label="Search recap by name"
                         value={searchQuery}
                         onChange={(e) => onSearchQueryChange(e.target.value)}
-                        className="h-9 w-full rounded-[4px] border border-border-medium bg-bg-primary pl-8 pr-3 text-[13px] text-text-primary outline-none placeholder:text-text-tertiary transition-colors duration-150 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:appearance-none"
+                        className="h-9 w-full rounded-[4px] border border-border-medium bg-bg-primary pl-8 pr-3 text-[13px] text-text-primary outline-none focus-visible:outline-none placeholder:text-text-tertiary transition-colors duration-150 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:appearance-none"
                     />
                 </div>
                 <div

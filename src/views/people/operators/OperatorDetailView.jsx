@@ -139,7 +139,6 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
                             onClose={() => setShowPlantModal(false)}
                             plants={filteredPlants}
                             onSelect={setAssignedPlant}
-                            searchPlaceholder="Search plants..."
                         />
                     )}
                     {showHistory && <OperatorHistoryView operator={operator} onClose={() => setShowHistory(false)} />}

@@ -8,7 +8,7 @@ const RECOVERY_ERROR_ID = 'recovery-error'
 // one replaces in place: recovery is a step of signing in, not a new page.
 const INPUT_CLS =
     'w-full rounded-md border border-white/15 bg-white/[0.06] text-white text-[13.5px] ' +
-    'px-3 py-2.5 outline-none transition-[border-color,background-color,box-shadow] duration-150 ease-out motion-reduce:transition-none ' +
+    'px-3 py-2.5 outline-none focus-visible:outline-none transition-[border-color,background-color,box-shadow] duration-150 ease-out motion-reduce:transition-none ' +
     'placeholder:text-white/40 hover:border-white/25 focus:border-white/50 focus:bg-white/[0.1] field-on-media'
 
 const LABEL_CLS = 'mb-1.5 block text-[10.5px] font-bold uppercase tracking-[0.1em] text-white/60'

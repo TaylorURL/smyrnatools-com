@@ -98,7 +98,7 @@ export default function VerificationChecklistSection({
                             placeholder="17 characters (no I, O, Q)"
                             value={vin}
                             onChange={(e) => setVin(e.target.value.toUpperCase().replace(/[IOQ]/g, ''))}
-                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none font-mono tabular-nums transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30 placeholder:text-text-tertiary"
+                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none focus-visible:outline-none font-mono tabular-nums transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30 placeholder:text-text-tertiary"
                             style={{
                                 ...FIELD_STYLE,
                                 borderColor: vin && !vinOk ? 'var(--status-danger)' : 'var(--border-light)'
@@ -142,7 +142,7 @@ export default function VerificationChecklistSection({
                             placeholder="Current reading"
                             value={hours ?? ''}
                             onChange={(e) => setHours(e.target.value)}
-                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none font-mono tabular-nums transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30 placeholder:text-text-tertiary"
+                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none focus-visible:outline-none font-mono tabular-nums transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30 placeholder:text-text-tertiary"
                             style={{
                                 ...FIELD_STYLE,
                                 borderColor:
@@ -168,7 +168,7 @@ export default function VerificationChecklistSection({
                             onChange={(e) =>
                                 setLastServiceDate(e.target.value ? DateUtility.parseLocalDate(e.target.value) : null)
                             }
-                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30 [color-scheme:light] dark:[color-scheme:dark]"
+                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none focus-visible:outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30 [color-scheme:light] dark:[color-scheme:dark]"
                             style={FIELD_STYLE}
                         />
                         {lastServiceDate && serviceOverdue && (
@@ -192,7 +192,7 @@ export default function VerificationChecklistSection({
                             onChange={(e) =>
                                 setLastChipDate(e.target.value ? DateUtility.parseLocalDate(e.target.value) : null)
                             }
-                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
+                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
                             style={FIELD_STYLE}
                         />
                     </div>

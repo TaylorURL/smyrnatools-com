@@ -5,6 +5,7 @@ import CommentModalSection from '../../../app/components/sections/CommentModalSe
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
 import HistoryViewSection from '../../../app/components/sections/HistoryViewSection'
 import IssueModalSection from '../../../app/components/sections/IssueModalSection'
+import { DETAIL_SELECT_CLS, detailFieldButtonCls } from '../../../app/constants/detailFormClasses'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { PickupTruckService } from '../../../services/PickupTruckService'
 import { PlantService } from '../../../services/PlantService'
@@ -37,6 +38,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
     const [showHistory, setShowHistory] = useState(false)
     const [showComments, setShowComments] = useState(false)
     const [showIssues, setShowIssues] = useState(false)
+    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
     useEffect(() => {
         async function fetchData() {
             setIsLoading(true)
@@ -257,13 +259,20 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
             setIsSaving(false)
         }
     }
+    /** Runs from the shell's confirm dialog, as on the other asset types: the
+     *  Delete button only opens the dialog, and the user is told either way. */
     async function handleDelete() {
         if (!pickup?.id) return
+        if (!showDeleteConfirmation) return setShowDeleteConfirmation(true)
         try {
             await PickupTruckService.remove(pickup.id)
+            alert('Pickup truck deleted successfully')
             onClose?.()
         } catch (e) {
             console.error('Failed to delete pickup truck:', e)
+            alert('Error deleting pickup truck')
+        } finally {
+            setShowDeleteConfirmation(false)
         }
     }
     async function handleBackClick() {
@@ -295,6 +304,29 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
         }
         checkDeletePermission()
     }, [])
+    if (isLoading) {
+        return (
+            <DetailViewSection
+                title="Pickup Details"
+                onClose={onClose}
+                isLoading={true}
+                loadingMessage="Loading pickup details..."
+            />
+        )
+    }
+    if (!pickup) {
+        return (
+            <DetailViewSection
+                title="Pickup Not Found"
+                onClose={onClose}
+                onBack={handleBackClick}
+                notFound={true}
+                notFoundMessage="Pickup Not Found"
+                notFoundDescription="Could not find the requested pickup."
+            />
+        )
+    }
+    const pickupLabel = pickup.assigned || pickup.vin
     return (
         <>
             <DetailViewSection
@@ -305,43 +337,30 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                 message={message}
                 itemAssignedPlant={pickup?.assignedPlant}
                 onCanEditChange={setCanEditPickup}
-                isLoading={isLoading}
-                loadingMessage="Loading pickup details..."
-                notFound={!pickup && !isLoading}
-                notFoundMessage="Pickup Not Found"
-                notFoundDescription="Could not find the requested pickup."
+                isLoading={false}
+                showDeleteConfirmation={showDeleteConfirmation}
+                onDeleteConfirm={handleDelete}
+                onDeleteCancel={() => setShowDeleteConfirmation(false)}
+                deleteTitle="Confirm Delete"
+                deleteMessage={`Are you sure you want to delete ${pickupLabel ? `Pickup ${pickupLabel}` : 'this pickup'}? This action cannot be undone.`}
                 currentRegion={currentRegion}
                 assetType="pickup_truck"
                 onRegionTransfer={handleRegionTransfer}
                 headerActions={
-                    pickup && (
-                        <>
-                            <button
-                                type="button"
-                                className="global-button-secondary"
-                                onClick={() => setShowIssues(true)}
-                            >
-                                <i className="fas fa-tools"></i>
-                                <span>Issues</span>
-                            </button>
-                            <button
-                                type="button"
-                                className="global-button-secondary"
-                                onClick={() => setShowComments(true)}
-                            >
-                                <i className="fas fa-comments"></i>
-                                <span>Comments</span>
-                            </button>
-                            <button
-                                type="button"
-                                className="global-button-secondary"
-                                onClick={() => setShowHistory(true)}
-                            >
-                                <i className="fas fa-history"></i>
-                                <span>History</span>
-                            </button>
-                        </>
-                    )
+                    <>
+                        <button type="button" className="global-button-secondary" onClick={() => setShowIssues(true)}>
+                            <i className="fas fa-tools"></i>
+                            <span>Issues</span>
+                        </button>
+                        <button type="button" className="global-button-secondary" onClick={() => setShowComments(true)}>
+                            <i className="fas fa-comments"></i>
+                            <span>Comments</span>
+                        </button>
+                        <button type="button" className="global-button-secondary" onClick={() => setShowHistory(true)}>
+                            <i className="fas fa-history"></i>
+                            <span>History</span>
+                        </button>
+                    </>
                 }
                 footerActions={
                     canEditPickup && (
@@ -359,7 +378,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                                 <button
                                     type="button"
                                     className="global-button-danger flex-1 justify-center"
-                                    onClick={handleDelete}
+                                    onClick={() => setShowDeleteConfirmation(true)}
                                     disabled={isSaving || !canEditPickup}
                                 >
                                     <i className="fas fa-trash-alt"></i>
@@ -377,7 +396,6 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                                 onClose={() => setShowPlantModal(false)}
                                 plants={filteredPlants}
                                 onSelect={setAssignedPlant}
-                                searchPlaceholder="Search plants..."
                             />
                         )}
                         {showHistory && (
@@ -414,7 +432,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                             <label>Assigned Plant</label>
                             <button
                                 type="button"
-                                className={`operator-select-button form-control text-left ${!canEditPickup ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
+                                className={detailFieldButtonCls(!canEditPickup)}
                                 onClick={() => setShowPlantModal(true)}
                                 disabled={!canEditPickup}
                             >
@@ -426,7 +444,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                             <select
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value)}
-                                className="form-control"
+                                className={DETAIL_SELECT_CLS}
                                 disabled={!canEditPickup}
                             >
                                 <option value="">Select Status</option>
@@ -445,7 +463,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                                 value={assigned}
                                 onChange={(e) => setAssigned(e.target.value)}
                                 className="form-control"
-                                disabled={!canEditPickup}
+                                readOnly={!canEditPickup}
                             />
                         </div>
                         <div className="form-group">
@@ -455,7 +473,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                                 value={mileage}
                                 onChange={(e) => setMileage(e.target.value)}
                                 className="form-control"
-                                disabled={!canEditPickup}
+                                readOnly={!canEditPickup}
                             />
                         </div>
                     </DetailViewSection.Card>

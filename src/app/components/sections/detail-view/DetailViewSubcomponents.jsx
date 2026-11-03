@@ -20,9 +20,15 @@ const DEFAULT_ACCENT = DEFAULT_ACCENT_COLOR
 const LABEL_CLASS = 'flex items-center gap-1 text-[12px] font-medium text-text-secondary'
 const VALUE_BOX_CLASS = 'rounded-[4px] border border-border-light bg-bg-secondary px-3 py-2 text-[13px]'
 const INPUT_CLASS =
-    'dv-input h-9 w-full rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-[border-color,box-shadow] duration-150'
+    'dv-input h-9 w-full rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none focus-visible:outline-none transition-[border-color,box-shadow] duration-150'
 
-export function Section({ id, title, icon, children }) {
+/**
+ * One tab of cards. A lone card normally takes the full width; `keepHalfWidth`
+ * keeps it on the two-column grid instead, for a card that sits beside a
+ * partner on the other asset types (trailer Cleanliness) so it is the same
+ * width everywhere.
+ */
+export function Section({ id, title, icon, children, keepHalfWidth = false }) {
     const { activeSection, registerSection } = useContext(DetailViewContext)
     useEffect(() => {
         registerSection({ icon, id, title })
@@ -31,7 +37,7 @@ export function Section({ id, title, icon, children }) {
 
     const childArray = React.Children.toArray(children)
     const count = childArray.length
-    const gridClass = count === 1 ? 'flex flex-col gap-5' : 'grid grid-cols-2 gap-5'
+    const gridClass = count === 1 && !keepHalfWidth ? 'flex flex-col gap-5' : 'grid grid-cols-2 gap-5'
 
     const renderChildren = () => {
         if (count === 3) {
@@ -136,7 +142,7 @@ export function Select({ label, icon, options = [], placeholder, ...props }) {
             )}
             <select
                 {...props}
-                className="dv-input h-9 w-full cursor-pointer appearance-none rounded-[4px] border border-border-medium text-[13px] text-text-primary outline-none transition-[border-color,box-shadow] duration-150"
+                className="dv-input h-9 w-full cursor-pointer appearance-none rounded-[4px] border border-border-medium text-[13px] text-text-primary outline-none focus-visible:outline-none transition-[border-color,box-shadow] duration-150"
                 style={{
                     background: selectBg,
                     padding: '0 32px 0 12px',
@@ -168,7 +174,7 @@ export function Textarea({ label, icon, ...props }) {
             )}
             <textarea
                 {...props}
-                className="dv-input w-full min-h-[96px] resize-y rounded-md border border-border-light bg-bg-primary px-2.5 py-1.5 text-[12.5px] leading-[1.5] text-text-primary outline-none transition-[border-color,box-shadow] duration-150"
+                className="dv-input w-full min-h-[96px] resize-y rounded-md border border-border-light bg-bg-primary px-2.5 py-1.5 text-[12.5px] leading-[1.5] text-text-primary outline-none focus-visible:outline-none transition-[border-color,box-shadow] duration-150"
                 style={props.style}
             />
         </div>

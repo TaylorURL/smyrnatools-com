@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom'
 
 import { UserService } from '../../../services/UserService'
 import DateUtility from '../../../utils/DateUtility'
+import { DIALOG_CLOSE_BUTTON, DIALOG_CLOSE_ICON } from '../ui/Dialog'
 import UserAvatar from './UserAvatar'
 
 const SECTION_LABEL = 'px-4 pb-1 pt-3 text-[12px] font-medium text-text-tertiary'
@@ -132,7 +133,7 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                 aria-modal="false"
                 aria-label="Messages"
                 style={modalStyle}
-                className="flex max-h-[76vh] w-96 max-w-[calc(100vw-16px)] flex-col overflow-hidden rounded-card border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
+                className="flex max-h-[76vh] w-96 max-w-[calc(100vw-16px)] flex-col overflow-hidden rounded-modal border border-border-light bg-bg-primary shadow-modal animate-fade-slide-in motion-reduce:animate-none"
             >
                 <div className="flex shrink-0 items-center gap-2 border-b border-border-light py-2 pl-4 pr-2">
                     <span className="text-[14px] font-semibold text-text-primary">Messages</span>
@@ -152,10 +153,10 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-secondary transition-colors duration-150 ease-out hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+                            className={DIALOG_CLOSE_BUTTON}
                             aria-label="Close messages"
                         >
-                            <i className="fas fa-times text-[12px]" aria-hidden="true" />
+                            <i className={DIALOG_CLOSE_ICON} aria-hidden="true" />
                         </button>
                     </span>
                 </div>

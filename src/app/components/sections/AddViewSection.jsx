@@ -11,10 +11,10 @@ import Dialog from '../ui/Dialog'
 export const ADD_VIEW_ERROR_ID = 'add-view-error'
 
 /**
- * Every add form ends with a row holding its submit button. That row is
+ * Every add form ends with its actions row (`AddViewActions`). That row is
  * pinned to the bottom of the scrolling body and drawn as the dialog's footer
- * band, so the action stays in reach on a long form and sits where every
- * other dialog keeps it. (Written out in full so Tailwind finds every class.)
+ * band, so the actions stay in reach on a long form and sit where every
+ * other dialog keeps them. (Written out in full so Tailwind finds every class.)
  */
 const FORM_FOOTER = [
     '[&_form>div:last-child]:sticky',
@@ -32,6 +32,25 @@ const FORM_FOOTER = [
     '[&_form>div:last-child]:px-6',
     '[&_form>div:last-child]:py-3.5'
 ].join(' ')
+
+/**
+ * The row every add form ends with: Cancel, which closes the form just as the
+ * header's X does, then the submit button, in the order ConfirmDialog and the
+ * other dialogs put them. It must be the form's last child; AddViewSection
+ * turns that child into the footer band.
+ */
+export function AddViewActions({ isSaving = false, label, onCancel }) {
+    return (
+        <div>
+            <button type="button" className="btn-secondary" onClick={onCancel}>
+                Cancel
+            </button>
+            <button type="submit" className="btn-primary" disabled={isSaving}>
+                {isSaving ? 'Adding…' : label}
+            </button>
+        </div>
+    )
+}
 
 /**
  * The form inside the dialog. `.add-view-form` styles every field the add
@@ -135,18 +154,7 @@ function AddViewSection({ title, onClose, children, error, isListItem = false })
     }
     if (!hasPermission) {
         return (
-            <Dialog
-                open
-                onClose={handleClose}
-                size="md"
-                title={title}
-                zClassName="z-panel"
-                footer={
-                    <button type="button" className="btn-secondary" onClick={handleClose}>
-                        Close
-                    </button>
-                }
-            >
+            <Dialog open onClose={handleClose} size="md" title={title} zClassName="z-panel">
                 <div
                     ref={anchorRef}
                     className="flex min-h-[160px] flex-col items-center justify-center gap-1 text-center"

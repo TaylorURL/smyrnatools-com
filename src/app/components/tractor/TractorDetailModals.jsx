@@ -54,7 +54,6 @@ export function TractorOverlayModals({
                     onClose={() => setShowPlantModal(false)}
                     plants={filteredPlants}
                     onSelect={setAssignedPlant}
-                    searchPlaceholder="Search plants..."
                 />
             )}
         </>
@@ -132,7 +131,8 @@ export function TractorInlineModals({
                     onClose={() => setShowOperatorModal(false)}
                     onSelect={handleOperatorSelect}
                     currentValue={assignedOperator}
-                    tractors={tractors}
+                    assets={tractors}
+                    assetLabel="tractor"
                     assignedPlant={assignedPlant}
                     readOnly={!canEditTractor}
                     operators={operatorModalOperators}

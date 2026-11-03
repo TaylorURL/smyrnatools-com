@@ -1,25 +1,41 @@
+/**
+ * A theme colour that takes an opacity modifier (`ring-accent/30`,
+ * `bg-status-danger/10`). Tailwind cannot put an alpha on a bare
+ * `var(--accent)`, so every such utility built no rule at all: tints never
+ * showed and focus rings fell back to Tailwind's default blue. Mixing with
+ * transparent keeps the variable live, so both themes still apply.
+ */
+const themeColor =
+    (name) =>
+    ({ opacityValue }) =>
+        // A plain `bg-accent` is handed `var(--tw-bg-opacity, 1)`; nothing in the
+        // app sets those opacity variables, so it stays the bare variable.
+        opacityValue === undefined || opacityValue === '1' || String(opacityValue).startsWith('var(--tw-')
+            ? `var(--${name})`
+            : `color-mix(in srgb, var(--${name}) calc(${opacityValue} * 100%), transparent)`
+
 module.exports = {
     content: ['./src/**/*.{js,jsx,ts,tsx}', './index.html'],
     theme: {
         extend: {
             colors: {
-                accent: 'var(--accent)',
-                'accent-hover': 'var(--accent-hover)',
-                'accent-dark': 'var(--accent-dark)',
-                'bg-primary': 'var(--bg-primary)',
-                'bg-secondary': 'var(--bg-secondary)',
-                'bg-tertiary': 'var(--bg-tertiary)',
-                'text-primary': 'var(--text-primary)',
-                'text-secondary': 'var(--text-secondary)',
-                'text-tertiary': 'var(--text-tertiary)',
-                'border-light': 'var(--border-light)',
-                'border-medium': 'var(--border-medium)',
-                'bg-hover': 'var(--bg-hover)',
-                'status-active': 'var(--status-active)',
-                'status-warning': 'var(--status-warning)',
-                'status-danger': 'var(--status-danger)',
-                'status-shop': 'var(--status-shop)',
-                'status-spare': 'var(--status-spare)'
+                accent: themeColor('accent'),
+                'accent-hover': themeColor('accent-hover'),
+                'accent-dark': themeColor('accent-dark'),
+                'bg-primary': themeColor('bg-primary'),
+                'bg-secondary': themeColor('bg-secondary'),
+                'bg-tertiary': themeColor('bg-tertiary'),
+                'text-primary': themeColor('text-primary'),
+                'text-secondary': themeColor('text-secondary'),
+                'text-tertiary': themeColor('text-tertiary'),
+                'border-light': themeColor('border-light'),
+                'border-medium': themeColor('border-medium'),
+                'bg-hover': themeColor('bg-hover'),
+                'status-active': themeColor('status-active'),
+                'status-warning': themeColor('status-warning'),
+                'status-danger': themeColor('status-danger'),
+                'status-shop': themeColor('status-shop'),
+                'status-spare': themeColor('status-spare')
             },
             fontFamily: {
                 sans: ['var(--font-body)', 'system-ui', 'sans-serif'],
