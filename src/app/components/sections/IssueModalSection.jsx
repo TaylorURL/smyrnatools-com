@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { UserService } from '../../../services/UserService'
+import { isStaleNote } from '../../../utils/StaleNoteUtility'
 import { SEVERITY_TO_TONE } from '../../constants/issueModalConstants'
 import Badge from '../common/Badge'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import { SkeletonStack } from '../common/Skeleton'
+import StaleNoteFlag from '../common/StaleNoteFlag'
 import Dialog, { DIALOG_TEXTAREA } from '../ui/Dialog'
 import TabButton from '../ui/TabButton'
 import DockedPanel from './DockedPanel'
@@ -265,6 +267,9 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                         <span className="text-[12px] tabular-nums text-text-tertiary">
                                             {formatDate(issue.time_created)}
                                         </span>
+                                        {/* A resolved issue is history, so only an open one is
+                                            doubted for its age. */}
+                                        {!isResolved && isStaleNote(issue.time_created) && <StaleNoteFlag />}
                                     </div>
                                     <p className="m-0 mt-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-text-primary">
                                         {issue.issue}

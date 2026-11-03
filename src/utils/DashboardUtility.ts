@@ -165,7 +165,9 @@ const slimEquipment = (asset: EquipmentAsset) => ({
 })
 
 const slimPickup = (asset: BaseAsset) => ({
-    ...BASE_ASSET_FIELDS(asset)
+    ...BASE_ASSET_FIELDS(asset),
+    assigned: typeof asset.assigned === 'string' ? asset.assigned : '',
+    vin: typeof asset.vin === 'string' ? asset.vin : ''
 })
 
 const slimOperator = (operator: OperatorRecord) => ({

@@ -9,6 +9,7 @@ import DashboardPodcastPanel from '../../../app/components/dashboard/DashboardPo
 import DashboardSkeleton from '../../../app/components/dashboard/DashboardSkeleton'
 import EmbeddedViewModal from '../../../app/components/dashboard/EmbeddedViewModal'
 import FleetOverviewSection from '../../../app/components/dashboard/FleetOverviewSection'
+import StaleNotesPrompt from '../../../app/components/dashboard/StaleNotesPrompt'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 import { useDashboardAssets, useIssueCommentCounts, usePlantFilter } from '../../../app/hooks/useDashboardData'
@@ -18,6 +19,7 @@ import { useDashboardManagers } from '../../../app/hooks/useDashboardManagers'
 import { useDashboardStats } from '../../../app/hooks/useDashboardStats'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { usePlantNotifications } from '../../../app/hooks/usePlantNotifications'
+import { useStaleNotes } from '../../../app/hooks/useStaleNotes'
 import { useStatusHistory } from '../../../app/hooks/useStatusHistory'
 import { PlantService } from '../../../services/PlantService'
 
@@ -155,6 +157,18 @@ export default function DashboardView() {
         trainingOperators
     })
     const displayStats = useAnimatedStats(stats, regionPlantsLoaded, dashboardRegionCode)
+    const staleNotes = useStaleNotes({
+        dataReady,
+        plantCodes: myPlantCodesSet,
+        recordRefs: {
+            equipment: allEquipmentRef,
+            mixers: allMixersRef,
+            operators: allOperatorsFullRef,
+            pickups: allPickupsRef,
+            tractors: allTractorsRef,
+            trailers: allTrailersRef
+        }
+    })
 
     // Debounce stat recomputation (30ms) to batch rapid plant/region filter changes.
     const applyFilters = useCallback(() => {
@@ -319,6 +333,13 @@ export default function DashboardView() {
                 showMyPlants={false}
                 selectedPlantCode={dashboardPlant || ''}
                 userPlantCode={userPlantCode}
+            />
+            <StaleNotesPrompt
+                notes={staleNotes.notes}
+                onChanged={fetchIssueCommentCounts}
+                onDismiss={staleNotes.dismiss}
+                onKeep={staleNotes.keep}
+                onRemove={staleNotes.remove}
             />
             {embeddedView && (
                 <EmbeddedViewModal
