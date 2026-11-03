@@ -3,29 +3,7 @@ import React from 'react'
 import Badge from '../../app/components/common/Badge'
 import CountBubble from '../../app/components/common/CountBubble'
 import StarRating from '../../app/components/common/StarRating'
-
-/**
- * Badge tone per status token. An asset config lists a Tailwind class string
- * for each status, and the semantic lives in the `status-*` colour inside it —
- * `bg-status-active/15 text-status-active` and a solid `bg-status-active` both
- * mean success. Keying on the token rather than on the whole class string is
- * what keeps the two spellings equivalent.
- */
-const STATUS_TOKEN_TO_TONE = {
-    active: 'success',
-    danger: 'danger',
-    shop: 'info',
-    spare: 'neutral',
-    warning: 'warning'
-}
-
-/** Reads the `status-*` token out of a config's badge class string. A class
- *  string carrying none of them — the neutral fallback among them — is
- *  neutral. */
-const getStatusTone = (badgeClass) => {
-    const token = /\bbg-status-([a-z]+)/.exec(badgeClass || '')?.[1]
-    return STATUS_TOKEN_TO_TONE[token] || 'neutral'
-}
+import { getStatusTone } from '../../app/constants/statusPalette'
 
 /** Text action along the card's footer; a count follows the label in the
  *  status colour it belongs to. */
@@ -94,7 +72,6 @@ function AssetGridCard({
     onShowOperatorHistoryModal
 }) {
     const number = item[config.primaryField] || '---'
-    const statusBadgeClass = config.statusBadgeClasses?.[displayStatus] || 'bg-bg-tertiary text-text-secondary'
 
     const subtitleName = config.hasOperatorAssignment
         ? operator?.name
@@ -139,7 +116,7 @@ function AssetGridCard({
                             />
                         )}
                     </div>
-                    <Badge tone={getStatusTone(statusBadgeClass)} size="sm" uppercase={false}>
+                    <Badge tone={getStatusTone(displayStatus)} size="sm" uppercase={false}>
                         {`${displayStatus || '---'}${statusDays ? ` · ${statusDays}d` : ''}`}
                     </Badge>
                 </div>
@@ -193,6 +170,7 @@ function AssetGridCard({
                                     <span className="inline-flex flex-wrap items-baseline gap-x-1.5">
                                         <span className="tabular-nums">{value}</span>
                                         {isOverdue && <span className="text-[11.5px] text-status-danger">Overdue</span>}
+                                        {warning && <span className="text-[11.5px] text-status-danger">{warning}</span>}
                                     </span>
                                 )}
                             </dd>

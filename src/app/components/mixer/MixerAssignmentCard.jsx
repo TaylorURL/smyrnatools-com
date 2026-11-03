@@ -1,14 +1,11 @@
 import React from 'react'
 
+import {
+    DETAIL_UNASSIGN_BUTTON_CLS,
+    DETAIL_UNDO_BUTTON_CLS,
+    detailFieldButtonCls
+} from '../../constants/detailFormClasses'
 import DetailViewSection from '../sections/DetailViewSection'
-
-const FIELD_BUTTON_BASE =
-    'operator-select-button form-control text-left transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'
-
-const DISABLED_FIELD_CLASSES = 'bg-bg-secondary opacity-80 cursor-not-allowed'
-
-const UNDO_BUTTON_CLASSES =
-    'undo-operator-button unassign-operator-button bg-status-active text-white cursor-pointer text-[1rem] h-[38px] min-w-[140px] border-0 box-border ml-2 px-4 rounded-md transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent hover:brightness-105'
 
 /**
  * Renders the Assigned Plant and Assigned Operator selectors with their
@@ -36,7 +33,7 @@ export default function MixerAssignmentCard({
                 <label>Assigned Plant</label>
                 <button
                     type="button"
-                    className={`${FIELD_BUTTON_BASE} ${plantDisabled ? DISABLED_FIELD_CLASSES : ''}`}
+                    className={detailFieldButtonCls(plantDisabled)}
                     onClick={() => canEditMixer && onOpenPlantModal()}
                     disabled={plantDisabled}
                 >
@@ -48,7 +45,7 @@ export default function MixerAssignmentCard({
                 <div className="operator-select-container">
                     <button
                         type="button"
-                        className={`${FIELD_BUTTON_BASE} ${operatorDisabled ? DISABLED_FIELD_CLASSES : ''}`}
+                        className={detailFieldButtonCls(operatorDisabled)}
                         onClick={onOpenOperatorModal}
                         disabled={operatorDisabled}
                     >
@@ -60,7 +57,7 @@ export default function MixerAssignmentCard({
                         (assignedOperator ? (
                             <button
                                 type="button"
-                                className="unassign-operator-button transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                                className={DETAIL_UNASSIGN_BUTTON_CLS}
                                 aria-label="Unassign Operator"
                                 onClick={onUnassignOperator}
                             >
@@ -70,7 +67,7 @@ export default function MixerAssignmentCard({
                             lastUnassignedOperatorId && (
                                 <button
                                     type="button"
-                                    className={UNDO_BUTTON_CLASSES}
+                                    className={DETAIL_UNDO_BUTTON_CLS}
                                     aria-label="Undo Unassign"
                                     onClick={onUndoUnassignOperator}
                                 >

@@ -23,13 +23,6 @@ export const ISSUE_SERVICE_MAP = {
     tractor: 'TractorService',
     trailer: 'TrailerService'
 }
-export const STATUS_COLORS = {
-    Active: 'var(--status-active)',
-    'In Shop': 'var(--status-shop)',
-    Retired: 'var(--status-retired)',
-    Spare: 'var(--status-spare)'
-}
-export const DEFAULT_STATUS_COLOR = 'var(--accent)'
 export const SEVERITY_COLORS = {
     High: 'var(--status-danger)',
     Low: 'var(--status-shop)',

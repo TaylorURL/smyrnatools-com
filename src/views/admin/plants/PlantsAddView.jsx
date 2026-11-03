@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import AddViewSection, { ADD_VIEW_ERROR_ID } from '../../../app/components/sections/AddViewSection'
+import AddViewSection, { ADD_VIEW_ERROR_ID, AddViewActions } from '../../../app/components/sections/AddViewSection'
 import { PlantService } from '../../../services/PlantService'
 
 /** Slide-in form for creating a new plant record with a unique plant code and name. */
@@ -58,7 +58,7 @@ function PlantsAddView({ onClose, onPlantAdded }) {
         }
     }
     return (
-        <AddViewSection title="Add New Plant" onClose={onClose} error={error}>
+        <AddViewSection title="Add plant" onClose={onClose} error={error}>
             <form onSubmit={handleSubmit} autoComplete="off">
                 <div className="space-y-4">
                     <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
@@ -66,7 +66,7 @@ function PlantsAddView({ onClose, onPlantAdded }) {
                         <span>Plant Information</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1.5">
                             <label htmlFor="plantCode">Plant Code*</label>
                             <input
                                 id="plantCode"
@@ -79,7 +79,7 @@ function PlantsAddView({ onClose, onPlantAdded }) {
                                 autoFocus
                             />
                         </div>
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1.5">
                             <label htmlFor="plantName">Plant Name*</label>
                             <input
                                 id="plantName"
@@ -93,11 +93,7 @@ function PlantsAddView({ onClose, onPlantAdded }) {
                         </div>
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 pt-4">
-                    <button type="submit" disabled={isSaving}>
-                        {isSaving ? 'Adding...' : 'Add Plant'}
-                    </button>
-                </div>
+                <AddViewActions isSaving={isSaving} label="Add plant" onCancel={onClose} />
             </form>
         </AddViewSection>
     )

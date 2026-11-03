@@ -3,32 +3,8 @@ import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { Database } from '../../../services/DatabaseService'
+import { getStatusColor } from '../../constants/statusPalette'
 
-/**
- * Status → CSS variable token. Reads from the same `--status-*` palette
- * the rest of the app uses, so the bar respects every theme automatically.
- * Falls back to a neutral slate token for any unknown status value.
- */
-const STATUS_COLOR_VAR = {
-    Active: 'var(--status-active)',
-    'Down In Yard': 'var(--status-danger)',
-    'In Shop': 'var(--status-shop)',
-    'Light Duty': 'var(--status-warning)',
-    'No Hire': 'var(--status-danger)',
-    'Pending Start': 'var(--status-shop)',
-    Retired: 'var(--text-tertiary)',
-    Sold: 'var(--text-tertiary)',
-    Spare: 'var(--status-spare)',
-    Stationary: 'var(--status-shop)',
-    Terminated: 'var(--status-danger)',
-    'Third Party Work': 'var(--status-spare)',
-    Training: 'var(--status-warning)',
-    'Waiting For Shop': 'var(--status-warning)'
-}
-
-const FALLBACK_STATUS_COLOR = 'var(--text-tertiary)'
-
-const resolveStatusColor = (status) => STATUS_COLOR_VAR[status] || FALLBACK_STATUS_COLOR
 /**
  * @param {Object} props
  * @param {string} props.itemId - Primary key of the asset record.
@@ -203,7 +179,7 @@ const StatusHistoryBar = memo(function StatusHistoryBar({ itemId, itemType, curr
                             key={index}
                             className="h-full origin-left motion-reduce:transition-none"
                             style={{
-                                background: resolveStatusColor(item.status),
+                                background: getStatusColor(item.status),
                                 minWidth: item.percentage > 0 ? '2px' : '0',
                                 opacity: animateIn ? 0.8 : 0,
                                 transform: animateIn ? 'scaleX(1)' : 'scaleX(0)',
@@ -231,7 +207,7 @@ const StatusHistoryBar = memo(function StatusHistoryBar({ itemId, itemType, curr
                             >
                                 <div
                                     className="h-2 w-2 flex-shrink-0 rounded-sm"
-                                    style={{ background: resolveStatusColor(item.status) }}
+                                    style={{ background: getStatusColor(item.status) }}
                                 />
                                 <span className="flex-1 text-[11px] font-medium text-text-primary">{item.status}</span>
                                 <span className="text-[10px] text-text-secondary">{item.percentage}%</span>

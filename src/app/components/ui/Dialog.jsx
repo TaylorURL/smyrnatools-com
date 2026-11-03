@@ -18,6 +18,13 @@ const openStack = []
 const FOCUSABLE =
     'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
+/** The header's close button and its icon, for the anchored popovers
+ *  (messages, online users) that draw their own panel but should close the
+ *  same way a dialog does. */
+export const DIALOG_CLOSE_BUTTON =
+    'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none'
+export const DIALOG_CLOSE_ICON = 'fas fa-times text-[14px]'
+
 /**
  * The one dialog shell. Every popup in the app sits in it, so they share a
  * scrim, a panel, a header and a footer:
@@ -164,9 +171,9 @@ export default function Dialog({
                         type="button"
                         onClick={onClose}
                         aria-label="Close"
-                        className="-mr-2 -mt-1 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
+                        className={`-mr-2 -mt-1 ${DIALOG_CLOSE_BUTTON}`}
                     >
-                        <i className="fas fa-times text-[14px]" aria-hidden="true" />
+                        <i className={DIALOG_CLOSE_ICON} aria-hidden="true" />
                     </button>
                 </header>
                 {toolbar && <div className="shrink-0 border-b border-border-light px-6 pb-4">{toolbar}</div>}
@@ -202,8 +209,13 @@ export function DialogField({ children, hint, htmlFor, label }) {
     )
 }
 
-/** Input, select and textarea classes for fields inside a dialog. */
+/** Input, select and textarea classes for fields inside a dialog. The accent
+ *  border and a 2px ring of the accent at 30% are the focus mark, so
+ *  `focus-visible:outline-none` turns off the base layer's
+ *  `input:focus-visible` outline, which plain `outline-none` loses to on
+ *  specificity. `.add-view-form` in index.css draws the add forms' fields
+ *  the same way; change both together. */
 export const DIALOG_INPUT =
-    'w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:bg-bg-tertiary disabled:text-text-tertiary'
+    'w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:bg-bg-tertiary disabled:text-text-tertiary'
 export const DIALOG_TEXTAREA =
-    'w-full min-h-[96px] rounded-[4px] border border-border-medium bg-bg-primary px-3 py-2 text-[13px] leading-relaxed text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 resize-y'
+    'w-full min-h-[96px] rounded-[4px] border border-border-medium bg-bg-primary px-3 py-2 text-[13px] leading-relaxed text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 resize-y disabled:cursor-not-allowed disabled:bg-bg-tertiary disabled:text-text-tertiary'

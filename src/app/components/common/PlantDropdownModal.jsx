@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import Dialog from '../ui/Dialog'
+import DialogListRow from './DialogListRow'
 import DialogSearchField from './DialogSearchField'
 import useDialogClose from './useDialogClose'
 
@@ -35,12 +36,6 @@ const computeDistrictGroups = (plants) => {
         .map(([name, plantCodes]) => ({ name, plantCodes }))
         .sort((a, b) => a.name.localeCompare(b.name))
 }
-
-/** One ruled row of the list. `indent` lines a row up under an open region. */
-const rowClass = (selected, indent = false) =>
-    `flex w-full cursor-pointer items-center gap-3 border-0 border-b border-solid border-border-light py-2.5 pr-6 text-left text-[13px] text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none ${
-        indent ? 'pl-14' : 'pl-6'
-    } ${selected ? 'bg-bg-tertiary font-medium' : 'bg-transparent hover:bg-bg-hover'}`
 
 /**
  * The plant picker: search in the toolbar, then plain ruled rows with the
@@ -167,6 +162,7 @@ function PlantDropdownModal({
             bodyClassName="p-0"
             toolbar={
                 <DialogSearchField
+                    autoFocus
                     label={searchPlaceholder}
                     onChange={setSearch}
                     placeholder={searchPlaceholder}
@@ -261,7 +257,7 @@ function PlantDropdownModal({
                                                 onSelect(`REGION:${region.code}`)
                                                 onClose()
                                             }}
-                                            className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 border-0 bg-transparent py-2.5 pl-2 pr-6 text-left text-[13px] font-medium text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                                            className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 border-0 bg-transparent py-3 pl-2 pr-6 text-left text-[13px] font-medium text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
                                         >
                                             <span className="min-w-0 flex-1 truncate">{region.name}</span>
                                             <span className="text-[12px] font-normal tabular-nums text-text-tertiary">
@@ -356,29 +352,15 @@ function PlantDropdownModal({
                             const allSelected = codes.length > 0 && selectedInDistrict === codes.length
                             const partial = selectedInDistrict > 0 && !allSelected
                             return (
-                                <button
-                                    type="button"
+                                <DialogListRow
                                     key={district.name}
                                     role="option"
-                                    aria-selected={allSelected}
+                                    current={allSelected}
                                     onClick={() => handleDistrictClickMulti(district)}
-                                    className={rowClass(allSelected)}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={allSelected}
-                                        ref={(el) => {
-                                            if (el) el.indeterminate = partial
-                                        }}
-                                        onChange={() => {}}
-                                        className="h-4 w-4 shrink-0 accent-accent"
-                                        tabIndex={-1}
-                                    />
-                                    <span className="min-w-0 flex-1 truncate">{district.name}</span>
-                                    <span className="text-[12px] font-normal tabular-nums text-text-tertiary">
-                                        {selectedInDistrict}/{codes.length}
-                                    </span>
-                                </button>
+                                    leading={<RowCheckbox checked={allSelected} indeterminate={partial} />}
+                                    title={district.name}
+                                    aside={<RowCount>{`${selectedInDistrict}/${codes.length}`}</RowCount>}
+                                />
                             )
                         })}
                     </>
@@ -393,26 +375,19 @@ function PlantDropdownModal({
                                 ? localSelectedCodes.includes(code)
                                 : selectedPlantCode === code
                             return (
-                                <button
-                                    type="button"
+                                <DialogListRow
                                     key={code}
-                                    onClick={() => handlePlantClick(code)}
                                     role="option"
-                                    aria-selected={isSelected}
-                                    className={rowClass(isSelected)}
-                                >
-                                    {allowMultiple && (
-                                        <input
-                                            type="checkbox"
-                                            checked={isSelected}
-                                            onChange={() => {}}
-                                            className="h-4 w-4 shrink-0 accent-accent"
-                                            tabIndex={-1}
-                                        />
-                                    )}
-                                    <PlantCode code={code} />
-                                    <span className="min-w-0 flex-1 truncate">{plantNameOf(plant)}</span>
-                                </button>
+                                    current={isSelected}
+                                    onClick={() => handlePlantClick(code)}
+                                    leading={
+                                        <>
+                                            {allowMultiple && <RowCheckbox checked={isSelected} />}
+                                            <PlantCode code={code} />
+                                        </>
+                                    }
+                                    title={plantNameOf(plant)}
+                                />
                             )
                         })}
                     </>
@@ -434,21 +409,41 @@ function PlantCode({ code }) {
     return <span className="w-12 shrink-0 truncate font-mono text-[12px] tabular-nums text-text-secondary">{code}</span>
 }
 
+/** The checkbox a multi-select row leads with. It only shows the row's state;
+ *  the row itself is the control, so the box stays out of the tab order. */
+function RowCheckbox({ checked, indeterminate = false }) {
+    return (
+        <input
+            type="checkbox"
+            checked={checked}
+            ref={(el) => {
+                if (el) el.indeterminate = indeterminate
+            }}
+            onChange={() => {}}
+            className="h-4 w-4 shrink-0 accent-accent"
+            tabIndex={-1}
+        />
+    )
+}
+
+/** A plain figure on the right of a row: plants in a district or region. */
+function RowCount({ children }) {
+    return <span className="text-[12px] font-normal tabular-nums text-text-tertiary">{children}</span>
+}
+
 /** A single-select row: a plant (with `code`), or a choice above the plants
  *  such as All plants or a district (with an optional `count`). */
 function PickerRow({ children, code, count, indent = false, onClick, selected = false }) {
     return (
-        <button
-            type="button"
+        <DialogListRow
             role="option"
-            aria-selected={selected}
+            current={selected}
+            indent={indent}
             onClick={onClick}
-            className={rowClass(selected, indent)}
-        >
-            {code !== undefined && <PlantCode code={code} />}
-            <span className="min-w-0 flex-1 truncate">{children}</span>
-            {count != null && <span className="text-[12px] font-normal tabular-nums text-text-tertiary">{count}</span>}
-        </button>
+            leading={code !== undefined && <PlantCode code={code} />}
+            title={children}
+            aside={count != null && <RowCount>{count}</RowCount>}
+        />
     )
 }
 

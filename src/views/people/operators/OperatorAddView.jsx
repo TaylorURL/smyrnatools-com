@@ -1,21 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import ConfirmDialog from '../../../app/components/common/ConfirmDialog'
-import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
-import AddViewSection from '../../../app/components/sections/AddViewSection'
+import PlantPickerField from '../../../app/components/common/PlantPickerField'
+import AddViewSection, { AddViewActions } from '../../../app/components/sections/AddViewSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { OperatorService } from '../../../services/OperatorService'
 import { PlantService } from '../../../services/PlantService'
 import { getSessionUserId } from '../../../services/SessionService'
 import { UserService } from '../../../services/UserService'
 import ValidationUtility from '../../../utils/ValidationUtility'
-
-// Theme-aware native <select> styling. `appearance-none` strips the browser
-// chevron so the inline-SVG (uses `currentColor`, so it follows --text-primary
-// across the light and dark themes) renders consistently. Matches the input
-// height ladder and focus treatment used elsewhere in the add-view forms.
-const SELECT_CLS =
-    'h-11 w-full cursor-pointer rounded-card bg-bg-secondary border border-border-light text-text-primary text-sm px-4 pr-10 appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[length:1rem_1rem] bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2024%2024%27%20stroke%3D%27currentColor%27%3E%3Cpath%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%272%27%20d%3D%27M19%209l-7%207-7-7%27%2F%3E%3C%2Fsvg%3E")] hover:border-border-medium focus:outline-none focus-visible:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 [color-scheme:light] dark:[color-scheme:dark]'
 
 /**
  * Form for adding an operator. The existing roster is passed in so a name
@@ -175,7 +168,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
     }
     return (
         <>
-            <AddViewSection title="Add New Operator" onClose={onClose} error={error}>
+            <AddViewSection title="Add operator" onClose={onClose} error={error}>
                 <form onSubmit={handleSubmit}>
                     <div className="space-y-4">
                         <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
@@ -183,7 +176,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                             <span>Basic Information</span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1.5">
                                 <label htmlFor="name">Name*</label>
                                 <input
                                     id="name"
@@ -194,7 +187,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                                     required
                                 />
                             </div>
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1.5">
                                 <label htmlFor="phone">Phone</label>
                                 <input
                                     id="phone"
@@ -212,24 +205,20 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                             <span>Assignment & Status</span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="assignedPlant">Assigned Plant*</label>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsPlantModalOpen(true)}
-                                    aria-label="Select assigned plant"
-                                >
-                                    {plantDisplayText}
-                                </button>
-                            </div>
-                            <div className="flex flex-col gap-1">
+                            <PlantPickerField
+                                closePicker={() => setIsPlantModalOpen(false)}
+                                isPlantModalOpen={isPlantModalOpen}
+                                openPicker={() => setIsPlantModalOpen(true)}
+                                plantDisplayText={plantDisplayText}
+                                plants={filteredPlants}
+                                selectPlant={(code) => {
+                                    setAssignedPlant(code)
+                                    setIsPlantModalOpen(false)
+                                }}
+                            />
+                            <div className="flex flex-col gap-1.5">
                                 <label htmlFor="status">Status</label>
-                                <select
-                                    id="status"
-                                    value={status}
-                                    onChange={(e) => setStatus(e.target.value)}
-                                    className={SELECT_CLS}
-                                >
+                                <select id="status" value={status} onChange={(e) => setStatus(e.target.value)}>
                                     <option value="Active">Active</option>
                                     <option value="Light Duty">Light Duty</option>
                                     <option value="Terminated">Terminated</option>
@@ -241,7 +230,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                         </div>
                         {status === 'Pending Start' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-1.5">
                                     <label htmlFor="pendingStartDate">Pending Start Date</label>
                                     <input
                                         id="pendingStartDate"
@@ -260,21 +249,16 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                             <span>Position & Training</span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1.5">
                                 <label htmlFor="position">Position</label>
-                                <select
-                                    id="position"
-                                    value={position}
-                                    onChange={(e) => setPosition(e.target.value)}
-                                    className={SELECT_CLS}
-                                >
+                                <select id="position" value={position} onChange={(e) => setPosition(e.target.value)}>
                                     <option value="">Select Position</option>
                                     <option value="Mixer Operator">Mixer Operator</option>
                                     <option value="Tractor Operator">Tractor Operator</option>
                                 </select>
                             </div>
                             {hasTrainingPermission && (
-                                <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-1.5">
                                     <label htmlFor="isTrainer">Trainer Status</label>
                                     <select
                                         id="isTrainer"
@@ -286,7 +270,6 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                                                 setAssignedTrainer('0')
                                             }
                                         }}
-                                        className={SELECT_CLS}
                                     >
                                         <option value="false">Not a Trainer</option>
                                         <option value="true">Trainer</option>
@@ -296,14 +279,13 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                         </div>
                         {hasTrainingPermission && (status === 'Training' || status === 'Pending Start') && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-1.5">
                                     <label htmlFor="assignedTrainer">Assigned Trainer</label>
                                     <select
                                         id="assignedTrainer"
                                         value={assignedTrainer}
                                         onChange={(e) => setAssignedTrainer(e.target.value)}
                                         disabled={isTrainer}
-                                        className={SELECT_CLS}
                                     >
                                         <option value="0">None</option>
                                         {operators
@@ -315,7 +297,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                                             ))}
                                     </select>
                                     {operators.filter((op) => op.isTrainer).length === 0 && (
-                                        <span className="text-xs text-text-tertiary">No trainers available</span>
+                                        <span className="text-[12px] text-text-tertiary">No trainers available</span>
                                     )}
                                 </div>
                             </div>
@@ -326,7 +308,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                             <i className="fas fa-car"></i>
                             <span>CDL Restrictions</span>
                         </div>
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1.5">
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="checkbox"
@@ -335,29 +317,14 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                                 />
                                 <span>Automatic Only</span>
                             </label>
-                            <span className="text-xs text-text-tertiary">
+                            <span className="text-[12px] text-text-tertiary">
                                 Enable if the operator has a CDL restriction for automatic transmission only
                             </span>
                         </div>
                     </div>
-                    <div className="flex justify-end gap-3 pt-4">
-                        <button type="submit" disabled={isSaving}>
-                            {isSaving ? 'Adding...' : 'Add Operator'}
-                        </button>
-                    </div>
+                    <AddViewActions isSaving={isSaving} label="Add operator" onCancel={onClose} />
                 </form>
             </AddViewSection>
-            {isPlantModalOpen && (
-                <PlantDropdownModal
-                    isOpen={isPlantModalOpen}
-                    onClose={() => setIsPlantModalOpen(false)}
-                    onSelect={(code) => {
-                        setAssignedPlant(code)
-                        setIsPlantModalOpen(false)
-                    }}
-                    plants={filteredPlants}
-                />
-            )}
             <ConfirmDialog
                 isOpen={showDuplicateConfirm}
                 onConfirm={() => {

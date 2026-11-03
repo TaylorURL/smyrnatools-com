@@ -7,6 +7,7 @@ import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import { SkeletonStack } from '../common/Skeleton'
 import Dialog, { DIALOG_TEXTAREA } from '../ui/Dialog'
+import TabButton from '../ui/TabButton'
 import DockedPanel from './DockedPanel'
 import { formatDate } from './issue-modal/issueModalHelpers'
 import { IssueRowSkeleton } from './issue-modal/IssueModalSkeletons'
@@ -168,16 +169,29 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
         ? itemType
         : `${itemType} · ${openIssues.length} open ${openIssues.length === 1 ? 'issue' : 'issues'}`
 
+    // Open and Resolved are two views of the list, so they are underline tabs
+    // laid on the toolbar's bottom rule exactly as the history popup lays its
+    // own (pulled down by the toolbar's 16px padding plus the 1px the active
+    // tab's bar overlaps).
     const toolbar = (
-        <SegmentedChoice
-            ariaLabel="Show issues"
-            onChange={setActiveTab}
-            options={[
+        <div className="-mb-[17px] flex gap-5 overflow-x-auto pb-px">
+            {[
                 { count: openIssues.length, id: 'open', label: 'Open' },
                 { count: resolvedIssues.length, id: 'resolved', label: 'Resolved' }
-            ]}
-            value={activeTab}
-        />
+            ].map((tab) => (
+                <TabButton
+                    key={tab.id}
+                    label={
+                        <>
+                            {tab.label}
+                            <span className="ml-1.5 font-normal tabular-nums text-text-tertiary">{tab.count}</span>
+                        </>
+                    }
+                    isActive={activeTab === tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                />
+            ))}
+        </div>
     )
 
     const body = (
@@ -197,7 +211,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                         aria-label="Describe the issue"
                         disabled={isSubmitting}
                         rows="3"
-                        className={`${DIALOG_TEXTAREA} disabled:cursor-not-allowed disabled:bg-bg-tertiary disabled:text-text-tertiary`}
+                        className={DIALOG_TEXTAREA}
                     />
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-3">

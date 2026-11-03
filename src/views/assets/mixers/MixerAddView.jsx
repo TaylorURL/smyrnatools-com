@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 
 import PlantPickerField from '../../../app/components/common/PlantPickerField'
-import AddViewSection from '../../../app/components/sections/AddViewSection'
+import AddViewSection, { AddViewActions } from '../../../app/components/sections/AddViewSection'
+import { DialogField } from '../../../app/components/ui/Dialog'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import usePlantPicker from '../../../app/hooks/usePlantPicker'
 import { Mixer } from '../../../app/models/mixers/Mixer'
@@ -73,7 +74,7 @@ function MixerAddView({ plants, onClose, onMixerAdded }) {
     }
 
     return (
-        <AddViewSection title="Add New Mixer" onClose={onClose} error={error}>
+        <AddViewSection title="Add mixer" onClose={onClose} error={error}>
             <form onSubmit={handleSubmit} autoComplete="off">
                 <div className="space-y-4">
                     <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
@@ -81,8 +82,7 @@ function MixerAddView({ plants, onClose, onMixerAdded }) {
                         <span> Basic Information</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1">
-                            <label htmlFor="truckNumber">Truck Number*</label>
+                        <DialogField label="Truck Number*" htmlFor="truckNumber">
                             <input
                                 id="truckNumber"
                                 type="text"
@@ -93,27 +93,8 @@ function MixerAddView({ plants, onClose, onMixerAdded }) {
                                 required
                                 autoFocus
                             />
-                        </div>
-                    </div>
-                </div>
-                <div className="space-y-4">
-                    <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
-                        <i className="fas fa-building"></i>
-                        <span> Assignment & Status</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <PlantPickerField {...picker} />
-                        <div className="flex flex-col gap-1">
-                            <label htmlFor="status">Status</label>
-                            <select id="status" value={status} onChange={(e) => setStatus(e.target.value)}>
-                                <option value="">Select Status</option>
-                                <option value="Spare">Spare</option>
-                                <option value="In Shop">In Shop</option>
-                                <option value="Retired">Retired</option>
-                            </select>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <label htmlFor="hours">Hours</label>
+                        </DialogField>
+                        <DialogField label="Hours" htmlFor="hours">
                             <input
                                 id="hours"
                                 type="number"
@@ -123,14 +104,27 @@ function MixerAddView({ plants, onClose, onMixerAdded }) {
                                 min="0"
                                 step="any"
                             />
-                        </div>
+                        </DialogField>
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 pt-4">
-                    <button type="submit" disabled={isSaving}>
-                        {isSaving ? 'Adding...' : 'Add Mixer'}
-                    </button>
+                <div className="space-y-4">
+                    <div className="border-b border-border-light pb-2 font-heading text-[15px] font-semibold tracking-tight text-text-primary [&>i]:hidden">
+                        <i className="fas fa-building"></i>
+                        <span> Assignment & Status</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <PlantPickerField {...picker} />
+                        <DialogField label="Status" htmlFor="status">
+                            <select id="status" value={status} onChange={(e) => setStatus(e.target.value)}>
+                                <option value="">Select Status</option>
+                                <option value="Spare">Spare</option>
+                                <option value="In Shop">In Shop</option>
+                                <option value="Retired">Retired</option>
+                            </select>
+                        </DialogField>
+                    </div>
                 </div>
+                <AddViewActions isSaving={isSaving} label="Add mixer" onCancel={onClose} />
             </form>
         </AddViewSection>
     )

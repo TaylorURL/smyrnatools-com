@@ -131,7 +131,7 @@ const mixerConfig = {
         {
             getValue: (item) => item.cleanlinessRating || 0,
             getWarning: (item) =>
-                item.cleanlinessRating && item.cleanlinessRating < 3 && item.status !== 'Retired' ? 'DIRTY' : null,
+                item.cleanlinessRating && item.cleanlinessRating < 3 && item.status !== 'Retired' ? 'Dirty' : null,
             label: 'Cleanliness',
             type: 'stars'
         },
@@ -319,23 +319,6 @@ const mixerConfig = {
         'Third Party Work': (item) => item.status === 'In Shop' && item.shopStatus === 'third_party',
         Verified: (item) => item.isVerified?.(),
         'Waiting For Shop': (item) => item.status === 'In Shop' && item.shopStatus === 'waiting_for_shop'
-    },
-
-    statusBadgeClasses: {
-        Active: 'bg-status-active/15 text-status-active',
-        'Down In Yard': 'bg-status-danger/15 text-status-danger',
-        'In Shop': 'bg-status-shop/15 text-status-shop',
-        'Ready For Pickup': 'bg-status-active/15 text-status-active',
-        Spare: 'bg-status-spare/15 text-status-spare',
-        'Third Party Work': 'bg-status-warning/15 text-status-warning',
-        'Waiting For Shop': 'bg-status-warning/15 text-status-warning'
-    },
-
-    statusColors: {
-        Active: 'var(--status-active)',
-        'In Shop': 'var(--status-inshop)',
-        Retired: 'var(--status-retired)',
-        Spare: 'var(--status-spare)'
     },
 
     statusOptions: [

@@ -29,7 +29,16 @@ function TractorDetailView({ tractorId, onClose }) {
     const [operatorModalOperators, setOperatorModalOperators] = useState([])
     const [lastUnassignedOperatorId, setLastUnassignedOperatorId] = useState(null)
 
-    if (state.isLoading) return null
+    if (state.isLoading) {
+        return (
+            <DetailViewSection
+                title="Tractor Details"
+                onClose={onClose}
+                isLoading={true}
+                loadingMessage="Loading tractor details..."
+            />
+        )
+    }
     if (!state.tractor) {
         return (
             <DetailViewSection

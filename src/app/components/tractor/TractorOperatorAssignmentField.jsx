@@ -1,11 +1,11 @@
 import React from 'react'
 
 import { TractorService } from '../../../services/TractorService'
-
-const DISABLED_FIELD_CLASSES = 'bg-bg-secondary opacity-80 cursor-not-allowed'
-
-const UNDO_BUTTON_CLASSES =
-    'undo-operator-button unassign-operator-button bg-[var(--success)] rounded text-[var(--text-light)] cursor-pointer text-[1rem] h-[38px] min-w-[140px] border-0 box-border ml-2 px-4 transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40'
+import {
+    DETAIL_UNASSIGN_BUTTON_CLS,
+    DETAIL_UNDO_BUTTON_CLS,
+    detailFieldButtonCls
+} from '../../constants/detailFormClasses'
 
 /**
  * Plant and operator assignment block on the tractor detail. Unassigning
@@ -94,7 +94,7 @@ function TractorOperatorAssignmentField({
                 <label>Assigned Plant</label>
                 <button
                     type="button"
-                    className={`operator-select-button form-control text-left transition-transform duration-150 ease-out motion-reduce:transition-none ${plantDisabled ? DISABLED_FIELD_CLASSES : ''}`}
+                    className={detailFieldButtonCls(plantDisabled)}
                     onClick={() => canEditTractor && setShowPlantModal(true)}
                     disabled={plantDisabled}
                 >
@@ -106,7 +106,7 @@ function TractorOperatorAssignmentField({
                 <div className="operator-select-container">
                     <button
                         type="button"
-                        className={`operator-select-button form-control text-left transition-transform duration-150 ease-out motion-reduce:transition-none ${operatorDisabled ? DISABLED_FIELD_CLASSES : ''}`}
+                        className={detailFieldButtonCls(operatorDisabled)}
                         onClick={async () => {
                             if (canEditTractor) {
                                 await fetchOperatorsForModal()
@@ -123,7 +123,7 @@ function TractorOperatorAssignmentField({
                         (assignedOperator ? (
                             <button
                                 type="button"
-                                className="unassign-operator-button transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                                className={DETAIL_UNASSIGN_BUTTON_CLS}
                                 aria-label="Unassign Operator"
                                 onClick={handleUnassign}
                             >
@@ -133,7 +133,7 @@ function TractorOperatorAssignmentField({
                             lastUnassignedOperatorId && (
                                 <button
                                     type="button"
-                                    className={UNDO_BUTTON_CLASSES}
+                                    className={DETAIL_UNDO_BUTTON_CLS}
                                     aria-label="Undo Unassign"
                                     onClick={handleUndoUnassign}
                                 >

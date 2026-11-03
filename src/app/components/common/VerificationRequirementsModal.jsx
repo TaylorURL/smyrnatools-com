@@ -445,8 +445,8 @@ export default function VerificationRequirementsModal({
                 isOpen={pendingDeleteIssueId !== null}
                 onConfirm={confirmDeleteIssue}
                 onCancel={() => setPendingDeleteIssueId(null)}
-                title="Delete Issue"
-                message="Are you sure you want to delete this issue?"
+                title="Delete this issue?"
+                message="This can't be undone."
                 confirmLabel="Delete"
                 variant="danger"
             />
@@ -454,8 +454,8 @@ export default function VerificationRequirementsModal({
                 isOpen={pendingDeleteCommentId !== null}
                 onConfirm={confirmDeleteComment}
                 onCancel={() => setPendingDeleteCommentId(null)}
-                title="Delete Comment"
-                message="Are you sure you want to delete this comment?"
+                title="Delete this comment?"
+                message="This can't be undone."
                 confirmLabel="Delete"
                 variant="danger"
             />

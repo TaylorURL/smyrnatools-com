@@ -24,7 +24,7 @@ export default function StartPageDropdown({ onChange, value }) {
                 onClick={() => setOpen((prev) => !prev)}
                 aria-haspopup="listbox"
                 aria-expanded={open}
-                className="flex h-9 w-full items-center justify-between rounded-[4px] px-3 text-left outline-none cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-accent"
+                className="flex h-9 w-full items-center justify-between rounded-[4px] px-3 text-left outline-none focus-visible:outline-none cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-accent"
                 style={FieldStyle}
             >
                 <span className="text-[14px] text-text-primary">{selected.id}</span>

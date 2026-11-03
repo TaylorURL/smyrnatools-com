@@ -207,19 +207,6 @@ const trailerConfig = {
         'Past Due Service': (item) => AssetStatsUtility.isServiceOverdue(item.lastServiceDate, 90)
     },
 
-    statusBadgeClasses: {
-        Active: 'bg-status-active/15 text-status-active',
-        'In Shop': 'bg-status-shop/15 text-status-shop',
-        Spare: 'bg-status-spare/15 text-status-spare'
-    },
-
-    statusColors: {
-        Active: 'var(--status-active)',
-        'In Shop': 'var(--status-inshop)',
-        Retired: 'var(--status-retired)',
-        Spare: 'var(--status-spare)'
-    },
-
     // Trailer uses a type filter instead of a status filter.
     statusOptions: ['All Types', 'Cement', 'End Dump', 'Past Due Service', 'Open Issues'],
 

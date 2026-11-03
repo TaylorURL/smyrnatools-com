@@ -148,7 +148,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                     />
                     <input
                         type="search"
-                        className="w-full rounded-card border border-border-light bg-bg-secondary pl-9 pr-9 py-2.5 text-sm text-text-primary outline-none transition-colors placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
+                        className="w-full rounded-card border border-border-light bg-bg-secondary pl-9 pr-9 py-2.5 text-sm text-text-primary outline-none focus-visible:outline-none transition-colors placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
                         placeholder="Filter plants by code or name…"
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
@@ -206,7 +206,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                 <div className="flex flex-col sm:flex-row gap-2">
                     <input
                         type="text"
-                        className="flex-1 rounded-card border border-border-light bg-bg-secondary px-4 py-2.5 text-sm font-mono tabular-nums text-text-primary outline-none transition-colors placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-60"
+                        className="flex-1 rounded-card border border-border-light bg-bg-secondary px-4 py-2.5 text-sm font-mono tabular-nums text-text-primary outline-none focus-visible:outline-none transition-colors placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-60"
                         placeholder="e.g. 404"
                         value={customCodeInput}
                         onChange={(e) => {

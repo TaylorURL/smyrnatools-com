@@ -196,7 +196,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                         <label>Region Code</label>
                         <input
                             type="text"
-                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none focus-visible:outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
                             value={regionCode}
                             disabled
                         />
@@ -205,7 +205,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                         <label>Region Name</label>
                         <input
                             type="text"
-                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none focus-visible:outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
                             value={regionName}
                             onChange={(e) => setRegionName(e.target.value)}
                         />
@@ -214,7 +214,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                         <label>Type</label>
                         <div className="relative">
                             <select
-                                className="w-full appearance-none cursor-pointer rounded-card border border-border-light bg-bg-secondary pl-4 pr-10 py-3 text-sm text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+                                className="w-full appearance-none cursor-pointer rounded-card border border-border-light bg-bg-secondary pl-4 pr-10 py-3 text-sm text-text-primary outline-none focus-visible:outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                                 value={regionType}
                                 onChange={(e) => setRegionType(e.target.value)}
                             >
@@ -280,7 +280,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                     />
                                     <input
                                         type="search"
-                                        className="w-full rounded-card border border-border-light bg-bg-secondary pl-10 pr-10 py-3 text-sm text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
+                                        className="w-full rounded-card border border-border-light bg-bg-secondary pl-10 pr-10 py-3 text-sm text-text-primary outline-none focus-visible:outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
                                         placeholder="Search by code or name"
                                         value={plantQuery}
                                         onChange={(e) => setPlantQuery(e.target.value)}
@@ -355,7 +355,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                             <div className="flex items-center gap-2">
                                 <input
                                     type="text"
-                                    className="flex-1 w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none transition-colors focus:border-accent"
+                                    className="flex-1 w-full h-9 rounded-[4px] border border-border-medium bg-bg-primary px-3 text-[13px] text-text-primary outline-none focus-visible:outline-none transition-colors focus:border-accent"
                                     placeholder="New district name..."
                                     value={newDistrictName}
                                     onChange={(e) => setNewDistrictName(e.target.value)}
@@ -448,7 +448,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                     {unassignedPlants.length > 0 && (
                                                         <div className="relative">
                                                             <select
-                                                                className="w-full appearance-none cursor-pointer rounded-card border border-border-light bg-bg-secondary pl-4 pr-10 py-3 text-[13px] text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+                                                                className="w-full appearance-none cursor-pointer rounded-card border border-border-light bg-bg-secondary pl-4 pr-10 py-3 text-[13px] text-text-primary outline-none focus-visible:outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                                                                 value=""
                                                                 onChange={(e) => {
                                                                     if (e.target.value)

@@ -171,7 +171,7 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
                     aria-label="Write a comment"
                     disabled={isSubmitting}
                     rows="3"
-                    className={`${DIALOG_TEXTAREA} disabled:cursor-not-allowed disabled:bg-bg-tertiary disabled:text-text-tertiary`}
+                    className={DIALOG_TEXTAREA}
                 />
                 <div className="flex justify-end">
                     <button type="submit" disabled={isSubmitDisabled} className="btn-primary">

@@ -422,14 +422,14 @@ function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
                         trailerType={trailerType}
                         onTrailerTypeChange={setTrailerType}
                         canEditTrailer={canEditTrailer}
-                        plantDisplayText={plantDisplayText}
-                        onOpenPlantModal={() => setShowPlantModal(true)}
                         status={status}
                         onStatusChange={setStatus}
                         assignedTractor={assignedTractor}
                     />
                     <TrailerAssignmentCard
                         canEditTrailer={canEditTrailer}
+                        plantDisplayText={plantDisplayText}
+                        onOpenPlantModal={() => setShowPlantModal(true)}
                         assignedTractor={assignedTractor}
                         tractorDisplayText={
                             assignedTractor ? getTractorName(assignedTractor, tractors) : 'None (Click to select)'
@@ -440,7 +440,7 @@ function TrailerDetailView({ trailer: initialTrailer, trailerId, onClose }) {
                         onUndoUnassign={handleUndoUnassign}
                     />
                 </DetailViewSection.Section>
-                <DetailViewSection.Section id="maintenance" title="Maintenance" icon="fas fa-wrench">
+                <DetailViewSection.Section id="maintenance" title="Maintenance" icon="fas fa-wrench" keepHalfWidth>
                     <TrailerCleanlinessCard
                         cleanlinessRating={cleanlinessRating}
                         onCleanlinessRatingChange={setCleanlinessRating}

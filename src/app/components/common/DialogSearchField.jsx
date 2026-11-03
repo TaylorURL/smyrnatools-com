@@ -6,11 +6,14 @@ import { DIALOG_INPUT } from '../ui/Dialog'
  * The search box a picker puts in its dialog toolbar: a magnifier inside the
  * left edge and, once something is typed, a clear button inside the right.
  * `autoFocus` marks it for Dialog to focus when it opens (React's own
- * `autoFocus` would be undone by Dialog focusing its panel).
+ * `autoFocus` would be undone by Dialog focusing its panel). A field that
+ * appears after the dialog has opened takes `inputRef` and is focused by its
+ * owner instead.
  */
 export default function DialogSearchField({
     autoFocus = false,
     className = '',
+    inputRef,
     label,
     onChange,
     placeholder,
@@ -24,6 +27,7 @@ export default function DialogSearchField({
                 aria-hidden="true"
             />
             <input
+                ref={inputRef}
                 type={type}
                 placeholder={placeholder}
                 aria-label={label}

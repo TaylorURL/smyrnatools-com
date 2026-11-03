@@ -1,7 +1,7 @@
 import React from 'react'
 
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
-import { DETAIL_SELECT_CLS } from '../../../../app/constants/detailFormClasses'
+import { DETAIL_SELECT_CLS, detailFieldButtonCls } from '../../../../app/constants/detailFormClasses'
 import { EQUIPMENT_TYPE_OPTIONS, STATUS_OPTIONS } from './equipmentTypeOptions'
 
 /**
@@ -63,7 +63,7 @@ export default function EquipmentBasicInfoSection({
                     <label>Assigned Plant</label>
                     <button
                         type="button"
-                        className={`operator-select-button form-control text-left ${!canEditEquipment ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
+                        className={detailFieldButtonCls(!canEditEquipment)}
                         onClick={() => canEditEquipment && setShowPlantModal(true)}
                         disabled={!canEditEquipment}
                     >
@@ -113,13 +113,11 @@ export default function EquipmentBasicInfoSection({
                 <div className="form-group">
                     <label>Year</label>
                     <input
-                        type="number"
+                        type="text"
                         value={year}
                         onChange={(e) => setYear(e.target.value)}
                         className="form-control"
                         readOnly={!canEditEquipment}
-                        min="1900"
-                        max={new Date().getFullYear()}
                     />
                 </div>
             </DetailViewSection.Card>

@@ -6,28 +6,32 @@ import useDialogClose from '../../../app/components/common/useDialogClose'
 import Dialog from '../../../app/components/ui/Dialog'
 
 /**
- * Operator picker for a mixer, scoped to the mixer's own plant.
+ * Operator picker for a mixer or a tractor, scoped to that asset's plant.
+ * `assets` is the roster of the same kind (every mixer, or every tractor) and
+ * `assetLabel` names one of them ("mixer") for the no-plant notice.
  *
- * An operator already driving another active mixer is left out of the list
+ * An operator already driving another active asset is left out of the list
  * entirely, so a double assignment cannot be made here; one who is merely
  * inactive is shown and marked unavailable. Read-only mode drops the
  * exclusion, since nothing can be picked and the roster is what a reader
- * wants to see. The operator already assigned to this mixer always appears,
- * whatever the filters say.
+ * wants to see. The operator already assigned to this asset always appears,
+ * whatever the filters say. Unassigning is the detail card's Unassign button,
+ * which also sets the status and offers an undo, so there is no "None" row.
  */
 function OperatorSelectModal({
     isOpen,
     onClose,
     onSelect,
     currentValue,
-    mixers = [],
+    assets = [],
+    assetLabel = 'asset',
     assignedPlant = '',
     readOnly = false,
     operators,
     onRefresh
 }) {
     const [searchText, setSearchText] = useState('')
-    const [isLoading] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
     const [, setFilterPlant] = useState(assignedPlant)
     const [filterPosition, setFilterPosition] = useState('')
     const [sortAvailableFirst, setSortAvailableFirst] = useState(true)
@@ -35,10 +39,21 @@ function OperatorSelectModal({
     useEffect(() => {
         if (assignedPlant) setFilterPlant(assignedPlant)
     }, [assignedPlant])
-    /** Returns true if the operator is already assigned to an active mixer (prevents double-assignment). */
+    /** Returns true if the operator is already assigned to an active asset (prevents double-assignment). */
     function isOperatorAssigned(operatorId) {
-        if (!operatorId || operatorId === '0' || !Array.isArray(mixers)) return false
-        return mixers.some((mixer) => mixer.assignedOperator === operatorId && mixer.status === 'Active')
+        if (!operatorId || operatorId === '0' || !Array.isArray(assets)) return false
+        return assets.some((asset) => asset.assignedOperator === operatorId && asset.status === 'Active')
+    }
+    // The list gives way to the loading line while a refresh is in flight,
+    // the same way the tractor picker does.
+    async function handleRefresh() {
+        if (!onRefresh) return
+        setIsLoading(true)
+        try {
+            await onRefresh()
+        } finally {
+            setIsLoading(false)
+        }
     }
     const filteredOperators = operators
         .filter(
@@ -98,7 +113,8 @@ function OperatorSelectModal({
                             type="button"
                             aria-label="Refresh operator list"
                             className="btn-secondary"
-                            onClick={() => onRefresh && onRefresh()}
+                            disabled={isLoading}
+                            onClick={handleRefresh}
                         >
                             <i className="fas fa-sync text-[12px]" aria-hidden="true" />
                             Refresh
@@ -109,15 +125,10 @@ function OperatorSelectModal({
                     </div>
                     {!assignedPlant && (
                         <div className="rounded-[4px] border border-[color:var(--notice-warning-border)] bg-[color:var(--notice-warning-bg)] px-3 py-2 text-[13px] text-[color:var(--notice-warning-strong)]">
-                            No plant selected. Give this mixer a plant to see its operators.
+                            No plant selected. Give this {assetLabel} a plant to see its operators.
                         </div>
                     )}
                 </div>
-            }
-            footer={
-                <button type="button" className="btn-secondary" onClick={onClose}>
-                    Cancel
-                </button>
             }
         >
             <div ref={anchorRef} className="h-full">
@@ -126,7 +137,7 @@ function OperatorSelectModal({
                         <i className="fas fa-spinner fa-spin text-[13px]" aria-hidden="true" />
                         Loading operators
                     </div>
-                ) : filteredOperators.length === 0 ? (
+                ) : shownCount === 0 ? (
                     <div className="flex h-full min-h-[240px] flex-col items-center justify-center gap-1 px-6 text-center">
                         <p className="m-0 text-[15px] font-medium text-text-primary">
                             {assignedPlant ? `No operators found at plant ${assignedPlant}` : 'No plant selected'}

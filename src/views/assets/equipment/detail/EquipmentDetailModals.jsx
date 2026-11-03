@@ -68,7 +68,6 @@ export default function EquipmentDetailModals({
                     onClose={() => setShowPlantModal(false)}
                     plants={filteredPlants}
                     onSelect={setAssignedPlant}
-                    searchPlaceholder="Search plants..."
                 />
             )}
             {showMissingFieldsModal && (
@@ -85,6 +84,9 @@ export default function EquipmentDetailModals({
                     setModel={setModel}
                     setYear={setYear}
                     setLastServiceDate={setLastServiceDate}
+                    itemType="Equipment"
+                    itemId={equipment?.id}
+                    service={EquipmentService}
                     status={status}
                 />
             )}

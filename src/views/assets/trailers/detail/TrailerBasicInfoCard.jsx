@@ -4,7 +4,8 @@ import DetailViewSection from '../../../../app/components/sections/DetailViewSec
 import { DETAIL_SELECT_CLS } from '../../../../app/constants/detailFormClasses'
 
 /**
- * Number, type, plant and status for a trailer. Active is offered only once a
+ * Number, type and status for a trailer (its plant sits in the Assignment
+ * card, as on the mixer and tractor pages). Active is offered only once a
  * tractor is assigned, since a trailer with nothing to pull it is not active,
  * and the option says so rather than failing on save.
  */
@@ -14,8 +15,6 @@ export default function TrailerBasicInfoCard({
     trailerType,
     onTrailerTypeChange,
     canEditTrailer,
-    plantDisplayText,
-    onOpenPlantModal,
     status,
     onStatusChange,
     assignedTractor
@@ -45,17 +44,6 @@ export default function TrailerBasicInfoCard({
                     <option value="Cement">Cement</option>
                     <option value="End Dump">End Dump</option>
                 </select>
-            </div>
-            <div className="form-group">
-                <label>Assigned Plant</label>
-                <button
-                    type="button"
-                    className={`operator-select-button form-control text-left ${!canEditTrailer ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
-                    onClick={() => canEditTrailer && onOpenPlantModal()}
-                    disabled={!canEditTrailer}
-                >
-                    <span className="block truncate">{plantDisplayText}</span>
-                </button>
             </div>
             <div className="form-group">
                 <label>Active Status</label>
