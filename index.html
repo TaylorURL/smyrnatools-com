@@ -379,11 +379,13 @@
          can reach the current files, which makes re-fetching the document the
          whole of the recovery rather than its last resort.
 
-         The document is served must-revalidate, and `cache: "reload"` is what
-         makes the re-fetch reach the network instead of being answered from
-         the same stale copy that caused this. That request is the one thing
-         here worth retrying, so it is tried three times with a growing gap
-         before the reload is taken regardless.
+         The document is cached in the browser and at the edge, and asking
+         for it again at this page's own address can be answered out of either
+         with the very copy that caused this. So the replacement is asked for
+         at an address carrying a one-off marker, which no cache has an answer
+         for and which the deployment's own file answers. That request is the
+         one thing here worth retrying, so it is tried three times with a
+         growing gap before the navigation is taken regardless.
 
          Two limits stand between a recovery and a reload loop. A second
          attempt inside the cooling window is refused, which is what stops a
@@ -391,6 +393,12 @@
          cycling the page; a tab that has been running long enough to cross a
          later deploy is still recovered, which a one-per-tab flag would have
          denied. Three attempts is the whole of a tab's allowance.
+
+         A refusal is not the end of it. The document is a drawn screen, so a
+         reader refused a recovery is left looking at a finished page that
+         answers nothing, and the error boundary that would say so ships
+         inside the bundle that is missing. So the refusal says it here, in
+         the document, and offers the reload itself.
 
          This listens after the reporter above, so the failure is still
          reported before the page goes away. -->
@@ -401,6 +409,29 @@
         // second recovery is answering a later deploy rather than looping.
         var COOLING_MS = 60000;
         var ALLOWANCE = 3;
+        // A document re-fetched at this page's own address can be answered by
+        // the copy that caused the failure: the shell is cached at the edge as
+        // well as in the browser, and `cache: "reload"` only reaches past the
+        // browser's. The edge keys its cache on the whole address, so a one-off
+        // marker on the query is a address no cache has an answer for and the
+        // deployment's own file is what comes back. It is taken off the address
+        // bar as soon as the document carrying it is running, so a reader never
+        // sees it and never shares it.
+        var MARKER = "shell";
+        function freshAddress() {
+          var params = new URLSearchParams(location.search);
+          params.set(MARKER, String(Date.now()));
+          return location.pathname + "?" + params.toString() + location.hash;
+        }
+        (function stripMarker() {
+          if (location.search.indexOf(MARKER + "=") < 0) return;
+          try {
+            var params = new URLSearchParams(location.search);
+            params.delete(MARKER);
+            var query = params.toString();
+            history.replaceState(history.state, "", location.pathname + (query ? "?" + query : "") + location.hash);
+          } catch (ignored) {}
+        })();
         function attempts() {
           try {
             var raw = sessionStorage.getItem(KEY);
@@ -409,28 +440,72 @@
             return null;
           }
         }
+        // What a reader is left with when no further recovery is owed. The
+        // document drawn at build time is a finished screen, so a bundle that
+        // never arrived leaves a sign-in page that looks perfect and answers
+        // nothing — every control dead, with no sign that anything is wrong.
+        // The error boundary that would say so is inside the bundle, which is
+        // the very file missing here, so the saying has to happen out here.
+        var told = false;
+        function tell() {
+          if (told) return;
+          told = true;
+          // The drawn screen is addressed by the same marker the prerender uses
+          // to keep it out of a paint it does not belong in.
+          document.documentElement.setAttribute("data-front-door", "off");
+          var notice = document.createElement("div");
+          notice.setAttribute("style", "position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;text-align:center;background:#0b1220;color:#fff;font:400 16px/1.5 system-ui,-apple-system,sans-serif");
+          var words = document.createElement("p");
+          words.setAttribute("style", "margin:0;max-width:30rem");
+          words.textContent = "This page was open while the app was updated, so part of it could not be loaded. Reloading picks up the current version.";
+          var button = document.createElement("button");
+          button.type = "button";
+          button.textContent = "Reload";
+          button.setAttribute("style", "font:600 15px/1 system-ui,-apple-system,sans-serif;color:#fff;background:#1e3a5f;border:0;border-radius:6px;padding:12px 24px;cursor:pointer");
+          button.addEventListener("click", function () {
+            try {
+              sessionStorage.removeItem(KEY);
+            } catch (ignored) {}
+            location.replace(freshAddress());
+          });
+          notice.appendChild(words);
+          notice.appendChild(button);
+          var place = function () { (document.body || document.documentElement).appendChild(notice) };
+          // A stylesheet in the head fails while the head is still being
+          // parsed, before there is a body to put this in.
+          if (document.body) place();
+          else document.addEventListener("DOMContentLoaded", place);
+        }
         // Answers whether the document is being replaced, so a caller can tell
         // a recovery under way from one it has to leave to the reader.
+        var replacing = false;
         window.__recoverStaleShell = function () {
+          // Both of a document's static assets fail together, and the second
+          // failure is not a second fault to recover from.
+          if (replacing) return true;
           var taken = attempts();
-          if (!taken) return false;
           var now = Date.now();
-          if (taken.length >= ALLOWANCE) return false;
-          if (taken.length && now - taken[taken.length - 1] < COOLING_MS) return false;
+          if (!taken || taken.length >= ALLOWANCE || (taken.length && now - taken[taken.length - 1] < COOLING_MS)) {
+            tell();
+            return false;
+          }
           taken.push(now);
           try {
             sessionStorage.setItem(KEY, JSON.stringify(taken));
           } catch (ignored) {
+            tell();
             return false;
           }
+          replacing = true;
           // Long enough for the reporter's beacon to leave, short enough that
           // the reader sees a reload rather than a blank page.
           setTimeout(function () {
+            var address = freshAddress();
             var left = 3;
-            var again = function () { location.reload() };
+            var again = function () { location.replace(address) };
             var ask = function () {
               left -= 1;
-              fetch(location.href, { cache: "reload", credentials: "same-origin" }).then(again, function () {
+              fetch(address, { cache: "reload", credentials: "same-origin" }).then(again, function () {
                 if (left > 0) setTimeout(ask, (3 - left) * 400);
                 else again();
               });
