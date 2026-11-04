@@ -21,9 +21,47 @@
     <link as="font" crossorigin href="/fonts/plex-sans-condensed-600-latin.woff2" rel="preload" type="font/woff2">
     <link as="font" crossorigin href="/fonts/plex-sans-400-latin.woff2" rel="preload" type="font/woff2">
     <link as="image" fetchpriority="high" href="/srm-logo.svg" rel="preload" type="image/svg+xml">
+    <script>
+        // Defined above the link it serves so the handler is never reached
+        // before it exists. One retry only: a second failure means the sheet
+        // is genuinely unreachable from this browser, and asking again would
+        // not change that.
+        window.__iconSheetState = "preloading";
+        window.__recoverIconSheet = function () {
+            window.__iconSheetState = "retrying";
+            var retry = document.createElement("link");
+            retry.rel = "stylesheet";
+            // The recovery stands in for a resource whose failure is already
+            // held against the original address, so its own failure must not
+            // report a second time for the one fault.
+            retry.setAttribute("data-recovery", "icon-sheet");
+            // The failed preload is recorded against this URL in the browser's
+            // memory cache, and a second link naming the same address is
+            // answered out of that record without a request ever leaving the
+            // browser - the same thing that makes a failed dynamic import
+            // unrecoverable at its own specifier. So the retry asks at an
+            // address no cache has an answer for. The query is ignored by the
+            // static host, which serves the same file for it.
+            retry.href = "/fonts/fontawesome/css/all.min.css?retry=" + Date.now();
+            retry.onload = function () { window.__iconSheetState = "recovered"; };
+            retry.onerror = function () { window.__iconSheetState = "unreachable"; };
+            document.head.appendChild(retry);
+        };
+    </script>
     <link as="style" href="/fonts/fontawesome/css/all.min.css"
+          onerror="this.onerror=null;if(window.__recoverIconSheet)window.__recoverIconSheet()"
           onload="this.onload=null;this.rel='stylesheet'"
           rel="preload">
+    <!-- The onerror handler matters as much as the onload one. Promoting this
+         link to a stylesheet is the only thing that applies the icon rules, and
+         onload is the only thing that promotes it, so a preload that fails
+         leaves rel at "preload" for the life of the page and every icon on the
+         site renders as an empty 0x0 box with no ::before content and no second
+         attempt. That is what a reader met on 2026-11-04: the chevron on this
+         landing page vanished, silently and permanently. The recovery below
+         asks for the sheet again as a plain stylesheet, which is a different
+         request type from a preload and succeeds in every case where the
+         preload was declined rather than the file being gone. -->
     <!-- The onload handler above never runs with scripting off, so the icon
          rules reach that reader through this fallback. It is held back from the
          build's critical-CSS pass, which inlines a sheet's rules at its own
@@ -269,13 +307,88 @@
           var path = String(target || "");
           return path.indexOf("/_vercel/insights/") > -1 || path.indexOf("/_vercel/speed-insights/") > -1;
         }
+        // A <link rel="preload"> failing is not the same event as a reader
+        // losing a file. A preload is a hint issued before anything needs the
+        // resource, and a browser is free to decline one without the origin
+        // ever being asked - a privacy setting or content blocker that refuses
+        // webfonts refuses every font request on the page at once. What decides
+        // whether a reader lost anything is the attempt that actually uses the
+        // resource, and that attempt comes later: the icon sheet re-requests
+        // itself through __recoverIconSheet in the head above, and a font a
+        // preload missed is fetched again by the @font-face rule that needs it.
+        //
+        // So a preload failure is held against its href rather than sent, and
+        // before it escalates the resource is asked for once more as an
+        // ordinary request. An answer means the origin is serving the file and
+        // this browser declined the hint - which describes the reader's browser
+        // and not the site, and is the one case that must not file anything. No
+        // answer is the failure a reader actually meets, and it reports once.
+        //
+        // The re-request goes out over XMLHttpRequest rather than fetch, both
+        // because the fetch wrapper below would hold a second report for the
+        // same fault, and because an xhr is a different resource type from a
+        // font: a rule that blocks webfonts by type lets it through, which is
+        // exactly the distinction being drawn.
+        //
+        // Without this, one visitor-side rule filed one ticket per file. On
+        // 2026-11-04 a single page load lost all three /fonts/ preloads in the
+        // same instant - both Plex faces and the icon sheet - and filed three
+        // separate reports against files the origin answered 200 for the whole
+        // time, while the one preload outside /fonts/ loaded normally.
+        var PRELOAD_WINDOW_MS = 10000;
+        var preloadPending = {};
+        // One href files at most one report, so the icon sheet's own retry
+        // failing does not report the same fault a second time.
+        var linkFailureSeen = {};
+        function preloadHint(target) {
+          if (!target || target.tagName !== "LINK") return false;
+          return String(target.rel || "").toLowerCase().indexOf("preload") > -1;
+        }
+        function askAgain(href, whenMissing) {
+          try {
+            var request = new XMLHttpRequest();
+            request.open("GET", href, true);
+            request.onload = function () { if (request.status < 200 || request.status >= 400) whenMissing(); };
+            request.onerror = whenMissing;
+            request.ontimeout = whenMissing;
+            request.timeout = 10000;
+            request.send();
+          } catch (ignored) {
+            whenMissing();
+          }
+        }
+        function holdPreloadFailure(href, message) {
+          if (preloadPending[href]) return;
+          hold("resource", message);
+          preloadPending[href] = setTimeout(function () {
+            delete preloadPending[href];
+            if (pageGoingAway) return;
+            // The icon sheet is the one resource that can say for itself
+            // whether a reader ended up with it.
+            if (href.indexOf("/fonts/fontawesome/") > -1 && window.__iconSheetState === "recovered") {
+              hold("interruption", "Icon stylesheet recovered after its preload was declined");
+              return;
+            }
+            askAgain(href, function () { emit("resource", message); });
+          }, PRELOAD_WINDOW_MS);
+        }
         // Capture phase, because element load failures fire error events that do not bubble.
         window.addEventListener("error", function (event) {
           try {
             if (event.target && event.target !== window && event.target.tagName) {
               if (MEDIA_LIFECYCLE_TAGS[event.target.tagName]) return;
               if (platformTelemetry(event.target.src || event.target.href)) return;
-              report("resource", "Failed to load " + event.target.tagName.toLowerCase() + ": " + (event.target.src || event.target.href || ""));
+              var where = event.target.src || event.target.href || "";
+              if (event.target.tagName === "LINK" && where) {
+                if (event.target.getAttribute && event.target.getAttribute("data-recovery")) return;
+                if (linkFailureSeen[where]) return;
+                linkFailureSeen[where] = true;
+                if (preloadHint(event.target)) {
+                  holdPreloadFailure(where, "Failed to load link: " + where);
+                  return;
+                }
+              }
+              report("resource", "Failed to load " + event.target.tagName.toLowerCase() + ": " + where);
             } else {
               report("uncaught", event.message, event.error && event.error.stack);
             }
