@@ -2,17 +2,20 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { UserService } from '../../../services/UserService'
 import { formatCentralDate } from '../../../utils/PlanUtility'
+import { isAutoResolvedNote, isResolvedComment } from '../../../utils/StaleNoteUtility'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import Skeleton, { SkeletonStack } from '../common/Skeleton'
 import UserAvatar from '../common/UserAvatar'
 import Dialog, { DIALOG_TEXTAREA } from '../ui/Dialog'
+import TabButton from '../ui/TabButton'
 import DockedPanel from './DockedPanel'
 import KeepPermanentSwitch from './notes/KeepPermanentSwitch'
 import NoteCountChip from './notes/NoteCountChip'
 import NotePopupEyebrow from './notes/NotePopupEyebrow'
 import { NOTE_ACTION_CLS, NOTE_COMPOSER_TEXTAREA } from './notes/notePopupStyles'
 import NoteStatusChip from './notes/NoteStatusChip'
+import ResolvedNoteLine from './notes/ResolvedNoteLine'
 
 function CommentRowSkeleton() {
     return (
@@ -67,6 +70,7 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
     const [error, setError] = useState(null)
     const [userNames, setUserNames] = useState({})
     const [pendingDeleteId, setPendingDeleteId] = useState(null)
+    const [activeTab, setActiveTab] = useState('active')
 
     // The Dialog's close handler stays the same function for its whole life:
     // a new one would re-run its open effect and pull focus out of the
@@ -164,6 +168,11 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
         const dateB = new Date(b.createdAt || b.created_at)
         return dateB - dateA
     })
+    // A comment stays active until it is resolved; the nightly job resolves
+    // the ones left unkept for three months and flags them as timed out.
+    const activeComments = sortedComments.filter((comment) => !isResolvedComment(comment))
+    const resolvedComments = sortedComments.filter((comment) => isResolvedComment(comment))
+    const displayComments = activeTab === 'active' ? activeComments : resolvedComments
 
     const isSubmitDisabled = isSubmitting || !newComment.trim()
     const isPanel = displayMode === 'panel'
@@ -178,15 +187,22 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
         <SkeletonStack count={3} gapClassName="gap-0">
             {() => <CommentRowSkeleton />}
         </SkeletonStack>
-    ) : comments.length === 0 ? (
+    ) : displayComments.length === 0 ? (
         <div className="flex flex-col items-center gap-1 px-6 py-10 text-center">
-            <p className="m-0 text-[15px] font-medium text-text-primary">No comments yet</p>
-            <p className="m-0 text-[13px] text-text-secondary">Be the first to add one below.</p>
+            <p className="m-0 text-[15px] font-medium text-text-primary">
+                {activeTab === 'active' ? 'No comments yet' : 'No resolved comments'}
+            </p>
+            <p className="m-0 text-[13px] text-text-secondary">
+                {activeTab === 'active'
+                    ? 'Be the first to add one below.'
+                    : 'Comments marked resolved, including ones that timed out, show up here.'}
+            </p>
         </div>
     ) : (
         <ul className="m-0 list-none p-0">
-            {sortedComments.map((comment) => {
+            {displayComments.map((comment) => {
                 const createdAt = comment.createdAt || comment.created_at
+                const isResolved = isResolvedComment(comment)
                 return (
                     <li
                         key={comment.id}
@@ -201,11 +217,23 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
                                 <span className="text-[12px] tabular-nums text-text-tertiary">
                                     {formatDate(createdAt)}
                                 </span>
-                                <NoteStatusChip createdAt={createdAt} permanent={comment.permanent} />
+                                <NoteStatusChip
+                                    createdAt={createdAt}
+                                    permanent={comment.permanent}
+                                    resolved={isResolved}
+                                />
                             </div>
                             <p className="m-0 mt-1 whitespace-pre-wrap break-words text-[13px] leading-5 text-text-primary">
                                 {comment.text}
                             </p>
+                            {isResolved && (
+                                <div className="mt-1.5">
+                                    <ResolvedNoteLine
+                                        autoResolved={isAutoResolvedNote(comment)}
+                                        when={formatDate(comment.resolvedAt || comment.resolved_at)}
+                                    />
+                                </div>
+                            )}
                         </div>
                         <button
                             type="button"
@@ -221,32 +249,33 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
         </ul>
     )
 
-    const composer = (
-        <form onSubmit={handleAddComment} className="flex w-full flex-col gap-2.5" aria-label="New comment">
-            <span className="text-[12px] font-semibold text-text-secondary">New comment</span>
-            <ErrorMessage message={error} onDismiss={() => setError(null)} />
-            <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder={`Write a comment for this ${noun}…`}
-                aria-label="Write a comment"
-                disabled={isSubmitting}
-                rows="3"
-                className={`${DIALOG_TEXTAREA} ${NOTE_COMPOSER_TEXTAREA}`}
-            />
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-3">
-                <KeepPermanentSwitch
-                    checked={permanent}
+    const composer =
+        activeTab === 'active' ? (
+            <form onSubmit={handleAddComment} className="flex w-full flex-col gap-2.5" aria-label="New comment">
+                <span className="text-[12px] font-semibold text-text-secondary">New comment</span>
+                <ErrorMessage message={error} onDismiss={() => setError(null)} />
+                <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder={`Write a comment for this ${noun}…`}
+                    aria-label="Write a comment"
                     disabled={isSubmitting}
-                    noun="comment"
-                    onChange={setPermanent}
+                    rows="3"
+                    className={`${DIALOG_TEXTAREA} ${NOTE_COMPOSER_TEXTAREA}`}
                 />
-                <button type="submit" disabled={isSubmitDisabled} className="btn-primary ml-auto">
-                    {isSubmitting ? 'Posting' : 'Post comment'}
-                </button>
-            </div>
-        </form>
-    )
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-3">
+                    <KeepPermanentSwitch
+                        checked={permanent}
+                        disabled={isSubmitting}
+                        noun="comment"
+                        onChange={setPermanent}
+                    />
+                    <button type="submit" disabled={isSubmitDisabled} className="btn-primary ml-auto">
+                        {isSubmitting ? 'Posting' : 'Post comment'}
+                    </button>
+                </div>
+            </form>
+        ) : null
 
     const confirmDialog = (
         <ConfirmDialog
@@ -263,14 +292,48 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
     const title = (
         <span className="inline-flex items-center gap-2">
             Comments
-            {!isLoading && <NoteCountChip count={comments.length} />}
+            {!isLoading && <NoteCountChip count={activeComments.length} />}
         </span>
+    )
+
+    // Active and Resolved are two views of the list, laid on the toolbar's
+    // bottom rule the same way the issues popup lays Open and Resolved.
+    const toolbar = (
+        <div className="-mb-[17px] flex gap-5 overflow-x-auto pb-px">
+            {[
+                { count: activeComments.length, id: 'active', label: 'Active' },
+                { count: resolvedComments.length, id: 'resolved', label: 'Resolved' }
+            ].map((tab) => (
+                <TabButton
+                    key={tab.id}
+                    label={
+                        <>
+                            {tab.label}
+                            {!isLoading && (
+                                <span className="ml-1.5">
+                                    <NoteCountChip count={tab.count} />
+                                </span>
+                            )}
+                        </>
+                    }
+                    isActive={activeTab === tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                />
+            ))}
+        </div>
     )
 
     if (isPanel) {
         return (
             <>
-                <DockedPanel onClose={onClose} eyebrow={eyebrow} title={title} footer={composer} bodyClassName="p-0">
+                <DockedPanel
+                    onClose={onClose}
+                    eyebrow={eyebrow}
+                    title={title}
+                    toolbar={toolbar}
+                    footer={composer}
+                    bodyClassName="p-0"
+                >
                     {body}
                 </DockedPanel>
                 {confirmDialog}
@@ -286,6 +349,7 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
                 size="md"
                 eyebrow={eyebrow}
                 title={title}
+                toolbar={toolbar}
                 footer={composer}
                 bodyClassName="p-0"
             >

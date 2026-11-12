@@ -4,6 +4,7 @@ import { OperatorService } from '../../services/OperatorService'
 import { PlantService } from '../../services/PlantService'
 import { TractorService } from '../../services/TractorService'
 import { UserService } from '../../services/UserService'
+import { isResolvedComment } from '../../utils/StaleNoteUtility'
 
 /**
  * Loads everything the tractor detail view edits — the tractor itself,
@@ -224,7 +225,11 @@ export default function useTractorDetail(tractorId, preferences) {
                     TractorService.fetchComments(tractorId),
                     TractorService.fetchIssues(tractorId)
                 ])
-                setComments(Array.isArray(commentData) ? commentData.filter((c) => c && (c.comment || c.text)) : [])
+                setComments(
+                    Array.isArray(commentData)
+                        ? commentData.filter((c) => c && (c.comment || c.text) && !isResolvedComment(c))
+                        : []
+                )
                 setIssues(
                     Array.isArray(issueData) ? issueData.filter((i) => i && (i.issue || i.title || i.description)) : []
                 )

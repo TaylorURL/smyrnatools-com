@@ -34,7 +34,7 @@ describe('CommentModalSection', () => {
             ])
         )
         expect(await screen.findByText('Drum seal leaking.')).toBeInTheDocument()
-        expect(screen.getByText(/^Deletes /)).toBeInTheDocument()
+        expect(screen.getByText(/^Resolves /)).toBeInTheDocument()
         expect(screen.getByText('Permanent')).toBeInTheDocument()
         expect(screen.getByText('May be out of date')).toBeInTheDocument()
         // The only switch is the composer's, for the comment being written.
@@ -50,12 +50,39 @@ describe('CommentModalSection', () => {
         expect(keep).toHaveAttribute('aria-checked', 'false')
         fireEvent.click(keep)
         expect(keep).toHaveAttribute('aria-checked', 'true')
-        expect(screen.getByText('On: this comment is never auto-deleted')).toBeInTheDocument()
+        expect(screen.getByText('On: this comment is never auto-resolved')).toBeInTheDocument()
 
         fireEvent.change(screen.getByLabelText('Write a comment'), { target: { value: 'Keep on file.' } })
         fireEvent.click(screen.getByRole('button', { name: 'Post comment' }))
 
         await waitFor(() => expect(service.addComment).toHaveBeenCalledWith('m1', 'Keep on file.', 'u1', true))
         await waitFor(() => expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false'))
+    })
+
+    it('keeps resolved comments on the Resolved tab and says when one timed out', async () => {
+        renderPopup(
+            makeService([
+                { author: 'u1', created_at: daysAgo(2), id: 'a', permanent: false, text: 'Brakes checked.' },
+                {
+                    auto_resolved: true,
+                    author: 'u1',
+                    created_at: daysAgo(100),
+                    id: 'b',
+                    permanent: false,
+                    resolved_at: daysAgo(8),
+                    text: 'Needs a new mirror.'
+                }
+            ])
+        )
+        expect(await screen.findByText('Brakes checked.')).toBeInTheDocument()
+        expect(screen.queryByText('Needs a new mirror.')).not.toBeInTheDocument()
+
+        fireEvent.click(screen.getByRole('button', { name: /^Resolved/ }))
+        expect(await screen.findByText('Needs a new mirror.')).toBeInTheDocument()
+        expect(screen.getByText('Timed out')).toBeInTheDocument()
+        expect(screen.getByText(/^Auto-resolved .* after 3 months$/)).toBeInTheDocument()
+        expect(screen.queryByText('Brakes checked.')).not.toBeInTheDocument()
+        // Nothing is written from the Resolved tab.
+        expect(screen.queryByLabelText('Write a comment')).not.toBeInTheDocument()
     })
 })

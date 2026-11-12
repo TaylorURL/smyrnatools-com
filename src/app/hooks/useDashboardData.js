@@ -201,19 +201,28 @@ export function useIssueCommentCounts({
                     ? Database.from('mixers_maintenance').select('*').in('mixer_id', mixerIds)
                     : Promise.resolve({ data: [] }),
                 mixerIds.length
-                    ? Database.from('mixers_comments').select('id,mixer_id').in('mixer_id', mixerIds)
+                    ? Database.from('mixers_comments')
+                          .select('id,mixer_id')
+                          .in('mixer_id', mixerIds)
+                          .is('resolved_at', null)
                     : Promise.resolve({ data: [] }),
                 tractorIds.length
                     ? Database.from('tractors_maintenance').select('*').in('tractor_id', tractorIds)
                     : Promise.resolve({ data: [] }),
                 tractorIds.length
-                    ? Database.from('tractors_comments').select('id,tractor_id').in('tractor_id', tractorIds)
+                    ? Database.from('tractors_comments')
+                          .select('id,tractor_id')
+                          .in('tractor_id', tractorIds)
+                          .is('resolved_at', null)
                     : Promise.resolve({ data: [] }),
                 trailerIds.length
                     ? Database.from('trailers_maintenance').select('*').in('trailer_id', trailerIds)
                     : Promise.resolve({ data: [] }),
                 trailerIds.length
-                    ? Database.from('trailers_comments').select('id,trailer_id').in('trailer_id', trailerIds)
+                    ? Database.from('trailers_comments')
+                          .select('id,trailer_id')
+                          .in('trailer_id', trailerIds)
+                          .is('resolved_at', null)
                     : Promise.resolve({ data: [] }),
                 equipmentIds.length
                     ? Database.from('heavy_equipment_maintenance').select('*').in('equipment_id', equipmentIds)
@@ -222,6 +231,7 @@ export function useIssueCommentCounts({
                     ? Database.from('heavy_equipment_comments')
                           .select('id,equipment_id')
                           .in('equipment_id', equipmentIds)
+                          .is('resolved_at', null)
                     : Promise.resolve({ data: [] })
             ])
             const counts = { equipment: {}, mixers: {}, tractors: {}, trailers: {} }

@@ -18,6 +18,7 @@ import NoteCountChip from './notes/NoteCountChip'
 import NotePopupEyebrow from './notes/NotePopupEyebrow'
 import { NOTE_ACTION_CLS, NOTE_COMPOSER_TEXTAREA } from './notes/notePopupStyles'
 import NoteStatusChip from './notes/NoteStatusChip'
+import ResolvedNoteLine from './notes/ResolvedNoteLine'
 
 const SEVERITY_OPTIONS = ['Low', 'Medium', 'High'].map((sev) => ({ id: sev, label: sev }))
 
@@ -225,7 +226,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                     <p className="m-0 text-[13px] text-text-secondary">
                         {activeTab === 'open'
                             ? 'Report one below when something needs fixing.'
-                            : 'Issues marked resolved show up here.'}
+                            : 'Issues marked resolved, including ones that timed out, show up here.'}
                     </p>
                 </div>
             ) : (
@@ -261,9 +262,10 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                         />
                                     </div>
                                     {isResolved && (
-                                        <p className="m-0 text-[12px] text-text-secondary">
-                                            Resolved {formatDate(issue.time_completed)}
-                                        </p>
+                                        <ResolvedNoteLine
+                                            autoResolved={issue.auto_resolved === true}
+                                            when={formatDate(issue.time_completed)}
+                                        />
                                     )}
                                 </div>
                                 <div className="-mr-1.5 flex shrink-0 items-center">
