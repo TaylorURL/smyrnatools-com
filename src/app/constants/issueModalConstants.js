@@ -7,3 +7,13 @@ export const SEVERITY_TO_TONE = {
     Low: 'success',
     Medium: 'warning'
 }
+
+/**
+ * The bar down the left edge of an issue row, in the same status tokens as
+ * its severity pill's dot, so the two always agree.
+ */
+export const SEVERITY_TO_BAR = {
+    High: 'bg-status-danger',
+    Low: 'bg-status-active',
+    Medium: 'bg-status-warning'
+}

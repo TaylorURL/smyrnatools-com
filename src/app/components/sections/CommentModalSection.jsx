@@ -2,24 +2,30 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { UserService } from '../../../services/UserService'
 import { formatCentralDate } from '../../../utils/PlanUtility'
-import { isStaleNote } from '../../../utils/StaleNoteUtility'
-import Badge from '../common/Badge'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import Skeleton, { SkeletonStack } from '../common/Skeleton'
-import StaleNoteFlag from '../common/StaleNoteFlag'
+import UserAvatar from '../common/UserAvatar'
 import Dialog, { DIALOG_TEXTAREA } from '../ui/Dialog'
 import DockedPanel from './DockedPanel'
+import KeepPermanentSwitch from './notes/KeepPermanentSwitch'
+import NoteCountChip from './notes/NoteCountChip'
+import NotePopupEyebrow from './notes/NotePopupEyebrow'
+import { NOTE_ACTION_CLS, NOTE_COMPOSER_TEXTAREA } from './notes/notePopupStyles'
+import NoteStatusChip from './notes/NoteStatusChip'
 
 function CommentRowSkeleton() {
     return (
-        <div className="border-b border-border-light px-6 py-3">
-            <div className="mb-2 flex items-center gap-2">
-                <Skeleton className="h-3.5 w-28" />
-                <Skeleton className="h-3 w-14" />
+        <div className="flex items-start gap-3 border-b border-border-light px-6 py-3.5">
+            <Skeleton className="h-8 w-8 shrink-0" rounded="rounded-full" />
+            <div className="min-w-0 flex-1">
+                <div className="mb-2 flex items-center gap-2">
+                    <Skeleton className="h-3.5 w-28" />
+                    <Skeleton className="h-3 w-14" />
+                </div>
+                <Skeleton className="mb-1.5 h-3 w-full" />
+                <Skeleton className="h-3 w-3/5" />
             </div>
-            <Skeleton className="mb-1.5 h-3 w-full" />
-            <Skeleton className="h-3 w-3/5" />
         </div>
     )
 }
@@ -161,89 +167,85 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
 
     const isSubmitDisabled = isSubmitting || !newComment.trim()
     const isPanel = displayMode === 'panel'
-    const eyebrow = isLoading
-        ? itemType
-        : `${itemType} · ${comments.length} ${comments.length === 1 ? 'comment' : 'comments'}`
+    const eyebrow = <NotePopupEyebrow itemType={itemType} itemLabel={itemNumber || itemId} />
+    const noun = String(itemType || 'item').toLowerCase()
 
-    const body = (
-        <>
-            <form onSubmit={handleAddComment} className="flex flex-col gap-3 border-b border-border-light px-6 py-4">
-                <ErrorMessage message={error} onDismiss={() => setError(null)} />
-                <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Write a comment"
-                    aria-label="Write a comment"
-                    disabled={isSubmitting}
-                    rows="3"
-                    className={DIALOG_TEXTAREA}
-                />
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <label className="flex cursor-pointer items-center gap-2 text-[12px] text-text-secondary">
-                        <input
-                            type="checkbox"
-                            checked={permanent}
-                            onChange={(e) => setPermanent(e.target.checked)}
-                            disabled={isSubmitting}
-                        />
-                        Permanent (never auto-deleted)
-                    </label>
-                    <button type="submit" disabled={isSubmitDisabled} className="btn-primary">
-                        {isSubmitting ? 'Posting' : 'Post'}
-                    </button>
-                </div>
-            </form>
-
-            {isLoading ? (
-                <SkeletonStack count={3} gapClassName="gap-0">
-                    {() => <CommentRowSkeleton />}
-                </SkeletonStack>
-            ) : comments.length === 0 ? (
-                <div className="flex flex-col items-center gap-1 px-6 py-10 text-center">
-                    <p className="m-0 text-[15px] font-medium text-text-primary">No comments yet</p>
-                    <p className="m-0 text-[13px] text-text-secondary">Be the first to add one.</p>
-                </div>
-            ) : (
-                <ul className="m-0 list-none p-0">
-                    {sortedComments.map((comment) => (
-                        <li
-                            key={comment.id}
-                            className="flex items-start gap-3 border-b border-border-light px-6 py-3 transition-colors duration-150 hover:bg-bg-hover motion-reduce:transition-none"
-                        >
-                            <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-baseline gap-x-2">
-                                    <span className="text-[13px] font-medium text-text-primary">
-                                        {getAuthorName(comment)}
-                                    </span>
-                                    <span className="text-[12px] tabular-nums text-text-tertiary">
-                                        {formatDate(comment.createdAt || comment.created_at)}
-                                    </span>
-                                    {comment.permanent ? (
-                                        <Badge tone="neutral" size="xs" icon="thumbtack">
-                                            Permanent
-                                        </Badge>
-                                    ) : (
-                                        isStaleNote(comment.createdAt || comment.created_at) && <StaleNoteFlag />
-                                    )}
-                                </div>
-                                <p className="m-0 mt-0.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-text-primary">
-                                    {comment.text}
-                                </p>
+    // List first, newest on top, with the composer pinned underneath so the
+    // popup reads like a thread. Whether a comment is kept is chosen once, in
+    // the composer, for the comment being posted; a posted comment shows what
+    // was chosen and offers no way to change it.
+    const body = isLoading ? (
+        <SkeletonStack count={3} gapClassName="gap-0">
+            {() => <CommentRowSkeleton />}
+        </SkeletonStack>
+    ) : comments.length === 0 ? (
+        <div className="flex flex-col items-center gap-1 px-6 py-10 text-center">
+            <p className="m-0 text-[15px] font-medium text-text-primary">No comments yet</p>
+            <p className="m-0 text-[13px] text-text-secondary">Be the first to add one below.</p>
+        </div>
+    ) : (
+        <ul className="m-0 list-none p-0">
+            {sortedComments.map((comment) => {
+                const createdAt = comment.createdAt || comment.created_at
+                return (
+                    <li
+                        key={comment.id}
+                        className="flex items-start gap-3 border-b border-border-light px-6 py-3.5 transition-colors duration-150 last:border-b-0 hover:bg-bg-hover motion-reduce:transition-none"
+                    >
+                        <UserAvatar name={getAuthorName(comment)} userId={comment.author} size={32} />
+                        <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span className="text-[13px] font-semibold text-text-primary">
+                                    {getAuthorName(comment)}
+                                </span>
+                                <span className="text-[12px] tabular-nums text-text-tertiary">
+                                    {formatDate(createdAt)}
+                                </span>
+                                <NoteStatusChip createdAt={createdAt} permanent={comment.permanent} />
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => handleDeleteComment(comment.id)}
-                                title="Delete"
-                                aria-label="Delete comment"
-                                className="-mr-2 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-text-tertiary transition-colors duration-150 hover:bg-bg-tertiary hover:text-status-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
-                            >
-                                <i className="fas fa-trash text-[12px]" aria-hidden="true" />
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </>
+                            <p className="m-0 mt-1 whitespace-pre-wrap break-words text-[13px] leading-5 text-text-primary">
+                                {comment.text}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => handleDeleteComment(comment.id)}
+                            aria-label="Delete comment"
+                            className={`${NOTE_ACTION_CLS} text-text-tertiary hover:text-status-danger`}
+                        >
+                            Delete
+                        </button>
+                    </li>
+                )
+            })}
+        </ul>
+    )
+
+    const composer = (
+        <form onSubmit={handleAddComment} className="flex w-full flex-col gap-2.5" aria-label="New comment">
+            <span className="text-[12px] font-semibold text-text-secondary">New comment</span>
+            <ErrorMessage message={error} onDismiss={() => setError(null)} />
+            <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder={`Write a comment for this ${noun}…`}
+                aria-label="Write a comment"
+                disabled={isSubmitting}
+                rows="3"
+                className={`${DIALOG_TEXTAREA} ${NOTE_COMPOSER_TEXTAREA}`}
+            />
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-3">
+                <KeepPermanentSwitch
+                    checked={permanent}
+                    disabled={isSubmitting}
+                    noun="comment"
+                    onChange={setPermanent}
+                />
+                <button type="submit" disabled={isSubmitDisabled} className="btn-primary ml-auto">
+                    {isSubmitting ? 'Posting' : 'Post comment'}
+                </button>
+            </div>
+        </form>
     )
 
     const confirmDialog = (
@@ -258,12 +260,17 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
         />
     )
 
-    const title = itemNumber || itemId
+    const title = (
+        <span className="inline-flex items-center gap-2">
+            Comments
+            {!isLoading && <NoteCountChip count={comments.length} />}
+        </span>
+    )
 
     if (isPanel) {
         return (
             <>
-                <DockedPanel onClose={onClose} eyebrow={eyebrow} title={title} bodyClassName="p-0">
+                <DockedPanel onClose={onClose} eyebrow={eyebrow} title={title} footer={composer} bodyClassName="p-0">
                     {body}
                 </DockedPanel>
                 {confirmDialog}
@@ -273,7 +280,15 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
 
     return (
         <>
-            <Dialog open onClose={handleDialogClose} size="md" eyebrow={eyebrow} title={title} bodyClassName="p-0">
+            <Dialog
+                open
+                onClose={handleDialogClose}
+                size="md"
+                eyebrow={eyebrow}
+                title={title}
+                footer={composer}
+                bodyClassName="p-0"
+            >
                 {body}
             </Dialog>
             {confirmDialog}

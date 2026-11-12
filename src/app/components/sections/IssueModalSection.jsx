@@ -1,13 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { UserService } from '../../../services/UserService'
-import { isStaleNote } from '../../../utils/StaleNoteUtility'
-import { SEVERITY_TO_TONE } from '../../constants/issueModalConstants'
+import { SEVERITY_TO_BAR, SEVERITY_TO_TONE } from '../../constants/issueModalConstants'
 import Badge from '../common/Badge'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import { SkeletonStack } from '../common/Skeleton'
-import StaleNoteFlag from '../common/StaleNoteFlag'
 import Dialog, { DIALOG_TEXTAREA } from '../ui/Dialog'
 import TabButton from '../ui/TabButton'
 import DockedPanel from './DockedPanel'
@@ -15,11 +13,13 @@ import { formatDate } from './issue-modal/issueModalHelpers'
 import { IssueRowSkeleton } from './issue-modal/IssueModalSkeletons'
 import SegmentedChoice from './issue-modal/SegmentedChoice'
 import SendIssueMessageModal from './issue-modal/SendIssueMessageModal'
+import KeepPermanentSwitch from './notes/KeepPermanentSwitch'
+import NoteCountChip from './notes/NoteCountChip'
+import NotePopupEyebrow from './notes/NotePopupEyebrow'
+import { NOTE_ACTION_CLS, NOTE_COMPOSER_TEXTAREA } from './notes/notePopupStyles'
+import NoteStatusChip from './notes/NoteStatusChip'
 
 const SEVERITY_OPTIONS = ['Low', 'Medium', 'High'].map((sev) => ({ id: sev, label: sev }))
-
-const ROW_ACTION_CLS =
-    'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none'
 
 /**
  * Issue list and composer for one asset. `displayMode: 'panel'` drops the
@@ -168,10 +168,9 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
     const displayIssues = activeTab === 'open' ? openIssues : resolvedIssues
     const isPanel = displayMode === 'panel'
     const isSubmitDisabled = isSubmitting || !newIssue.trim()
-    const title = itemNumber || itemId
-    const eyebrow = isLoading
-        ? itemType
-        : `${itemType} · ${openIssues.length} open ${openIssues.length === 1 ? 'issue' : 'issues'}`
+    const title = 'Issues'
+    const eyebrow = <NotePopupEyebrow itemType={itemType} itemLabel={itemNumber || itemId} />
+    const noun = String(itemType || 'item').toLowerCase()
 
     // Open and Resolved are two views of the list, so they are underline tabs
     // laid on the toolbar's bottom rule exactly as the history popup lays its
@@ -188,7 +187,11 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                     label={
                         <>
                             {tab.label}
-                            <span className="ml-1.5 font-normal tabular-nums text-text-tertiary">{tab.count}</span>
+                            {!isLoading && (
+                                <span className="ml-1.5">
+                                    <NoteCountChip count={tab.count} />
+                                </span>
+                            )}
                         </>
                     }
                     isActive={activeTab === tab.id}
@@ -198,49 +201,16 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
         </div>
     )
 
+    // List first, newest on top, with the composer pinned underneath on the
+    // Open tab so the popup reads like a thread. Whether an issue is kept is
+    // chosen once, in the composer, for the issue being reported; a reported
+    // issue shows what was chosen and offers no way to change it.
     const body = (
         <>
-            {error && (
+            {error && activeTab !== 'open' && (
                 <div className="px-6 pt-4">
                     <ErrorMessage message={error} onDismiss={() => setError(null)} />
                 </div>
-            )}
-
-            {activeTab === 'open' && (
-                <form onSubmit={handleAddIssue} className="flex flex-col gap-3 border-b border-border-light px-6 py-4">
-                    <textarea
-                        value={newIssue}
-                        onChange={(e) => setNewIssue(e.target.value)}
-                        placeholder="What's the issue?"
-                        aria-label="Describe the issue"
-                        disabled={isSubmitting}
-                        rows="3"
-                        className={DIALOG_TEXTAREA}
-                    />
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <span className="text-[12px] font-medium text-text-secondary">Severity</span>
-                            <SegmentedChoice
-                                ariaLabel="Severity"
-                                onChange={setSeverity}
-                                options={SEVERITY_OPTIONS}
-                                value={severity}
-                            />
-                        </div>
-                        <label className="flex cursor-pointer items-center gap-2 text-[12px] text-text-secondary">
-                            <input
-                                type="checkbox"
-                                checked={permanent}
-                                onChange={(e) => setPermanent(e.target.checked)}
-                                disabled={isSubmitting}
-                            />
-                            Permanent (never auto-deleted)
-                        </label>
-                        <button type="submit" disabled={isSubmitDisabled} className="btn-primary">
-                            {isSubmitting ? 'Submitting' : 'Submit'}
-                        </button>
-                    </div>
-                </form>
             )}
 
             {isLoading ? (
@@ -254,7 +224,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                     </p>
                     <p className="m-0 text-[13px] text-text-secondary">
                         {activeTab === 'open'
-                            ? 'Report one above when something needs fixing.'
+                            ? 'Report one below when something needs fixing.'
                             : 'Issues marked resolved show up here.'}
                     </p>
                 </div>
@@ -265,58 +235,55 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                         return (
                             <li
                                 key={issue.id}
-                                className="flex items-start gap-3 border-b border-border-light px-6 py-3 transition-colors duration-150 hover:bg-bg-hover motion-reduce:transition-none"
+                                className="flex items-start gap-3 border-b border-border-light px-6 py-3.5 transition-colors duration-150 last:border-b-0 hover:bg-bg-hover motion-reduce:transition-none"
                             >
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                        <Badge tone={SEVERITY_TO_TONE[issue.severity] || 'warning'} size="sm">
-                                            {issue.severity}
-                                        </Badge>
-                                        <span className="text-[13px] font-medium text-text-primary">
-                                            {getCreatorName(issue)}
-                                        </span>
-                                        <span className="text-[12px] tabular-nums text-text-tertiary">
-                                            {formatDate(issue.time_created)}
-                                        </span>
-                                        {/* A resolved issue is history, so only an open one is
-                                            doubted for its age. */}
-                                        {issue.permanent ? (
-                                            <Badge tone="neutral" size="xs" icon="thumbtack">
-                                                Permanent
-                                            </Badge>
-                                        ) : (
-                                            !isResolved && isStaleNote(issue.time_created) && <StaleNoteFlag />
-                                        )}
-                                    </div>
-                                    <p className="m-0 mt-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-text-primary">
+                                <span
+                                    aria-hidden="true"
+                                    className={`w-1 shrink-0 self-stretch rounded-[2px] ${
+                                        SEVERITY_TO_BAR[issue.severity] || SEVERITY_TO_BAR.Medium
+                                    }`}
+                                />
+                                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                                    <p className="m-0 whitespace-pre-wrap break-words text-[13px] font-medium leading-5 text-text-primary">
                                         {issue.issue}
                                     </p>
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <Badge tone={SEVERITY_TO_TONE[issue.severity] || 'warning'} size="xs">
+                                            {issue.severity}
+                                        </Badge>
+                                        <span className="text-[12px] tabular-nums text-text-tertiary">
+                                            {getCreatorName(issue)} · {formatDate(issue.time_created)}
+                                        </span>
+                                        <NoteStatusChip
+                                            createdAt={issue.time_created}
+                                            permanent={issue.permanent}
+                                            resolved={isResolved}
+                                        />
+                                    </div>
                                     {isResolved && (
-                                        <p className="m-0 mt-1 text-[12px] text-text-secondary">
+                                        <p className="m-0 text-[12px] text-text-secondary">
                                             Resolved {formatDate(issue.time_completed)}
                                         </p>
                                     )}
                                 </div>
-                                <div className="-mr-2 flex shrink-0">
+                                <div className="-mr-1.5 flex shrink-0 items-center">
                                     {!isResolved && (
                                         <>
                                             <button
                                                 type="button"
                                                 onClick={() => handleCompleteIssue(issue.id)}
-                                                title="Mark resolved"
                                                 aria-label="Mark resolved"
-                                                className={`${ROW_ACTION_CLS} text-text-secondary hover:text-text-primary`}
+                                                className={`${NOTE_ACTION_CLS} font-semibold text-status-active hover:bg-bg-tertiary`}
                                             >
-                                                <i className="fas fa-check text-[12px]" aria-hidden="true" />
+                                                Resolve
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setMessageIssue(issue)}
-                                                title="Send message"
                                                 aria-label="Send message"
-                                                className={`${ROW_ACTION_CLS} text-text-secondary hover:text-text-primary`}
+                                                className={`${NOTE_ACTION_CLS} text-text-secondary hover:bg-bg-tertiary hover:text-text-primary`}
                                             >
-                                                <i className="fas fa-paper-plane text-[12px]" aria-hidden="true" />
+                                                Message
                                             </button>
                                         </>
                                     )}
@@ -324,11 +291,10 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                         <button
                                             type="button"
                                             onClick={() => handleDeleteIssue(issue.id)}
-                                            title="Delete"
                                             aria-label="Delete issue"
-                                            className={`${ROW_ACTION_CLS} text-text-tertiary hover:text-status-danger`}
+                                            className={`${NOTE_ACTION_CLS} text-text-tertiary hover:bg-bg-tertiary hover:text-status-danger`}
                                         >
-                                            <i className="fas fa-trash text-[12px]" aria-hidden="true" />
+                                            Delete
                                         </button>
                                     )}
                                 </div>
@@ -339,6 +305,43 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
             )}
         </>
     )
+
+    const composer =
+        activeTab === 'open' ? (
+            <form onSubmit={handleAddIssue} className="flex w-full flex-col gap-2.5" aria-label="Report a new issue">
+                <span className="text-[12px] font-semibold text-text-secondary">Report a new issue</span>
+                <ErrorMessage message={error} onDismiss={() => setError(null)} />
+                <textarea
+                    value={newIssue}
+                    onChange={(e) => setNewIssue(e.target.value)}
+                    placeholder={`What's wrong with this ${noun}?`}
+                    aria-label="Describe the issue"
+                    disabled={isSubmitting}
+                    rows="3"
+                    className={`${DIALOG_TEXTAREA} ${NOTE_COMPOSER_TEXTAREA}`}
+                />
+                <div className="flex items-center gap-3">
+                    <span className="text-[12px] font-medium text-text-secondary">Severity</span>
+                    <SegmentedChoice
+                        ariaLabel="Severity"
+                        onChange={setSeverity}
+                        options={SEVERITY_OPTIONS}
+                        value={severity}
+                    />
+                </div>
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-3">
+                    <KeepPermanentSwitch
+                        checked={permanent}
+                        disabled={isSubmitting}
+                        noun="issue"
+                        onChange={setPermanent}
+                    />
+                    <button type="submit" disabled={isSubmitDisabled} className="btn-primary ml-auto">
+                        {isSubmitting ? 'Reporting' : 'Report issue'}
+                    </button>
+                </div>
+            </form>
+        ) : null
 
     const overlays = (
         <>
@@ -366,7 +369,14 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
     if (isPanel) {
         return (
             <>
-                <DockedPanel onClose={onClose} eyebrow={eyebrow} title={title} toolbar={toolbar} bodyClassName="p-0">
+                <DockedPanel
+                    onClose={onClose}
+                    eyebrow={eyebrow}
+                    title={title}
+                    toolbar={toolbar}
+                    footer={composer}
+                    bodyClassName="p-0"
+                >
                     {body}
                 </DockedPanel>
                 {overlays}
@@ -383,6 +393,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                 eyebrow={eyebrow}
                 title={title}
                 toolbar={toolbar}
+                footer={composer}
                 bodyClassName="p-0"
             >
                 {body}

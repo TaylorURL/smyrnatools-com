@@ -26,6 +26,24 @@ export const isStaleNote = (dateString: string | null | undefined, now: number =
     return Number.isFinite(time) && now - time > STALE_NOTE_DAYS * MS_PER_DAY
 }
 
+/**
+ * How long a comment or an open issue lives unless it was kept permanently
+ * when it was written. `expire_old_notes()` deletes anything older every
+ * night; change both together.
+ */
+export const NOTE_EXPIRY_MONTHS = 3
+
+/** When the nightly job deletes a note written at `dateString`, or null for a
+ *  missing or unreadable date. Calendar months, the way Postgres reads
+ *  `interval '3 months'` on a UTC database. */
+export const noteExpiresAt = (dateString: string | null | undefined): Date | null => {
+    const time = dateString ? Date.parse(dateString) : NaN
+    if (!Number.isFinite(time)) return null
+    const at = new Date(time)
+    at.setUTCMonth(at.getUTCMonth() + NOTE_EXPIRY_MONTHS)
+    return at
+}
+
 /** Plant Manager, and the combined roles that carry it, such as "Plant
  *  Manager & Equipment Manager". Matched the way the dashboard's people
  *  section buckets roles, so both agree on who counts. */
