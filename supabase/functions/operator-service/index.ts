@@ -48,7 +48,11 @@ Deno.serve(async (req) => {
     try {
         const url = new URL(req.url)
         const endpoint = url.pathname.split('/').pop()
-        const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', { auth: { autoRefreshToken: false, persistSession: false } })
+        const supabase = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+            { auth: { autoRefreshToken: false, persistSession: false } }
+        )
 
         switch (endpoint) {
             case 'list': {
@@ -118,11 +122,7 @@ Deno.serve(async (req) => {
                 const [{ data: activeData, error: activeError }, { data: otherData, error: otherError }] =
                     await Promise.all([
                         supabase.from(OPERATORS_TABLE).select('*').eq('status', 'Active').order('name'),
-                        supabase
-                            .from(OPERATORS_TABLE)
-                            .select('*')
-                            .or('status.is.null,status.neq.Active')
-                            .order('name')
+                        supabase.from(OPERATORS_TABLE).select('*').or('status.is.null,status.neq.Active').order('name')
                     ])
                 if (activeError || otherError) return errorResponse('Failed to fetch operators', headers, 400)
                 return jsonResponse({ data: [...(activeData ?? []), ...(otherData ?? [])] }, headers)
@@ -358,7 +358,8 @@ Deno.serve(async (req) => {
                         operator_id: operatorId,
                         text,
                         author: auth,
-                        created_at: new Date().toISOString()
+                        created_at: new Date().toISOString(),
+                        permanent: body?.permanent === true
                     })
                     .select()
                     .single()

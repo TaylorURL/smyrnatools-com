@@ -227,7 +227,7 @@ class BaseAssetService {
         return this.commentModelFn ? rows.map(this.commentModelFn) : rows
     }
 
-    async addComment(entityId, text, author) {
+    async addComment(entityId, text, author, permanent = false) {
         ValidationUtility.requireUUID(entityId, `${this.entityName} ID is required`)
         if (!text?.trim()) throw new Error('Comment text is required')
         if (!author?.trim?.()) throw new Error('Author is required')
@@ -236,6 +236,7 @@ class BaseAssetService {
             {
                 author: typeof author === 'string' ? author.trim() : author,
                 [this.entityIdParam]: entityId,
+                permanent: permanent === true,
                 text: typeof text === 'string' ? text.trim() : text
             },
             'Failed to add comment'
@@ -260,7 +261,7 @@ class BaseAssetService {
         return json?.data ?? []
     }
 
-    async addIssue(entityId, issue, severity, createdBy = null) {
+    async addIssue(entityId, issue, severity, createdBy = null, permanent = false) {
         ValidationUtility.requireUUID(entityId, `${this.entityName} ID is required`)
         if (!issue?.trim()) throw new Error('Issue description is required')
         const json = await apiPostOrThrow(
@@ -268,6 +269,7 @@ class BaseAssetService {
             {
                 [this.entityIdParam]: entityId,
                 issue: issue.trim(),
+                permanent: permanent === true,
                 severity: normalizeSeverity(severity),
                 userId: createdBy
             },
@@ -372,8 +374,9 @@ export function createAssetService(config) {
     const base = new BaseAssetService(config)
     return {
         _base: base,
-        addComment: (entityId, text, author) => base.addComment(entityId, text, author),
-        addIssue: (entityId, issue, severity, createdBy = null) => base.addIssue(entityId, issue, severity, createdBy),
+        addComment: (entityId, text, author, permanent = false) => base.addComment(entityId, text, author, permanent),
+        addIssue: (entityId, issue, severity, createdBy = null, permanent = false) =>
+            base.addIssue(entityId, issue, severity, createdBy, permanent),
         completeIssue: (issueId) => base.completeIssue(issueId),
         createHistoryEntry: (entityId, fieldName, oldValue, newValue, changedBy) =>
             base.createHistoryEntry(entityId, fieldName, oldValue, newValue, changedBy),

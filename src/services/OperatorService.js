@@ -39,13 +39,13 @@ class OperatorServiceImpl {
         )
         return json?.data ?? []
     }
-    async addComment(operatorId, text, userId) {
+    async addComment(operatorId, text, userId, permanent = false) {
         ValidationUtility.requireUUID(operatorId, 'Operator ID is required')
         if (!text?.trim()) throw new Error('Comment text is required')
         if (!userId) throw new Error('User ID is required')
         const json = await apiPostOrThrow(
             `${SERVICE_PREFIX}/add-comment`,
-            { operatorId, text: text.trim(), userId },
+            { operatorId, permanent: permanent === true, text: text.trim(), userId },
             'Failed to add comment'
         )
         return json?.data ?? null

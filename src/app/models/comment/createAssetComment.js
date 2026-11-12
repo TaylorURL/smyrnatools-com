@@ -16,6 +16,7 @@ export function createAssetComment({ foreignKey, foreignKeyColumn }) {
             this[foreignKey] = data[foreignKeyColumn] ?? ''
             this.text = data.text ?? ''
             this.author = data.author ?? ''
+            this.permanent = data.permanent === true
             const created = data.created_at
             this.createdAt =
                 typeof created === 'string' && !isNaN(Date.parse(created)) ? created : new Date().toISOString()
@@ -32,6 +33,7 @@ export function createAssetComment({ foreignKey, foreignKeyColumn }) {
                 created_at: this.createdAt,
                 [foreignKeyColumn]: this[foreignKey],
                 id: this.id,
+                permanent: this.permanent,
                 text: this.text
             }
         }

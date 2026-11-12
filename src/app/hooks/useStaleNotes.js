@@ -121,12 +121,14 @@ async function fetchSourceNotes(source, records, cutoff) {
         Database.from(source.commentsTable)
             .select(`id, ${source.fk}, text, author, created_at`)
             .in(source.fk, ids)
+            .eq('permanent', false)
             .lt('created_at', cutoff),
         source.issuesTable
             ? Database.from(source.issuesTable)
                   .select(`id, ${source.fk}, issue, severity, created_by, time_created`)
                   .in(source.fk, ids)
                   .is('time_completed', null)
+                  .eq('permanent', false)
                   .lt('time_created', cutoff)
             : Promise.resolve({ data: [] })
     ])
