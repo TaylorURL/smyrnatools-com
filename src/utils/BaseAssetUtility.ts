@@ -141,9 +141,12 @@ export async function fetchAllCountsFromTable(
     entityIds: string[]
 ): Promise<CountMap> {
     if (!entityIds?.length) return {}
+    // Comment counts are of active comments: a resolved one (by hand or by the
+    // nightly three-month timeout) is history and only shows on Resolved.
     const { data, error } = await Database.from(tableName)
         .select(idColumnName)
         .in(idColumnName, entityIds)
+        .is('resolved_at', null)
         .overrideTypes<Record<string, string>[], { merge: false }>()
     if (error) return {}
     const counts: CountMap = {}

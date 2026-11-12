@@ -28,13 +28,25 @@ export const isStaleNote = (dateString: string | null | undefined, now: number =
 }
 
 /**
- * How long a comment or an open issue lives unless it was kept permanently
- * when it was written. `expire_old_notes()` deletes anything older every
- * night; change both together.
+ * How long a comment or an open issue stays active unless it was kept
+ * permanently when it was written. `expire_old_notes()` marks anything older
+ * resolved every night (and flags it `auto_resolved`, so the popups can say it
+ * timed out); change both together.
  */
 export const NOTE_EXPIRY_MONTHS = 3
 
-/** When the nightly job deletes a note written at `dateString`, or null for a
+/** True for a comment that has been resolved, by hand or by the nightly
+ *  timeout. Reads the model's `resolvedAt` or the raw row's `resolved_at`. */
+export const isResolvedComment = (
+    comment: { resolvedAt?: string | null; resolved_at?: string | null } | null | undefined
+): boolean => Boolean(comment?.resolvedAt || comment?.resolved_at)
+
+/** True when the nightly timeout resolved the note rather than a person. */
+export const isAutoResolvedNote = (
+    note: { autoResolved?: boolean; auto_resolved?: boolean } | null | undefined
+): boolean => note?.autoResolved === true || note?.auto_resolved === true
+
+/** When the nightly job marks resolved a note written at `dateString`, or null for a
  *  missing or unreadable date. Calendar months, the way Postgres reads
  *  `interval '3 months'` on a UTC database. */
 export const noteExpiresAt = (dateString: string | null | undefined): Date | null => {

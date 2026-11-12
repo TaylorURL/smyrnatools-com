@@ -129,6 +129,7 @@ async function fetchSourceNotes(source, records, cutoff, authorId = null) {
     const [comments, issues] = await Promise.all([
         scope(Database.from(source.commentsTable).select(`id, ${source.fk}, text, author, created_at`), 'author')
             .eq('permanent', false)
+            .is('resolved_at', null)
             .lt('created_at', cutoff),
         source.issuesTable
             ? scope(

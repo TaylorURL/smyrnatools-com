@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+    isAutoResolvedNote,
     isPlantManagerRole,
+    isResolvedComment,
     isStaleNote,
     mergeStaleNotes,
     noteAgeInDays,
@@ -45,6 +47,17 @@ describe('StaleNoteUtility', () => {
         expect(noteExpiresAt('2026-08-15T12:00:00Z')?.toISOString()).toBe('2026-11-15T12:00:00.000Z')
         expect(noteExpiresAt(null)).toBeNull()
         expect(noteExpiresAt('not a date')).toBeNull()
+    })
+
+    it('tells resolved and timed-out notes from active ones, model or raw row', () => {
+        expect(isResolvedComment({ resolved_at: '2026-11-12T10:30:00Z' })).toBe(true)
+        expect(isResolvedComment({ resolvedAt: '2026-11-12T10:30:00Z' })).toBe(true)
+        expect(isResolvedComment({ resolved_at: null })).toBe(false)
+        expect(isResolvedComment(null)).toBe(false)
+        expect(isAutoResolvedNote({ auto_resolved: true })).toBe(true)
+        expect(isAutoResolvedNote({ autoResolved: true })).toBe(true)
+        expect(isAutoResolvedNote({ auto_resolved: false })).toBe(false)
+        expect(isAutoResolvedNote(undefined)).toBe(false)
     })
 
     it('recognises plant manager roles, combined ones included', () => {

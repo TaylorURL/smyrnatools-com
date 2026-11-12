@@ -5,6 +5,7 @@ import { PlantService } from '../../services/PlantService'
 import { TractorService } from '../../services/TractorService'
 import { TrailerService } from '../../services/TrailerService'
 import { UserService } from '../../services/UserService'
+import { isResolvedComment } from '../../utils/StaleNoteUtility'
 
 /**
  * Resolves the active region code: prefers the user's selected region, then
@@ -83,7 +84,11 @@ export function useTrailerCommentsAndIssues(trailer, trailerId) {
                 .select('*')
                 .eq('trailer_id', id)
                 .order('created_at', { ascending: false })
-            setComments(Array.isArray(commentData) ? commentData.filter((c) => c && (c.comment || c.text)) : [])
+            setComments(
+                Array.isArray(commentData)
+                    ? commentData.filter((c) => c && (c.comment || c.text) && !isResolvedComment(c))
+                    : []
+            )
             const { data: issueData } = await Database.from('trailers_maintenance')
                 .select('*')
                 .eq('trailer_id', id)
