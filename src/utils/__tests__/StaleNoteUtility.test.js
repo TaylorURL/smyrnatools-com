@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { isPlantManagerRole, isStaleNote, noteAgeInDays, STALE_NOTE_DAYS, staleNoteCutoff } from '../StaleNoteUtility'
+import {
+    isPlantManagerRole,
+    isStaleNote,
+    noteAgeInDays,
+    noteExpiresAt,
+    STALE_NOTE_DAYS,
+    staleNoteCutoff
+} from '../StaleNoteUtility'
 
 const NOW = Date.parse('2026-11-03T12:00:00Z')
 const daysBefore = (days) => new Date(NOW - days * 86400000).toISOString()
@@ -28,6 +35,13 @@ describe('StaleNoteUtility', () => {
         expect(noteAgeInDays(daysBefore(45.7), NOW)).toBe(45)
         expect(noteAgeInDays(null, NOW)).toBe(0)
         expect(noteAgeInDays(daysBefore(-2), NOW)).toBe(0)
+    })
+
+    it('puts the expiry three calendar months after the note was written', () => {
+        expect(noteExpiresAt('2026-11-03T12:00:00Z')?.toISOString()).toBe('2027-02-03T12:00:00.000Z')
+        expect(noteExpiresAt('2026-08-15T12:00:00Z')?.toISOString()).toBe('2026-11-15T12:00:00.000Z')
+        expect(noteExpiresAt(null)).toBeNull()
+        expect(noteExpiresAt('not a date')).toBeNull()
     })
 
     it('recognises plant manager roles, combined ones included', () => {
