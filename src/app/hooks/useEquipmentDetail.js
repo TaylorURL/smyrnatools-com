@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { EquipmentService } from '../../services/EquipmentService'
 import { PlantService } from '../../services/PlantService'
 import { UserService } from '../../services/UserService'
+import { isResolvedComment } from '../../utils/StaleNoteUtility'
 
 /**
  * @param {string} equipmentId - Equipment ID to load.
@@ -205,7 +206,11 @@ export default function useEquipmentDetail(equipmentId, preferences) {
             if (!equipmentId) return
             try {
                 const comments = await EquipmentService.fetchComments(equipmentId)
-                setComments(Array.isArray(comments) ? comments.filter((c) => c && (c.comment || c.text)) : [])
+                setComments(
+                    Array.isArray(comments)
+                        ? comments.filter((c) => c && (c.comment || c.text) && !isResolvedComment(c))
+                        : []
+                )
                 const issues = await EquipmentService.fetchIssues(equipmentId)
                 setIssues(Array.isArray(issues) ? issues.filter((i) => i && (i.issue || i.title || i.description)) : [])
             } catch {

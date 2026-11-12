@@ -36,8 +36,8 @@ export default function KeepPermanentSwitch({ checked, disabled = false, noun, o
                 <span className="text-[13px] font-medium text-text-primary">Keep this {noun} permanently</span>
                 <span id={hintId} className={`text-[12px] ${checked ? 'text-accent' : 'text-text-tertiary'}`}>
                     {checked
-                        ? `On: this ${noun} is never auto-deleted`
-                        : `Off: deleted automatically after ${NOTE_EXPIRY_MONTHS} months`}
+                        ? `On: this ${noun} is never auto-resolved`
+                        : `Off: marked resolved automatically after ${NOTE_EXPIRY_MONTHS} months`}
                 </span>
             </span>
         </label>

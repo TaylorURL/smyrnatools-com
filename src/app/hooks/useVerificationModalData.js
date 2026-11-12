@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { Database } from '../../services/DatabaseService'
 import { UserService } from '../../services/UserService'
+import { isResolvedComment } from '../../utils/StaleNoteUtility'
 
 const INITIAL_SECTIONS_READY = {
     checklist: false,
@@ -98,7 +99,9 @@ export default function useVerificationModalData({ assignedOperator, itemId, ope
         setIsLoadingComments(true)
         try {
             const fetchedComments = await service.fetchComments(itemId)
-            setComments(Array.isArray(fetchedComments) ? fetchedComments : [])
+            setComments(
+                Array.isArray(fetchedComments) ? fetchedComments.filter((comment) => !isResolvedComment(comment)) : []
+            )
             const userIds = new Set()
             fetchedComments.forEach((comment) => {
                 if (comment.author) userIds.add(comment.author)

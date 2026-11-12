@@ -5,6 +5,7 @@ import { OperatorService } from '../../services/OperatorService'
 import { PlantService } from '../../services/PlantService'
 import { UserService } from '../../services/UserService'
 import { DateUtility } from '../../utils/DateUtility'
+import { isResolvedComment } from '../../utils/StaleNoteUtility'
 import { usePreferences } from '../context/PreferencesContext'
 
 /**
@@ -146,12 +147,14 @@ export default function useMixerDetailData(mixerId) {
                 ])
                 if (cancelled) return
                 const normalizedComments = Array.isArray(commentData)
-                    ? commentData.map((c) => ({
-                          author: c.author,
-                          created_at: c.createdAt || c.created_at,
-                          id: c.id,
-                          text: c.text
-                      }))
+                    ? commentData
+                          .filter((c) => !isResolvedComment(c))
+                          .map((c) => ({
+                              author: c.author,
+                              created_at: c.createdAt || c.created_at,
+                              id: c.id,
+                              text: c.text
+                          }))
                     : []
                 setComments(normalizedComments)
                 setIssues(
