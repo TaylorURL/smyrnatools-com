@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { UserService } from '../../../services/UserService'
 import { formatCentralDate } from '../../../utils/PlanUtility'
 import { isStaleNote } from '../../../utils/StaleNoteUtility'
+import Badge from '../common/Badge'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import Skeleton, { SkeletonStack } from '../common/Skeleton'
@@ -54,6 +55,7 @@ const formatDate = (dateString) => {
 function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, displayMode = 'modal' }) {
     const [comments, setComments] = useState([])
     const [newComment, setNewComment] = useState('')
+    const [permanent, setPermanent] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState(null)
@@ -135,8 +137,9 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
                 setError('You must be logged in to add comments')
                 return
             }
-            await service.addComment(itemId, newComment, userId)
+            await service.addComment(itemId, newComment, userId, permanent)
             setNewComment('')
+            setPermanent(false)
             fetchComments()
         } catch (err) {
             setError(err.message || 'Failed to add comment. Please try again.')
@@ -175,7 +178,16 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
                     rows="3"
                     className={DIALOG_TEXTAREA}
                 />
-                <div className="flex justify-end">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <label className="flex cursor-pointer items-center gap-2 text-[12px] text-text-secondary">
+                        <input
+                            type="checkbox"
+                            checked={permanent}
+                            onChange={(e) => setPermanent(e.target.checked)}
+                            disabled={isSubmitting}
+                        />
+                        Permanent (never auto-deleted)
+                    </label>
                     <button type="submit" disabled={isSubmitDisabled} className="btn-primary">
                         {isSubmitting ? 'Posting' : 'Post'}
                     </button>
@@ -206,7 +218,13 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
                                     <span className="text-[12px] tabular-nums text-text-tertiary">
                                         {formatDate(comment.createdAt || comment.created_at)}
                                     </span>
-                                    {isStaleNote(comment.createdAt || comment.created_at) && <StaleNoteFlag />}
+                                    {comment.permanent ? (
+                                        <Badge tone="neutral" size="xs" icon="thumbtack">
+                                            Permanent
+                                        </Badge>
+                                    ) : (
+                                        isStaleNote(comment.createdAt || comment.created_at) && <StaleNoteFlag />
+                                    )}
                                 </div>
                                 <p className="m-0 mt-0.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-text-primary">
                                     {comment.text}

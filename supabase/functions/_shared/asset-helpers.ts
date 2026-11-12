@@ -116,11 +116,7 @@ export async function requireAssetAccessById(
     headers: Record<string, string>
 ): Promise<Response | null> {
     const admin = getAdminClient()
-    const { data, error } = await admin
-        .from(table)
-        .select(plantColumn)
-        .eq(idColumn, id)
-        .maybeSingle()
+    const { data, error } = await admin.from(table).select(plantColumn).eq(idColumn, id).maybeSingle()
     if (error || !data) return errorResponse('Asset not found', headers, 404)
     const plantCode = (data as any)?.[plantColumn] as string | null
     return requireAssetAccess(userId, plantCode, headers)
@@ -296,7 +292,7 @@ export async function handleAddComment(
     const fkCol = deriveFkCol(tables)
     const { data, error } = await supabase
         .from(tables.comments!)
-        .insert([{ [fkCol]: entityId, text, author, created_at: nowIso() }])
+        .insert([{ [fkCol]: entityId, text, author, created_at: nowIso(), permanent: body?.permanent === true }])
         .select()
         .maybeSingle()
     if (error) return errorResponse('Operation failed', headers, 400)
@@ -465,7 +461,8 @@ export async function handleAddIssue(
             issue,
             severity,
             time_created: nowIso(),
-            created_by: auth
+            created_by: auth,
+            permanent: body?.permanent === true
         })
         .select()
         .maybeSingle()

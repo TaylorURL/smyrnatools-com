@@ -32,6 +32,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
     const [issues, setIssues] = useState([])
     const [newIssue, setNewIssue] = useState('')
     const [severity, setSeverity] = useState('Medium')
+    const [permanent, setPermanent] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState(null)
@@ -147,9 +148,10 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                 setError('You must be logged in to add an issue')
                 return
             }
-            await service.addIssue(itemId, newIssue, severity, userId)
+            await service.addIssue(itemId, newIssue, severity, userId, permanent)
             setNewIssue('')
             setSeverity('Medium')
+            setPermanent(false)
             fetchIssues()
         } catch (err) {
             setError(err.message || 'Failed to add issue. Please try again.')
@@ -225,6 +227,15 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                 value={severity}
                             />
                         </div>
+                        <label className="flex cursor-pointer items-center gap-2 text-[12px] text-text-secondary">
+                            <input
+                                type="checkbox"
+                                checked={permanent}
+                                onChange={(e) => setPermanent(e.target.checked)}
+                                disabled={isSubmitting}
+                            />
+                            Permanent (never auto-deleted)
+                        </label>
                         <button type="submit" disabled={isSubmitDisabled} className="btn-primary">
                             {isSubmitting ? 'Submitting' : 'Submit'}
                         </button>
@@ -269,7 +280,13 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                         </span>
                                         {/* A resolved issue is history, so only an open one is
                                             doubted for its age. */}
-                                        {!isResolved && isStaleNote(issue.time_created) && <StaleNoteFlag />}
+                                        {issue.permanent ? (
+                                            <Badge tone="neutral" size="xs" icon="thumbtack">
+                                                Permanent
+                                            </Badge>
+                                        ) : (
+                                            !isResolved && isStaleNote(issue.time_created) && <StaleNoteFlag />
+                                        )}
                                     </div>
                                     <p className="m-0 mt-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-text-primary">
                                         {issue.issue}
