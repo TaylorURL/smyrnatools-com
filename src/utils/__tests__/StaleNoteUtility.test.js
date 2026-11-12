@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest'
 import {
     isPlantManagerRole,
     isStaleNote,
+    mergeStaleNotes,
     noteAgeInDays,
     noteExpiresAt,
     STALE_NOTE_DAYS,
-    staleNoteCutoff
+    staleNoteCutoff,
+    staleNotesAudience,
+    staleNotesHeading
 } from '../StaleNoteUtility'
 
 const NOW = Date.parse('2026-11-03T12:00:00Z')
@@ -50,5 +53,48 @@ describe('StaleNoteUtility', () => {
         expect(isPlantManagerRole('District Manager')).toBe(false)
         expect(isPlantManagerRole('Dispatcher')).toBe(false)
         expect(isPlantManagerRole(null)).toBe(false)
+    })
+
+    it('merges the author and plant reads into one list, marking whose and where', () => {
+        const merged = mergeStaleNotes(
+            [
+                { authorId: 'me', key: 'comment:a', plantCode: '401' },
+                { authorId: 'me', key: 'issue:b', plantCode: '999' },
+                { authorId: 'me', key: 'comment:a', plantCode: '401' },
+                { authorId: 'someone', key: 'comment:c', plantCode: ' 401 ' }
+            ],
+            'me',
+            ['401']
+        )
+        expect(merged.map((n) => [n.key, n.mine, n.atMyPlants])).toEqual([
+            ['comment:a', true, true],
+            ['issue:b', true, false],
+            ['comment:c', false, true]
+        ])
+    })
+
+    it('marks nothing at my plants for someone who manages none', () => {
+        const merged = mergeStaleNotes([{ authorId: 'me', key: 'comment:a', plantCode: '' }], 'me')
+        expect(merged[0]).toMatchObject({ atMyPlants: false, mine: true })
+        expect(mergeStaleNotes([{ authorId: 'me', key: 'comment:a' }], '')[0].mine).toBe(false)
+    })
+
+    it('heads the prompt by whose notes it holds', () => {
+        expect(staleNotesAudience([{ atMyPlants: true, key: 'a' }])).toBe('plants')
+        expect(staleNotesAudience([{ atMyPlants: false, key: 'a', mine: true }])).toBe('mine')
+        expect(
+            staleNotesAudience([
+                { atMyPlants: true, key: 'a' },
+                { key: 'b', mine: true }
+            ])
+        ).toBe('mixed')
+        expect(staleNotesHeading([{ atMyPlants: true, key: 'a', mine: true }])).toBe('Old notes at your plants')
+        expect(staleNotesHeading([{ key: 'a', mine: true }])).toBe('Your old notes')
+        expect(
+            staleNotesHeading([
+                { atMyPlants: true, key: 'a' },
+                { key: 'b', mine: true }
+            ])
+        ).toBe('Old notes at your plants and yours')
     })
 })

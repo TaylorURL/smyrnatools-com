@@ -9,7 +9,7 @@ import { getSessionUserId } from '../../services/SessionService'
 import { TractorService } from '../../services/TractorService'
 import { TrailerService } from '../../services/TrailerService'
 import { UserService } from '../../services/UserService'
-import { isPlantManagerRole, staleNoteCutoff } from '../../utils/StaleNoteUtility'
+import { isPlantManagerRole, mergeStaleNotes, staleNoteCutoff } from '../../utils/StaleNoteUtility'
 import { STALE_NOTES_ASKED_KEY, STALE_NOTES_KEPT_KEY } from '../constants/dashboardConstants'
 
 /** Kept ids are capped so the list can't grow without bound on one device. */
@@ -110,28 +110,39 @@ const markAsked = (uid) => {
     }
 }
 
-/** The old comments and open issues on one kind of record, for the records
- *  given. A failed query yields nothing rather than failing the rest. */
-async function fetchSourceNotes(source, records, cutoff) {
+/**
+ * The old comments and open issues on one kind of record. With `authorId` it
+ * reads the ones that person wrote, on any of the records given; without it,
+ * every one on those records. A failed query yields nothing rather than
+ * failing the rest, and a note on a record the dashboard doesn't hold is left
+ * out, since there is nothing to name it by.
+ */
+async function fetchSourceNotes(source, records, cutoff, authorId = null) {
     const idOf = source.idOf || ((a) => a.id)
     const byId = new Map(records.map((a) => [idOf(a), a]).filter(([id]) => id))
     const ids = [...byId.keys()]
     if (!ids.length) return []
+    // Scoped to the author, the records are a lookup rather than a filter: the
+    // author column narrows it enough, and a whole fleet of ids would not fit
+    // in the request.
+    const scope = (query, authorColumn) => (authorId ? query.eq(authorColumn, authorId) : query.in(source.fk, ids))
     const [comments, issues] = await Promise.all([
-        Database.from(source.commentsTable)
-            .select(`id, ${source.fk}, text, author, created_at`)
-            .in(source.fk, ids)
+        scope(Database.from(source.commentsTable).select(`id, ${source.fk}, text, author, created_at`), 'author')
             .eq('permanent', false)
             .lt('created_at', cutoff),
         source.issuesTable
-            ? Database.from(source.issuesTable)
-                  .select(`id, ${source.fk}, issue, severity, created_by, time_created`)
-                  .in(source.fk, ids)
+            ? scope(
+                  Database.from(source.issuesTable).select(
+                      `id, ${source.fk}, issue, severity, created_by, time_created`
+                  ),
+                  'created_by'
+              )
                   .is('time_completed', null)
                   .eq('permanent', false)
                   .lt('time_created', cutoff)
             : Promise.resolve({ data: [] })
     ])
+    const known = (row) => byId.has(row[source.fk])
     const asset = (row) => {
         const record = byId.get(row[source.fk])
         return {
@@ -142,7 +153,7 @@ async function fetchSourceNotes(source, records, cutoff) {
         }
     }
     return [
-        ...(comments.error ? [] : comments.data || []).map((row) => ({
+        ...(comments.error ? [] : comments.data || []).filter(known).map((row) => ({
             ...asset(row),
             authorId: row.author,
             createdAt: row.created_at,
@@ -151,7 +162,7 @@ async function fetchSourceNotes(source, records, cutoff) {
             kind: 'comment',
             text: row.text
         })),
-        ...(issues.error ? [] : issues.data || []).map((row) => ({
+        ...(issues.error ? [] : issues.data || []).filter(known).map((row) => ({
             ...asset(row),
             authorId: row.created_by,
             createdAt: row.time_created,
@@ -165,8 +176,9 @@ async function fetchSourceNotes(source, records, cutoff) {
 }
 
 /**
- * Old comments and open issues at a plant manager's own plants, for the
- * dashboard to offer once per visit. Nothing loads for anyone else, before the
+ * Old comments and open issues for the dashboard to offer once per visit:
+ * every one the signed-in user wrote, whatever their role or plant, and for a
+ * plant manager also every one at their own plants. Nothing loads before the
  * dashboard's records are in, or after this visit has already asked.
  *
  * `remove` deletes a note for good, `keep` hides it from the prompt on this
@@ -179,27 +191,28 @@ export function useStaleNotes({ dataReady, plantCodes, recordRefs }) {
     const plantKey = useMemo(() => [...(plantCodes || [])].sort().join(','), [plantCodes])
 
     useEffect(() => {
-        if (!dataReady || !plantKey || !uid || wasAsked(uid)) return
+        if (!dataReady || !uid || wasAsked(uid)) return
         let cancelled = false
         async function load() {
             const roles = await UserService.getUserRoles(uid).catch(() => [])
-            if (cancelled || !roles.some((role) => isPlantManagerRole(role?.name))) return
+            if (cancelled) return
+            const managesPlants = Boolean(plantKey) && roles.some((role) => isPlantManagerRole(role?.name))
             const plants = new Set(plantKey.split(','))
             const atMyPlants = (record) => plants.has(String(record?.plantCode || '').trim())
             const cutoff = staleNoteCutoff()
             const found = (
                 await Promise.all(
-                    SOURCES.map((source) =>
-                        fetchSourceNotes(
-                            source,
-                            (recordRefs[source.ref]?.current || []).filter(atMyPlants),
-                            cutoff
-                        ).catch(() => [])
-                    )
+                    SOURCES.flatMap((source) => {
+                        const records = recordRefs[source.ref]?.current || []
+                        const reads = [fetchSourceNotes(source, records, cutoff, uid).catch(() => [])]
+                        if (managesPlants)
+                            reads.push(fetchSourceNotes(source, records.filter(atMyPlants), cutoff).catch(() => []))
+                        return reads
+                    })
                 )
             ).flat()
             const kept = readKept(uid)
-            const fresh = found.filter((note) => !kept.has(note.key))
+            const fresh = mergeStaleNotes(found, uid, managesPlants ? plants : []).filter((note) => !kept.has(note.key))
             if (cancelled || !fresh.length) return
             const authorIds = [...new Set(fresh.map((note) => note.authorId).filter(Boolean))]
             const names = Object.fromEntries(

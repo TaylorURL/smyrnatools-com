@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
 
-import { noteAgeInDays, STALE_NOTE_DAYS } from '../../../utils/StaleNoteUtility'
+import { noteAgeInDays, STALE_NOTE_DAYS, staleNotesHeading } from '../../../utils/StaleNoteUtility'
 import { SEVERITY_TO_TONE } from '../../constants/issueModalConstants'
 import Badge from '../common/Badge'
 import ConfirmDialog from '../common/ConfirmDialog'
@@ -58,7 +58,8 @@ function StaleNoteRow({ busy, note, onKeep, onRemove }) {
 
 /**
  * The dashboard's nudge to clear out old notes: a small card in the corner
- * saying how many comments and open issues at the manager's plants are past
+ * saying how many of the user's own comments and open issues, and for a plant
+ * manager the ones at their plants, are past
  * `STALE_NOTE_DAYS`, and a dialog to go through them. Each one can be removed
  * (deleted for good) or kept (left alone and not asked about again).
  *
@@ -131,7 +132,7 @@ export default function StaleNotesPrompt({ notes, onChanged, onDismiss, onKeep, 
                     <i className="fas fa-clock-rotate-left mt-1 text-[13px] text-status-warning" aria-hidden="true" />
                     <div className="min-w-0 flex-1">
                         <p className="m-0 font-heading text-[15px] font-semibold text-text-primary">
-                            Old notes at your plants
+                            {staleNotesHeading(notes)}
                         </p>
                         <p className="m-0 mt-1 text-[13px] leading-relaxed text-text-secondary">
                             {summarize(comments.length, issues.length)} {notes.length === 1 ? 'is' : 'are'} over{' '}

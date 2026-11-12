@@ -10,6 +10,7 @@ const NOTES = [
     {
         assetLabel: '2121',
         assetType: 'Mixer',
+        atMyPlants: true,
         authorName: 'Derek Hollis',
         createdAt: daysAgo(45),
         id: 'c1',
@@ -21,6 +22,7 @@ const NOTES = [
     {
         assetLabel: '2124',
         assetType: 'Mixer',
+        atMyPlants: true,
         authorName: 'Derek Hollis',
         createdAt: daysAgo(60),
         id: 'c2',
@@ -32,6 +34,7 @@ const NOTES = [
     {
         assetLabel: '310',
         assetType: 'Tractor',
+        atMyPlants: true,
         authorName: 'Priya Natarajan',
         createdAt: daysAgo(90),
         id: 'i1',
@@ -75,9 +78,17 @@ const setup = () => {
 describe('StaleNotesPrompt', () => {
     it('sums up the old notes in the corner card', () => {
         setup()
+        expect(screen.getByRole('status')).toHaveTextContent('Old notes at your plants')
         expect(screen.getByRole('status')).toHaveTextContent(
             '2 comments and 1 open issue are over 30 days old and may be out of date.'
         )
+    })
+
+    it("heads the card as the user's own notes when none is at a plant they manage", () => {
+        const mine = NOTES.map((note) => ({ ...note, atMyPlants: false, mine: true }))
+        render(<StaleNotesPrompt notes={mine} onDismiss={vi.fn()} onKeep={vi.fn()} onRemove={vi.fn()} />)
+        expect(screen.getByRole('status')).toHaveTextContent('Your old notes')
+        expect(screen.getByRole('status')).not.toHaveTextContent('at your plants')
     })
 
     it('stops asking for this visit on Not now', () => {
