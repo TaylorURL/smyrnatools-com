@@ -522,6 +522,16 @@
         // second recovery is answering a later deploy rather than looping.
         var COOLING_MS = 60000;
         var ALLOWANCE = 3;
+        // How long an attempt is held against the reader. The allowance is
+        // here to stop one document looping through its own recovery, and a
+        // loop like that happens inside a minute or two - it was never meant
+        // to describe the life of a tab. sessionStorage outlives far more than
+        // a load: a phone keeps its tabs for weeks, across every deploy in
+        // between, so an allowance that is only ever added to is spent for
+        // good, and from then on the first asset to fail skips the recovery
+        // entirely. Attempts older than this window belong to an earlier
+        // incident and are dropped.
+        var MEMORY_MS = 600000;
         // A document re-fetched at this page's own address can be answered by
         // the copy that caused the failure: the shell is cached at the edge as
         // well as in the browser, and `cache: "reload"` only reaches past the
@@ -548,7 +558,15 @@
         function attempts() {
           try {
             var raw = sessionStorage.getItem(KEY);
-            return raw ? JSON.parse(raw) : [];
+            var taken = raw ? JSON.parse(raw) : [];
+            if (!taken || typeof taken.length !== "number") return [];
+            var now = Date.now();
+            var recent = [];
+            for (var i = 0; i < taken.length; i += 1) {
+              if (typeof taken[i] === "number" && now - taken[i] < MEMORY_MS) recent.push(taken[i]);
+            }
+            if (recent.length !== taken.length) sessionStorage.setItem(KEY, JSON.stringify(recent));
+            return recent;
           } catch (ignored) {
             return null;
           }
@@ -560,9 +578,32 @@
         // The error boundary that would say so is inside the bundle, which is
         // the very file missing here, so the saying has to happen out here.
         var told = false;
+        // Set when the missing asset is something other than a stylesheet -
+        // the entry bundle's own preload, or the import that asks for it. Then
+        // the drawn screen really is everything the reader has and there is
+        // nothing left to wait for.
+        var bundleLost = false;
+        // The entry module is asked for a frame after the first paint, so a
+        // stylesheet in the head fails well before the bundle has had its
+        // chance to answer. Long enough to let it.
+        var BOOT_GRACE_MS = 4000;
         function tell() {
           if (told) return;
           told = true;
+          if (bundleLost || window.__appLost) speak();
+          else setTimeout(speak, BOOT_GRACE_MS);
+        }
+        function speak() {
+          // The message says part of the page could not be loaded and offers a
+          // reload. Where the bundle arrived and the app is running, that is
+          // not true of anything the reader can see: every control works, and
+          // what is missing is the sheet that styles them. Covering a working
+          // application with a dead end is worse than the unstyled page
+          // underneath it, so nothing is said and nothing is hidden.
+          if (window.__appBooted) {
+            told = false;
+            return;
+          }
           // The drawn screen is addressed by the same marker the prerender uses
           // to keep it out of a paint it does not belong in.
           document.documentElement.setAttribute("data-front-door", "off");
@@ -627,6 +668,53 @@
           }, 500);
           return true;
         };
+        // The main stylesheet is the one asset this document asks for without
+        // holding the paint on it. The build writes the rules the drawn screen
+        // needs into the page and leaves the sheet itself on a media query that
+        // matches nothing, so the browser fetches it at the lowest priority it
+        // has - and a request at that priority is the first thing a phone drops
+        // when the connection changes or the reader looks at something else.
+        // Losing it says nothing about whether the file is still on the origin.
+        //
+        // One more request settles that. An answer means the sheet was lost in
+        // flight: it is attached again, the document is left alone, and no
+        // attempt is spent. No answer is the deploy race, and the recovery
+        // above is what that is for.
+        var sheetAsked = {};
+        function restyle(href, crossorigin) {
+          var again = document.createElement("link");
+          again.rel = "stylesheet";
+          // Both this listener and the reporter's read the stamp, so the
+          // replacement failing is not mistaken for a second fault.
+          again.setAttribute("data-recovery", "stylesheet");
+          if (crossorigin !== null && crossorigin !== undefined) again.setAttribute("crossorigin", crossorigin);
+          again.href = href;
+          (document.head || document.documentElement).appendChild(again);
+        }
+        function sheetFailed(target, href) {
+          if (replacing) return;
+          if (sheetAsked[href]) {
+            window.__recoverStaleShell();
+            return;
+          }
+          sheetAsked[href] = true;
+          var crossorigin = target.getAttribute ? target.getAttribute("crossorigin") : null;
+          var gone = function () { window.__recoverStaleShell() };
+          try {
+            var request = new XMLHttpRequest();
+            request.open("GET", href, true);
+            request.onload = function () {
+              if (request.status >= 200 && request.status < 400) restyle(href, crossorigin);
+              else gone();
+            };
+            request.onerror = gone;
+            request.ontimeout = gone;
+            request.timeout = 10000;
+            request.send();
+          } catch (ignored) {
+            gone();
+          }
+        }
         // A stylesheet and a module preload are ordinary elements, and a stale
         // document fails on those before any import is reached.
         window.addEventListener("error", function (event) {
@@ -634,6 +722,15 @@
           if (!target || target === window) return;
           var href = target.src || target.href || "";
           if (href.indexOf(location.origin + "/assets/") !== 0) return;
+          if (target.tagName === "LINK" && String(target.rel || "").toLowerCase().indexOf("stylesheet") > -1) {
+            if (target.getAttribute && target.getAttribute("data-recovery")) {
+              window.__recoverStaleShell();
+              return;
+            }
+            sheetFailed(target, href);
+            return;
+          }
+          bundleLost = true;
           window.__recoverStaleShell();
         }, true);
       })();

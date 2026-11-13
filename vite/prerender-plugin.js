@@ -61,6 +61,12 @@ function inliner(outDir, base) {
  * first, which is the first frame the document can have been painted in and the
  * earliest the bundle can no longer hold it back.
  *
+ * Whether that import answered is the one thing the shell's recovery cannot
+ * work out for itself, and it decides what a reader should be told: a bundle
+ * that never arrived leaves a drawn screen with every control dead, and a
+ * bundle that did leaves a working application that may only be missing the
+ * sheet that styles it. So the import says which happened.
+ *
  * A frame is not always coming. A tab opened in the background paints nothing
  * until somebody looks at it, and waiting on a frame there would leave the
  * drawn screen sitting dead — a sign-in button nothing is listening to. So the
@@ -78,7 +84,7 @@ function paintFirst(head) {
     // no sign to the reader that anything is wrong. The shell's recovery
     // re-fetches the document past the cache and picks up the current hashes.
     const source = `let started=false;
-const start=()=>{if(!started){started=true;import(${JSON.stringify(src)}).catch(()=>{if(window.__recoverStaleShell)window.__recoverStaleShell()})}};
+const start=()=>{if(!started){started=true;import(${JSON.stringify(src)}).then(()=>{window.__appBooted=true},()=>{window.__appLost=true;if(window.__recoverStaleShell)window.__recoverStaleShell()})}};
 if(document.visibilityState==="visible")requestAnimationFrame(()=>requestAnimationFrame(start));
 else start();
 setTimeout(start,2000)`
