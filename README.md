@@ -6,7 +6,7 @@ The internal operations app for Smyrna Ready Mix, a ready-mix concrete company.
 
 [smyrnatools.com](https://www.smyrnatools.com)
 
-<img src="https://img.shields.io/badge/version-2026.46.5-222d65?style=for-the-badge" alt="Version 2026.46.5" />
+<img src="https://img.shields.io/badge/version-2026.46.6-222d65?style=for-the-badge" alt="Version 2026.46.6" />
 
 I built Smyrna Tools while I was running plants for Smyrna Ready Mix. Managers track their trucks, equipment, operators and plants in one place. Everything is behind a company sign-in. The only public pages are login, privacy, terms and contact.
 
@@ -27,6 +27,8 @@ Roles carry named permissions like `region.select.all` and `detailview.delete`, 
 ## Assets
 
 `BaseAssetService` does CRUD, history, comments, issues and verification once. Each asset type passes a config and gets thin typed methods on top. Change summaries come from `ai-service`, which calls the xAI API on the server so the key never reaches the browser, and falls back to Claude when Grok fails. Plan schedule snapshots are taken at 5:30 PM Chicago time by `pg_cron` and `pg_net` calling an edge function from inside Postgres.
+
+Comments and open issues age out. Past thirty days the popups flag them and the dashboard asks whoever wrote the note, and the plant managers at its plant, whether it still applies. Past three months a nightly `pg_cron` job marks what's left resolved and sets `auto_resolved`, so the popup can say it timed out rather than name someone who closed it. Nothing is deleted, and an issue someone already resolved is history and never expires. Whether a note is kept permanently is chosen in the create form, and a trigger refuses any later change, so no script or manual edit can flip one.
 
 <details>
 <summary>Running it locally</summary>
