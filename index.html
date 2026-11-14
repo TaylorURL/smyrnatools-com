@@ -307,6 +307,26 @@
           var path = String(target || "");
           return path.indexOf("/_vercel/insights/") > -1 || path.indexOf("/_vercel/speed-insights/") > -1;
         }
+        // A tag carrying data-optional is one the page has already decided it
+        // can do without: deferred, asked for by nothing a reader meets, and
+        // read by no other script. It is also the one request on this page that
+        // a reader who moves on is likely to cancel. Everything else the page
+        // fetches is first-party and rides the connection the document already
+        // arrived on, while an optional tag is third-party and has to open its
+        // own - a DNS lookup, a TCP connect and a TLS handshake to another host
+        // before a byte of it is asked for - so it is systematically the last
+        // request on the page to settle. A reader who taps through, backgrounds
+        // the tab or loses signal in that window cancels it, and a cancelled
+        // script load fires this error event exactly as a broken one does. A
+        // content blocker refusing a third-party analytics path lands here the
+        // same way, and refuses this one request and nothing else on the page.
+        // Either way the report describes the visitor's departure or the
+        // visitor's browser rather than a fault in the page, so the tag that
+        // knows it is optional says so and this handler believes it. Every
+        // other script keeps reporting, because nothing else here is optional.
+        function optional(target) {
+          return !!(target.hasAttribute && target.hasAttribute("data-optional"));
+        }
         // A <link rel="preload"> failing is not the same event as a reader
         // losing a file. A preload is a hint issued before anything needs the
         // resource, and a browser is free to decline one without the origin
@@ -378,6 +398,7 @@
             if (event.target && event.target !== window && event.target.tagName) {
               if (MEDIA_LIFECYCLE_TAGS[event.target.tagName]) return;
               if (platformTelemetry(event.target.src || event.target.href)) return;
+              if (optional(event.target)) return;
               var where = event.target.src || event.target.href || "";
               if (event.target.tagName === "LINK" && where) {
                 if (event.target.getAttribute && event.target.getAttribute("data-recovery")) return;
@@ -737,8 +758,11 @@
     </script>
     <!-- Traffic analytics. The site key is public by design: it says which
          site a hit belongs to, and the collector accepts it only from this
-         site's own origins. Deferred, so nothing on the page waits for it. -->
-    <script src="https://gujgtjqqurildqurpffh.supabase.co/functions/v1/analytics-tracker" data-site="sa_7bcbf8f895fbbf056ce0cbc4a8b92531" defer crossorigin="anonymous"></script>
+         site's own origins. Deferred, so nothing on the page waits for it.
+         Marked optional because nothing here waits on it or reads from it, so
+         a load it does not finish is a visit that goes uncounted and nothing
+         more - see optional() in the reporter above. -->
+    <script src="https://gujgtjqqurildqurpffh.supabase.co/functions/v1/analytics-tracker" data-site="sa_7bcbf8f895fbbf056ce0cbc4a8b92531" defer crossorigin="anonymous" data-optional></script>
   </head>
 <body>
 <noscript>You need to enable JavaScript to run this app.</noscript>
