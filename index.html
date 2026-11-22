@@ -190,16 +190,34 @@
           if (location.search.indexOf("console=off") > -1) localStorage.removeItem("reporter-console");
           loud = localStorage.getItem("reporter-console") === "1";
         } catch (ignored) {}
-        // An extension injects its scripts into the page, so a rejection thrown
-        // inside one arrives at this handler with nothing of the site in its
-        // stack. A stack naming only extension scripts describes the visitor's
-        // browser; one carrying a single site frame is the site's.
-        function extensionOnly(stack) {
-          var schemes = String(stack || "").match(/[a-z][a-z0-9+.-]*:\/\//gi);
-          if (!schemes) return false;
-          for (var i = 0; i < schemes.length; i += 1) {
-            var scheme = schemes[i].slice(0, -3).toLowerCase();
-            if (scheme.slice(-9) !== "extension") return false;
+        // The browser injects scripts of its own into the page, so a failure
+        // thrown inside one arrives at this handler with nothing of the site in
+        // it. Text naming only browser-owned frames describes the visitor's
+        // browser; text carrying a single site frame is the site's.
+        //
+        // Two kinds of frame are browser-owned. An extension serves its scripts
+        // from a scheme ending in "extension" with an authority after it, as in
+        // "chrome-extension://id/content.js:1:1". WebKit labels a script the
+        // host application injects "user-script", and that frame carries no
+        // authority at all - the scheme is followed straight by a line number,
+        // as in "request@user-script:37:2329:23" - so a scan insisting on "//"
+        // after the scheme never sees it.
+        //
+        // Both the message and the stack are read, because a console override
+        // has only the arguments it was called with: a script logging a
+        // stack-shaped string through console.error puts its frames in the
+        // message and leaves the stack empty.
+        function browserOnly(text) {
+          var frames = String(text || "").match(/(?:^|[\s@(])[a-z][a-z0-9+.-]*:(?:\/\/|\d)/gi);
+          if (!frames) return false;
+          for (var i = 0; i < frames.length; i += 1) {
+            var scheme = frames[i]
+              .toLowerCase()
+              .replace(/^[\s@(]/, "")
+              .split(":")[0];
+            if (scheme.slice(-9) === "extension") continue;
+            if (scheme === "user-script") continue;
+            return false;
           }
           return true;
         }
@@ -258,7 +276,7 @@
         // recovered — see the fetch wrapper below.
         function emit(kind, message, stack) {
           if (sent >= 10) return; // a page stuck in an error loop stops at ten
-          if (extensionOnly(stack)) return;
+          if (browserOnly(stack) || browserOnly(message)) return;
           sent += 1;
           try {
             send(JSON.stringify({
