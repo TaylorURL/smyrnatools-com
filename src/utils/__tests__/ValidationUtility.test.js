@@ -183,6 +183,69 @@ describe('ValidationUtility', () => {
         })
     })
 
+    /* The client reading has to agree with the rule `/auth-service/*` applies,
+     * or a password the meter calls medium comes back 400 'Password is too
+     * weak'. `serverStrength` below is `scorePassword` / `strengthLabel` from
+     * `supabase/functions/_shared/auth-helpers.ts`, transcribed; a drift in
+     * either copy breaks the parity test rather than a user's save. */
+    describe('passwordStrength', () => {
+        const SERVER_SPECIAL = /[!@#$%^&*(),.?":{}|<>]/
+
+        function serverStrength(password) {
+            if (!password || password.length < 10) return 'weak'
+            let score = 0
+            if (password.length >= 10) score++
+            if (password.length >= 12) score++
+            if (password.length >= 16) score++
+            if (/[A-Z]/.test(password)) score++
+            if (/[a-z]/.test(password)) score++
+            if (/[0-9]/.test(password)) score++
+            if (SERVER_SPECIAL.test(password)) score++
+            return score < 4 ? 'weak' : score < 5 ? 'medium' : 'strong'
+        }
+
+        const cases = [
+            '',
+            'short',
+            'password',
+            'password12',
+            'Password12',
+            'Password123!',
+            'Str0ng!Passphrase',
+            'Abcdefghij-',
+            'Abcdefghij_',
+            'Abcdefghij+',
+            'Abcdefghij=',
+            'Abcdefghij[]',
+            "Abcdefghij'",
+            'Abcdefghij~',
+            'Abcdefghij!',
+            'abcdefghijklmnop',
+            'aaaaaaaaaaaaaaaaaaaa'
+        ]
+
+        it('agrees with the server rule on every case', () => {
+            cases.forEach((password) => {
+                expect([password, ValidationUtility.passwordStrength(password)]).toEqual([
+                    password,
+                    serverStrength(password)
+                ])
+            })
+        })
+
+        it('does not credit a symbol the server ignores', () => {
+            // 11 chars, upper and lower, and a dash the server scores nothing
+            // for: three points, which is weak on both sides.
+            expect(ValidationUtility.passwordStrength('Abcdefghij-')).toBe('weak')
+            // The same password with a symbol the server does count clears it.
+            expect(ValidationUtility.passwordStrength('Abcdefghij!')).toBe('medium')
+        })
+
+        it('treats anything under ten characters as weak', () => {
+            expect(ValidationUtility.passwordStrength('Aa1!Aa1!A')).toBe('weak')
+        })
+    })
+
     describe('compareVINs', () => {
         it('sorts VINs with numeric segments naturally', () => {
             const vins = ['MIX10', 'MIX2', 'MIX1', 'MIX20']

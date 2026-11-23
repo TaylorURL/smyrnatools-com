@@ -14,6 +14,7 @@ import {
 import { Database } from '../../../services/DatabaseService'
 import { UserService } from '../../../services/UserService'
 import APIUtility from '../../../utils/APIUtility'
+import { PASSWORD_REQUIREMENT, ValidationUtility } from '../../../utils/ValidationUtility'
 import ManagerAssignmentCard from './detail/ManagerAssignmentCard'
 import ManagerBasicInfoCard from './detail/ManagerBasicInfoCard'
 import ManagerDetailFooterActions from './detail/ManagerDetailFooterActions'
@@ -51,6 +52,7 @@ function ManagerDetailView({ managerId, onClose }) {
     const [additionalPlants, setAdditionalPlants] = useState([])
     const [roleName, setRoleName] = useState('')
     const [password, setPassword] = useState('')
+    const [passwordError, setPasswordError] = useState('')
     const [showPasswordField, setShowPasswordField] = useState(false)
     const [showPlantModal, setShowPlantModal] = useState(false)
     const [showAdditionalPlantsModal, setShowAdditionalPlantsModal] = useState(false)
@@ -167,18 +169,38 @@ function ManagerDetailView({ managerId, onClose }) {
     const regionPlantCodes = useRegionPlantCodes(preferences.selectedRegion?.code, plantCode, setPlantCode)
     const filteredPlants = useFilteredPlants(plants, regionPlantCodes, preferences.selectedRegion?.type)
 
+    /** Saves the manager. Returns true only when everything asked for was
+     *  written, so a caller that navigates away afterwards can tell a
+     *  successful save from a refused one. */
     async function handleSave() {
-        if (isReadOnly) return
+        if (isReadOnly) return false
         if (!manager?.id) {
             setMessage('Error: Cannot save manager with undefined ID')
             setTimeout(() => setMessage(''), 5000)
-            return
+            return false
         }
         if (!plantCode || !plantCode.trim()) {
             setMessage('Plant must be assigned before saving.')
-            return
+            return false
         }
+        const changingPassword = Boolean(showPasswordField && password)
+        /* The password is checked against the rule BEFORE anything is written.
+         * The profile update below commits first and independently of the
+         * password call, so sending a password the server will refuse means
+         * the name, email, plant and role are already saved by the time the
+         * 400 comes back — and the only notice of it was a thrown Error in the
+         * console plus "Error saving changes", which reads as though nothing
+         * had been saved at all. Refusing here keeps the record untouched and
+         * puts the requirement on the field the admin can act on. */
+        if (changingPassword && (await ValidationUtility.passwordStrength(password)) === 'weak') {
+            setPasswordError(`That password is too weak. ${PASSWORD_REQUIREMENT}`)
+            return false
+        }
+        setPasswordError('')
         setIsSaving(true)
+        /* Tracks whether the profile write has committed, so a later failure is
+         * reported as the partial save it is rather than as a total one. */
+        let detailsSaved = false
         try {
             const { data: checkManager, error: checkError } = await Database.from('users_profiles')
                 .select('id')
@@ -202,7 +224,8 @@ function ManagerDetailView({ managerId, onClose }) {
                 },
                 roleId: selectedRole.id
             })
-            if (showPasswordField && password) {
+            detailsSaved = true
+            if (changingPassword) {
                 const { res: pwRes, json: pwJson } = await APIUtility.post('/auth-service/admin-update-password', {
                     password,
                     userId: managerId
@@ -216,10 +239,24 @@ function ManagerDetailView({ managerId, onClose }) {
             setShowPasswordField(false)
             setPassword('')
             await fetchManagerDetails()
+            return true
         } catch (error) {
             console.error('Error saving manager:', error)
-            setMessage(`Error saving changes: ${error.message || 'Unknown error'}`)
+            const reason = error.message || 'Unknown error'
+            if (detailsSaved) {
+                /* Only the password is outstanding. Saying "Error saving
+                 * changes" here would be untrue — the details are already on
+                 * the server — and leaving `originalValues` alone would keep
+                 * the form insisting those details are unsaved, so reload the
+                 * record and name the one thing that did not land. */
+                setPasswordError(reason)
+                setMessage(`Details saved. The password was not changed: ${reason}`)
+                await fetchManagerDetails()
+            } else {
+                setMessage(`Error saving changes: ${reason}`)
+            }
             setTimeout(() => setMessage(''), 5000)
+            return false
         } finally {
             setIsSaving(false)
         }
@@ -243,9 +280,14 @@ function ManagerDetailView({ managerId, onClose }) {
         }
     }
 
+    /* Back saves first, so a refused save must not be followed by an unmount:
+     * the message explaining why would be destroyed along with the view, which
+     * left the console error as the only notice that anything went wrong. The
+     * close control in the header still leaves unconditionally. */
     const handleBackClick = async () => {
         if (!isReadOnly && hasUnsavedChanges) {
-            await handleSave()
+            const saved = await handleSave()
+            if (!saved) return
         }
         onClose()
     }
@@ -338,12 +380,20 @@ function ManagerDetailView({ managerId, onClose }) {
             {!isReadOnly && canEditManager && (
                 <ManagerSecuritySection
                     showPasswordField={showPasswordField}
-                    onShowPasswordField={() => setShowPasswordField(true)}
+                    onShowPasswordField={() => {
+                        setPasswordError('')
+                        setShowPasswordField(true)
+                    }}
                     password={password}
-                    onPasswordChange={setPassword}
+                    passwordError={passwordError}
+                    onPasswordChange={(value) => {
+                        setPassword(value)
+                        setPasswordError('')
+                    }}
                     onCancelPasswordChange={() => {
                         setShowPasswordField(false)
                         setPassword('')
+                        setPasswordError('')
                     }}
                 />
             )}

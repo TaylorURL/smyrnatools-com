@@ -130,6 +130,23 @@ function optionalString(v: unknown): string | typeof v {
     return typeof v === 'string' ? v.trim() : v
 }
 
+/** The symbols the server counts as a special character. This is
+ *  `SPECIAL_CHAR_REGEX` in `auth-helpers.ts` character for character, and it
+ *  is NARROWER than "anything not a letter or digit": `-`, `_`, `+`, `=`,
+ *  `[`, `]`, `/`, `\`, `'`, `;` and `~` all score nothing on the server.
+ *  Scoring them here is what let a password the server refuses read as
+ *  medium or strong on the client — `Abcdefghij-` scores 4 against
+ *  `[^A-Za-z0-9]` and 3 against the rule the server actually applies, so the
+ *  meter said medium and `/auth-service/*` answered 400 'Password is too
+ *  weak'. */
+const PASSWORD_SPECIAL_CHARS = /[!@#$%^&*(),.?":{}|<>]/
+
+/** What a password has to satisfy, in the words the rule below enforces.
+ *  Displayed wherever a password is set, so the requirement is readable
+ *  before a submit rather than inferred from a refusal afterwards. */
+export const PASSWORD_REQUIREMENT =
+    'Use at least 12 characters with a mix of upper case, lower case, numbers and symbols (!@#$%^&*(),.?":{}|<>). 16 characters or more is accepted on length alone.'
+
 /** Returns 'weak' | 'medium' | 'strong' for the supplied password. Mirrors
  *  the server-side `validatePasswordStrength` (`auth-helpers.ts`) so the
  *  client-side strength meter reads the same scale the server uses to
@@ -152,7 +169,7 @@ function passwordStrength(password: string): string {
     if (/[A-Z]/.test(value)) score += 1
     if (/[a-z]/.test(value)) score += 1
     if (/[0-9]/.test(value)) score += 1
-    if (/[^A-Za-z0-9]/.test(value)) score += 1
+    if (PASSWORD_SPECIAL_CHARS.test(value)) score += 1
     if (score < 4) return 'weak'
     if (score < 5) return 'medium'
     return 'strong'
