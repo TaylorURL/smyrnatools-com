@@ -531,13 +531,28 @@
          can reach the current files, which makes re-fetching the document the
          whole of the recovery rather than its last resort.
 
-         The document is cached in the browser and at the edge, and asking
-         for it again at this page's own address can be answered out of either
-         with the very copy that caused this. So the replacement is asked for
-         at an address carrying a one-off marker, which no cache has an answer
-         for and which the deployment's own file answers. That request is the
-         one thing here worth retrying, so it is tried three times with a
-         growing gap before the navigation is taken regardless.
+         The document is cached in the browser, and asking for it again at this
+         page's own address can be answered out of that cache with the very
+         copy that caused this. So the replacement is asked for at an address
+         carrying a one-off marker, which the browser has no answer for. The
+         edge is a different matter and the marker does not reach past it: the
+         platform keys this document's cache on the deployment rather than on
+         the address, so `/?marker=1`, a path never asked for before and a
+         request carrying `Cache-Control: no-cache` all come back
+         `x-vercel-cache: HIT` with the same etag. That is not a problem to
+         solve - what the edge holds is the current deployment's own file,
+         which is exactly what a stale document needs - but it does mean the
+         marker buys only the browser's cache, and nothing here may depend on
+         it buying more.
+
+         The warm-up request is the one thing here worth retrying, so it is
+         tried three times with a growing gap. Nothing waits on what it
+         answers, though, and it is given a deadline: the navigation is the
+         recovery and it is taken on that deadline whatever the warm-up is
+         doing. The recovery as a whole is given a deadline too, because a
+         navigation can go nowhere - a reader who is offline stays on this
+         page - and a recovery believed to be under way is one that holds back
+         the message below.
 
          Two limits stand between a recovery and a reload loop. A second
          attempt inside the cooling window is refused, which is what stops a
@@ -669,6 +684,23 @@
           if (document.body) place();
           else document.addEventListener("DOMContentLoaded", place);
         }
+        // How long the replacement document's warm-up request may take before
+        // the navigation is taken without waiting for it. The request is only
+        // a warm-up - nothing here reads what it answers - and `fetch` has no
+        // timeout of its own, so a connection that accepts the request and
+        // then stalls settles neither way and the retry schedule below is
+        // never reached. The navigation is the recovery, so it is taken on
+        // this deadline whatever the warm-up is doing.
+        var PROBE_DEADLINE_MS = 2500;
+        // How long the whole recovery may take before the reader is told
+        // instead. Nothing after `location.replace` is guaranteed either: a
+        // reader who is offline, or whose document request stalls the way the
+        // warm-up can, stays on this page - and while `replacing` stands the
+        // refusal message below is held back, so a recovery that goes nowhere
+        // used to leave a drawn screen that answers nothing, with no message
+        // and no way out. When this deadline passes the document stops calling
+        // itself replaced and says what happened.
+        var REPLACEMENT_DEADLINE_MS = 12000;
         // Answers whether the document is being replaced, so a caller can tell
         // a recovery under way from one it has to leave to the reader.
         var replacing = false;
@@ -695,8 +727,15 @@
           setTimeout(function () {
             var address = freshAddress();
             var left = 3;
-            var again = function () { location.replace(address) };
+            var taken = false;
+            var again = function () {
+              if (taken) return;
+              taken = true;
+              location.replace(address);
+            };
+            setTimeout(again, PROBE_DEADLINE_MS);
             var ask = function () {
+              if (taken) return;
               left -= 1;
               fetch(address, { cache: "reload", credentials: "same-origin" }).then(again, function () {
                 if (left > 0) setTimeout(ask, (3 - left) * 400);
@@ -705,6 +744,11 @@
             };
             ask();
           }, 500);
+          setTimeout(function () {
+            if (!replacing) return;
+            replacing = false;
+            tell();
+          }, REPLACEMENT_DEADLINE_MS);
           return true;
         };
         // The main stylesheet is the one asset this document asks for without
