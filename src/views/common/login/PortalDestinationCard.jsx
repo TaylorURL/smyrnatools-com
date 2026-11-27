@@ -1,22 +1,22 @@
 import React, { memo } from 'react'
 
 /**
- * Per-tone icon and dot colours. The portal sits on a permanently dark
- * ambient video, so each tone is lifted to a brighter variant that reads
- * against the glass surface (dark navy accent → sky-blue, deep blues and
- * greens → light saturated variants).
+ * Per-tone icon colours. The portal sits on a permanently dark ambient
+ * video, so each tone is lifted to a brighter variant that reads against
+ * the glass surface (dark navy accent → sky-blue, deep blues and greens →
+ * light saturated variants).
  */
 const TONE_STYLES = {
-    accent: { dot: 'bg-sky-300', icon: 'text-sky-300' },
-    info: { dot: 'bg-blue-300', icon: 'text-blue-300' },
-    neutral: { dot: 'bg-slate-300', icon: 'text-white/70' },
-    success: { dot: 'bg-emerald-300', icon: 'text-emerald-300' }
+    accent: 'text-sky-300',
+    info: 'text-blue-300',
+    neutral: 'text-white/70',
+    success: 'text-emerald-300'
 }
 
 /**
  * Horizontal portal destination row. Flat 1px panel that mirrors the
- * dashboard's tile aesthetic — icon chip on the left, title + meta + copy
- * in the middle, arrow indicator on the right. Renders as either:
+ * dashboard's tile aesthetic — icon on the left, title, a quiet note on
+ * what kind of place it is, and copy in the middle, arrow on the right. Renders as either:
  *   - an external `<a>` (when `href` is provided) — opens in a new tab,
  *     decorated with the standard external-link rel attributes
  *   - a `<button>` (when `onClick` is provided) — used for in-app routes
@@ -42,22 +42,17 @@ const PortalDestinationCard = memo(function PortalDestinationCard({
     const content = (
         <div className="flex items-center gap-4">
             <span
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/[0.06] ${toneCls.icon}`}
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/[0.06] ${toneCls}`}
                 aria-hidden="true"
             >
                 <i className={`fas fa-${icon} text-base`} />
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                     <span className="truncate font-heading text-[15px] font-bold tracking-tight text-white">
                         {title}
                     </span>
-                    {meta && (
-                        <span className="inline-flex items-center gap-1 rounded border border-white/10 bg-white/[0.06] px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.08em] text-white/75">
-                            <span className={`h-1 w-1 rounded-full ${toneCls.dot}`} aria-hidden="true" />
-                            {meta}
-                        </span>
-                    )}
+                    {meta && <span className="text-[12px] text-white/60">{meta}</span>}
                 </div>
                 <span className="text-[12.5px] leading-snug text-white/70">{description}</span>
             </div>
