@@ -11,7 +11,7 @@ const INPUT_CLS =
     'px-3 py-2.5 outline-none focus-visible:outline-none transition-[border-color,background-color,box-shadow] duration-150 ease-out motion-reduce:transition-none ' +
     'placeholder:text-white/40 hover:border-white/25 focus:border-white/50 focus:bg-white/[0.1] field-on-media'
 
-const LABEL_CLS = 'mb-1.5 block text-[10.5px] font-bold uppercase tracking-[0.1em] text-white/60'
+const LABEL_CLS = 'mb-1.5 block text-[12.5px] font-medium text-white/75'
 
 const ALERT_BASE_CLS =
     'mb-5 flex items-start gap-2 rounded-md border px-3 py-2 text-[12.5px] leading-snug animate-msg-in motion-reduce:animate-none'
@@ -53,10 +53,6 @@ function PasswordRecoveryView({ onBackToLogin }) {
     return (
         <div className="w-full rounded-card border border-white/10 bg-slate-950/45 p-5 shadow-modal backdrop-blur-xl animate-fade-slide-in motion-reduce:animate-none sm:p-6">
             <div className="mb-5 flex flex-col gap-1.5">
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/60">
-                    <span className="h-1.5 w-1.5 rounded-full bg-current text-sky-300 shadow-glow" aria-hidden="true" />
-                    Smyrna Tools
-                </span>
                 <h2 className="m-0 font-heading text-[22px] font-bold leading-tight tracking-tight text-white">
                     Reset your password
                 </h2>
@@ -67,7 +63,7 @@ function PasswordRecoveryView({ onBackToLogin }) {
             <form onSubmit={handleSubmit} noValidate>
                 <div className="mb-4">
                     <label htmlFor="recovery-email" className={LABEL_CLS}>
-                        Email Address
+                        Email address
                     </label>
                     <input
                         id="recovery-email"
@@ -115,7 +111,7 @@ function PasswordRecoveryView({ onBackToLogin }) {
                     ) : (
                         <>
                             <i className="fas fa-paper-plane text-[11px]" aria-hidden="true" />
-                            Send New Password
+                            Send new password
                         </>
                     )}
                 </button>
@@ -127,7 +123,7 @@ function PasswordRecoveryView({ onBackToLogin }) {
                     onClick={onBackToLogin}
                     className="cursor-pointer border-none bg-transparent p-0 font-bold text-sky-300 transition-colors duration-150 ease-out hover:text-sky-200 hover:underline focus-visible:underline focus-visible:outline-none motion-reduce:transition-none"
                 >
-                    Back to Sign In
+                    Back to sign in
                 </button>
             </div>
         </div>

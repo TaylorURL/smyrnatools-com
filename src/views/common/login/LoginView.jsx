@@ -91,20 +91,11 @@ function LoginView() {
                         <span className="font-heading text-[15px] font-bold tracking-tight text-white">
                             Smyrna Portal
                         </span>
-                        <span className="hidden text-[9.5px] font-semibold uppercase tracking-[0.14em] text-white/55 sm:inline">
-                            Operations · Fleet · Concrete
+                        <span className="hidden text-[12px] text-white/60 sm:inline">
+                            Operations, fleet and concrete
                         </span>
                     </span>
                 </button>
-                <div className="min-w-[8px] flex-1" />
-                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/15 bg-white/[0.06] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-white/75">
-                    <span
-                        className="h-1.5 w-1.5 rounded-full bg-current text-status-active shadow-glow"
-                        aria-hidden="true"
-                    />
-                    <span className="hidden sm:inline">System</span>
-                    Online
-                </span>
             </header>
             <main className="relative z-10 flex flex-1 flex-col">
                 {isRevealed ? (
@@ -112,11 +103,7 @@ function LoginView() {
                         id="portal-landing"
                         className="mx-auto my-auto w-full max-w-[1080px] px-4 py-8 sm:px-6 sm:py-10 lg:py-14 animate-fade-in-up motion-reduce:animate-none"
                     >
-                        <section aria-labelledby="portal-heading" className="mb-7 flex flex-col gap-1.5">
-                            <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/55">
-                                <span className="h-px w-6 bg-white/25" aria-hidden="true" />
-                                Welcome
-                            </span>
+                        <section aria-labelledby="portal-heading" className="mb-7 flex flex-col gap-2">
                             <h1
                                 id="portal-heading"
                                 className="m-0 font-heading text-[28px] font-bold leading-[1.05] tracking-tight text-white sm:text-[34px]"
@@ -129,13 +116,6 @@ function LoginView() {
                         </section>
                         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] lg:gap-6">
                             <nav aria-label="Destinations" className="flex flex-col gap-2.5">
-                                <div className="flex items-center gap-2 px-0.5">
-                                    <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/55">
-                                        Destinations
-                                    </span>
-                                    <span className="h-px flex-1 bg-white/15" aria-hidden="true" />
-                                    <span className="text-[10px] font-bold tabular-nums text-white/55">03</span>
-                                </div>
                                 <PortalDestinationCard
                                     title="Smyrna Ready Mix"
                                     description="Company site — services, plants, and ways to request concrete."
@@ -157,7 +137,7 @@ function LoginView() {
                                     description="Internal operations — plants, fleet, people, and reporting."
                                     onClick={focusLoginPanel}
                                     icon="toolbox"
-                                    meta="Internal · Sign-in required"
+                                    meta="Internal, sign-in required"
                                     tone="accent"
                                 />
                             </nav>
@@ -177,10 +157,10 @@ function LoginView() {
                          * whole fade in front of a screen the document already
                          * arrived carrying — this one is drawn at build time,
                          * and the fade is the last thing left standing between
-                         * it and the reader. Split across the mark, the
-                         * eyebrow, the line under the title and the chip, the
-                         * screen still opens rather than appearing, and the
-                         * title is there in the first frame. Concealing the
+                         * it and the reader. Split across the mark and the
+                         * prompt under the title, the screen still opens
+                         * rather than appearing, and the title is there in the
+                         * first frame. Concealing the
                          * portal returns to this branch, so the same split
                          * governs the way back.
                          */}
@@ -208,25 +188,17 @@ function LoginView() {
                                     fetchPriority="high"
                                 />
                             </span>
-                            <span className="flex flex-col items-center gap-2.5">
-                                <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/55 animate-fade-in motion-reduce:animate-none">
-                                    <span className="h-px w-6 bg-white/25" aria-hidden="true" />
-                                    Welcome
-                                    <span className="h-px w-6 bg-white/25" aria-hidden="true" />
-                                </span>
+                            <span className="flex flex-col items-center gap-3">
                                 <span className="font-heading text-[40px] font-bold leading-none tracking-tight text-white sm:text-[48px]">
                                     Smyrna Tools
                                 </span>
-                                <span className="text-[12.5px] text-white/70 animate-fade-in motion-reduce:animate-none">
-                                    Click to sign in
+                                <span className="inline-flex items-center gap-1.5 text-[13px] text-white/70 transition-colors duration-200 ease-out group-hover:text-white animate-fade-in motion-reduce:transition-none motion-reduce:animate-none">
+                                    Sign in
+                                    <i
+                                        className="fas fa-arrow-right text-[10px] transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
+                                        aria-hidden="true"
+                                    />
                                 </span>
-                            </span>
-                            <span
-                                aria-hidden="true"
-                                className="inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/70 transition-[color,border-color,transform,background-color] duration-200 ease-out group-hover:translate-y-0.5 group-hover:border-white/30 group-hover:bg-white/[0.1] group-hover:text-white animate-fade-in motion-reduce:transition-none motion-reduce:animate-none motion-reduce:group-hover:translate-y-0"
-                            >
-                                <i className="fas fa-chevron-down text-[9px]" />
-                                Enter
                             </span>
                         </button>
                     </div>
