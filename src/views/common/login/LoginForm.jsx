@@ -38,9 +38,7 @@ const PasswordStrengthBar = memo(function PasswordStrengthBar({ strength }) {
                         className={`h-full rounded-sm transition-[width] duration-300 ${STRENGTH_FILL_CLS[strength] || ''} ${STRENGTH_WIDTH_CLS[strength] || 'w-0'}`}
                     />
                 </div>
-                <span
-                    className={`text-[10px] font-bold uppercase tracking-[0.08em] ${STRENGTH_TONE_CLS[strength] || 'text-white/70'}`}
-                >
+                <span className={`text-[11.5px] font-semibold ${STRENGTH_TONE_CLS[strength] || 'text-white/70'}`}>
                     {strength}
                 </span>
             </div>
@@ -65,7 +63,7 @@ const INPUT_CLS =
     'focus:border-white/50 focus:bg-white/[0.1] ' +
     'field-on-media'
 
-const LABEL_CLS = 'mb-1.5 block text-[10.5px] font-bold uppercase tracking-[0.1em] text-white/60'
+const LABEL_CLS = 'mb-1.5 block text-[12.5px] font-medium text-white/75'
 
 const ALERT_BASE_CLS =
     'mb-5 flex items-start gap-2 rounded-md border px-3 py-2 text-[12.5px] leading-snug animate-msg-in motion-reduce:animate-none'
@@ -242,15 +240,13 @@ function LoginForm() {
     return (
         <div className="w-full rounded-card border border-white/10 bg-slate-950/45 p-5 shadow-modal backdrop-blur-xl sm:p-6">
             <div className="mb-5 flex flex-col gap-1.5">
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/60">
-                    <span className="h-1.5 w-1.5 rounded-full bg-current text-sky-300 shadow-glow" aria-hidden="true" />
-                    Smyrna Tools
-                </span>
                 <h2 className="m-0 font-heading text-[22px] font-bold leading-tight tracking-tight text-white">
                     {isSignUp ? 'Create account' : 'Sign in to Smyrna Tools'}
                 </h2>
                 <p className="m-0 text-[12.5px] text-white/70">
-                    {isSignUp ? 'Fill in your details to request access.' : 'Enter your credentials to continue.'}
+                    {isSignUp
+                        ? 'Fill in your details to request access to Smyrna Tools.'
+                        : 'Enter your credentials to continue.'}
                 </p>
             </div>
             <form onSubmit={handleSubmit} noValidate>
@@ -258,7 +254,7 @@ function LoginForm() {
                     <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label htmlFor="login-first-name" className={LABEL_CLS}>
-                                First Name
+                                First name
                             </label>
                             <input
                                 id="login-first-name"
@@ -272,7 +268,7 @@ function LoginForm() {
                         </div>
                         <div>
                             <label htmlFor="login-last-name" className={LABEL_CLS}>
-                                Last Name
+                                Last name
                             </label>
                             <input
                                 id="login-last-name"
@@ -288,7 +284,7 @@ function LoginForm() {
                 )}
                 <div className="mb-4">
                     <label htmlFor="login-email" className={LABEL_CLS}>
-                        Email Address
+                        Email address
                     </label>
                     <input
                         id="login-email"
@@ -309,9 +305,9 @@ function LoginForm() {
                             <button
                                 type="button"
                                 onClick={openRecovery}
-                                className="cursor-pointer border-none bg-transparent p-0 text-[11px] font-semibold text-sky-300 transition-colors duration-150 ease-out hover:text-sky-200 hover:underline focus-visible:underline focus-visible:outline-none motion-reduce:transition-none"
+                                className="cursor-pointer border-none bg-transparent p-0 text-[12px] font-medium text-sky-300 transition-colors duration-150 ease-out hover:text-sky-200 hover:underline focus-visible:underline focus-visible:outline-none motion-reduce:transition-none"
                             >
-                                Forgot Password?
+                                Forgot password?
                             </button>
                         )}
                     </div>
@@ -340,7 +336,7 @@ function LoginForm() {
                 {isSignUp && (
                     <div className="mb-4">
                         <label htmlFor="login-confirm-password" className={LABEL_CLS}>
-                            Confirm Password
+                            Confirm password
                         </label>
                         <div className="relative">
                             <input
@@ -407,7 +403,7 @@ function LoginForm() {
                                 className={`fas ${isSignUp ? 'fa-user-plus' : 'fa-arrow-right-to-bracket'} text-[11px]`}
                                 aria-hidden="true"
                             />
-                            {isSignUp ? 'Create Account' : 'Sign In'}
+                            {isSignUp ? 'Create account' : 'Sign in'}
                         </>
                     )}
                 </button>
@@ -421,7 +417,7 @@ function LoginForm() {
                     onClick={toggleSignUp}
                     className="cursor-pointer border-none bg-transparent p-0 font-bold text-sky-300 transition-colors duration-150 ease-out hover:text-sky-200 hover:underline focus-visible:underline focus-visible:outline-none motion-reduce:transition-none"
                 >
-                    {isSignUp ? 'Sign In' : 'Sign Up'}
+                    {isSignUp ? 'Sign in' : 'Sign up'}
                 </button>
             </div>
         </div>
