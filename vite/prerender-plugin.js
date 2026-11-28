@@ -123,21 +123,39 @@ window.__smyrnaBackgroundClips=clips})()`
 }
 
 /**
- * Hands the chosen clip to the video element the moment the parser has built
- * it.
+ * Hands the chosen clip to the video element one frame after the first paint.
  *
- * Waiting for the document to finish would be waiting for the analytics script
- * as well, since a deferred script holds DOMContentLoaded back, and the clip is
- * the largest thing the page paints. So this runs inline, immediately after the
- * markup it reaches into, which is the first instant the element exists.
+ * The clip is three megabytes of ambient video behind a screen that is already
+ * written out whole, and it is not what the page paints: it is held at two per
+ * cent opacity until it can play, and the largest thing a reader is shown is
+ * the heading above it. Named while the parser is still in the head, it is in
+ * flight before the document has produced a single frame - an autoplaying
+ * element with a source is loaded and decoded eagerly, and the renderer holds
+ * the first frame back until it has one to composite. That is what put the
+ * first paint eight hundred milliseconds after the last byte of the page had
+ * arrived and the main thread had gone idle, with the heading charged for all
+ * of it.
+ *
+ * So the choice is still made in the document - the element is still handed a
+ * file already decided rather than asking the bundle for one - and only the
+ * fetch waits, until one frame after the frame the screen is drawn in. The clip
+ * fades in over a second once it can play, so arriving a frame later is not
+ * something a reader can see.
+ *
+ * The waits mirror the bundle's: a tab nobody is looking at paints nothing, so
+ * there is no frame to protect there and the fetch starts at once, and a timer
+ * stands behind both for the throttled cases in between.
  */
 const CLIP_HANDOFF = `<script>(function(){
 var pick=window.__smyrnaBackgroundVideo,clips=window.__smyrnaBackgroundClips;
 if(pick===undefined||!clips)return;
 var el=document.querySelector("source[data-ambient-clip]");
 if(!el||el.getAttribute("src"))return;
-el.setAttribute("src",clips[pick]);
-if(el.parentNode&&el.parentNode.load)el.parentNode.load()})()</script>`.replace(/\n/g, '')
+var started=false;
+var start=function(){if(started)return;started=true;el.setAttribute("src",clips[pick]);if(el.parentNode&&el.parentNode.load)el.parentNode.load()};
+if(document.visibilityState==="visible")requestAnimationFrame(function(){requestAnimationFrame(start)});
+else start();
+setTimeout(start,2000)})()</script>`.replace(/\n/g, '')
 
 /**
  * Prepares the rendered screen for the document it is written into.

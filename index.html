@@ -18,6 +18,15 @@
     <link href="/app-logo.png" rel="apple-touch-icon" />
     <link href="/manifest.json" rel="manifest" />
     <link crossorigin href="https://gujgtjqqurildqurpffh.supabase.co" rel="preconnect">
+    <!-- The front door's largest text - the "Smyrna Tools" heading the drawn
+         screen opens with - is set in Condensed at font-bold, so the file it
+         needs is the 700 and not the 600 beside it. Without this line the
+         browser cannot know that: the weight is only decided once the inlined
+         rules have been applied to the markup, which is a round trip and a
+         download after the document landed, and the heading spends that time
+         set in the fallback. The 600 stays preloaded for the screens the
+         bundle renders after sign-in, which is where it is used. -->
+    <link as="font" crossorigin href="/fonts/plex-sans-condensed-700-latin.woff2" rel="preload" type="font/woff2">
     <link as="font" crossorigin href="/fonts/plex-sans-condensed-600-latin.woff2" rel="preload" type="font/woff2">
     <link as="font" crossorigin href="/fonts/plex-sans-400-latin.woff2" rel="preload" type="font/woff2">
     <link as="image" fetchpriority="high" href="/srm-logo.svg" rel="preload" type="image/svg+xml">
